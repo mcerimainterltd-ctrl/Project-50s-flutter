@@ -53,7 +53,9 @@ jobs:
         continue-on-error: true
 
       - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/xamepage-release.jks
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.jks
+          ls -la android/app/release.jks
 
       - name: Write key.properties
         run: |
@@ -61,8 +63,9 @@ jobs:
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.KEY_PASSWORD }}
           keyAlias=${{ secrets.KEY_ALIAS }}
-          storeFile=xamepage-release.jks
+          storeFile=release.jks
           KEYEOF
+          cat android/key.properties
 
       - name: Build release APK
         run: |
@@ -89,4 +92,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: rm -f android/app/xamepage-release.jks android/key.properties
+        run: rm -f android/app/release.jks android/key.properties
