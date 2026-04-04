@@ -1,17 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
-import '../../shared/models/xame_user.dart';
 import '../services/auth_service.dart';
+import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/register_screen.dart';
 
-// Placeholder screens — replace with real screens as you build them
 class _Placeholder extends StatelessWidget {
   final String name;
   const _Placeholder(this.name);
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFF0A0A0F),
-    body: Center(child: Text(name, style: const TextStyle(color: Colors.white))));
+    body: Center(child: Text(name, style: const TextStyle(color: Colors.white, fontSize: 18))));
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -26,8 +26,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/login',        builder: (c, s) => const _Placeholder('Login')),
-      GoRoute(path: '/register',     builder: (c, s) => const _Placeholder('Register')),
+      GoRoute(path: '/login',        builder: (c, s) => const LoginScreen()),
+      GoRoute(path: '/register',     builder: (c, s) => const RegisterScreen()),
       GoRoute(path: '/contacts',     builder: (c, s) => const _Placeholder('Contacts')),
       GoRoute(path: '/chat/:userId', builder: (c, s) => _Placeholder('Chat: ${s.pathParameters['userId']}')),
       GoRoute(path: '/call/:userId', builder: (c, s) => _Placeholder('Call: ${s.pathParameters['userId']}')),
