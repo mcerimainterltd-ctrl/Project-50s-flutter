@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/contacts/screens/contacts_screen.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;
@@ -11,7 +12,8 @@ class _Placeholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFF0A0A0F),
-    body: Center(child: Text(name, style: const TextStyle(color: Colors.white, fontSize: 18))));
+    body: Center(child: Text(name,
+      style: const TextStyle(color: Colors.white, fontSize: 18))));
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -20,7 +22,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/login',
     redirect: (context, state) {
       final loggedIn   = user != null;
-      final isAuthRoute = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final isAuthRoute = state.matchedLocation == '/login' ||
+                          state.matchedLocation == '/register';
       if (!loggedIn && !isAuthRoute) return '/login';
       if (loggedIn  &&  isAuthRoute) return '/contacts';
       return null;
@@ -28,9 +31,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/login',        builder: (c, s) => const LoginScreen()),
       GoRoute(path: '/register',     builder: (c, s) => const RegisterScreen()),
-      GoRoute(path: '/contacts',     builder: (c, s) => const _Placeholder('Contacts')),
+      GoRoute(path: '/contacts',     builder: (c, s) => const ContactsScreen()),
       GoRoute(path: '/chat/:userId', builder: (c, s) => _Placeholder('Chat: ${s.pathParameters['userId']}')),
-      GoRoute(path: '/call/:userId', builder: (c, s) => _Placeholder('Call: ${s.pathParameters['userId']}')),
+      GoRoute(path: '/call/:userId', builder: (c, s) => _Placeholder('Call')),
       GoRoute(path: '/incoming-call',builder: (c, s) => const _Placeholder('Incoming Call')),
       GoRoute(path: '/conference',   builder: (c, s) => const _Placeholder('Conference')),
       GoRoute(path: '/call-history', builder: (c, s) => const _Placeholder('Call History')),
