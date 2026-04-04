@@ -133,7 +133,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Container(
                   width: 72, height: 72,
                   decoration: BoxDecoration(
-                    color: XameColors.primary.withOpacity(0.15),
+                    color: XameColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: XameColors.primary, width: 1.5),
                   ),
@@ -176,9 +176,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: XameColors.primary.withOpacity(0.1),
+                      color: XameColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: XameColors.primary.withOpacity(0.3)),
+                      border: Border.all(color: XameColors.primary.withValues(alpha: 0.3)),
                     ),
                     child: Row(children: [
                       const Icon(Icons.info_outline, color: XameColors.primary, size: 16),
@@ -199,9 +199,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: XameColors.danger.withOpacity(0.1),
+                    color: XameColors.danger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: XameColors.danger.withOpacity(0.3)),
+                    border: Border.all(color: XameColors.danger.withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
                     const Icon(Icons.error_outline, color: XameColors.danger, size: 16),

@@ -87,7 +87,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Container(
                   width: 80, height: 80,
                   decoration: BoxDecoration(
-                    color: XameColors.accent.withOpacity(0.15),
+                    color: XameColors.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: XameColors.accent, width: 1.5),
                   ),
@@ -203,9 +203,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: XameColors.danger.withOpacity(0.1),
+                    color: XameColors.danger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: XameColors.danger.withOpacity(0.3)),
+                    border: Border.all(color: XameColors.danger.withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
                     const Icon(Icons.error_outline, color: XameColors.danger, size: 16),
