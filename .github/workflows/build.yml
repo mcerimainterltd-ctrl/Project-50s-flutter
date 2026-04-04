@@ -49,8 +49,8 @@ jobs:
 
       - run: flutter pub get
 
-      - run: flutter analyze --no-fatal-infos
-        continue-on-error: true
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos || true
 
       - name: Decode keystore
         run: |
@@ -65,7 +65,6 @@ jobs:
           keyAlias=${{ secrets.KEY_ALIAS }}
           storeFile=release.jks
           KEYEOF
-          cat android/key.properties
 
       - name: Build release APK
         run: |
