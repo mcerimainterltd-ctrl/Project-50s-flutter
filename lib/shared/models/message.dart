@@ -18,6 +18,7 @@ class XameMessage {
   final bool             viewOnce;
   final String?          fileUrl;
   final String?          fileName;
+  final String?          fileMime;
   final int?             fileSize;
   final Map<String, String>? reactions;
 
@@ -38,28 +39,21 @@ class XameMessage {
     this.viewOnce   = false,
     this.fileUrl,
     this.fileName,
+    this.fileMime,
     this.fileSize,
     this.reactions,
   });
 
   XameMessage copyWith({String? status, Map<String, String>? reactions}) => XameMessage(
-    id:             id,
-    senderId:       senderId,
-    recipientId:    recipientId,
-    text:           text,
-    type:           type,
-    direction:      direction,
-    ts:             ts,
-    status:         status ?? this.status,
-    isDisappearing: isDisappearing,
-    expiresAt:      expiresAt,
-    replyToId:      replyToId,
-    replyToText:    replyToText,
-    forwarded:      forwarded,
-    viewOnce:       viewOnce,
-    fileUrl:        fileUrl,
-    fileName:       fileName,
-    fileSize:       fileSize,
+    id:             id,             senderId:      senderId,
+    recipientId:    recipientId,    text:          text,
+    type:           type,           direction:     direction,
+    ts:             ts,             status:        status ?? this.status,
+    isDisappearing: isDisappearing, expiresAt:     expiresAt,
+    replyToId:      replyToId,      replyToText:   replyToText,
+    forwarded:      forwarded,      viewOnce:      viewOnce,
+    fileUrl:        fileUrl,        fileName:      fileName,
+    fileMime:       fileMime,       fileSize:      fileSize,
     reactions:      reactions ?? this.reactions,
   );
 
