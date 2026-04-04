@@ -45,7 +45,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
       final msg = XameMessage(
         id:          m['id']        ?? _uuid.v4(),
-        senderId:    senderId,
+        senderId:    senderId ?? '',
         recipientId: '',
         text:        m['text']      ?? '',
         type:        m['file'] != null ? _typeFromFile(m['file']) : MessageType.text,

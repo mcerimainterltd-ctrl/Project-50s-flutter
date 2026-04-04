@@ -1,3 +1,4 @@
+import 'dart:io' as dart_io;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -595,4 +596,3 @@ class _ComposerState extends State<_Composer> {
 }
 
 // dart:io import alias to avoid conflict with File widget
-import 'dart:io' as dart_io;
