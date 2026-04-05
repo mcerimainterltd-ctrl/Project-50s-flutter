@@ -1,4 +1,3 @@
-final activeContactIdProvider = StateProvider<String?>((ref) => null);
 
 import 'dart:async';
 import 'package:dio/dio.dart';
@@ -6,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
+
+final activeContactIdProvider = StateProvider<String?>((ref) => null);
 
 class ContactModel {
   final String id, name;
