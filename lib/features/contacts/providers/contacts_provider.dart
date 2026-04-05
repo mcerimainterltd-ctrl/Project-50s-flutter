@@ -1,10 +1,9 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../core/services/chat_service.dart';
 import '../../../core/services/socket_service.dart';
-import 'package:dio/dio.dart';
 
 class ContactModel {
   final String id, name;
@@ -60,19 +59,59 @@ final typingProvider = StateProvider<Set<String>>((ref) => {});
 
 class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
   final List<StreamSubscription> _subs = [];
-  final _dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+  final _dio = Dio(BaseOptions(
+    baseUrl:        AppConstants.serverUrl,
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
+  ));
 
   @override
   Future<List<ContactModel>> build() async {
     _listenToSocket();
     ref.onDispose(() { for (final s in _subs) s.cancel(); });
+    // Request contacts immediately — socket may already be connected
+    _requestContacts();
     return [];
+  }
+
+  // Request contacts — called on build and after addContact
+  void _requestContacts() {
+    final socket = ref.read(socketServiceProvider);
+    final user   = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    if (socket.isConnected) {
+      // Already connected — request immediately
+      socket.emitGetContacts(user.xameId);
+      socket.emitGetChatHistory(user.xameId);
+      socket.emitRequestOnlineUsers();
+    } else {
+      // Not connected yet — listen for connection then request
+      late StreamSubscription sub;
+      sub = socket.connectionState.listen((state) {
+        if (state == SocketState.connected) {
+          Future.delayed(const Duration(milliseconds: 300), () {
+            socket.emitGetContacts(user.xameId);
+            socket.emitGetChatHistory(user.xameId);
+            socket.emitRequestOnlineUsers();
+          });
+          sub.cancel();
+        }
+      });
+      _subs.add(sub);
+    }
   }
 
   void _listenToSocket() {
     final socket = ref.read(socketServiceProvider);
 
+    // contacts_list — server sends after get_contacts
     _subs.add(socket.contactsList.listen((list) {
+      if (list.isEmpty) {
+        // Empty list — keep existing or stay empty
+        if (state.valueOrNull?.isEmpty ?? true) state = const AsyncData([]);
+        return;
+      }
       final current = state.valueOrNull ?? [];
       final updated = list.map((m) {
         final existing = current.where((c) => c.id == m['xameId']).firstOrNull;
@@ -80,6 +119,8 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
           existingUnread: existing?.unreadCount,
           existingMissed: existing?.missedCallsCount);
       }).toList();
+
+      // Add self contact if missing
       final self = ref.read(currentUserProvider);
       if (self != null && !updated.any((c) => c.id == self.xameId)) {
         updated.insert(0, ContactModel(
@@ -93,57 +134,65 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
       state = AsyncData(updated);
     }));
 
+    // online_users
     _subs.add(socket.onlineUsers.listen((ids) {
       final current = state.valueOrNull; if (current == null) return;
       final self = ref.read(currentUserProvider);
       state = AsyncData(current.map((c) =>
-        c.copyWith(isOnline: ids.contains(c.id) || c.id == self?.xameId)).toList());
+        c.copyWith(isOnline: ids.contains(c.id) || c.id == self?.xameId)
+      ).toList());
     }));
 
+    // receive-message — update preview + unread
     _subs.add(socket.receiveMessage.listen((data) {
       final senderId = data['senderId'] as String?;
       final message  = data['message']  as Map<String, dynamic>?;
       if (senderId == null || message == null) return;
-      final current = state.valueOrNull ?? [];
+      final current  = state.valueOrNull ?? [];
       final activeId = ref.read(activeContactIdProvider);
       state = AsyncData(current.map((c) {
         if (c.id != senderId) return c;
         return c.copyWith(
-          lastInteractionTs:      message['ts'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+          lastInteractionTs:      message['ts'] as int? ??
+            DateTime.now().millisecondsSinceEpoch,
           lastInteractionPreview: message['text'] as String? ?? 'Attachment',
-          unreadCount:            activeId == senderId ? 0 : c.unreadCount + 1,
+          unreadCount: activeId == senderId ? 0 : c.unreadCount + 1,
         );
       }).toList());
     }));
 
+    // typing / stop-typing
     _subs.add(socket.typing.listen((id) {
       final t = Set<String>.from(ref.read(typingProvider))..add(id);
       ref.read(typingProvider.notifier).state = t;
     }));
-
     _subs.add(socket.stopTyping.listen((id) {
       final t = Set<String>.from(ref.read(typingProvider))..remove(id);
       ref.read(typingProvider.notifier).state = t;
     }));
 
+    // profile-updated
     _subs.add(socket.profileUpdated.listen((data) {
       final userId = data['userId'] as String?; if (userId == null) return;
       final current = state.valueOrNull ?? [];
       state = AsyncData(current.map((c) {
         if (c.id != userId) return c;
         return c.copyWith(
-          profilePic:        data['profilePic']    as String? ?? c.profilePic,
-          name:              (data['preferredName'] != null && data['preferredName'] != '')
-                               ? data['preferredName'] as String : c.name,
-          isProfilePicHidden: data['hideProfilePicture'] as bool? ?? c.isProfilePicHidden,
+          profilePic: data['profilePic'] as String? ?? c.profilePic,
+          name: (data['preferredName'] != null && data['preferredName'] != '')
+            ? data['preferredName'] as String : c.name,
+          isProfilePicHidden:
+            data['hideProfilePicture'] as bool? ?? c.isProfilePicHidden,
         );
       }).toList());
     }));
 
+    // missed call count
     _subs.add(socket.missedCallCount.listen((senderId) {
       final current = state.valueOrNull ?? [];
       state = AsyncData(current.map((c) =>
-        c.id == senderId ? c.copyWith(missedCallsCount: c.missedCallsCount + 1) : c
+        c.id == senderId
+          ? c.copyWith(missedCallsCount: c.missedCallsCount + 1) : c
       ).toList());
     }));
   }
@@ -151,14 +200,17 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
   void markRead(String contactId) {
     final current = state.valueOrNull ?? [];
     state = AsyncData(current.map((c) =>
-      c.id == contactId ? c.copyWith(unreadCount: 0) : c).toList());
+      c.id == contactId ? c.copyWith(unreadCount: 0) : c
+    ).toList());
   }
 
   Future<Map<String, dynamic>?> searchUser(String xameId) async {
     try {
-      final res  = await _dio.post('/api/search-user', data: {'xameId': xameId.trim()});
+      final res  = await _dio.post('/api/search-user',
+        data: {'xameId': xameId.trim()});
       final data = res.data as Map<String, dynamic>;
-      return data['success'] == true ? data['user'] as Map<String, dynamic> : null;
+      if (data['success'] != true) return null;
+      return data['user'] as Map<String, dynamic>;
     } catch (_) { return null; }
   }
 
@@ -167,8 +219,26 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
       final res  = await _dio.post('/api/add-contact',
         data: {'userId': selfId, 'contactId': contactId});
       final data = res.data as Map<String, dynamic>;
-      if (data['success'] == true)
+      if (data['success'] == true) {
+        // Add contact directly from API response — no need to wait for socket
+        final c = data['contact'] as Map<String, dynamic>?;
+        if (c != null) {
+          final current = state.valueOrNull ?? [];
+          if (!current.any((x) => x.id == c['xameId'])) {
+            state = AsyncData([
+              ...current,
+              ContactModel(
+                id:        c['xameId'] as String,
+                name:      c['name']   as String? ?? c['xameId'] as String,
+                profilePic: c['profilePic'] as String?,
+                isOnline:  c['isOnline'] as bool? ?? false,
+              ),
+            ]);
+          }
+        }
+        // Also refresh via socket
         ref.read(socketServiceProvider).emitGetContacts(selfId);
+      }
     } catch (_) {}
   }
 
@@ -181,7 +251,8 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     } catch (_) {}
   }
 
-  Future<void> updateContactName(String selfId, String contactId, String newName) async {
+  Future<void> updateContactName(
+      String selfId, String contactId, String newName) async {
     try {
       final res  = await _dio.post('/api/update-contact',
         data: {'userId': selfId, 'contactId': contactId, 'newName': newName});
@@ -190,7 +261,8 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
         final current = state.valueOrNull ?? [];
         state = AsyncData(current.map((c) =>
           c.id == contactId
-            ? c.copyWith(name: data['updatedName'] as String? ?? newName) : c
+            ? c.copyWith(name: data['updatedName'] as String? ?? newName)
+            : c
         ).toList());
       }
     } catch (_) {}
@@ -198,4 +270,5 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
 }
 
 final contactsProvider =
-  AsyncNotifierProvider<ContactsNotifier, List<ContactModel>>(ContactsNotifier.new);
+  AsyncNotifierProvider<ContactsNotifier, List<ContactModel>>(
+    ContactsNotifier.new);

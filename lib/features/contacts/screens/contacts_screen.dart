@@ -33,21 +33,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
     final user = ref.read(currentUserProvider);
     if (user == null) return;
     final socket = ref.read(socketServiceProvider);
-
-    // Connect socket
     socket.connect(user.xameId);
-
-    // Wait for confirmed connection before requesting data
-    // Mirrors: socket.on('connect') → emit get_contacts + get_chat_history
-    socket.connectionState.firstWhere((s) => s == SocketState.connected)
-      .then((_) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          socket.emitGetContacts(user.xameId);
-          socket.emitGetChatHistory(user.xameId);
-          socket.emitRequestOnlineUsers();
-          socket.startHeartbeat(user.xameId);
-        });
-      });
+    socket.startHeartbeat(user.xameId);
   }
 
   @override
@@ -87,7 +74,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       GestureDetector(
         onTap: () => context.go('/profile'),
         child: XameAvatar(
-          name: user?.displayName ?? '', profilePic: user?.profilePic,
+          name: user?.displayName ?? '',
+          profilePic: user?.profilePic,
           size: 36, isOnline: true),
       ),
       const SizedBox(width: 12),
@@ -103,19 +91,23 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               suffixIcon: _filter.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.close, color: Colors.white30, size: 18),
-                    onPressed: () { _searchCtrl.clear(); setState(() => _filter = ''); })
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      setState(() => _filter = '');
+                    })
                 : null,
               filled: true, fillColor: XameColors.darkCard,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 10),
             ),
           )
         : Text(['Chats','Calls','Discover','Profile'][_tab],
             style: const TextStyle(color: Colors.white, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
-      // Connection indicator
       _ConnectionDot(),
       IconButton(
         icon: const Icon(Icons.more_vert, color: Colors.white70),
@@ -177,8 +169,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 child: TextField(
                   controller: ctrl,
                   style: const TextStyle(color: Colors.white),
-                  onSubmitted: (_) => _doSearch(ctrl, setS,
-                    (e) => error = e, (u) => foundUser = u, (s) => searching = s),
+                  onSubmitted: (_) => _doSearch(
+                    ctrl, setS,
+                    (e) => error = e,
+                    (u) => foundUser = u,
+                    (s) => searching = s),
                   decoration: InputDecoration(
                     hintText:  'Enter Xame-ID',
                     hintStyle: const TextStyle(color: Colors.white30),
@@ -198,8 +193,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              SizedBox(
-                height: 50,
+              SizedBox(height: 50,
                 child: ElevatedButton(
                   onPressed: searching ? null : () => _doSearch(
                     ctrl, setS,
@@ -216,8 +210,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                         child: CircularProgressIndicator(
                           color: Colors.black, strokeWidth: 2))
                     : const Text('Search'),
-                ),
-              ),
+                )),
             ]),
             if (error != null) ...[
               const SizedBox(height: 10),
@@ -240,8 +233,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                   border: Border.all(
                     color: XameColors.primary.withValues(alpha: 0.3))),
                 child: Row(children: [
-                  XameAvatar(
-                    name: _contactName(foundUser!), size: 44),
+                  XameAvatar(name: _contactName(foundUser!), size: 44),
                   const SizedBox(width: 12),
                   Expanded(child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +250,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     onPressed: () async {
                       final self = ref.read(currentUserProvider);
                       if (self == null) return;
-                      final contactId = foundUser!['xameId']?.toString();
+                      final contactId =
+                        foundUser!['xameId']?.toString();
                       if (contactId == null) return;
                       await ref.read(contactsProvider.notifier)
                         .addContact(self.xameId, contactId);
@@ -290,7 +283,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
     );
   }
 
-  // Mirrors: u.firstName + ' ' + u.lastName in chat.js
   String _contactName(Map<String, dynamic> u) {
     final first = u['firstName']?.toString() ?? '';
     final last  = u['lastName']?.toString()  ?? '';
@@ -320,10 +312,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         else setFound(result);
       });
     } catch (e) {
-      setS(() {
-        setSearching(false);
-        setError('Network error. Try again.');
-      });
+      setS(() { setSearching(false); setError('Network error. Try again.'); });
     }
   }
 
@@ -337,8 +326,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         mainAxisSize: MainAxisSize.min, children: [
         const SizedBox(height: 8),
         Container(width: 36, height: 4,
-          decoration: BoxDecoration(
-            color: Colors.white24,
+          decoration: BoxDecoration(color: Colors.white24,
             borderRadius: BorderRadius.circular(2))),
         ListTile(
           leading: const Icon(Icons.call_outlined, color: Colors.white70),
@@ -377,17 +365,17 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   }
 }
 
-// ── Connection status dot ─────────────────────────────────────────────────
+// ── Connection dot ─────────────────────────────────────────────────────────
 class _ConnectionDot extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(
-      socketServiceProvider.select((_) => _.isConnected));
+    final connected = ref.watch(
+      socketServiceProvider.select((s) => s.isConnected));
     return Container(
       width: 8, height: 8, margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: state ? XameColors.accent : XameColors.danger),
+        color: connected ? XameColors.accent : Colors.orange),
     );
   }
 }
@@ -406,7 +394,7 @@ class _ChatsTab extends ConsumerWidget {
       loading: () => const Center(
         child: CircularProgressIndicator(color: XameColors.primary)),
       error: (e, _) => Center(
-        child: Text('$e',
+        child: Text('Error: $e',
           style: const TextStyle(color: Colors.white38))),
       data: (list) {
         var filtered = list.where((c) =>
@@ -421,10 +409,11 @@ class _ChatsTab extends ConsumerWidget {
         final selfList = filtered.where((c) => c.id == self?.xameId).toList();
         final others   = filtered.where((c) => c.id != self?.xameId).toList();
 
-        if (list.isEmpty) return _LoadingContacts();
-        if (others.isEmpty && filter.isEmpty) return _EmptyChats();
+        if (list.isEmpty) {
+          return _EmptyChats();
+        }
 
-        final items = [
+        final items = <Widget>[
           ...selfList.map((c) => _ContactTile(contact: c, isSelf: true)),
           if (others.isNotEmpty) _SectionHeader(others.length),
           ...others.map((c) => _ContactTile(contact: c)),
@@ -438,17 +427,6 @@ class _ChatsTab extends ConsumerWidget {
       },
     );
   }
-}
-
-class _LoadingContacts extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      const CircularProgressIndicator(color: XameColors.primary, strokeWidth: 2),
-      const SizedBox(height: 16),
-      const Text('Connecting...', style: TextStyle(color: Colors.white38)),
-    ]),
-  );
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -646,8 +624,7 @@ class _PlaceholderTab extends StatelessWidget {
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Icon(icon, color: Colors.white24, size: 48),
       const SizedBox(height: 12),
-      Text(label,
-        style: const TextStyle(color: Colors.white38, fontSize: 16)),
+      Text(label, style: const TextStyle(color: Colors.white38, fontSize: 16)),
       const SizedBox(height: 4),
       const Text('Coming soon',
         style: TextStyle(color: Colors.white24, fontSize: 12)),
