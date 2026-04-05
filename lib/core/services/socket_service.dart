@@ -95,10 +95,13 @@ class SocketService {
           .setReconnectionAttempts(999999)
           .setTimeout(30000)
           .enableForceNew()
+          .disableAutoConnect()
           .build(),
       );
 
       _registerHandlers(_socket!, xameId, stealth: stealth);
+
+    _socket!.connect();
 
     } catch (e) {
       debugPrint('❌ Socket error: $e');
