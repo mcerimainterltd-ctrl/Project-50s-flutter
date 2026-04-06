@@ -30,7 +30,7 @@ void main() async {
   runApp(ProviderScope(
     overrides: [
       if (savedUser != null)
-        currentUserProvider.overrideWith((ref) => savedUser),
+        currentUserProvider.overrideWith((ref) => savedUser!),
     ],
     child: const XamePageApp(),
   ));
