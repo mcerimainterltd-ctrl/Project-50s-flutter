@@ -20,6 +20,8 @@ class WebRTCService {
   final _callTimerCtrl = StreamController<String>.broadcast();
 
   Stream<CallState> get callState  => _callStateCtrl.stream;
+  Stream<Never> get remoteStream$ => const Stream.empty();
+  dynamic get localStream => null;
   Stream<String>    get callTimer  => _callTimerCtrl.stream;
 
   WebRTCService(this._socket);
