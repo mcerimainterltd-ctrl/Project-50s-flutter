@@ -9,6 +9,8 @@ class WebRTCService {
   final _callStateCtrl = StreamController<CallState>.broadcast();
   final _callTimerCtrl = StreamController<String>.broadcast();
   final _remoteStreamCtrl = StreamController<MediaStream?>.broadcast();
+  final _incomingCallCtrl = StreamController<bool>.broadcast();
+  Stream<bool> get onIncomingCall => _incomingCallCtrl.stream;
   
   RTCPeerConnection? _peerConnection;
   MediaStream? _localStream;
@@ -20,6 +22,7 @@ class WebRTCService {
 
   WebRTCService(this._socket) {
     _socket.on("offer", (data) async {
+      _incomingCallCtrl.add(true);
       await _peerConnection?.setRemoteDescription(
         RTCSessionDescription(data["sdp"], data["type"])
       );
