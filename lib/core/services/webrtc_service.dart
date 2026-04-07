@@ -1,48 +1,80 @@
-// flutter_webrtc temporarily stubbed — will be re-added after base APK builds
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../config/constants.dart';
-import 'socket_service.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-final webRTCServiceProvider = Provider<WebRTCService>((ref) =>
-  WebRTCService(ref.read(socketServiceProvider)));
-
-enum CallState { idle, outgoing, incoming, active, ended }
+enum CallState { idle, calling, ringing, connected, busy, failed }
 
 class WebRTCService {
-  final SocketService _socket;
-  bool callActive = false, isAudioMuted = false, isVideoMuted = false, isLoudspeakerOn = false;
-  static const _bridge = MethodChannel(AppConstants.channelAndroidBridge);
-
+  final IO.Socket _socket;
   final _callStateCtrl = StreamController<CallState>.broadcast();
   final _callTimerCtrl = StreamController<String>.broadcast();
+  final _remoteStreamCtrl = StreamController<MediaStream?>.broadcast();
+  
+  RTCPeerConnection? _peerConnection;
+  MediaStream? _localStream;
 
-  Stream<CallState> get callState  => _callStateCtrl.stream;
-  Stream<Never> get remoteStream$ => const Stream.empty();
-  dynamic get localStream => null;
-  Stream<String>    get callTimer  => _callTimerCtrl.stream;
+  Stream<CallState> get callState => _callStateCtrl.stream;
+  Stream<MediaStream?> get remoteStream$ => _remoteStreamCtrl.stream;
+  Stream<String> get callTimer => _callTimerCtrl.stream;
+  MediaStream? get localStream => _localStream;
 
-  WebRTCService(this._socket);
+  WebRTCService(this._socket) {
+    _socket.on("offer", (data) async {
+      await _peerConnection?.setRemoteDescription(
+        RTCSessionDescription(data["sdp"], data["type"])
+      );
+      RTCSessionDescription answer = await _peerConnection!.createAnswer();
+      await _peerConnection!.setLocalDescription(answer);
+      _socket.emit("answer", answer.toMap());
+    });
 
-  Future<void> startCall(String recipientId, String callType) async =>
-      debugPrint('WebRTC stubbed — startCall($recipientId, $callType)');
+    _socket.on("answer", (data) async {
+      await _peerConnection?.setRemoteDescription(
+        RTCSessionDescription(data["sdp"], data["type"])
+      );
+    });
 
-  Future<void> handleIncomingCall(dynamic offer, String callerId, {bool isVideo = false}) async =>
-      debugPrint('WebRTC stubbed — handleIncomingCall($callerId)');
+    _socket.on("ice-candidate", (data) {
+      _peerConnection?.addCandidate(
+        RTCIceCandidate(data["candidate"], data["sdpMid"], data["sdpMLineIndex"])
+      );
+    });
+  }
 
-  Future<void> handleAnswer(dynamic answer, String fromUserId) async =>
-      debugPrint('WebRTC stubbed — handleAnswer($fromUserId)');
+  Future<void> startCall() async {
+    RTCSessionDescription offer = await _peerConnection!.createOffer();
+    await _peerConnection!.setLocalDescription(offer);
+    _socket.emit("offer", offer.toMap());
+  }
 
-  void handleNewIceCandidate(dynamic candidate, String fromUserId) =>
-      debugPrint('WebRTC stubbed — handleNewIceCandidate($fromUserId)');
+  Future<void> initializeMedia(Map<String, dynamic> mediaConstraints) async {
+    Map<String, dynamic> configuration = {
+      "iceServers": [{"urls": "stun:stun.l.google.com:19302"}]
+    };
+    Map<String, dynamic> loopbackConstraints = {
+      "mandatory": {},
+      "optional": [{"DtlsSrtpKeyAgreement": true}]
+    };
 
-  Future<void> exitVideoCall() async => debugPrint('WebRTC stubbed — exitVideoCall()');
-  Future<void> endCall()       async => debugPrint('WebRTC stubbed — endCall()');
-  void toggleAudio()  => debugPrint('WebRTC stubbed — toggleAudio()');
-  void toggleVideo()  => debugPrint('WebRTC stubbed — toggleVideo()');
-  Future<void> toggleCamera()  async => debugPrint('WebRTC stubbed — toggleCamera()');
-  Future<void> toggleSpeaker() async => debugPrint('WebRTC stubbed — toggleSpeaker()');
-  void dispose() { _callStateCtrl.close(); _callTimerCtrl.close(); }
+    _peerConnection = await createPeerConnection(configuration, loopbackConstraints);
+    _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+
+    _peerConnection?.onAddStream = (MediaStream stream) {
+      _remoteStreamCtrl.add(stream);
+    };
+
+    await _peerConnection?.addStream(_localStream!);
+
+    _peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
+      _socket.emit("ice-candidate", candidate.toMap());
+    };
+  }
+
+  void dispose() {
+    _callStateCtrl.close();
+    _callTimerCtrl.close();
+    _remoteStreamCtrl.close();
+    _localStream?.dispose();
+    _peerConnection?.dispose();
+  }
 }

@@ -1,0 +1,39 @@
+--- lib/features/contacts/screens/contacts_screen.dart
++++ lib/features/contacts/screens/contacts_screen.dart
+@@ -1,4 +1,5 @@
+ import 'package:flutter/material.dart';
++import '../../calling/screens/incoming_call_screen.dart';
+ // ... other imports remain
+ 
+ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
+@@ -6,6 +7,7 @@
+   final _searchCtrl = TextEditingController();
+   final _tabCtrl = TabController(length: 4, vsync: this);
+   String _filter = '';
++  late StreamSubscription _incomingCallSub;
+ 
+   @override
+   void initState() {
+@@ -13,6 +15,14 @@
+     _searchCtrl.addListener(() => setState(() {}));
+     // ... existing code ...
+     _connectSocket();
++    
++    // Listen for incoming calls
++    _incomingCallSub = ref.read(socketServiceProvider).incomingCall.listen((call) {
++      ref.read(incomingCallProvider.notifier).state = call;
++      if (mounted) {
++        context.go('/incoming-call');
++      }
++    });
+   }
+ 
+   @override
+@@ -20,6 +30,7 @@
+     _searchCtrl.dispose();
+     _tabCtrl.dispose();
+     _socket.dispose();
++    _incomingCallSub.cancel();
+     super.dispose();
+   }
+ 
