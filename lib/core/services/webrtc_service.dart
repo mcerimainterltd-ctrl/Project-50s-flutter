@@ -23,6 +23,7 @@ class WebRTCService {
   WebRTCService(this._socket) {
     _socket.on("offer", (data) async {
       _incomingCallCtrl.add(true);
+      _incomingCallCtrl.add(true);
       await _peerConnection?.setRemoteDescription(
         RTCSessionDescription(data["sdp"], data["type"])
       );
