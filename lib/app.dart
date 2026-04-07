@@ -17,7 +17,7 @@ class XamePageApp extends ConsumerWidget {
       WebRTCService.instance.onIncomingCall.listen((incoming) {
         if (incoming) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            GoRouter.of(context).push("/incoming-call");
+            ref.read(routerProvider).push("/incoming-call");
           });
         }
       });
@@ -26,7 +26,7 @@ class XamePageApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Xamepage',
       theme: AppTheme.light,
-      routerConfig: router,
+      routerConfig: ref.watch(routerProvider),
       debugShowCheckedModeBanner: false,
     );
   }
