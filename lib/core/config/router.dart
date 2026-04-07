@@ -1,3 +1,5 @@
+import "../services/webrtc_service.dart";
+import "../../features/calls/screens/call_screen.dart";
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +18,6 @@ class _Placeholder extends StatelessWidget {
     body: Center(child: Text(name,
       style: const TextStyle(color: Colors.white, fontSize: 18))));
 }
-
 final routerProvider = Provider<GoRouter>((ref) {
   final user = ref.watch(currentUserProvider);
   return GoRouter(
@@ -35,8 +36,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
       GoRoute(path: '/chat/:userId',
         builder: (c, s) => ChatScreen(userId: s.pathParameters['userId']!)),
-      GoRoute(path: '/call/:userId', builder: (c, s) => const _Placeholder('Call')),
-      GoRoute(path: '/incoming-call', builder: (c, s) => const _Placeholder('Incoming Call')),
+      GoRoute(path: '/call/:userId', builder: (context, state) => CallScreen(webrtcService: WebRTCService.instance)),
+      GoRoute(path: '/incoming-call', builder: (context, state) => CallScreen(webrtcService: WebRTCService.instance)),
       GoRoute(path: '/conference',    builder: (c, s) => const _Placeholder('Conference')),
       GoRoute(path: '/call-history',  builder: (c, s) => const _Placeholder('Call History')),
       GoRoute(path: '/dialpad',       builder: (c, s) => const _Placeholder('Dialpad')),

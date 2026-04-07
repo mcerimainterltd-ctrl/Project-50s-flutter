@@ -1,3 +1,4 @@
+import "webrtc_service.dart";
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -98,6 +99,7 @@ class SocketService {
           .disableAutoConnect()
           .build(),
       );
+      WebRTCService(_socket!);
 
       _registerHandlers(_socket!, xameId, stealth: stealth);
 

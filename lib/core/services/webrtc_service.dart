@@ -5,6 +5,10 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 enum CallState { idle, calling, ringing, connected, busy, failed }
 
 class WebRTCService {
+  static WebRTCService? _instance;
+  static WebRTCService get instance => _instance!;
+  static WebRTCService? _instance;
+  static WebRTCService get instance => _instance!;
   final IO.Socket _socket;
   final _callStateCtrl = StreamController<CallState>.broadcast();
   final _callTimerCtrl = StreamController<String>.broadcast();
@@ -21,8 +25,9 @@ class WebRTCService {
   MediaStream? get localStream => _localStream;
 
   WebRTCService(this._socket) {
+    _instance = this;
+    _instance = this;
     _socket.on("offer", (data) async {
-      _incomingCallCtrl.add(true);
       _incomingCallCtrl.add(true);
       await _peerConnection?.setRemoteDescription(
         RTCSessionDescription(data["sdp"], data["type"])
