@@ -2,7 +2,7 @@ import "package:go_router/go_router.dart";
 import "core/services/webrtc_service.dart";
 import "package:flutter/material.dart";
 import "features/calls/screens/call_screen.dart";
-import "package:Project_50s_final/features/calls/screens/call_screen.dart";
+import "package:xamepage/features/calls/screens/call_screen.dart";
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
