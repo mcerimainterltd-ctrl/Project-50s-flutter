@@ -3,22 +3,32 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'webrtc_socket_service.dart';
 
-// 1. Restore the Provider so app.dart can find this class
+enum CallState { idle, outgoing, incoming, active, ended }
+
 final webRTCServiceProvider = Provider((ref) {
   final socket = ref.watch(webRTCSocketServiceProvider);
   return WebRTCService(socket);
 });
-
-enum CallState { idle, outgoing, incoming, active, ended }
 
 class WebRTCService {
   final WebRTCSocketService _socket;
   MediaStream? localStream;
   Map<String, RTCPeerConnection> peers = {};
 
-  // 2. Restore UI Controllers so the screens don't crash
+  // UI Properties restored for app.dart and call_screen.dart
+  bool isAudioMuted = false;
+  bool isVideoMuted = false;
+  bool isLoudspeakerOn = false;
+
+  final _callStateController = StreamController<CallState>.broadcast();
   final _callTimerController = StreamController<String>.broadcast();
+  final _remoteStreamController = StreamController<MediaStream>.broadcast();
+  final _incomingCallCtrl = StreamController<bool>.broadcast();
+
+  Stream<CallState> get callState => _callStateController.stream;
   Stream<String> get callTimer => _callTimerController.stream;
+  Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
+  Stream<bool> get onIncomingCall => _incomingCallCtrl.stream;
 
   WebRTCService(this._socket);
 
@@ -26,7 +36,12 @@ class WebRTCService {
     'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]
   };
 
-  Future<void> startCall(String remoteUserId, bool isVideo) async {
+  Future<void> startCall(String remoteUserId, dynamic isVideoInput) async {
+    // Fix: Handle both bool and String 'video'/'voice' from the UI
+    bool isVideo = isVideoInput == true || isVideoInput == 'video';
+    
+    _callStateController.add(CallState.outgoing);
+    
     final Map<String, dynamic> constraints = {
       'audio': true,
       'video': isVideo ? {'facingMode': 'user'} : false,
@@ -49,19 +64,21 @@ class WebRTCService {
   Future<void> handleAnswer(String remoteUserId, dynamic answer) async {
     var pc = peers[remoteUserId];
     if (pc != null) {
+      _callStateController.add(CallState.active);
       await pc.setRemoteDescription(
         RTCSessionDescription(answer['sdp'], answer['type'])
       );
     }
   }
 
-  // Added missing UI methods to prevent 'Undefined method' errors
-  void toggleAudio() {}
-  void toggleVideo() {}
-  Future<void> toggleSpeaker() async {}
+  // Restore UI interaction methods
+  void toggleAudio() => isAudioMuted = !isAudioMuted;
+  void toggleVideo() => isVideoMuted = !isVideoMuted;
+  Future<void> toggleSpeaker() async => isLoudspeakerOn = !isLoudspeakerOn;
   Future<void> toggleCamera() async {}
 
-  void endCall() {
+  Future<void> endCall() async {
+    _callStateController.add(CallState.ended);
     localStream?.dispose();
     peers.forEach((key, pc) => pc.dispose());
     peers.clear();
