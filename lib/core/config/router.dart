@@ -1,7 +1,6 @@
 import '../../features/calling/screens/call_screen.dart';
 import '../../features/calling/screens/incoming_call_screen.dart';
 import "../services/webrtc_service.dart";
-import "../../features/calls/screens/call_screen.dart";
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';

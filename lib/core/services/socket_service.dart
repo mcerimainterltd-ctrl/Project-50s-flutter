@@ -99,7 +99,6 @@ class SocketService {
           
           .build(),
       );
-      WebRTCService(_socket!);
 
       _registerHandlers(_socket!, xameId, stealth: stealth);
 
