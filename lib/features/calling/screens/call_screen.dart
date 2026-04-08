@@ -23,7 +23,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   late final StreamSubscription _timerSub;
   late final StreamSubscription _remoteSub;
 
-  // Draggable thumbnail state
   Offset _thumbnailOffset = const Offset(16, 60);
   bool _isDragging = false;
   bool _isFullscreen = false;
@@ -87,12 +86,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Remote video (full screen or normal)
           Positioned.fill(
             child: GestureDetector(
               onDoubleTap: _toggleFullscreen,
@@ -102,7 +99,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             ),
           ),
-          // Local video thumbnail (draggable, double‑tap to swap)
           if (widget.isVideo && _webrtc.localStream != null && !_isFullscreen)
             Positioned(
               left: _thumbnailOffset.dx,
@@ -112,10 +108,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 onPanUpdate: (details) {
                   setState(() {
                     _thumbnailOffset = Offset(
-                      (_thumbnailOffset.dx + details.delta.dx)
-                          .clamp(0.0, screenSize.width - 120),
-                      (_thumbnailOffset.dy + details.delta.dy)
-                          .clamp(0.0, screenSize.height - 180),
+                      (_thumbnailOffset.dx + details.delta.dx).clamp(0.0, screenSize.width - 120),
+                      (_thumbnailOffset.dy + details.delta.dy).clamp(0.0, screenSize.height - 180),
                     );
                   });
                 },
@@ -139,7 +133,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 ),
               ),
             ),
-          // Fullscreen local video (when double‑tapped remote)
           if (widget.isVideo && _webrtc.localStream != null && _isFullscreen)
             Positioned.fill(
               child: GestureDetector(
@@ -151,7 +144,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 ),
               ),
             ),
-          // Call info overlay (only when not fullscreen)
           if (!_isFullscreen)
             SafeArea(
               child: Column(
@@ -185,7 +177,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 ],
               ),
             ),
-          // Control buttons (always on top)
           Positioned(
             bottom: 60, left: 0, right: 0,
             child: Column(
