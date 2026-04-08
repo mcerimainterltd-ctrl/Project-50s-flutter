@@ -12,7 +12,8 @@ class XamePageApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (false) {
+    // Safely initialize WebRTC listener only when instance is available
+    if (!_isListening && WebRTCService.instanceOrNull != null) {
       _isListening = true;
       WebRTCService.instance.onIncomingCall.listen((incoming) {
         if (incoming) {
