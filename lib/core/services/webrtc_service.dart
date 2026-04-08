@@ -69,7 +69,6 @@ class WebRTCService {
     _isVideoCall = callType == 'video';
     _callStateController.add(CallState.outgoing);
 
-    // Wait for socket to be connected
     int attempts = 0;
     while (!_socket.isConnected && attempts < 50) {
       await Future.delayed(Duration(milliseconds: 100));

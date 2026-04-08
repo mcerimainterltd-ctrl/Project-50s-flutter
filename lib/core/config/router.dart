@@ -1,14 +1,13 @@
-import '../../features/calling/screens/call_screen.dart';
-import '../../features/calling/screens/incoming_call_screen.dart';
-import "../services/webrtc_service.dart";
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/contacts/screens/contacts_screen.dart';
 import '../../features/messaging/screens/chat_screen.dart';
+import '../../features/calling/screens/call_screen.dart';
+import '../../features/calling/screens/incoming_call_screen.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;
@@ -19,6 +18,7 @@ class _Placeholder extends StatelessWidget {
     body: Center(child: Text(name,
       style: const TextStyle(color: Colors.white, fontSize: 18))));
 }
+
 final routerProvider = Provider<GoRouter>((ref) {
   final user = ref.watch(currentUserProvider);
   return GoRouter(
@@ -37,8 +37,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
       GoRoute(path: '/chat/:userId',
         builder: (c, s) => ChatScreen(userId: s.pathParameters['userId']!)),
-      GoRoute(path: '/call/:userId', builder: (context, state) => CallScreen(webrtcService: WebRTCService.instance)),
-      GoRoute(path: '/incoming-call', builder: (context, state) => CallScreen(webrtcService: WebRTCService.instance)),
+      GoRoute(path: '/call/:userId',
+        builder: (context, state) => CallScreen(
+          userId: state.pathParameters['userId']!,
+          isVideo: state.uri.queryParameters['video'] == 'true',
+        )),
+      GoRoute(path: '/incoming-call',
+        builder: (context, state) => const IncomingCallScreen()),
       GoRoute(path: '/conference',    builder: (c, s) => const _Placeholder('Conference')),
       GoRoute(path: '/call-history',  builder: (c, s) => const _Placeholder('Call History')),
       GoRoute(path: '/dialpad',       builder: (c, s) => const _Placeholder('Dialpad')),

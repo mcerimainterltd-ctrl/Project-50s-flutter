@@ -23,6 +23,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   late final StreamSubscription _timerSub;
   late final StreamSubscription _remoteSub;
 
+  // Draggable thumbnail state
+  Offset _thumbnailOffset = const Offset(16, 60);
+  bool _isDragging = false;
+  bool _isFullscreen = false;
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +60,20 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     if (mounted) context.go('/contacts');
   }
 
+  void _swapVideos() {
+    setState(() {
+      final temp = _localRenderer.srcObject;
+      _localRenderer.srcObject = _remoteRenderer.srcObject;
+      _remoteRenderer.srcObject = temp;
+    });
+  }
+
+  void _toggleFullscreen() {
+    setState(() {
+      _isFullscreen = !_isFullscreen;
+    });
+  }
+
   @override
   void dispose() {
     _stateSub.cancel();
@@ -67,59 +86,106 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (widget.isVideo)
-            Positioned.fill(child: RTCVideoView(_remoteRenderer, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover))
-          else
-            Container(color: const Color(0xFF0A0A0F)),
-          if (widget.isVideo && _webrtc.localStream != null)
+          // Remote video (full screen or normal)
+          Positioned.fill(
+            child: GestureDetector(
+              onDoubleTap: _toggleFullscreen,
+              child: RTCVideoView(
+                _remoteRenderer,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              ),
+            ),
+          ),
+          // Local video thumbnail (draggable, double‑tap to swap)
+          if (widget.isVideo && _webrtc.localStream != null && !_isFullscreen)
             Positioned(
-              top: 60, right: 16,
-              child: Container(
-                width: 100, height: 140,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: RTCVideoView(_localRenderer, mirror: true,
-                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
+              left: _thumbnailOffset.dx,
+              top: _thumbnailOffset.dy,
+              child: GestureDetector(
+                onPanStart: (_) => _isDragging = true,
+                onPanUpdate: (details) {
+                  setState(() {
+                    _thumbnailOffset = Offset(
+                      (_thumbnailOffset.dx + details.delta.dx)
+                          .clamp(0.0, screenSize.width - 120),
+                      (_thumbnailOffset.dy + details.delta.dy)
+                          .clamp(0.0, screenSize.height - 180),
+                    );
+                  });
+                },
+                onPanEnd: (_) => _isDragging = false,
+                onDoubleTap: _swapVideos,
+                child: Container(
+                  width: 120,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: RTCVideoView(
+                      _localRenderer,
+                      mirror: true,
+                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                    ),
+                  ),
                 ),
               ),
             ),
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 60),
-                CircleAvatar(radius: 45, child: Text(widget.userId[0])),
-                const SizedBox(height: 16),
-                Text(widget.userId, style: const TextStyle(color: Colors.white, fontSize: 24)),
-                const SizedBox(height: 8),
-                StreamBuilder<CallState>(
-                  stream: _webrtc.callState,
-                  builder: (ctx, snap) {
-                    final state = snap.data ?? CallState.outgoing;
-                    String label;
-                    switch (state) {
-                      case CallState.outgoing: label = 'Calling...'; break;
-                      case CallState.active: label = '00:00'; break;
-                      case CallState.incoming: label = 'Incoming...'; break;
-                      default: label = 'Ended'; break;
-                    }
-                    return Text(label, style: const TextStyle(color: Colors.white54));
-                  },
+          // Fullscreen local video (when double‑tapped remote)
+          if (widget.isVideo && _webrtc.localStream != null && _isFullscreen)
+            Positioned.fill(
+              child: GestureDetector(
+                onDoubleTap: _toggleFullscreen,
+                child: RTCVideoView(
+                  _localRenderer,
+                  mirror: true,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                 ),
-                StreamBuilder<String>(
-                  stream: _webrtc.callTimer,
-                  builder: (ctx, snap) {
-                    final timer = snap.data ?? '00:00';
-                    return Text(timer, style: const TextStyle(color: Colors.white, fontSize: 24));
-                  },
-                ),
-              ],
+              ),
             ),
-          ),
+          // Call info overlay (only when not fullscreen)
+          if (!_isFullscreen)
+            SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 60),
+                  CircleAvatar(radius: 45, child: Text(widget.userId[0])),
+                  const SizedBox(height: 16),
+                  Text(widget.userId, style: const TextStyle(color: Colors.white, fontSize: 24)),
+                  const SizedBox(height: 8),
+                  StreamBuilder<CallState>(
+                    stream: _webrtc.callState,
+                    builder: (ctx, snap) {
+                      final state = snap.data ?? CallState.outgoing;
+                      String label;
+                      switch (state) {
+                        case CallState.outgoing: label = 'Calling...'; break;
+                        case CallState.active: label = '00:00'; break;
+                        case CallState.incoming: label = 'Incoming...'; break;
+                        default: label = 'Ended'; break;
+                      }
+                      return Text(label, style: const TextStyle(color: Colors.white54));
+                    },
+                  ),
+                  StreamBuilder<String>(
+                    stream: _webrtc.callTimer,
+                    builder: (ctx, snap) {
+                      final timer = snap.data ?? '00:00';
+                      return Text(timer, style: const TextStyle(color: Colors.white, fontSize: 24));
+                    },
+                  ),
+                ],
+              ),
+            ),
+          // Control buttons (always on top)
           Positioned(
             bottom: 60, left: 0, right: 0,
             child: Column(
