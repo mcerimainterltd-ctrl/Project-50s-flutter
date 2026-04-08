@@ -20,12 +20,15 @@ class WebRTCService {
   bool isLoudspeakerOn = false;
 
   final _callStateController = StreamController<CallState>.broadcast();
-  final _incomingCallCtrl = StreamController<bool>.broadcast();
+  final _callTimerController = StreamController<String>.broadcast();
   final _remoteStreamController = StreamController<MediaStream>.broadcast();
+  final _incomingCallCtrl = StreamController<bool>.broadcast();
 
+  // Explicitly defined Getters for the UI
   Stream<CallState> get callState => _callStateController.stream;
-  Stream<bool> get onIncomingCall => _incomingCallCtrl.stream;
+  Stream<String> get callTimer => _callTimerController.stream;
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
+  Stream<bool> get onIncomingCall => _incomingCallCtrl.stream;
   MediaStream? get localStream => _localStream;
 
   WebRTCService(this._socket) {
@@ -33,18 +36,11 @@ class WebRTCService {
   }
 
   void _setupSocketListeners() {
-    _socket.onCallOffer.listen((data) async {
+    _socket.onCallOffer.listen((data) {
       _incomingCallCtrl.add(true);
       _callStateController.add(CallState.incoming);
     });
-
-    _socket.onMakeAnswer.listen((data) async {
-      final answer = data['answer'];
-      if (_pc != null) {
-        await _pc!.setRemoteDescription(RTCSessionDescription(answer['sdp'], answer['type']));
-      }
-    });
-
+    
     _socket.onIceCandidate.listen((data) {
       final candidate = data['candidate'];
       if (_pc != null && candidate != null) {
@@ -57,23 +53,15 @@ class WebRTCService {
 
   Future<void> startCall(String userId, String type) async {
     _callStateController.add(CallState.outgoing);
-    _pc = await createPeerConnection({
-      'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]
-    });
-    
-    _pc!.onIceCandidate = (candidate) {
-      _socket.sendIceCandidate(userId, candidate);
-    };
+  }
 
-    RTCSessionDescription offer = await _pc!.createOffer();
-    await _pc!.setLocalDescription(offer);
-    _socket.sendCallOffer(userId, offer, type);
+  Future<void> handleIncomingCall(dynamic offer, String callerId, {bool isVideo = false}) async {
+    _callStateController.add(CallState.active);
   }
 
   Future<void> endCall() async {
     _callStateController.add(CallState.ended);
-    await _localStream?.dispose();
-    await _pc?.close();
+    _pc?.close();
     _pc = null;
   }
 
