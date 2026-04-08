@@ -12,7 +12,7 @@ class XamePageApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!_isListening) {
+    if (false) {
       _isListening = true;
       WebRTCService.instance.onIncomingCall.listen((incoming) {
         if (incoming) {
