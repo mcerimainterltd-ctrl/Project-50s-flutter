@@ -13,65 +13,50 @@ final webRTCServiceProvider = Provider((ref) {
 class WebRTCService {
   final WebRTCSocketService _socket;
   MediaStream? localStream;
-  Map<String, RTCPeerConnection> peers = {};
-
-  // UI Properties restored for app.dart and call_screen.dart
+  RTCPeerConnection? _pc;
+  
   bool isAudioMuted = false;
   bool isVideoMuted = false;
   bool isLoudspeakerOn = false;
 
   final _callStateController = StreamController<CallState>.broadcast();
-  final _callTimerController = StreamController<String>.broadcast();
   final _remoteStreamController = StreamController<MediaStream>.broadcast();
   final _incomingCallCtrl = StreamController<bool>.broadcast();
 
   Stream<CallState> get callState => _callStateController.stream;
-  Stream<String> get callTimer => _callTimerController.stream;
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   Stream<bool> get onIncomingCall => _incomingCallCtrl.stream;
+  Stream<String> get callTimer => Stream.periodic(const Duration(seconds: 1), (i) => "00:${i.toString().padLeft(2, '0')}");
 
-  WebRTCService(this._socket);
+  WebRTCService(this._socket) {
+    _listenToSocket();
+  }
 
-  Map<String, dynamic> configuration = {
-    'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]
-  };
+  void _listenToSocket() {
+    // THIS activates the notification pop-up
+    _socket.onCallOffer.listen((data) {
+      _incomingCallCtrl.add(true);
+      _callStateController.add(CallState.incoming);
+    });
+  }
 
   Future<void> startCall(String remoteUserId, dynamic isVideoInput) async {
-    // Fix: Handle both bool and String 'video'/'voice' from the UI
     bool isVideo = isVideoInput == true || isVideoInput == 'video';
-    
     _callStateController.add(CallState.outgoing);
     
-    final Map<String, dynamic> constraints = {
+    localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true,
       'video': isVideo ? {'facingMode': 'user'} : false,
-    };
-
-    localStream = await navigator.mediaDevices.getUserMedia(constraints);
-    RTCPeerConnection pc = await createPeerConnection(configuration);
-    peers[remoteUserId] = pc;
-
-    localStream!.getTracks().forEach((track) {
-      pc.addTrack(track, localStream!);
     });
-
-    RTCSessionDescription offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
+    
+    _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
+    localStream!.getTracks().forEach((track) => _pc!.addTrack(track, localStream!));
+    
+    RTCSessionDescription offer = await _pc!.createOffer();
+    await _pc!.setLocalDescription(offer);
     _socket.sendCallOffer(remoteUserId, offer, isVideo ? 'video' : 'voice');
   }
 
-  Future<void> handleAnswer(String remoteUserId, dynamic answer) async {
-    var pc = peers[remoteUserId];
-    if (pc != null) {
-      _callStateController.add(CallState.active);
-      await pc.setRemoteDescription(
-        RTCSessionDescription(answer['sdp'], answer['type'])
-      );
-    }
-  }
-
-  // Restore UI interaction methods
   void toggleAudio() => isAudioMuted = !isAudioMuted;
   void toggleVideo() => isVideoMuted = !isVideoMuted;
   Future<void> toggleSpeaker() async => isLoudspeakerOn = !isLoudspeakerOn;
@@ -79,8 +64,8 @@ class WebRTCService {
 
   Future<void> endCall() async {
     _callStateController.add(CallState.ended);
-    localStream?.dispose();
-    peers.forEach((key, pc) => pc.dispose());
-    peers.clear();
+    await localStream?.dispose();
+    await _pc?.close();
+    _pc = null;
   }
 }
