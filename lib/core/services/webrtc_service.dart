@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'webrtc_socket_service.dart';
+import 'socket_service.dart'; // To access Data Classes
 
 enum CallState { idle, outgoing, incoming, active, ended }
 
@@ -36,16 +37,20 @@ class WebRTCService {
 
     _socket.onMakeAnswer.listen((data) async {
       if (_pc != null) {
-        var answer = data['answer'];
-        await _pc!.setRemoteDescription(RTCSessionDescription(answer['sdp'], answer['type']));
+        await _pc!.setRemoteDescription(
+          RTCSessionDescription(data.answer['sdp'], data.answer['type'])
+        );
         _callStateController.add(CallState.active);
       }
     });
 
     _socket.onIceCandidate.listen((data) {
-      if (_pc != null) {
-        var cand = data['candidate'];
-        _pc!.addCandidate(RTCIceCandidate(cand['candidate'], cand['sdpMid'], cand['sdpMLineIndex']));
+      if (_pc != null && data.candidate != null) {
+        _pc!.addCandidate(RTCIceCandidate(
+          data.candidate['candidate'],
+          data.candidate['sdpMid'],
+          data.candidate['sdpMLineIndex'],
+        ));
       }
     });
   }
@@ -54,24 +59,36 @@ class WebRTCService {
     _callStateController.add(CallState.outgoing);
     _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
     
-    _pc!.onIceCandidate = (candidate) => _socket.sendIceCandidate(userId, candidate);
+    _pc!.onIceCandidate = (candidate) {
+      _socket.sendIceCandidate(userId, {
+        'candidate': candidate.candidate,
+        'sdpMid': candidate.sdpMid,
+        'sdpMLineIndex': candidate.sdpMLineIndex,
+      });
+    };
+    
     _pc!.onTrack = (event) => _remoteStreamController.add(event.streams[0]);
 
-    localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': type == 'video'});
+    localStream = await navigator.mediaDevices.getUserMedia({
+      'audio': true, 
+      'video': type == 'video' || type == true
+    });
+    
     localStream!.getTracks().forEach((track) => _pc!.addTrack(track, localStream!));
 
     RTCSessionDescription offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
-    _socket.sendCallOffer(userId, offer, type.toString());
+    _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, type.toString());
   }
 
   Future<void> endCall() async {
     _callStateController.add(CallState.ended);
+    await localStream?.dispose();
     await _pc?.close();
     _pc = null;
   }
 
-  // UI Stubs to keep build stable
+  // UI Stubs for stability
   bool isAudioMuted = false;
   bool isVideoMuted = false;
   bool isLoudspeakerOn = false;

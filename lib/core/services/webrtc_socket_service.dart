@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'socket_service.dart'; // Assuming your base socket logic is here
+import 'socket_service.dart';
 
 final webRTCSocketServiceProvider = Provider((ref) {
   final socketService = ref.watch(socketServiceProvider);
@@ -9,37 +9,22 @@ final webRTCSocketServiceProvider = Provider((ref) {
 
 class WebRTCSocketService {
   final SocketService _baseSocket;
-  
   WebRTCSocketService(this._baseSocket);
 
-  // Streams for the WebRTC Service to listen to
-  Stream<dynamic> get onCallOffer => _baseSocket.getResponse('call-user');
-  Stream<dynamic> get onMakeAnswer => _baseSocket.getResponse('make-answer');
-  Stream<dynamic> get onIceCandidate => _baseSocket.getResponse('ice-candidate');
+  // Directly mapping to your existing SocketService streams
+  Stream<IncomingCallData> get onCallOffer => _baseSocket.incomingCall;
+  Stream<CallAnswerData> get onMakeAnswer => _baseSocket.callAnswer;
+  Stream<IceCandidateData> get onIceCandidate => _baseSocket.iceCandidate;
 
-  void sendCallOffer(String to, RTCSessionDescription offer, String type) {
-    _baseSocket.emit('call-user', {
-      'recipientId': to,
-      'offer': {'sdp': offer.sdp, 'type': offer.type},
-      'callType': type,
-    });
-  }
+  // Use your existing emit helpers
+  void connect(String userId) => _baseSocket.connect(userId);
+  
+  void sendCallOffer(String to, dynamic offer, String type) => 
+      _baseSocket.emitCallUser(to, offer, type);
 
-  void sendAnswer(String to, RTCSessionDescription answer) {
-    _baseSocket.emit('make-answer', {
-      'to': to,
-      'answer': {'sdp': answer.sdp, 'type': answer.type},
-    });
-  }
+  void sendAnswer(String to, dynamic answer) => 
+      _baseSocket.emitMakeAnswer(to, answer);
 
-  void sendIceCandidate(String to, RTCIceCandidate candidate) {
-    _baseSocket.emit('ice-candidate', {
-      'to': to,
-      'candidate': {
-        'candidate': candidate.candidate,
-        'sdpMid': candidate.sdpMid,
-        'sdpMLineIndex': candidate.sdpMLineIndex,
-      },
-    });
-  }
+  void sendIceCandidate(String to, dynamic candidate) => 
+      _baseSocket.emitIceCandidate(to, candidate);
 }
