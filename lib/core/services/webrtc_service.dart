@@ -15,20 +15,17 @@ class WebRTCService {
   RTCPeerConnection? _pc;
   MediaStream? _localStream;
   
-  // UI Properties restored for call_screen.dart
   bool isAudioMuted = false;
   bool isVideoMuted = false;
   bool isLoudspeakerOn = false;
 
   final _callStateController = StreamController<CallState>.broadcast();
-  final _callTimerController = StreamController<String>.broadcast();
-  final _remoteStreamController = StreamController<MediaStream>.broadcast();
   final _incomingCallCtrl = StreamController<bool>.broadcast();
+  final _remoteStreamController = StreamController<MediaStream>.broadcast();
 
   Stream<CallState> get callState => _callStateController.stream;
-  Stream<String> get callTimer => _callTimerController.stream;
-  Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   Stream<bool> get onIncomingCall => _incomingCallCtrl.stream;
+  Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   MediaStream? get localStream => _localStream;
 
   WebRTCService(this._socket) {
@@ -36,36 +33,47 @@ class WebRTCService {
   }
 
   void _setupSocketListeners() {
-    _socket.onCallOffer.listen((data) {
+    _socket.onCallOffer.listen((data) async {
       _incomingCallCtrl.add(true);
       _callStateController.add(CallState.incoming);
     });
-    
+
+    _socket.onMakeAnswer.listen((data) async {
+      final answer = data['answer'];
+      if (_pc != null) {
+        await _pc!.setRemoteDescription(RTCSessionDescription(answer['sdp'], answer['type']));
+      }
+    });
+
     _socket.onIceCandidate.listen((data) {
       final candidate = data['candidate'];
       if (_pc != null && candidate != null) {
         _pc!.addCandidate(RTCIceCandidate(
-          candidate['candidate'],
-          candidate['sdpMid'],
-          candidate['sdpMLineIndex'],
+          candidate['candidate'], candidate['sdpMid'], candidate['sdpMLineIndex'],
         ));
       }
     });
   }
 
-  // Restored missing methods for CallScreen
   Future<void> startCall(String userId, String type) async {
     _callStateController.add(CallState.outgoing);
-    // Peer connection logic would go here
-  }
+    _pc = await createPeerConnection({
+      'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]
+    });
+    
+    _pc!.onIceCandidate = (candidate) {
+      _socket.sendIceCandidate(userId, candidate);
+    };
 
-  Future<void> handleIncomingCall(dynamic offer, String callerId, {bool isVideo = false}) async {
-    _callStateController.add(CallState.active);
+    RTCSessionDescription offer = await _pc!.createOffer();
+    await _pc!.setLocalDescription(offer);
+    _socket.sendCallOffer(userId, offer, type);
   }
 
   Future<void> endCall() async {
     _callStateController.add(CallState.ended);
-    _pc?.close();
+    await _localStream?.dispose();
+    await _pc?.close();
     _pc = null;
   }
 
