@@ -1,34 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/webrtc_service.dart';
 import 'core/services/webrtc_socket_service.dart';
 import 'core/config/router.dart';
-import 'core/theme/app_theme.dart';
 
-class XamePageApp extends ConsumerWidget {
+class XamePageApp extends ConsumerStatefulWidget {
   const XamePageApp({super.key});
+  @override
+  ConsumerState<XamePageApp> createState() => _XamePageAppState();
+}
+
+class _XamePageAppState extends ConsumerState<XamePageApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Listen for calls in a dedicated listener, not the build method
+    Future.microtask(() {
+      ref.read(webRTCServiceProvider).onIncomingCall.listen((incoming) {
+        if (incoming) ref.read(routerProvider).push("/incoming-call");
+      });
+    });
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
-    final userId = user?.xameId;
-
-    if (userId != null) {
-      WebRTCSocketService().connect(userId);
-      ref.read(webRTCServiceProvider).onIncomingCall.listen((_) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(routerProvider).push("/incoming-call");
-        });
-      });
+    if (user != null) {
+      ref.read(webRTCSocketServiceProvider).connect(user.xameId);
     }
 
     return MaterialApp.router(
-      title: 'Xamepage',
-      theme: AppTheme.light,
-      routerConfig: ref.watch(routerProvider),
       debugShowCheckedModeBanner: false,
+      routerConfig: ref.watch(routerProvider),
     );
   }
 }
