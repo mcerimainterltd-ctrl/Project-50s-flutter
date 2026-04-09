@@ -4,7 +4,7 @@ import 'package:xamepage/core/config/router.dart';
 import 'package:xamepage/core/services/socket_service.dart';
 import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
-import 'package:xamepage/core/models/user_model.dart';
+import 'package:xamepage/shared/models/xame_user.dart';
 
 class XamePageApp extends ConsumerStatefulWidget {
   const XamePageApp({super.key});
