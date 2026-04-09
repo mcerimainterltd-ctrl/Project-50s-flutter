@@ -90,6 +90,13 @@ class WebRTCService {
     localStream!.getTracks().forEach((t) => _pc!.addTrack(t, localStream!));
   }
 
+  
+  void rejectCall() {
+    _socket.emitCallRejected(currentRemoteUserId ?? "", "declined");
+    _callStateController.add(CallState.ended);
+    _incomingCallController.add(false);
+  }
+
   void endCall() {
     _callStateController.add(CallState.ended);
     _socket.emitCallEnded(currentRemoteUserId ?? "");

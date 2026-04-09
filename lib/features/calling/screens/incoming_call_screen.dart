@@ -18,7 +18,7 @@ class IncomingCallScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Spacer(),
-          CircleAvatar(radius: 50, child: Text(userId[0].toUpperCase(), style: const TextStyle(fontSize: 32))),
+          CircleAvatar(radius: 50, child: Text(userId.isNotEmpty ? userId[0].toUpperCase() : "?", style: const TextStyle(fontSize: 32))),
           const SizedBox(height: 20),
           Text(userId, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
           Text("Incoming ${isVideo ? 'Video' : 'Voice'} Call...", style: const TextStyle(color: Colors.white70)),
@@ -28,12 +28,19 @@ class IncomingCallScreen extends ConsumerWidget {
             children: [
               FloatingActionButton(
                 heroTag: "decline", backgroundColor: Colors.red,
-                onPressed: () => webrtc.endCall(),
+                onPressed: () {
+                  webrtc.rejectCall();
+                  context.pop(); // Close the screen immediately
+                },
                 child: const Icon(Icons.call_end, color: Colors.white),
               ),
               FloatingActionButton(
                 heroTag: "accept", backgroundColor: Colors.green,
-                onPressed: () => context.push('/call/$userId?video=$isVideo&incoming=true'),
+                onPressed: () {
+                  // THE CRITICAL CONNECTION:
+                  webrtc.joinCall(isVideo); 
+                  context.push('/call/$userId?video=$isVideo&incoming=true');
+                },
                 child: Icon(isVideo ? Icons.videocam : Icons.call, color: Colors.white),
               ),
             ],
