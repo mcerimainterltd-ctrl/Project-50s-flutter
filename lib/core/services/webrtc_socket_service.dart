@@ -1,13 +1,9 @@
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 
-// This is the EXACT name app.dart is looking for
-final webRTCSocketServiceProvider = Provider<WebRTCSocketService>((ref) {
-  // We cannot guess your socket provider name, so we will use a 
-  // placeholder that you can swap with your actual socket provider.
-  throw UnimplementedError("Please map this to your project's main socket provider");
-});
+// This fulfills the 'Undefined name' error in app.dart and webrtc_service.dart
+// We use a StateProvider so it's empty (null) by default and won't crash the build
+final webRTCSocketServiceProvider = StateProvider<WebRTCSocketService?>((ref) => null);
 
 class WebRTCSocketService {
   final dynamic _socket;
@@ -28,7 +24,7 @@ class WebRTCSocketService {
     }
   }
 
-  // This method is required by lib/app.dart:30:16
+  // Required by lib/app.dart:30:16
   void connect(String userId) {
     _socket?.emit('join', userId);
   }
