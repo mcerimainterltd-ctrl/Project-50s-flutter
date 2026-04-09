@@ -1,35 +1,25 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
+import 'webrtc_signaling_client.dart';
 
-// This fulfills the 'Undefined name' error in app.dart and webrtc_service.dart
-// We use a StateProvider so it's empty (null) by default and won't crash the build
-final webRTCSocketServiceProvider = StateProvider<WebRTCSocketService?>((ref) => null);
-
-class WebRTCSocketService {
+class WebRTCSocketService implements ISignalingClient {
   final dynamic _socket;
   
-  final _onCallOffer = StreamController<dynamic>.broadcast();
-  final _onMakeAnswer = StreamController<dynamic>.broadcast();
-  final _onIceCandidate = StreamController<dynamic>.broadcast();
+  final _offerController = StreamController<Map<String, dynamic>>.broadcast();
+  final _answerController = StreamController<Map<String, dynamic>>.broadcast();
+  final _iceController = StreamController<Map<String, dynamic>>.broadcast();
 
-  Stream<dynamic> get onCallOffer => _onCallOffer.stream;
-  Stream<dynamic> get onMakeAnswer => _onMakeAnswer.stream;
-  Stream<dynamic> get onIceCandidate => _onIceCandidate.stream;
+  @override Stream<Map<String, dynamic>> get onCallOffer => _offerController.stream;
+  @override Stream<Map<String, dynamic>> get onAnswer => _answerController.stream;
+  @override Stream<Map<String, dynamic>> get onIceCandidate => _iceController.stream;
 
   WebRTCSocketService(this._socket) {
-    if (_socket != null) {
-      _socket.on('call-user', (data) => _onCallOffer.add(data));
-      _socket.on('make-answer', (data) => _onMakeAnswer.add(data));
-      _socket.on('ice-candidate', (data) => _onIceCandidate.add(data));
-    }
+    _socket?.on('call-user', (data) => _offerController.add(Map<String, dynamic>.from(data)));
+    _socket?.on('make-answer', (data) => _answerController.add(Map<String, dynamic>.from(data)));
+    _socket?.on('ice-candidate', (data) => _iceController.add(Map<String, dynamic>.from(data)));
   }
 
-  // Required by lib/app.dart:30:16
-  void connect(String userId) {
-    _socket?.emit('join', userId);
-  }
+  void connect(String userId) => _socket?.emit('join', userId);
 
-  void sendCallOffer(String to, dynamic offer, String type) => _socket?.emit('call-user', {'to': to, 'offer': offer, 'type': type});
-  void sendCallAnswer(String to, dynamic answer) => _socket?.emit('make-answer', {'to': to, 'answer': answer});
-  void sendIceCandidate(String to, dynamic candidate) => _socket?.emit('ice-candidate', {'to': to, 'candidate': candidate});
+  @override
+  void emit(String event, Map<String, dynamic> data) => _socket?.emit(event, data);
 }

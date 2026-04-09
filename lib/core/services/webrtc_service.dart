@@ -1,18 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'webrtc_socket_service.dart';
 
-// This fulfills the requirement in webrtc_service.dart:10:34
+// THE PROVIDER - We define it here to ensure it's globally accessible
+final webRTCSocketServiceProvider = StateProvider<WebRTCSocketService?>((ref) => null);
+
 final webRTCServiceProvider = Provider((ref) {
-  final socketService = ref.watch(webRTCSocketServiceProvider);
-  // Return a dummy service if null to prevent compilation failure
-  return WebRTCService(socketService ?? WebRTCSocketService(null));
+  final socket = ref.watch(webRTCSocketServiceProvider);
+  return WebRTCService(socket);
 });
 
 class WebRTCService {
-  final WebRTCSocketService _socket;
-  WebRTCService(this._socket);
-  
-  Future<void> startCall(String userId, bool isVideo) async {}
-  Future<void> joinCall(bool isVideo) async {}
-  void endCall() {}
+  final WebRTCSocketService? _signaling;
+  WebRTCService(this._signaling);
+
+  Future<void> startCall(String userId, bool isVideo) async {
+    // Professional WebRTC logic here...
+  }
 }
