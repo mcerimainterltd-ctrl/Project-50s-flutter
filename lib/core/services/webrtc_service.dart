@@ -15,8 +15,10 @@ class WebRTCService {
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
   dynamic _pendingOffer;
+  bool _isIncomingVideo = true; // Tracks the type of incoming call
 
   String? get currentRemoteUserId => _currentRemoteUserId;
+  bool get isIncomingVideo => _isIncomingVideo;
 
   final _callStateController = StreamController<CallState>.broadcast();
   final _incomingCallCtrl = StreamController<bool>.broadcast();
@@ -29,7 +31,9 @@ class WebRTCService {
   WebRTCService(this._socket) {
     _socket.onCallOffer.listen((data) {
       _currentRemoteUserId = data.callerId;
-      _pendingOffer = data.offer; 
+      _pendingOffer = data.offer;
+      // EXTRACT the actual call type from the signaling data
+      _isIncomingVideo = data.type == 'video'; 
       _callStateController.add(CallState.incoming);
       _incomingCallCtrl.add(true);
     });
@@ -58,20 +62,19 @@ class WebRTCService {
     
     RTCSessionDescription offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
+    
+    // Pass the actual call type string ('video' or 'voice')
     _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
   }
 
   Future<void> joinCall(bool isVideo) async {
     if (_pendingOffer == null) return;
     await _setupPeerConnection(isVideo);
-    
     await _pc!.setRemoteDescription(RTCSessionDescription(_pendingOffer['sdp'], _pendingOffer['type']));
     _remoteDescriptionSet = true;
     
     RTCSessionDescription answer = await _pc!.createAnswer();
     await _pc!.setLocalDescription(answer);
-    
-    // FIX: Using sendCallAnswer instead of the non-existent sendMakeAnswer
     _socket.sendCallAnswer(_currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
@@ -81,11 +84,7 @@ class WebRTCService {
 
   Future<void> _setupPeerConnection(bool isVideo) async {
     _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
-    _pc!.onIceCandidate = (c) {
-      if (c.candidate != null) {
-        _socket.sendIceCandidate(_currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
-      }
-    };
+    _pc!.onIceCandidate = (c) => _socket.sendIceCandidate(_currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
     _pc!.onTrack = (e) {
       if (e.streams.isNotEmpty) {
         _remoteStreamController.add(e.streams[0]);
@@ -96,14 +95,15 @@ class WebRTCService {
     localStream!.getTracks().forEach((track) => _pc!.addTrack(track, localStream!));
   }
 
-  Future<void> endCall() async {
+  Future<void> endCall() {
     _callStateController.add(CallState.ended);
     _incomingCallCtrl.add(false);
     _remoteDescriptionSet = false;
     _pendingIce.clear();
     _pendingOffer = null;
-    await localStream?.dispose();
-    await _pc?.close();
-    _pc = null;
+    return Future.wait([localStream?.dispose() ?? Future.value(), _pc?.close() ?? Future.value()]).then((_) {
+      _pc = null;
+      localStream = null;
+    });
   }
 }
