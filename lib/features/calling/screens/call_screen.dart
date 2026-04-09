@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/services/webrtc_service.dart';
-import '../../../core/theme/app_theme.dart';
 
 class CallScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -21,6 +20,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   final _remoteRenderer = RTCVideoRenderer();
   StreamSubscription? _stateSub;
   StreamSubscription? _remoteSub;
+  
+  Offset _thumbnailOffset = const Offset(20, 60);
+  bool _isSwapped = false;
+  CallState _currentStatus = CallState.outgoing;
 
   @override
   void initState() {
@@ -32,9 +35,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Future<void> _initRenderers() async {
     await _localRenderer.initialize();
     await _remoteRenderer.initialize();
-    _stateSub = _webrtc.callState.listen((s) { if (s == CallState.ended && mounted) context.go('/contacts'); });
-    _remoteSub = _webrtc.remoteStream$.listen((s) { if (mounted) setState(() => _remoteRenderer.srcObject = s); });
     
+    _stateSub = _webrtc.callState.listen((s) {
+      if (mounted) setState(() => _currentStatus = s);
+      if (s == CallState.ended && mounted) context.go('/contacts');
+    });
+
+    _remoteSub = _webrtc.remoteStream$.listen((s) {
+      if (mounted) setState(() => _remoteRenderer.srcObject = s);
+    });
+
     await _webrtc.startCall(widget.userId, widget.isVideo);
     if (mounted && _webrtc.localStream != null) {
       setState(() => _localRenderer.srcObject = _webrtc.localStream);
@@ -50,63 +60,74 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isCallActive = _currentStatus == CallState.active;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Positioned.fill(child: RTCVideoView(_remoteRenderer, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover)),
-          
-          // Floating Local Preview
-          if (widget.isVideo)
+          // MAIN VIDEO: Shows Local if calling, Remote if active
+          Positioned.fill(
+            child: GestureDetector(
+              onDoubleTap: () => setState(() => _isSwapped = !_isSwapped),
+              child: RTCVideoView(
+                (isCallActive && !_isSwapped) ? _remoteRenderer : _localRenderer,
+                mirror: !(isCallActive && !_isSwapped),
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              ),
+            ),
+          ),
+
+          // DRAGGABLE THUMBNAIL: Appears only when call is active
+          if (isCallActive)
             Positioned(
-              right: 16, top: 60,
-              child: Container(
-                width: 110, height: 160,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white30, width: 1)),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: RTCVideoView(_localRenderer, mirror: true, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
+              left: _thumbnailOffset.dx,
+              top: _thumbnailOffset.dy,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  setState(() {
+                    _thumbnailOffset += details.delta;
+                  });
+                },
+                onDoubleTap: () => setState(() => _isSwapped = !_isSwapped),
+                child: Container(
+                  width: 120, height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white24, width: 2),
+                    boxShadow: [BoxShadow(blurRadius: 10, color: Colors.black54)],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: RTCVideoView(
+                      _isSwapped ? _remoteRenderer : _localRenderer,
+                      mirror: !_isSwapped,
+                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                    ),
+                  ),
                 ),
               ),
             ),
 
-          // Top Header
-          Positioned(
-            top: 60, left: 20,
+          // OVERLAY UI
+          SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.userId, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 10)])),
-                const Text("Connected", style: TextStyle(color: Colors.greenAccent, fontSize: 14)),
-              ],
-            ),
-          ),
-
-          // Bottom Modern Controls
-          Positioned(
-            bottom: 40, left: 20, right: 20,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white10),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(icon: Icon(_webrtc.isAudioMuted ? Icons.mic_off : Icons.mic, color: Colors.white), onPressed: () => setState(() => _webrtc.toggleAudio())),
-                  GestureDetector(
-                    onTap: () => _webrtc.endCall(),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                      child: const Icon(Icons.call_end, color: Colors.white, size: 30),
-                    ),
-                  ),
-                  IconButton(icon: const Icon(Icons.flip_camera_android, color: Colors.white), onPressed: () => _webrtc.toggleCamera()),
+                if (!isCallActive) ...[
+                  const SizedBox(height: 100),
+                  Text(widget.userId, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                  const Text("Calling...", style: TextStyle(color: Colors.white70, fontSize: 18)),
                 ],
-              ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: FloatingActionButton(
+                    backgroundColor: Colors.red,
+                    onPressed: () => _webrtc.endCall(),
+                    child: const Icon(Icons.call_end, size: 30),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

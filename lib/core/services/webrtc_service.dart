@@ -35,15 +35,17 @@ class WebRTCService {
   void _listenToSocket() {
     _socket.onCallOffer.listen((data) {
       _currentRemoteUserId = data.callerId;
-      _incomingCallCtrl.add(true);
       _callStateController.add(CallState.incoming);
+      _incomingCallCtrl.add(true); 
     });
+
     _socket.onMakeAnswer.listen((data) async {
       if (_pc != null) {
         await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
         _callStateController.add(CallState.active);
       }
     });
+
     _socket.onIceCandidate.listen((data) {
       if (_pc != null && data.candidate != null) {
         _pc!.addCandidate(RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']));
@@ -54,11 +56,23 @@ class WebRTCService {
   Future<void> startCall(String userId, dynamic type) async {
     _currentRemoteUserId = userId;
     _callStateController.add(CallState.outgoing);
+    
+    localStream = await navigator.mediaDevices.getUserMedia({
+      'audio': true, 
+      'video': type == 'video' || type == true
+    });
+
     _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
-    _pc!.onIceCandidate = (candidate) => _socket.sendIceCandidate(userId, {'candidate': candidate.candidate, 'sdpMid': candidate.sdpMid, 'sdpMLineIndex': candidate.sdpMLineIndex});
-    _pc!.onTrack = (event) => _remoteStreamController.add(event.streams[0]);
-    localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': type == 'video' || type == true});
+    _pc!.onIceCandidate = (candidate) => _socket.sendIceCandidate(userId, {
+      'candidate': candidate.candidate, 'sdpMid': candidate.sdpMid, 'sdpMLineIndex': candidate.sdpMLineIndex
+    });
+    _pc!.onTrack = (event) {
+      _remoteStreamController.add(event.streams[0]);
+      _callStateController.add(CallState.active);
+    };
+    
     localStream!.getTracks().forEach((track) => _pc!.addTrack(track, localStream!));
+
     RTCSessionDescription offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
     _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, type.toString());
@@ -66,16 +80,10 @@ class WebRTCService {
 
   Future<void> endCall() async {
     _callStateController.add(CallState.ended);
+    _incomingCallCtrl.add(false);
     await localStream?.dispose();
     await _pc?.close();
     _pc = null;
+    localStream = null;
   }
-
-  bool isAudioMuted = false;
-  bool isVideoMuted = false;
-  bool isLoudspeakerOn = false;
-  void toggleAudio() => isAudioMuted = !isAudioMuted;
-  void toggleVideo() => isVideoMuted = !isVideoMuted;
-  Future<void> toggleSpeaker() async => isLoudspeakerOn = !isLoudspeakerOn;
-  Future<void> toggleCamera() async {}
 }
