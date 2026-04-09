@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'socket_service.dart'; 
+import 'package:xamepage/core/services/socket_service.dart'; 
 // Assuming socketServiceProvider is defined in socket_service.dart based on your grep
 import 'package:xamepage/core/services/socket_service.dart'; 
 
