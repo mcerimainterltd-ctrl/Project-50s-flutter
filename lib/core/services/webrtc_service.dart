@@ -35,6 +35,7 @@ class WebRTCService {
   WebRTCService(this._socket) {
     // Listening to YOUR existing SocketService streams
     _socket.incomingCall.listen((data) {
+      if (data.callerId == _socket.currentUserId) return; // Ignore self
       currentRemoteUserId = data.callerId;
       _pendingOffer = data.offer;
       isIncomingVideo = data.callType == 'video';

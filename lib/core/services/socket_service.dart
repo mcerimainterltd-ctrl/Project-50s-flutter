@@ -11,6 +11,7 @@ final socketServiceProvider = Provider<SocketService>((ref) => SocketService());
 enum SocketState { disconnected, connecting, connected, reconnecting, failed }
 
 class SocketService {
+  String? currentUserId;
   IO.Socket? _socket;
   int    _reconnectAttempts = 0;
   Timer? _heartbeatTimer;
@@ -67,7 +68,7 @@ class SocketService {
 
   bool get isConnected => _socket?.connected ?? false;
 
-  void connect(String xameId, {bool stealth = false}) {
+  void connect(String xameId, {bool stealth = false}) { currentUserId = xameId;
     if (_socket?.connected == true) {
       debugPrint('✅ Socket already connected for: $xameId');
       return;
