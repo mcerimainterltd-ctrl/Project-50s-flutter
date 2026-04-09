@@ -14,6 +14,7 @@ final webRTCServiceProvider = Provider((ref) {
 });
 
 class WebRTCService {
+  CallState _callState = CallState.idle;
   final SocketService _socket;
   RTCPeerConnection? _pc;
   MediaStream? localStream;
@@ -29,6 +30,7 @@ class WebRTCService {
   final _incomingCallController = StreamController<bool>.broadcast();
 
   Stream<CallState> get callState => _callStateController.stream;
+  CallState get callStateStreamValue => _callState;
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   Stream<bool> get onIncomingCall => _incomingCallController.stream;
 
@@ -40,7 +42,7 @@ class WebRTCService {
       _pendingOffer = data.offer;
       isIncomingVideo = data.callType == 'video';
       _incomingCallController.add(true);
-      _callStateController.add(CallState.incoming);
+      _callState = CallState.incoming; _callStateController.add(CallState.incoming);
     });
 
     _socket.callAnswer.listen((data) async {
@@ -49,7 +51,7 @@ class WebRTCService {
         _remoteDescriptionSet = true;
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
-        _callStateController.add(CallState.active);
+        _callState = CallState.active; _callStateController.add(CallState.active);
       }
     });
 
@@ -62,7 +64,7 @@ class WebRTCService {
 
   Future<void> startCall(String userId, bool isVideo) async {
     currentRemoteUserId = userId;
-    _callStateController.add(CallState.outgoing);
+    _callState = CallState.outgoing; _callStateController.add(CallState.outgoing);
     await _setup(isVideo);
     var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
@@ -80,7 +82,7 @@ class WebRTCService {
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
-    _callStateController.add(CallState.active);
+    _callState = CallState.active; _callStateController.add(CallState.active);
   }
 
   Future<void> _setup(bool v) async {
@@ -94,12 +96,12 @@ class WebRTCService {
   
   void rejectCall() {
     _socket.emitCallRejected(currentRemoteUserId ?? "", "declined");
-    _callStateController.add(CallState.ended);
+    _callState = CallState.ended; _callStateController.add(CallState.ended);
     _incomingCallController.add(false);
   }
 
   void endCall() {
-    _callStateController.add(CallState.ended);
+    _callState = CallState.ended; _callStateController.add(CallState.ended);
     _socket.emitCallEnded(currentRemoteUserId ?? "");
     localStream?.getTracks().forEach((t) => t.stop());
     localStream?.dispose();
