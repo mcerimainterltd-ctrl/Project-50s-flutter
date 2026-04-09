@@ -52,7 +52,7 @@ class IncomingCallScreen extends ConsumerWidget {
                       _ActionBtn(icon: Icons.call_end, color: Colors.red, label: "Decline", 
                         onTap: () { webrtc.endCall(); context.go('/contacts'); }),
                       _ActionBtn(icon: Icons.videocam, color: Colors.green, label: "Answer", 
-                        onTap: () => context.push('/call/$userId?video=true')),
+                        onTap: () => context.push('/call/$userId?video=true&incoming=true')),
                     ],
                   ),
                 ),
