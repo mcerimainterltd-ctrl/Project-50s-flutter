@@ -75,7 +75,10 @@ class WebRTCService {
   Future<void> startCall(String userId, bool isVideo) async {
     currentRemoteUserId = userId;
     _callState = CallState.outgoing; _callStateController.add(CallState.outgoing);
+    // 1. Setup hardware first
     await _setup(isVideo);
+    
+    // 2. Create Offer (This now contains the media info)
     var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
     // Using YOUR existing emit method
@@ -84,9 +87,14 @@ class WebRTCService {
 
   Future<void> joinCall(bool isVideo) async {
     if (_pendingOffer == null) return;
-    await _setup(isVideo);
+    // 1. Setup hardware and WAIT for tracks to be added
+    await _setup(isVideo); 
+    
+    // 2. Set remote info
     await _pc!.setRemoteDescription(RTCSessionDescription(_pendingOffer['sdp'], _pendingOffer['type']));
     _remoteDescriptionSet = true;
+    
+    // 3. Create Answer (Now it will include the tracks we added in _setup)
     var answer = await _pc!.createAnswer();
     await _pc!.setLocalDescription(answer);
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
