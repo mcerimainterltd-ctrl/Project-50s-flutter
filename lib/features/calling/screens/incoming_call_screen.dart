@@ -13,7 +13,7 @@ class IncomingCallScreen extends ConsumerWidget {
     final isVideo = webrtc.isIncomingVideo;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: const Color(0xFF0D1117),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -27,16 +27,14 @@ class IncomingCallScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               FloatingActionButton(
-                heroTag: "decline",
-                backgroundColor: Colors.red,
+                heroTag: "decline", backgroundColor: Colors.red,
                 onPressed: () => webrtc.endCall(),
-                child: const Icon(Icons.call_end),
+                child: const Icon(Icons.call_end, color: Colors.white),
               ),
               FloatingActionButton(
-                heroTag: "accept",
-                backgroundColor: Colors.green,
+                heroTag: "accept", backgroundColor: Colors.green,
                 onPressed: () => context.push('/call/$userId?video=$isVideo&incoming=true'),
-                child: Icon(isVideo ? Icons.videocam : Icons.call),
+                child: Icon(isVideo ? Icons.videocam : Icons.call, color: Colors.white),
               ),
             ],
           ),
