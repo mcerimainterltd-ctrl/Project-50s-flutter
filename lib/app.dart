@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
 import 'package:xamepage/core/services/socket_service.dart';
 import 'package:xamepage/core/services/webrtc_service.dart';
+import 'package:xamepage/core/services/auth_service.dart';
+import 'package:xamepage/core/models/user_model.dart';
 
 class XamePageApp extends ConsumerStatefulWidget {
   const XamePageApp({super.key});
