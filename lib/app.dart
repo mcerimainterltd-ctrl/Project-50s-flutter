@@ -27,7 +27,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     if (user != null) {
-      ref.read(webRTCSocketServiceProvider).connect(user.xameId);
+      ref.read(webRTCSocketServiceProvider)?.connect(user.xameId);
     }
 
     return MaterialApp.router(

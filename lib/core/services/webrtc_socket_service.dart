@@ -3,7 +3,6 @@ import 'webrtc_signaling_client.dart';
 
 class WebRTCSocketService implements ISignalingClient {
   final dynamic _socket;
-  
   final _offerController = StreamController<Map<String, dynamic>>.broadcast();
   final _answerController = StreamController<Map<String, dynamic>>.broadcast();
   final _iceController = StreamController<Map<String, dynamic>>.broadcast();
@@ -13,13 +12,23 @@ class WebRTCSocketService implements ISignalingClient {
   @override Stream<Map<String, dynamic>> get onIceCandidate => _iceController.stream;
 
   WebRTCSocketService(this._socket) {
-    _socket?.on('call-user', (data) => _offerController.add(Map<String, dynamic>.from(data)));
-    _socket?.on('make-answer', (data) => _answerController.add(Map<String, dynamic>.from(data)));
-    _socket?.on('ice-candidate', (data) => _iceController.add(Map<String, dynamic>.from(data)));
+    if (_socket != null) {
+      _socket.on('call-user', (data) => _offerController.add(Map<String, dynamic>.from(data)));
+      _socket.on('make-answer', (data) => _answerController.add(Map<String, dynamic>.from(data)));
+      _socket.on('ice-candidate', (data) => _iceController.add(Map<String, dynamic>.from(data)));
+    }
   }
 
-  void connect(String userId) => _socket?.emit('join', userId);
+  void connect(String userId) {
+    if (_socket != null) {
+      _socket.emit('join', userId);
+    }
+  }
 
   @override
-  void emit(String event, Map<String, dynamic> data) => _socket?.emit(event, data);
+  void emit(String event, Map<String, dynamic> data) {
+    if (_socket != null) {
+      _socket.emit(event, data);
+    }
+  }
 }
