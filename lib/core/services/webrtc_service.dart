@@ -14,6 +14,14 @@ final webRTCServiceProvider = Provider((ref) {
 });
 
 class WebRTCService {
+  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+
+  // Call this in your constructor or main.dart
+  Future<void> initRenderers() async {
+    await _localRenderer.initialize();
+    await _remoteRenderer.initialize();
+  }
   RTCVideoRenderer get localRenderer => _localRenderer;
   RTCVideoRenderer get remoteRenderer => _remoteRenderer;
   CallState _callState = CallState.idle;
@@ -36,7 +44,7 @@ class WebRTCService {
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   Stream<bool> get onIncomingCall => _incomingCallController.stream;
 
-  WebRTCService(this._socket) {
+  WebRTCService(this._socket) { initRenderers();
     // Listening to YOUR existing SocketService streams
     _socket.incomingCall.listen((data) {
       if (data.callerId == _socket.currentUserId) return; // Ignore self
