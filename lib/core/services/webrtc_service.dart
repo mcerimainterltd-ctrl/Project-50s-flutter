@@ -5,7 +5,10 @@ import 'webrtc_socket_service.dart';
 
 enum CallState { idle, outgoing, incoming, active, ended }
 
-final webRTCServiceProvider = Provider((ref) => WebRTCService(ref.watch(webRTCSocketServiceProvider)));
+final webRTCServiceProvider = Provider((ref) {
+  // We provide the socket service here
+  return WebRTCService(ref.watch(webRTCSocketServiceProvider));
+});
 
 class WebRTCService {
   final WebRTCSocketService _socket;
@@ -30,16 +33,16 @@ class WebRTCService {
 
   WebRTCService(this._socket) {
     _socket.onCallOffer.listen((data) {
-      _currentRemoteUserId = data.callerId;
-      _pendingOffer = data.offer;
-      _isIncomingVideo = data.type == 'video';
+      _currentRemoteUserId = data['callerId'];
+      _pendingOffer = data['offer'];
+      _isIncomingVideo = data['type'] == 'video';
       _callStateController.add(CallState.incoming);
       _incomingCallCtrl.add(true);
     });
 
     _socket.onMakeAnswer.listen((data) async {
       if (_pc != null) {
-        await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
+        await _pc!.setRemoteDescription(RTCSessionDescription(data['answer']['sdp'], data['answer']['type']));
         _remoteDescriptionSet = true;
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
@@ -48,7 +51,7 @@ class WebRTCService {
     });
 
     _socket.onIceCandidate.listen((data) {
-      final c = RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']);
+      final c = RTCIceCandidate(data['candidate']['candidate'], data['candidate']['sdpMid'], data['candidate']['sdpMLineIndex']);
       if (_pc != null && _remoteDescriptionSet) { _pc!.addCandidate(c); } 
       else { _pendingIce.add(c); }
     });
@@ -78,7 +81,11 @@ class WebRTCService {
 
   Future<void> _setupPeerConnection(bool isVideo) async {
     _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
-    _pc!.onIceCandidate = (c) => _socket.sendIceCandidate(_currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
+    _pc!.onIceCandidate = (c) {
+      if (c.candidate != null) {
+        _socket.sendIceCandidate(_currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
+      }
+    };
     _pc!.onTrack = (e) {
       if (e.streams.isNotEmpty) {
         _remoteStreamController.add(e.streams[0]);

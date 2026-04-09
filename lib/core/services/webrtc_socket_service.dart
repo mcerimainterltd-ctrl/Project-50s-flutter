@@ -1,30 +1,33 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'socket_service.dart';
-
-final webRTCSocketServiceProvider = Provider((ref) {
-  final socketService = ref.watch(socketServiceProvider);
-  return WebRTCSocketService(socketService);
-});
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'dart:async';
 
 class WebRTCSocketService {
-  final SocketService _baseSocket;
-  WebRTCSocketService(this._baseSocket);
-
-  // Directly mapping to your existing SocketService streams
-  Stream<IncomingCallData> get onCallOffer => _baseSocket.incomingCall;
-  Stream<CallAnswerData> get onMakeAnswer => _baseSocket.callAnswer;
-  Stream<IceCandidateData> get onIceCandidate => _baseSocket.iceCandidate;
-
-  // Use your existing emit helpers
-  void connect(String userId) => _baseSocket.connect(userId);
+  final IO.Socket _socket;
   
-  void sendCallOffer(String to, dynamic offer, String type) => 
-      _baseSocket.emitCallUser(to, offer, type);
+  final _onCallOffer = StreamController<dynamic>.broadcast();
+  final _onMakeAnswer = StreamController<dynamic>.broadcast();
+  final _onIceCandidate = StreamController<dynamic>.broadcast();
 
-  void sendAnswer(String to, dynamic answer) => 
-      _baseSocket.emitMakeAnswer(to, answer);
+  Stream<dynamic> get onCallOffer => _onCallOffer.stream;
+  Stream<dynamic> get onMakeAnswer => _onMakeAnswer.stream;
+  Stream<dynamic> get onIceCandidate => _onIceCandidate.stream;
 
-  void sendIceCandidate(String to, dynamic candidate) => 
-      _baseSocket.emitIceCandidate(to, candidate);
+  WebRTCSocketService(this._socket) {
+    _socket.on('call-user', (data) => _onCallOffer.add(data));
+    _socket.on('make-answer', (data) => _onMakeAnswer.add(data));
+    _socket.on('ice-candidate', (data) => _onIceCandidate.add(data));
+  }
+
+  void sendCallOffer(String to, dynamic offer, String type) {
+    _socket.emit('call-user', {'to': to, 'offer': offer, 'type': type});
+  }
+
+  // WE ARE EXPLICITLY DEFINING THIS NOW TO PREVENT COMPILER ERRORS
+  void sendCallAnswer(String to, dynamic answer) {
+    _socket.emit('make-answer', {'to': to, 'answer': answer});
+  }
+
+  void sendIceCandidate(String to, dynamic candidate) {
+    _socket.emit('ice-candidate', {'to': to, 'candidate': candidate});
+  }
 }
