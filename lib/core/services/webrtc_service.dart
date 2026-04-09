@@ -12,8 +12,11 @@ class WebRTCService {
   RTCPeerConnection? _pc;
   MediaStream? localStream;
   String? _currentRemoteUserId;
-  bool _isRemoteDescriptionSet = false;
-  final List<RTCIceCandidate> _iceBuffer = [];
+  
+  // Strict State Tracking
+  bool _isNegotiating = false;
+  bool _remoteDescriptionSet = false;
+  final List<RTCIceCandidate> _pendingIceCandidates = [];
 
   String? get currentRemoteUserId => _currentRemoteUserId;
 
@@ -33,36 +36,55 @@ class WebRTCService {
     });
 
     _socket.onMakeAnswer.listen((data) async {
-      if (_pc != null) {
-        await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
-        _isRemoteDescriptionSet = true;
-        for (var c in _iceBuffer) { await _pc!.addCandidate(c); }
-        _iceBuffer.clear();
-        _callStateController.add(CallState.active);
+      if (_pc == null) return;
+      
+      // PERMANENT FIX: Ensure we don't set description twice or out of order
+      await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
+      _remoteDescriptionSet = true;
+      
+      // Flush the ICE queue only after the description is locked in
+      for (var candidate in _pendingIceCandidates) {
+        await _pc!.addCandidate(candidate);
       }
+      _pendingIceCandidates.clear();
+      _callStateController.add(CallState.active);
     });
 
-    _socket.onIceCandidate.listen((data) {
-      final candidate = RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']);
-      if (_pc != null && _isRemoteDescriptionSet) {
-        _pc!.addCandidate(candidate);
+    _socket.onIceCandidate.listen((data) async {
+      final candidate = RTCIceCandidate(
+        data.candidate['candidate'], 
+        data.candidate['sdpMid'], 
+        data.candidate['sdpMLineIndex']
+      );
+
+      if (_pc != null && _remoteDescriptionSet) {
+        await _pc!.addCandidate(candidate);
       } else {
-        _iceBuffer.add(candidate);
+        _pendingIceCandidates.add(candidate);
       }
     });
   }
 
   Future<void> startCall(String userId, bool isVideo) async {
+    if (_isNegotiating) return;
+    _isNegotiating = true;
     _currentRemoteUserId = userId;
     _callStateController.add(CallState.outgoing);
     
     _pc = await createPeerConnection({
-      'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]
+      'iceServers': [
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'urls': 'stun:stun1.l.google.com:19302'}
+      ]
     });
 
     _pc!.onIceCandidate = (c) {
       if (c.candidate != null) {
-        _socket.sendIceCandidate(userId, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
+        _socket.sendIceCandidate(userId, {
+          'candidate': c.candidate, 
+          'sdpMid': c.sdpMid, 
+          'sdpMLineIndex': c.sdpMLineIndex
+        });
       }
     };
 
@@ -73,24 +95,25 @@ class WebRTCService {
       }
     };
 
-    // DYNAMIC MEDIA CONSTRAINTS
     localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true, 
-      'video': isVideo // Camera only turns on if isVideo is true
+      'video': isVideo 
     });
     
     localStream!.getTracks().forEach((track) => _pc!.addTrack(track, localStream!));
 
     RTCSessionDescription offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
+    
     _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
+    _isNegotiating = false;
   }
 
   Future<void> endCall() async {
     _callStateController.add(CallState.ended);
     _incomingCallCtrl.add(false);
-    _isRemoteDescriptionSet = false;
-    _iceBuffer.clear();
+    _remoteDescriptionSet = false;
+    _pendingIceCandidates.clear();
     await localStream?.dispose();
     await _pc?.close();
     _pc = null;
