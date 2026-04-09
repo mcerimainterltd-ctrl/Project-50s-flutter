@@ -23,6 +23,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   void initState() {
     super.initState();
+    ref.read(webRTCServiceProvider).callState.listen((s) => s == CallState.ended ? context.go('/contacts') : null);
     // Listen for state changes (Active, Ended, etc.)
     Future.microtask(() {
       ref.read(webRTCServiceProvider).callState.listen((state) {
@@ -56,7 +57,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             child: FloatingActionButton(
               backgroundColor: Colors.red,
               onPressed: () {
-                ref.read(webRTCServiceProvider).endCall();
+                onPressed: () { ref.read(webRTCServiceProvider).endCall(); if(mounted) context.go('/contacts'); },
                 context.go('/contacts');
               },
               child: const Icon(Icons.call_end),
