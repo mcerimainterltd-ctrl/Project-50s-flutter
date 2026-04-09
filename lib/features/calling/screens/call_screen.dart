@@ -21,6 +21,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   int _seconds = 0;
   bool _isMicMuted = false;
   bool _isCamMuted = false;
+  
+  // Award-Winning Interaction Variables
+  Offset _thumbnailOffset = const Offset(20, 50); 
+  bool _isLocalMain = false;
 
   @override
   void initState() {
@@ -37,65 +41,77 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     });
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) setState(() => _seconds++);
-    });
-  }
+  void _startTimer() => _timer = Timer.periodic(const Duration(seconds: 1), (t) => mounted ? setState(() => _seconds++) : null);
 
-  String _formatDuration(int seconds) {
-    final minutes = (seconds / 60).floor().toString().padLeft(2, '0');
-    final secs = (seconds % 60).toString().padLeft(2, '0');
-    return "$minutes:$secs";
-  }
+  String _formatDuration(int s) => "${(s / 60).floor().toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}";
 
   @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  void dispose() { _timer?.cancel(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     final webrtc = ref.watch(webRTCServiceProvider);
-    
+    final hasRemote = webrtc.remoteRenderer.srcObject != null;
+
+    // Logic: Local is full screen ONLY if remote is missing OR if toggled
+    final bool showLocalFull = !hasRemote || _isLocalMain;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0D1117),
       body: Stack(
         children: [
-          // Remote Video / Background
+          // 1. MAIN RENDERER (Full Screen)
           Positioned.fill(
-            child: Container(
-              color: Colors.black,
-              child: widget.isVideo && webrtc.remoteRenderer.srcObject != null
-                  ? RTCVideoView(webrtc.remoteRenderer, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover)
+            child: GestureDetector(
+              onDoubleTap: () => setState(() => _isLocalMain = !_isLocalMain),
+              child: Container(
+                color: Colors.black,
+                child: widget.isVideo 
+                  ? RTCVideoView(
+                      showLocalFull ? webrtc.localRenderer : webrtc.remoteRenderer,
+                      mirror: showLocalFull,
+                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                    )
                   : Center(child: CircleAvatar(radius: 60, backgroundColor: Colors.white10, child: Text(widget.userId[0], style: const TextStyle(fontSize: 40)))),
+              ),
             ),
           ),
-          
-          // Local Video Thumbnail
-          if (widget.isVideo && !_isCamMuted)
+
+          // 2. DRAGGABLE THUMBNAIL (Shows only if remote exists)
+          if (widget.isVideo && hasRemote)
             Positioned(
-              top: 50, right: 20, width: 110, height: 160,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: RTCVideoView(webrtc.localRenderer, mirror: true, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
+              top: _thumbnailOffset.dy,
+              right: _thumbnailOffset.dx,
+              child: GestureDetector(
+                onPanUpdate: (details) => setState(() => _thumbnailOffset += Offset(-details.delta.dx, details.delta.dy)),
+                onDoubleTap: () => setState(() => _isLocalMain = !_isLocalMain),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: Container(
+                    width: 110, height: 160,
+                    color: Colors.black54,
+                    child: RTCVideoView(
+                      _isLocalMain ? webrtc.remoteRenderer : webrtc.localRenderer,
+                      mirror: !_isLocalMain,
+                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                    ),
+                  ),
+                ),
               ),
             ),
 
-          // Top Info (Timer)
+          // 3. UI OVERLAYS (Timer & Controls - Preserved from 139)
           Positioned(
             top: 60, left: 0, right: 0,
             child: Column(
               children: [
                 Text(widget.userId, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(_formatDuration(_seconds), style: const TextStyle(color: Colors.white70, fontSize: 16, letterSpacing: 1.2)),
+                Text(_formatDuration(_seconds), style: const TextStyle(color: Colors.white70, fontSize: 16)),
               ],
             ),
           ),
 
-          // Bottom Controls
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -107,8 +123,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   if (widget.isVideo) _controlBtn(Icons.videocam_off, _isCamMuted, () => setState(() => _isCamMuted = !_isCamMuted)),
                   if (widget.isVideo) _controlBtn(Icons.flip_camera_ios, false, () => webrtc.localStream?.getVideoTracks()[0].switchCamera()),
                   FloatingActionButton(
-                    heroTag: "hangup",
-                    backgroundColor: Colors.red,
+                    heroTag: "hangup", backgroundColor: Colors.red,
                     onPressed: () { webrtc.endCall(); context.go('/contacts'); },
                     child: const Icon(Icons.call_end, color: Colors.white),
                   ),
