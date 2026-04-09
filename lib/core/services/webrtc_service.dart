@@ -1,15 +1,8 @@
-import 'webrtc_socket_service.dart';
 import 'dart:async';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'webrtc_socket_service.dart';
 
 enum CallState { idle, outgoing, incoming, active, ended }
-
-final webRTCServiceProvider = Provider((ref) {
-  // We provide the socket service here
-  return WebRTCService(ref.watch(webRTCSocketServiceProvider));
-});
 
 class WebRTCService {
   final WebRTCSocketService _socket;
@@ -25,11 +18,9 @@ class WebRTCService {
   bool get isIncomingVideo => _isIncomingVideo;
 
   final _callStateController = StreamController<CallState>.broadcast();
-  final _incomingCallCtrl = StreamController<bool>.broadcast();
   final _remoteStreamController = StreamController<MediaStream>.broadcast();
 
   Stream<CallState> get callState => _callStateController.stream;
-  Stream<bool> get onIncomingCall => _incomingCallCtrl.stream;
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
 
   WebRTCService(this._socket) {
@@ -38,7 +29,6 @@ class WebRTCService {
       _pendingOffer = data['offer'];
       _isIncomingVideo = data['type'] == 'video';
       _callStateController.add(CallState.incoming);
-      _incomingCallCtrl.add(true);
     });
 
     _socket.onMakeAnswer.listen((data) async {
@@ -61,18 +51,18 @@ class WebRTCService {
   Future<void> startCall(String userId, bool isVideo) async {
     _currentRemoteUserId = userId;
     _callStateController.add(CallState.outgoing);
-    await _setupPeerConnection(isVideo);
-    RTCSessionDescription offer = await _pc!.createOffer();
+    await _setup(isVideo);
+    var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
     _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
   }
 
   Future<void> joinCall(bool isVideo) async {
     if (_pendingOffer == null) return;
-    await _setupPeerConnection(isVideo);
+    await _setup(isVideo);
     await _pc!.setRemoteDescription(RTCSessionDescription(_pendingOffer['sdp'], _pendingOffer['type']));
     _remoteDescriptionSet = true;
-    RTCSessionDescription answer = await _pc!.createAnswer();
+    var answer = await _pc!.createAnswer();
     await _pc!.setLocalDescription(answer);
     _socket.sendCallAnswer(_currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
@@ -80,31 +70,18 @@ class WebRTCService {
     _callStateController.add(CallState.active);
   }
 
-  Future<void> _setupPeerConnection(bool isVideo) async {
+  Future<void> _setup(bool v) async {
     _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
-    _pc!.onIceCandidate = (c) {
-      if (c.candidate != null) {
-        _socket.sendIceCandidate(_currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
-      }
-    };
-    _pc!.onTrack = (e) {
-      if (e.streams.isNotEmpty) {
-        _remoteStreamController.add(e.streams[0]);
-        _callStateController.add(CallState.active);
-      }
-    };
-    localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': isVideo});
-    localStream!.getTracks().forEach((track) => _pc!.addTrack(track, localStream!));
+    _pc!.onIceCandidate = (c) => _socket.sendIceCandidate(_currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
+    _pc!.onTrack = (e) => e.streams.isNotEmpty ? _remoteStreamController.add(e.streams[0]) : null;
+    localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': v});
+    localStream!.getTracks().forEach((t) => _pc!.addTrack(t, localStream!));
   }
 
-  Future<void> endCall() async {
+  void endCall() {
     _callStateController.add(CallState.ended);
-    _incomingCallCtrl.add(false);
-    _remoteDescriptionSet = false;
-    _pendingIce.clear();
-    await localStream?.dispose();
-    await _pc?.close();
+    localStream?.dispose();
+    _pc?.close();
     _pc = null;
-    localStream = null;
   }
 }
