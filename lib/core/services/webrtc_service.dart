@@ -14,6 +14,8 @@ final webRTCServiceProvider = Provider((ref) {
 });
 
 class WebRTCService {
+  RTCVideoRenderer get localRenderer => _localRenderer;
+  RTCVideoRenderer get remoteRenderer => _remoteRenderer;
   CallState _callState = CallState.idle;
   final SocketService _socket;
   RTCPeerConnection? _pc;

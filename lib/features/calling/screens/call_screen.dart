@@ -38,7 +38,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       backgroundColor: const Color(0xFF0D1117),
       body: Stack(
         children: [
-          // Remote Video
           Positioned.fill(
             child: Container(
               color: Colors.black,
@@ -47,8 +46,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   : const Center(child: CircularProgressIndicator(color: Colors.white24)),
             ),
           ),
-          
-          // Local Thumbnail
           if (widget.isVideo)
             Positioned(
               top: 50,
@@ -63,12 +60,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 ),
               ),
             ),
-
-          // Hang up button
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: const EdgeInsets.bottom(50),
+              padding: const EdgeInsets.only(bottom: 50),
               child: FloatingActionButton(
                 backgroundColor: Colors.red,
                 onPressed: () {
