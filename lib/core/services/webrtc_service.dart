@@ -29,7 +29,7 @@ class WebRTCService {
   WebRTCService(this._socket) {
     _socket.onCallOffer.listen((data) {
       _currentRemoteUserId = data.callerId;
-      _pendingOffer = data.offer; // Store the offer to answer it later
+      _pendingOffer = data.offer; 
       _callStateController.add(CallState.incoming);
       _incomingCallCtrl.add(true);
     });
@@ -51,7 +51,6 @@ class WebRTCService {
     });
   }
 
-  // CALLER ROLE: Creates the Offer
   Future<void> startCall(String userId, bool isVideo) async {
     _currentRemoteUserId = userId;
     _callStateController.add(CallState.outgoing);
@@ -62,7 +61,6 @@ class WebRTCService {
     _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
   }
 
-  // RECEIVER ROLE: Creates the Answer (Stops the loop!)
   Future<void> joinCall(bool isVideo) async {
     if (_pendingOffer == null) return;
     await _setupPeerConnection(isVideo);
@@ -72,7 +70,9 @@ class WebRTCService {
     
     RTCSessionDescription answer = await _pc!.createAnswer();
     await _pc!.setLocalDescription(answer);
-    _socket.sendMakeAnswer(_currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
+    
+    // FIX: Using sendCallAnswer instead of the non-existent sendMakeAnswer
+    _socket.sendCallAnswer(_currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
