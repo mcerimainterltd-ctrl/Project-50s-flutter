@@ -90,7 +90,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Positioned.fill(
+          Positioned.fill(child: SizedBox(width: MediaQuery.of(context).size.width, height: MediaQuery.of(context).size.height, child: 
             child: GestureDetector(
               onDoubleTap: _toggleFullscreen,
               child: RTCVideoView(
@@ -134,7 +134,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             ),
           if (widget.isVideo && _webrtc.localStream != null && _isFullscreen)
-            Positioned.fill(
+            Positioned.fill(child: SizedBox(width: MediaQuery.of(context).size.width, height: MediaQuery.of(context).size.height, child: 
               child: GestureDetector(
                 onDoubleTap: _toggleFullscreen,
                 child: RTCVideoView(

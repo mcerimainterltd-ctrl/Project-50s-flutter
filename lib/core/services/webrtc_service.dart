@@ -12,6 +12,7 @@ final webRTCServiceProvider = Provider((ref) {
 });
 
 class WebRTCService {
+  String? get currentRemoteUserId => _currentRemoteUserId;
   final WebRTCSocketService _socket;
   RTCPeerConnection? _pc;
   MediaStream? localStream;
