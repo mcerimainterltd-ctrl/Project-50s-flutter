@@ -16,7 +16,6 @@ class WebRTCService {
   RTCPeerConnection? _pc;
   MediaStream? localStream;
   String? _currentRemoteUserId;
-  
   String? get currentRemoteUserId => _currentRemoteUserId;
 
   final _callStateController = StreamController<CallState>.broadcast();
@@ -29,23 +28,17 @@ class WebRTCService {
   Stream<String> get callTimer => Stream.periodic(const Duration(seconds: 1), (i) => "00:${i.toString().padLeft(2, '0')}");
 
   WebRTCService(this._socket) {
-    _listenToSocket();
-  }
-
-  void _listenToSocket() {
     _socket.onCallOffer.listen((data) {
       _currentRemoteUserId = data.callerId;
       _callStateController.add(CallState.incoming);
-      _incomingCallCtrl.add(true); 
+      _incomingCallCtrl.add(true); // FORCE NOTIFICATION
     });
-
     _socket.onMakeAnswer.listen((data) async {
       if (_pc != null) {
         await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
         _callStateController.add(CallState.active);
       }
     });
-
     _socket.onIceCandidate.listen((data) {
       if (_pc != null && data.candidate != null) {
         _pc!.addCandidate(RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']));
@@ -56,26 +49,17 @@ class WebRTCService {
   Future<void> startCall(String userId, dynamic type) async {
     _currentRemoteUserId = userId;
     _callStateController.add(CallState.outgoing);
-    
-    localStream = await navigator.mediaDevices.getUserMedia({
-      'audio': true, 
-      'video': type == 'video' || type == true
-    });
-
+    localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': true});
     _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
-    _pc!.onIceCandidate = (candidate) => _socket.sendIceCandidate(userId, {
-      'candidate': candidate.candidate, 'sdpMid': candidate.sdpMid, 'sdpMLineIndex': candidate.sdpMLineIndex
-    });
-    _pc!.onTrack = (event) {
-      _remoteStreamController.add(event.streams[0]);
+    _pc!.onIceCandidate = (c) => _socket.sendIceCandidate(userId, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
+    _pc!.onTrack = (e) {
+      _remoteStreamController.add(e.streams[0]);
       _callStateController.add(CallState.active);
     };
-    
     localStream!.getTracks().forEach((track) => _pc!.addTrack(track, localStream!));
-
-    RTCSessionDescription offer = await _pc!.createOffer();
+    var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
-    _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, type.toString());
+    _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, 'video');
   }
 
   Future<void> endCall() async {
