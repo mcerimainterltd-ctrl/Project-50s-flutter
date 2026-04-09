@@ -1,24 +1,24 @@
 import 'dart:async';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'webrtc_socket_service.dart';
+import 'socket_service.dart'; 
+// Assuming socketServiceProvider is defined in socket_service.dart based on your grep
+import 'package:xamepage/core/services/socket_service.dart'; 
 
-// RE-DEFINING THE ENUM YOUR UI EXPECTS
 enum CallState { idle, outgoing, incoming, active, ended }
 
-final webRTCSocketServiceProvider = StateProvider<WebRTCSocketService?>((ref) => null);
-
 final webRTCServiceProvider = Provider((ref) {
-  final socket = ref.watch(webRTCSocketServiceProvider);
+  // We use your existing, proven socket provider
+  final socket = ref.watch(socketServiceProvider);
   return WebRTCService(socket);
 });
 
 class WebRTCService {
-  final WebRTCSocketService? _socket;
+  final SocketService _socket;
   RTCPeerConnection? _pc;
-  MediaStream? localStream; // RESTORED FOR UI
-  String? currentRemoteUserId; // RESTORED FOR UI
-  bool isIncomingVideo = true; // RESTORED FOR UI
+  MediaStream? localStream;
+  String? currentRemoteUserId;
+  bool isIncomingVideo = true;
   
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
@@ -28,23 +28,23 @@ class WebRTCService {
   final _remoteStreamController = StreamController<MediaStream>.broadcast();
   final _incomingCallController = StreamController<bool>.broadcast();
 
-  // GETTERS REQUIRED BY YOUR UI (app.dart and screens)
   Stream<CallState> get callState => _callStateController.stream;
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   Stream<bool> get onIncomingCall => _incomingCallController.stream;
 
   WebRTCService(this._socket) {
-    _socket?.onCallOffer.listen((data) {
-      currentRemoteUserId = data['callerId'];
-      _pendingOffer = data['offer'];
-      isIncomingVideo = data['type'] == 'video';
+    // Listening to YOUR existing SocketService streams
+    _socket.incomingCall.listen((data) {
+      currentRemoteUserId = data.callerId;
+      _pendingOffer = data.offer;
+      isIncomingVideo = data.callType == 'video';
       _incomingCallController.add(true);
       _callStateController.add(CallState.incoming);
     });
 
-    _socket?.onAnswer.listen((data) async {
+    _socket.callAnswer.listen((data) async {
       if (_pc != null) {
-        await _pc!.setRemoteDescription(RTCSessionDescription(data['answer']['sdp'], data['answer']['type']));
+        await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
         _remoteDescriptionSet = true;
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
@@ -52,8 +52,8 @@ class WebRTCService {
       }
     });
 
-    _socket?.onIceCandidate.listen((data) {
-      final c = RTCIceCandidate(data['candidate']['candidate'], data['candidate']['sdpMid'], data['candidate']['sdpMLineIndex']);
+    _socket.iceCandidate.listen((data) {
+      final c = RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']);
       if (_pc != null && _remoteDescriptionSet) { _pc!.addCandidate(c); } 
       else { _pendingIce.add(c); }
     });
@@ -65,7 +65,8 @@ class WebRTCService {
     await _setup(isVideo);
     var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
-    _socket?.emit('call-user', {'to': userId, 'offer': {'sdp': offer.sdp, 'type': offer.type}, 'type': isVideo ? 'video' : 'voice'});
+    // Using YOUR existing emit method
+    _socket.emitCallUser(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
   }
 
   Future<void> joinCall(bool isVideo) async {
@@ -75,7 +76,7 @@ class WebRTCService {
     _remoteDescriptionSet = true;
     var answer = await _pc!.createAnswer();
     await _pc!.setLocalDescription(answer);
-    _socket?.emit('make-answer', {'to': currentRemoteUserId!, 'answer': {'sdp': answer.sdp, 'type': answer.type}});
+    _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
     _callStateController.add(CallState.active);
@@ -83,7 +84,7 @@ class WebRTCService {
 
   Future<void> _setup(bool v) async {
     _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
-    _pc!.onIceCandidate = (c) => _socket?.emit('ice-candidate', {'to': currentRemoteUserId!, 'candidate': {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex}});
+    _pc!.onIceCandidate = (c) => _socket.emitIceCandidate(currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
     _pc!.onTrack = (e) => e.streams.isNotEmpty ? _remoteStreamController.add(e.streams[0]) : null;
     localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': v});
     localStream!.getTracks().forEach((t) => _pc!.addTrack(t, localStream!));
@@ -91,6 +92,7 @@ class WebRTCService {
 
   void endCall() {
     _callStateController.add(CallState.ended);
+    _socket.emitCallEnded(currentRemoteUserId ?? "");
     localStream?.getTracks().forEach((t) => t.stop());
     localStream?.dispose();
     _pc?.close();
