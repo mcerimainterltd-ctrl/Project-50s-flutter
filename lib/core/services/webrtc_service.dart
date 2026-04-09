@@ -98,8 +98,14 @@ class WebRTCService {
   Future<void> _setup(bool v) async {
     _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
     _pc!.onIceCandidate = (c) => _socket.emitIceCandidate(currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
-    _pc!.onTrack = (e) => e.streams.isNotEmpty ? _remoteStreamController.add(e.streams[0]) : null;
+    _pc!.onTrack = (e) {
+      if (e.streams.isNotEmpty) {
+        _remoteRenderer.srcObject = e.streams[0];
+        _remoteStreamController.add(e.streams[0]);
+      }
+    };
     localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': v});
+    _localRenderer.srcObject = localStream;
     localStream!.getTracks().forEach((t) => _pc!.addTrack(t, localStream!));
   }
 
