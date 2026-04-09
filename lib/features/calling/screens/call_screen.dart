@@ -19,7 +19,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   final _remoteRenderer = RTCVideoRenderer();
   StreamSubscription? _stateSub;
   StreamSubscription? _remoteSub;
-  CallState _currentStatus = CallState.outgoing;
+  CallState _status = CallState.outgoing;
 
   @override
   void initState() {
@@ -32,7 +32,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     await _remoteRenderer.initialize();
     final webrtc = ref.read(webRTCServiceProvider);
     
-    _stateSub = webrtc.callState.listen((s) => setState(() => _currentStatus = s));
+    _stateSub = webrtc.callState.listen((s) => setState(() => _status = s));
     _remoteSub = webrtc.remoteStream$.listen((s) => setState(() => _remoteRenderer.srcObject = s));
     
     await webrtc.startCall(widget.userId, widget.isVideo);
@@ -49,38 +49,53 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final bool isLive = _currentStatus == CallState.active;
+    final bool isLive = _status == CallState.active;
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Container(
-        width: size.width,
-        height: size.height,
-        child: Stack(
-          children: [
-            // Ensure the RTCVideoView is inside a ConstrainedBox to prevent 'Half-Screen'
+      backgroundColor: const Color(0xFF0D1117),
+      body: Stack(
+        children: [
+          // VIDEO LAYER (Only shows if it's a video call)
+          if (widget.isVideo)
             Positioned.fill(
-              child: OverflowBox(
-                maxWidth: size.width,
-                maxHeight: size.height,
-                child: RTCVideoView(
-                  isLive ? _remoteRenderer : _localRenderer,
-                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                ),
+              child: RTCVideoView(
+                isLive ? _remoteRenderer : _localRenderer,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
               ),
             ),
-            Positioned(
-              bottom: 50, left: 0, right: 0,
-              child: Center(
-                child: FloatingActionButton(
-                  backgroundColor: Colors.red,
-                  onPressed: () { ref.read(webRTCServiceProvider).endCall(); context.go('/contacts'); },
-                  child: const Icon(Icons.call_end),
-                ),
+          
+          // VOICE UI LAYER (Shows if not a video call or before video connects)
+          if (!widget.isVideo)
+            Positioned.fill(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.blueGrey,
+                    child: Text(widget.userId[0].toUpperCase(), style: const TextStyle(fontSize: 40, color: Colors.white)),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(widget.userId, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(isLive ? "On Call" : "Calling...", style: const TextStyle(color: Colors.white70, fontSize: 16)),
+                ],
               ),
             ),
-          ],
-        ),
+
+          // CALL CONTROLS
+          Positioned(
+            bottom: 60, left: 0, right: 0,
+            child: Center(
+              child: FloatingActionButton(
+                heroTag: "end_call",
+                backgroundColor: Colors.red,
+                onPressed: () { ref.read(webRTCServiceProvider).endCall(); context.go('/contacts'); },
+                child: const Icon(Icons.call_end, color: Colors.white, size: 30),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

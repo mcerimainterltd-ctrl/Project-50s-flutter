@@ -12,7 +12,10 @@ class WebRTCService {
   RTCPeerConnection? _pc;
   MediaStream? localStream;
   String? _currentRemoteUserId;
-  final List<RTCIceCandidate> _remoteCandidates = []; // BUFFER for early candidates
+  bool _isRemoteDescriptionSet = false;
+  final List<RTCIceCandidate> _iceBuffer = [];
+
+  String? get currentRemoteUserId => _currentRemoteUserId;
 
   final _callStateController = StreamController<CallState>.broadcast();
   final _incomingCallCtrl = StreamController<bool>.broadcast();
@@ -32,18 +35,19 @@ class WebRTCService {
     _socket.onMakeAnswer.listen((data) async {
       if (_pc != null) {
         await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
-        // Process buffered candidates once description is set
-        for (var c in _remoteCandidates) { await _pc!.addCandidate(c); }
-        _remoteCandidates.clear();
+        _isRemoteDescriptionSet = true;
+        for (var c in _iceBuffer) { await _pc!.addCandidate(c); }
+        _iceBuffer.clear();
+        _callStateController.add(CallState.active);
       }
     });
 
     _socket.onIceCandidate.listen((data) {
       final candidate = RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']);
-      if (_pc != null && _pc!.remoteDescription != null) {
+      if (_pc != null && _isRemoteDescriptionSet) {
         _pc!.addCandidate(candidate);
       } else {
-        _remoteCandidates.add(candidate); // Buffer until PC is ready
+        _iceBuffer.add(candidate);
       }
     });
   }
@@ -53,7 +57,7 @@ class WebRTCService {
     _callStateController.add(CallState.outgoing);
     
     _pc = await createPeerConnection({
-      'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}, {'urls': 'stun:stun1.l.google.com:19302'}]
+      'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]
     });
 
     _pc!.onIceCandidate = (c) {
@@ -69,20 +73,27 @@ class WebRTCService {
       }
     };
 
-    localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': isVideo});
+    // DYNAMIC MEDIA CONSTRAINTS
+    localStream = await navigator.mediaDevices.getUserMedia({
+      'audio': true, 
+      'video': isVideo // Camera only turns on if isVideo is true
+    });
+    
     localStream!.getTracks().forEach((track) => _pc!.addTrack(track, localStream!));
 
-    var offer = await _pc!.createOffer();
+    RTCSessionDescription offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
-    _socket.sendCallOffer(userId, {'sdp': offer.offer['sdp'], 'type': offer.offer['type']}, 'video');
+    _socket.sendCallOffer(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
   }
 
   Future<void> endCall() async {
     _callStateController.add(CallState.ended);
     _incomingCallCtrl.add(false);
-    _remoteCandidates.clear();
+    _isRemoteDescriptionSet = false;
+    _iceBuffer.clear();
     await localStream?.dispose();
     await _pc?.close();
     _pc = null;
+    localStream = null;
   }
 }
