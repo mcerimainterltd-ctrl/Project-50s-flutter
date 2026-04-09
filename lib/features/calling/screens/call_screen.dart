@@ -15,30 +15,28 @@ class CallScreen extends ConsumerStatefulWidget {
 }
 
 class _CallScreenState extends ConsumerState<CallScreen> {
-  late WebRTCService _webrtc;
   final _localRenderer = RTCVideoRenderer();
   final _remoteRenderer = RTCVideoRenderer();
   StreamSubscription? _stateSub;
   StreamSubscription? _remoteSub;
-  
-  Offset _thumbnailOffset = const Offset(20, 60);
-  bool _isSwapped = false;
-  CallState _status = CallState.outgoing;
+  CallState _currentStatus = CallState.outgoing;
 
   @override
   void initState() {
     super.initState();
-    _webrtc = ref.read(webRTCServiceProvider);
     _init();
   }
 
   Future<void> _init() async {
     await _localRenderer.initialize();
     await _remoteRenderer.initialize();
-    _stateSub = _webrtc.callState.listen((s) => setState(() => _status = s));
-    _remoteSub = _webrtc.remoteStream$.listen((s) => setState(() => _remoteRenderer.srcObject = s));
-    await _webrtc.startCall(widget.userId, true);
-    if (_webrtc.localStream != null) setState(() => _localRenderer.srcObject = _webrtc.localStream);
+    final webrtc = ref.read(webRTCServiceProvider);
+    
+    _stateSub = webrtc.callState.listen((s) => setState(() => _currentStatus = s));
+    _remoteSub = webrtc.remoteStream$.listen((s) => setState(() => _remoteRenderer.srcObject = s));
+    
+    await webrtc.startCall(widget.userId, widget.isVideo);
+    if (webrtc.localStream != null) setState(() => _localRenderer.srcObject = webrtc.localStream);
   }
 
   @override
@@ -51,67 +49,34 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final bool isActive = _status == CallState.active;
+    final bool isLive = _currentStatus == CallState.active;
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SizedBox(
+      body: Container(
         width: size.width,
         height: size.height,
         child: Stack(
           children: [
-            // BACKGROUND VIDEO (Forces Full Screen)
+            // Ensure the RTCVideoView is inside a ConstrainedBox to prevent 'Half-Screen'
             Positioned.fill(
-              child: Container(
-                width: size.width,
-                height: size.height,
+              child: OverflowBox(
+                maxWidth: size.width,
+                maxHeight: size.height,
                 child: RTCVideoView(
-                  (isActive && !_isSwapped) ? _remoteRenderer : _localRenderer,
-                  mirror: !(isActive && !_isSwapped),
+                  isLive ? _remoteRenderer : _localRenderer,
                   objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                 ),
               ),
             ),
-
-            // DRAGGABLE THUMBNAIL
-            if (isActive)
-              Positioned(
-                left: _thumbnailOffset.dx,
-                top: _thumbnailOffset.dy,
-                child: GestureDetector(
-                  onPanUpdate: (d) => setState(() => _thumbnailOffset += d.delta),
-                  onDoubleTap: () => setState(() => _isSwapped = !_isSwapped),
-                  child: Container(
-                    width: 120, height: 180,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white24, width: 2),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: RTCVideoView(
-                        _isSwapped ? _remoteRenderer : _localRenderer,
-                        mirror: !_isSwapped,
-                        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-            // UI CONTROLS
             Positioned(
-              bottom: 40, left: 0, right: 0,
-              child: Column(
-                children: [
-                  if (!isActive) Text(widget.userId, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
-                  FloatingActionButton(
-                    backgroundColor: Colors.red,
-                    onPressed: () { _webrtc.endCall(); context.go('/contacts'); },
-                    child: const Icon(Icons.call_end, color: Colors.white),
-                  ),
-                ],
+              bottom: 50, left: 0, right: 0,
+              child: Center(
+                child: FloatingActionButton(
+                  backgroundColor: Colors.red,
+                  onPressed: () { ref.read(webRTCServiceProvider).endCall(); context.go('/contacts'); },
+                  child: const Icon(Icons.call_end),
+                ),
               ),
             ),
           ],
