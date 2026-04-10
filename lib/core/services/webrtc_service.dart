@@ -65,7 +65,7 @@ class WebRTCService {
         _remoteDescriptionSet = true;
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
-        _callState = CallState.active; _callStateController.add(CallState.active);
+        Helper.setSpeakerphoneOn(isVideo); _callState = CallState.active; _callStateController.add(CallState.active);
       }
     });
 
@@ -104,7 +104,7 @@ class WebRTCService {
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
-    _callState = CallState.active; _callStateController.add(CallState.active);
+    Helper.setSpeakerphoneOn(isVideo); _callState = CallState.active; _callStateController.add(CallState.active);
   }
 
   Future<void> _setup(bool v) async {
@@ -116,9 +116,17 @@ class WebRTCService {
     _pc!.onIceCandidate = (c) => _socket.emitIceCandidate(currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
     
     _pc!.onTrack = (e) {
-      if (e.streams.isNotEmpty && _remoteRenderer.srcObject == null) {
+      if (e.streams.isNotEmpty) {
+        // Force the stream to the renderer immediately
         _remoteRenderer.srcObject = e.streams[0];
+        
+        // Ensure all incoming tracks are enabled
+        for (var track in e.streams[0].getTracks()) {
+          track.enabled = true;
+        }
+        
         _remoteStreamController.add(e.streams[0]);
+        print("Remote stream attached and tracks enabled");
       }
     };
 
