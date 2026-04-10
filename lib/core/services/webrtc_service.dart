@@ -65,7 +65,7 @@ class WebRTCService {
         _remoteDescriptionSet = true;
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
-        Helper.setSpeakerphoneOn(isVideo); _callState = CallState.active; _callStateController.add(CallState.active);
+        Helper.setSpeakerphoneOn(isIncomingVideo); _callState = CallState.active; _callStateController.add(CallState.active);
       }
     });
 
@@ -104,7 +104,7 @@ class WebRTCService {
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
-    Helper.setSpeakerphoneOn(isVideo); _callState = CallState.active; _callStateController.add(CallState.active);
+    Helper.setSpeakerphoneOn(isIncomingVideo); _callState = CallState.active; _callStateController.add(CallState.active);
   }
 
   Future<void> _setup(bool v) async {
@@ -138,6 +138,7 @@ class WebRTCService {
     
     _localRenderer.srcObject = localStream;
     for (var track in localStream!.getTracks()) {
+      track.enabled = true;
       await _pc!.addTrack(track, localStream!);
     }
   }

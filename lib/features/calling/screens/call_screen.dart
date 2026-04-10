@@ -124,8 +124,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _controlBtn(Icons.mic_off, _isMicMuted, () => setState(() => _isMicMuted = !_isMicMuted)),
-                  if (widget.isVideo) _controlBtn(Icons.videocam_off, _isCamMuted, () => setState(() => _isCamMuted = !_isCamMuted)),
+                  _controlBtn(Icons.mic_off, _isMicMuted, () {
+      setState(() => _isMicMuted = !_isMicMuted);
+      webrtc.localStream?.getAudioTracks().forEach((t) => t.enabled = !_isMicMuted);
+    }),
+                  if (widget.isVideo) _controlBtn(Icons.videocam_off, _isCamMuted, () {
+      setState(() => _isCamMuted = !_isCamMuted);
+      webrtc.localStream?.getVideoTracks().forEach((t) => t.enabled = !_isCamMuted);
+    }),
                   if (widget.isVideo) _controlBtn(Icons.flip_camera_ios, false, () => webrtc.localStream?.getVideoTracks()[0].switchCamera()),
                   FloatingActionButton(
                     heroTag: "hangup", backgroundColor: Colors.red,

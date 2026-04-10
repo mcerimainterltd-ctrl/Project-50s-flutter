@@ -2,19 +2,19 @@ import os
 
 path = 'lib/core/services/webrtc_service.dart'
 with open(path, 'r') as f:
-    lines = f.readlines()
+    content = f.read()
 
-new_lines = []
-for line in lines:
-    new_lines.append(line)
-    # Inject variables at the top of the class
-    if 'class WebRTCService {' in line:
-        new_lines.append("  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();\n")
-        new_lines.append("  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();\n")
-        new_lines.append("\n  // Call this in your constructor or main.dart\n")
-        new_lines.append("  Future<void> initRenderers() async {\n")
-        new_lines.append("    await _localRenderer.initialize();\n")
-        new_lines.append("    await _remoteRenderer.initialize();\n  }\n")
+# Fix the scope error from Build 152 by using the class variable 'isIncomingVideo'
+content = content.replace(
+    'Helper.setSpeakerphoneOn(isVideo);',
+    'Helper.setSpeakerphoneOn(isIncomingVideo);'
+)
+
+# Ensure tracks are forced to TRUE on initialization so they show up immediately
+content = content.replace(
+    'for (var track in localStream!.getTracks()) {',
+    'for (var track in localStream!.getTracks()) {\n      track.enabled = true;'
+)
 
 with open(path, 'w') as f:
-    f.writelines(new_lines)
+    f.write(content)
