@@ -27,13 +27,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   void initState() {
     super.initState();
-    // Timer waits for active state - The Build 150 Logic
     Future.microtask(() {
       final service = ref.read(webRTCServiceProvider);
       if (!widget.isIncoming) {
         service.startCall(widget.userId, widget.isVideo);
       }
-      service.callState.listen((s) { setState(() {}); 
+      service.callState.listen((s) {
+        setState(() {}); 
         if (s == CallState.active && _timer == null) _startTimer();
         if (s == CallState.ended && mounted) context.go('/contacts');
       });
@@ -113,14 +113,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _controlBtn(Icons.mic_off, _isMicMuted, () {
-                    setState(() => _isMicMuted = !_isMicMuted);
-                    webrtc.localStream?.getAudioTracks().forEach((t) => t.enabled = !_isMicMuted);
-                  }),
-                  if (widget.isVideo) _controlBtn(Icons.videocam_off, _isCamMuted, () {
-                    setState(() => _isCamMuted = !_isCamMuted);
-                    webrtc.localStream?.getVideoTracks().forEach((t) => t.enabled = !_isCamMuted);
-                  }),
+                  _controlBtn(Icons.mic_off, _isMicMuted, () => setState(() => _isMicMuted = !_isMicMuted)),
+                  if (widget.isVideo) _controlBtn(Icons.videocam_off, _isCamMuted, () => setState(() => _isCamMuted = !_isCamMuted)),
                   if (widget.isVideo) _controlBtn(Icons.flip_camera_ios, false, () => webrtc.localStream?.getVideoTracks()[0].switchCamera()),
                   FloatingActionButton(
                     heroTag: "hangup", backgroundColor: Colors.red,

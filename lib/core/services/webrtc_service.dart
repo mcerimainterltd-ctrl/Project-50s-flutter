@@ -18,7 +18,6 @@ class WebRTCService {
     await _localRenderer.initialize();
     await _remoteRenderer.initialize();
   }
-
   RTCVideoRenderer get localRenderer => _localRenderer;
   RTCVideoRenderer get remoteRenderer => _remoteRenderer;
   CallState _callState = CallState.idle;
@@ -41,17 +40,14 @@ class WebRTCService {
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   Stream<bool> get onIncomingCall => _incomingCallController.stream;
 
-  WebRTCService(this._socket) {
-    initRenderers();
-    
+  WebRTCService(this._socket) { initRenderers();
     _socket.incomingCall.listen((data) {
       if (data.callerId == _socket.currentUserId) return;
       currentRemoteUserId = data.callerId;
       _pendingOffer = data.offer;
       isIncomingVideo = data.callType == 'video';
       _incomingCallController.add(true);
-      _callState = CallState.incoming; 
-      _callStateController.add(CallState.incoming);
+      _callState = CallState.incoming; _callStateController.add(CallState.incoming);
     });
 
     _socket.callAnswer.listen((data) async {
@@ -60,8 +56,7 @@ class WebRTCService {
         _remoteDescriptionSet = true;
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
-        _callState = CallState.active; 
-        _callStateController.add(CallState.active);
+        _callState = CallState.active; _callStateController.add(CallState.active);
       }
     });
 
@@ -70,15 +65,11 @@ class WebRTCService {
       if (_pc != null && _remoteDescriptionSet) { _pc!.addCandidate(c); }
       else { _pendingIce.add(c); }
     });
-
-    _socket.callEnded.listen((data) => _handleRemoteHangup());
   }
 
   Future<void> startCall(String userId, bool isVideo) async {
     currentRemoteUserId = userId;
-    isIncomingVideo = isVideo;
-    _callState = CallState.outgoing; 
-    _callStateController.add(CallState.outgoing);
+    _callState = CallState.outgoing; _callStateController.add(CallState.outgoing);
     await _setup(isVideo);
     var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
@@ -95,66 +86,30 @@ class WebRTCService {
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
-    _callState = CallState.active; 
-    _callStateController.add(CallState.active);
+    _callState = CallState.active; _callStateController.add(CallState.active);
   }
 
   Future<void> _setup(bool v) async {
-    _pc = await createPeerConnection({
-      'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}],
-      'sdpSemantics': 'unified-plan'
-    });
-
+    _pc = await createPeerConnection({'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]});
     _pc!.onIceCandidate = (c) => _socket.emitIceCandidate(currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
-    
-    _pc!.onTrack = (e) {
-      if (e.streams.isNotEmpty) {
-        _remoteRenderer.srcObject = e.streams[0];
-        _remoteStreamController.add(e.streams[0]);
-        _callStateController.add(_callState); // Refresh UI
-      }
-    };
-
-    localStream = await navigator.mediaDevices.getUserMedia({
-      'audio': true, 
-      'video': v ? {'facingMode': 'user'} : false
-    });
-    
+    _pc!.onTrack = (e) => e.streams.isNotEmpty ? _remoteStreamController.add(e.streams[0]) : null;
+    localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': v});
     _localRenderer.srcObject = localStream;
-    for (var track in localStream!.getTracks()) {
-      track.enabled = true;
-      _pc!.addTrack(track, localStream!);
-    }
-    
-    if (v) Helper.setSpeakerphoneOn(true);
-  }
-
-  void _handleRemoteHangup() {
-    _cleanup();
-    _callState = CallState.ended;
-    _callStateController.add(CallState.ended);
+    localStream!.getTracks().forEach((t) => _pc!.addTrack(t, localStream!));
+    _callStateController.add(_callState);
   }
 
   void rejectCall() {
     _socket.emitCallRejected(currentRemoteUserId ?? "", "declined");
-    _cleanup();
-    _callState = CallState.ended;
-    _callStateController.add(CallState.ended);
+    _callState = CallState.ended; _callStateController.add(CallState.ended);
+    _incomingCallController.add(false);
   }
 
   void endCall() {
+    _callState = CallState.ended; _callStateController.add(CallState.ended);
     _socket.emitCallEnded(currentRemoteUserId ?? "");
-    _cleanup();
-    _callState = CallState.ended;
-    _callStateController.add(CallState.ended);
-  }
-
-  void _cleanup() {
     localStream?.getTracks().forEach((t) => t.stop());
     localStream?.dispose();
-    localStream = null;
-    _localRenderer.srcObject = null;
-    _remoteRenderer.srcObject = null;
     _pc?.close();
     _pc = null;
     _remoteDescriptionSet = false;
