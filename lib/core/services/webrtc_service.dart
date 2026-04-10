@@ -1,3 +1,5 @@
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -106,27 +108,28 @@ class WebRTCService {
     Helper.setSpeakerphoneOn(isIncomingVideo); _callState = CallState.active; _callStateController.add(CallState.active);
   }
 
+
+  Future<List<Map<String, dynamic>>> _fetchIceServers() async {
+    try {
+      final res = await http.get(Uri.parse('https://project-50s.onrender.com/api/ice-servers'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final servers = (data['iceServers'] as List).map((s) => Map<String, dynamic>.from(s)).toList();
+        print('[ICE] Fetched \${servers.length} servers from Twilio NTS');
+        return servers;
+      }
+    } catch (e) {
+      print('[ICE] Failed to fetch, using fallback: \$e');
+    }
+    return [
+      {'urls': 'stun:stun.l.google.com:19302'},
+      {'urls': 'stun:stun1.l.google.com:19302'},
+    ];
+  }
+
   Future<void> _setup(bool v) async {
     _pc = await createPeerConnection({
-      'iceServers': [
-          {'urls': 'stun:stun.l.google.com:19302'},
-          {'urls': 'stun:stun1.l.google.com:19302'},
-          {
-            'urls': 'turn:openrelay.metered.ca:80',
-            'username': 'openrelayproject',
-            'credential': 'openrelayproject',
-          },
-          {
-            'urls': 'turn:openrelay.metered.ca:443',
-            'username': 'openrelayproject',
-            'credential': 'openrelayproject',
-          },
-          {
-            'urls': 'turn:openrelay.metered.ca:443?transport=tcp',
-            'username': 'openrelayproject',
-            'credential': 'openrelayproject',
-          },
-        ],
+      'iceServers': await _fetchIceServers(),
       'sdpSemantics': 'unified-plan'
     });
     
