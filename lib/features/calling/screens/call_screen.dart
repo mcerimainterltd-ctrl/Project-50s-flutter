@@ -23,6 +23,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   int _seconds = 0;
   bool _isMicMuted = false;
   bool _isCamMuted = false;
+  bool _isSpeakerOn = false;
   Offset _thumbnailOffset = const Offset(20, 50); 
   bool _isLocalMain = false;
 
@@ -123,6 +124,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   _controlBtn(Icons.mic_off, _isMicMuted, () {
                     setState(() => _isMicMuted = !_isMicMuted);
                     webrtc.localStream?.getAudioTracks().forEach((t) => t.enabled = !_isMicMuted);
+                  }),
+                  _controlBtn(Icons.volume_up, _isSpeakerOn, () {
+                    setState(() => _isSpeakerOn = !_isSpeakerOn);
+                    Helper.setSpeakerphoneOn(_isSpeakerOn);
                   }),
                   if (widget.isVideo) _controlBtn(Icons.videocam_off, _isCamMuted, () {
                     setState(() => _isCamMuted = !_isCamMuted);
