@@ -44,7 +44,11 @@ class WebRTCService {
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   Stream<bool> get onIncomingCall => _incomingCallController.stream;
 
-  WebRTCService(this._socket) { initRenderers();
+  WebRTCService(this._socket) { 
+    _socket.callEnded.listen((data) {
+      _handleRemoteHangup();
+    });
+     initRenderers();
     // Listening to YOUR existing SocketService streams
     _socket.incomingCall.listen((data) {
       if (data.callerId == _socket.currentUserId) return; // Ignore self
@@ -138,6 +142,8 @@ class WebRTCService {
   }
 
   void endCall() {
+    _socket.emitCallEnded(currentRemoteUserId ?? "");
+    _cleanup();
     _callState = CallState.ended; _callStateController.add(CallState.ended);
     _socket.emitCallEnded(currentRemoteUserId ?? "");
     localStream?.getTracks().forEach((t) => t.stop());
@@ -146,4 +152,22 @@ class WebRTCService {
     _pc = null;
     _remoteDescriptionSet = false;
   }
+
+  void _handleRemoteHangup() {
+    _callState = CallState.ended;
+    _callStateController.add(CallState.ended);
+    _cleanup();
+  }
+
+  void _cleanup() {
+    localStream?.getTracks().forEach((t) => t.stop());
+    localStream?.dispose();
+    localStream = null;
+    _localRenderer.srcObject = null;
+    _remoteRenderer.srcObject = null;
+    _pc?.close();
+    _pc = null;
+    _remoteDescriptionSet = false;
+  }
+
 }
