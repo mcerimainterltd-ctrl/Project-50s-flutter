@@ -125,7 +125,6 @@ class IncomingCallScreen extends ConsumerWidget {
                         label: "Accept",
                         color: const Color(0xFF00FF88), // XamePage Accent
                         onTap: () {
-                          webrtc.joinCall(isVideo);
                           context.push('/call/$userId?video=$isVideo&incoming=true');
                         },
                         isAccept: true,

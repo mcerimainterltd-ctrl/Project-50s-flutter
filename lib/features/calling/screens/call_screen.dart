@@ -27,7 +27,7 @@ class CallScreen extends ConsumerStatefulWidget {
 class _CallScreenState extends ConsumerState<CallScreen> {
   bool _isMicMuted   = false;
   bool _isCamMuted   = false;
-  bool _isSpeakerOn  = true;
+  bool _isSpeakerOn  = false;
   bool _isLocalMain  = false;
   bool _showControls = true;
   Offset _thumbnailOffset = const Offset(20, 100);
