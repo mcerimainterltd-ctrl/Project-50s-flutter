@@ -128,17 +128,18 @@ class _CallScreenState extends ConsumerState<CallScreen>
   // ─────────────────────────────────────────────
   Widget _buildVideoCall(WebRTCService webrtc, bool hasRemote, String name) {
     final showLocalFull = !hasRemote || _isLocalMain;
+    final topPad = MediaQuery.of(context).padding.top;
+    final botPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
-        onTap: _resetControlsTimer,
+        onTap: () => setState(() => _showControls = !_showControls),
         child: Stack(
           fit: StackFit.expand,
           children: [
 
-            // Main video feed
-            // Always show local video as background while connecting
+            // ── Main video ──────────────────────────────────────────
             RTCVideoView(
               hasRemote && !showLocalFull
                   ? webrtc.remoteRenderer
@@ -146,23 +147,21 @@ class _CallScreenState extends ConsumerState<CallScreen>
               mirror: !hasRemote || showLocalFull,
               objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
             ),
-            // Connecting overlay when no remote yet
+
+            // ── Connecting overlay ──────────────────────────────────
             if (!hasRemote)
-              Container(
-                color: Colors.black.withOpacity(0.35),
-                child: Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const SizedBox(height: 200),
-                    const CircularProgressIndicator(
-                        color: Colors.white38, strokeWidth: 1.5),
-                    const SizedBox(height: 16),
-                    Text("Waiting for \$name...",
-                      style: const TextStyle(color: Colors.white54, fontSize: 15)),
-                  ]),
-                ),
+              Positioned(
+                bottom: 160, left: 0, right: 0,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const CircularProgressIndicator(
+                      color: Colors.white38, strokeWidth: 1.5),
+                  const SizedBox(height: 14),
+                  Text("Calling \$name...",
+                    style: const TextStyle(color: Colors.white60, fontSize: 15)),
+                ]),
               ),
 
-            // PiP thumbnail
+            // ── PiP thumbnail ───────────────────────────────────────
             if (hasRemote)
               Positioned(
                 top: _thumbnailOffset.dy,
@@ -173,12 +172,8 @@ class _CallScreenState extends ConsumerState<CallScreen>
                   onDoubleTap: () => setState(() => _isLocalMain = !_isLocalMain),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Container(
+                    child: SizedBox(
                       width: 100, height: 144,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white38, width: 1.5),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
                       child: RTCVideoView(
                         _isLocalMain ? webrtc.remoteRenderer : webrtc.localRenderer,
                         mirror: !_isLocalMain,
@@ -189,73 +184,64 @@ class _CallScreenState extends ConsumerState<CallScreen>
                 ),
               ),
 
-            // Top bar — timer + name
-            AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: Positioned(
-                top: 0, left: 0, right: 0,
+            // ── Top bar (always visible) ────────────────────────────
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: AnimatedOpacity(
+                opacity: _showControls ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 250),
                 child: Container(
                   padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).padding.top + 12,
-                      left: 16, right: 16, bottom: 16),
-                  decoration: BoxDecoration(
+                      top: topPad + 14, left: 16, right: 16, bottom: 20),
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.black.withOpacity(0.45), Colors.transparent],
+                      colors: [Color(0xCC000000), Colors.transparent],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(name,
+                  child: Row(children: [
+                    Expanded(child: Text(name,
+                      style: const TextStyle(color: Colors.white,
+                          fontSize: 18, fontWeight: FontWeight.w600,
+                          shadows: [Shadow(color: Colors.black, blurRadius: 8)]))),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.circle,
+                            color: Color(0xFF4CAF50), size: 8),
+                        const SizedBox(width: 6),
+                        Text(_formatDuration(_seconds),
                           style: const TextStyle(color: Colors.white,
-                              fontSize: 18, fontWeight: FontWeight.w600)),
-                      ),
-                      // Timer top right
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.circle, color: Color(0xFF4CAF50),
-                                size: 8),
-                            const SizedBox(width: 6),
-                            Text(_formatDuration(_seconds),
-                              style: const TextStyle(color: Colors.white,
-                                  fontSize: 14,
-                                  fontFeatures: [FontFeature.tabularFigures()])),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                              fontSize: 14,
+                              fontFeatures: [FontFeature.tabularFigures()])),
+                      ]),
+                    ),
+                  ]),
                 ),
               ),
             ),
 
-            // Bottom controls
-            AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              child: Align(
-                alignment: Alignment.bottomCenter,
+            // ── Bottom controls (always visible) ────────────────────
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: AnimatedOpacity(
+                opacity: _showControls ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 250),
                 child: Container(
                   padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).padding.bottom + 32,
-                      left: 24, right: 24, top: 24),
-                  decoration: BoxDecoration(
+                      bottom: botPad + 36, left: 24, right: 24, top: 28),
+                  decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
-                      colors: [Colors.black.withOpacity(0.45), Colors.transparent],
+                      colors: [Color(0xCC000000), Colors.transparent],
                     ),
                   ),
                   child: Row(
@@ -277,7 +263,6 @@ class _CallScreenState extends ConsumerState<CallScreen>
                         setState(() => _isSpeakerOn = !_isSpeakerOn);
                         Helper.setSpeakerphoneOn(_isSpeakerOn);
                       }),
-                      // End call
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
