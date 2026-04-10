@@ -127,7 +127,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   const CircularProgressIndicator(
                       color: Colors.white38, strokeWidth: 1.5),
                   const SizedBox(height: 14),
-                  Text('Calling $name...',
+                  Text(widget.isIncoming ? 'Connecting...' : 'Calling $name...',
                     style: const TextStyle(color: Colors.white60, fontSize: 15)),
                 ]),
               ),
