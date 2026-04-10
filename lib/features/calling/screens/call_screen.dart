@@ -29,14 +29,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    // Timer waits for active state
     Future.microtask(() {
       final service = ref.read(webRTCServiceProvider);
       if (!widget.isIncoming) {
         service.startCall(widget.userId, widget.isVideo);
       }
       service.callState.listen((s) {
-        if (s == CallState.ended && mounted) context.go('/contacts');
+        if (s == CallState.active && _timer == null) {
+          _startTimer();
+        }
+        if (s == CallState.ended && mounted) {
+          context.go('/contacts');
+        }
       });
     });
   }
