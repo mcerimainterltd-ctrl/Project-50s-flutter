@@ -29,7 +29,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   void initState() {
     super.initState();
-    // Timer waits for active state
+    _startTimer();
     Future.microtask(() {
       final service = ref.read(webRTCServiceProvider);
       if (!widget.isIncoming) {
