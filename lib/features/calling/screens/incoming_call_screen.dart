@@ -197,7 +197,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen>
                         onTap: () async {
                           await webrtc.joinCall(isVideo);
                           if (context.mounted) {
-                            context.push('/call/\$callerId?video=\${isVideo ? 'true' : 'false'}&incoming=true');
+                            context.push("/call/\$callerId?video=\${isVideo ? 'true' : 'false'}&incoming=true");
                           }
                         },
                       ),
