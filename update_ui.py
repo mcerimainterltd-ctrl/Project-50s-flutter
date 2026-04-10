@@ -1,12 +1,14 @@
-import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../../../core/services/webrtc_service.dart';
+import re
 
-class IncomingCallScreen extends ConsumerWidget {
-  const IncomingCallScreen({super.key});
+path = 'lib/features/calling/screens/incoming_call_screen.dart'
+with open(path, 'r') as f:
+    content = f.read()
 
+# Ensure UI import exists
+if 'import "dart:ui";' not in content:
+    content = 'import "dart:ui";\n' + content
+
+new_ui = '''
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final webrtc = ref.watch(webRTCServiceProvider);
@@ -17,19 +19,16 @@ class IncomingCallScreen extends ConsumerWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Background Layer
           Container(
             decoration: const BoxDecoration(color: Color(0xFF0D1117)),
             child: profileUrl != null 
                 ? Image.network(profileUrl, fit: BoxFit.cover, height: double.infinity, width: double.infinity)
                 : Container(color: const Color(0xFF161B22)),
           ),
-          // 2. Blur Effect
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
             child: Container(color: Colors.black.withOpacity(0.5)),
           ),
-          // 3. UI Content
           SafeArea(
             child: Column(
               children: [
@@ -112,4 +111,10 @@ class IncomingCallScreen extends ConsumerWidget {
       ],
     );
   }
-}
+'''
+
+pattern = r'  @override\n  Widget build\(BuildContext context, WidgetRef ref\) \{.*?\}\n\}'
+updated_content = re.sub(pattern, new_ui, content, flags=re.DOTALL)
+
+with open(path, 'w') as f:
+    f.write(updated_content)
