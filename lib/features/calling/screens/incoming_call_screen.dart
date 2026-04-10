@@ -194,9 +194,11 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen>
                         icon: isVideo ? Icons.videocam : Icons.call,
                         color: const Color(0xFF43A047),
                         label: "Accept",
-                        onTap: () {
-                          webrtc.joinCall(isVideo);
-                          context.push('/call/\$callerId?video=\$isVideo&incoming=true');
+                        onTap: () async {
+                          await webrtc.joinCall(isVideo);
+                          if (context.mounted) {
+                            context.push('/call/\$callerId?video=\$isVideo&incoming=true');
+                          }
                         },
                       ),
                     ],

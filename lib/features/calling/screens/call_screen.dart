@@ -187,7 +187,7 @@ class _CallScreenState extends ConsumerState<CallScreen>
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.black87, Colors.transparent],
+                      colors: [Colors.black.withOpacity(0.45), Colors.transparent],
                     ),
                   ),
                   child: Row(
@@ -239,7 +239,7 @@ class _CallScreenState extends ConsumerState<CallScreen>
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
-                      colors: [Colors.black87, Colors.transparent],
+                      colors: [Colors.black.withOpacity(0.45), Colors.transparent],
                     ),
                   ),
                   child: Row(
