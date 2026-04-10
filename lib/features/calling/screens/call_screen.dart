@@ -18,6 +18,8 @@ class CallScreen extends ConsumerStatefulWidget {
 
 class _CallScreenState extends ConsumerState<CallScreen> {
   Timer? _timer;
+  StreamSubscription? _callStateSub;
+  StreamSubscription? _remoteStreamSub;
   int _seconds = 0;
   bool _isMicMuted = false;
   bool _isCamMuted = false;
@@ -49,7 +51,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   String _formatDuration(int s) => "${(s / 60).floor().toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}";
 
   @override
-  void dispose() { _timer?.cancel(); super.dispose(); }
+  void dispose() {
+    _timer?.cancel();
+    _callStateSub?.cancel();
+    _remoteStreamSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

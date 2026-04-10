@@ -3,7 +3,6 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/services/socket_service.dart'; 
 // Assuming socketServiceProvider is defined in socket_service.dart based on your grep
-import 'package:xamepage/core/services/socket_service.dart'; 
 
 enum CallState { idle, outgoing, incoming, active, ended }
 
@@ -156,9 +155,6 @@ class WebRTCService {
     _socket.emitCallEnded(currentRemoteUserId ?? "");
     _cleanup();
     _callState = CallState.ended; _callStateController.add(CallState.ended);
-    _socket.emitCallEnded(currentRemoteUserId ?? "");
-    localStream?.getTracks().forEach((t) => t.stop());
-    localStream?.dispose();
     _pc?.close();
     _pc = null;
     _remoteDescriptionSet = false;
