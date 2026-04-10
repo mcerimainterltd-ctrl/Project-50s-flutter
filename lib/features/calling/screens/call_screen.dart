@@ -33,7 +33,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       if (!widget.isIncoming) {
         service.startCall(widget.userId, widget.isVideo);
       }
-      service.callState.listen((s) {
+      service.callState.listen((s) { setState(() {}); 
         if (s == CallState.active && _timer == null) _startTimer();
         if (s == CallState.ended && mounted) context.go('/contacts');
       });

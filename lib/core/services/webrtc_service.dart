@@ -137,6 +137,8 @@ class WebRTCService {
     });
     
     _localRenderer.srcObject = localStream;
+    // Notify listeners that the stream is ready to be rendered
+    _callStateController.add(_callState);
     for (var track in localStream!.getTracks()) {
       track.enabled = true;
       await _pc!.addTrack(track, localStream!);
