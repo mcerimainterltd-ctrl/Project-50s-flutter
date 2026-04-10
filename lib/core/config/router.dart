@@ -41,6 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => CallScreen(
           userId: state.pathParameters['userId']!,
           isVideo: state.uri.queryParameters['video'] == 'true',
+          isIncoming: state.uri.queryParameters['incoming'] == 'true',
         )),
       GoRoute(path: '/incoming-call',
         builder: (context, state) => const IncomingCallScreen()),
