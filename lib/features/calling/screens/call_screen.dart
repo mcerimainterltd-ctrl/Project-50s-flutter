@@ -21,32 +21,30 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   int _seconds = 0;
   bool _isMicMuted = false;
   bool _isCamMuted = false;
-  
-  // Award-Winning Interaction Variables
   Offset _thumbnailOffset = const Offset(20, 50); 
   bool _isLocalMain = false;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    // Timer waits for active state - The Build 150 Logic
     Future.microtask(() {
       final service = ref.read(webRTCServiceProvider);
       if (!widget.isIncoming) {
         service.startCall(widget.userId, widget.isVideo);
       }
       service.callState.listen((s) {
-        if (s == CallState.active && _timer == null) {
-          _startTimer();
-        }
-        if (s == CallState.ended && mounted) {
-          context.go('/contacts');
-        }
+        if (s == CallState.active && _timer == null) _startTimer();
+        if (s == CallState.ended && mounted) context.go('/contacts');
       });
     });
   }
 
-  void _startTimer() => _timer = Timer.periodic(const Duration(seconds: 1), (t) => mounted ? setState(() => _seconds++) : null);
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) setState(() => _seconds++);
+    });
+  }
 
   String _formatDuration(int s) => "${(s / 60).floor().toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}";
 
@@ -57,15 +55,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Widget build(BuildContext context) {
     final webrtc = ref.watch(webRTCServiceProvider);
     final hasRemote = webrtc.remoteRenderer.srcObject != null;
-
-    // Logic: Local is full screen ONLY if remote is missing OR if toggled
     final bool showLocalFull = !hasRemote || _isLocalMain;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D1117),
       body: Stack(
         children: [
-          // 1. MAIN RENDERER (Full Screen)
           Positioned.fill(
             child: GestureDetector(
               onDoubleTap: () => setState(() => _isLocalMain = !_isLocalMain),
@@ -81,8 +76,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             ),
           ),
-
-          // 2. DRAGGABLE THUMBNAIL (Shows only if remote exists)
           if (widget.isVideo && hasRemote)
             Positioned(
               top: _thumbnailOffset.dy,
@@ -92,9 +85,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 onDoubleTap: () => setState(() => _isLocalMain = !_isLocalMain),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: Container(
+                  child: SizedBox(
                     width: 110, height: 160,
-                    color: Colors.black54,
                     child: RTCVideoView(
                       _isLocalMain ? webrtc.remoteRenderer : webrtc.localRenderer,
                       mirror: !_isLocalMain,
@@ -104,8 +96,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 ),
               ),
             ),
-
-          // 3. UI OVERLAYS (Timer & Controls - Preserved from 139)
           Positioned(
             top: 60, left: 0, right: 0,
             child: Column(
@@ -116,7 +106,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ],
             ),
           ),
-
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -125,13 +114,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _controlBtn(Icons.mic_off, _isMicMuted, () {
-      setState(() => _isMicMuted = !_isMicMuted);
-      webrtc.localStream?.getAudioTracks().forEach((t) => t.enabled = !_isMicMuted);
-    }),
+                    setState(() => _isMicMuted = !_isMicMuted);
+                    webrtc.localStream?.getAudioTracks().forEach((t) => t.enabled = !_isMicMuted);
+                  }),
                   if (widget.isVideo) _controlBtn(Icons.videocam_off, _isCamMuted, () {
-      setState(() => _isCamMuted = !_isCamMuted);
-      webrtc.localStream?.getVideoTracks().forEach((t) => t.enabled = !_isCamMuted);
-    }),
+                    setState(() => _isCamMuted = !_isCamMuted);
+                    webrtc.localStream?.getVideoTracks().forEach((t) => t.enabled = !_isCamMuted);
+                  }),
                   if (widget.isVideo) _controlBtn(Icons.flip_camera_ios, false, () => webrtc.localStream?.getVideoTracks()[0].switchCamera()),
                   FloatingActionButton(
                     heroTag: "hangup", backgroundColor: Colors.red,
