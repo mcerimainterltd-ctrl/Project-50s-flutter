@@ -15,7 +15,6 @@ class IncomingCallScreen extends ConsumerWidget {
     final userId = webrtc.currentRemoteUserId ?? "";
     final isVideo = webrtc.isIncomingVideo;
 
-    // Resolve Identity from ContactModel
     final contactsAsync = ref.watch(contactsProvider);
     final contact = contactsAsync.valueOrNull?.where((c) => c.id == userId).firstOrNull;
 
@@ -26,7 +25,6 @@ class IncomingCallScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFF0D1117),
       body: Stack(
         children: [
-          // 1. Full Screen Blurred Background
           Positioned.fill(
             child: profilePic != null
                 ? CachedNetworkImage(
@@ -36,7 +34,7 @@ class IncomingCallScreen extends ConsumerWidget {
                   )
                 : Container(color: const Color(0xFF161B22)),
           ),
-          
+
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
             child: Container(
@@ -53,13 +51,11 @@ class IncomingCallScreen extends ConsumerWidget {
             ),
           ),
 
-          // 2. Main UI
           SafeArea(
             child: Column(
               children: [
                 const Spacer(flex: 2),
-                
-                // Centered Avatar with Entrance Animation
+
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
                   duration: const Duration(milliseconds: 900),
@@ -86,26 +82,23 @@ class IncomingCallScreen extends ConsumerWidget {
                 ),
 
                 const SizedBox(height: 32),
-                
-                // Caller Name / ID
+
                 Text(
                   displayName,
                   style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: -0.5),
                 ),
                 if (displayName != userId && userId.isNotEmpty)
                   Text(
-                    "@$userId",
+                    "@\$userId",
                     style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 16, fontWeight: FontWeight.w500),
                   ),
-                
+
                 const SizedBox(height: 16),
-                
-                // Pulsing Call Type
-                _PulsingCallType(text: "INCOMING ${isVideo ? 'VIDEO' : 'VOICE'} CALL"),
+
+                _PulsingCallType(text: "INCOMING \${isVideo ? 'VIDEO' : 'VOICE'} CALL"),
 
                 const Spacer(flex: 3),
 
-                // Control Buttons
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 40),
                   child: Row(
@@ -123,10 +116,10 @@ class IncomingCallScreen extends ConsumerWidget {
                       _buildControl(
                         icon: isVideo ? Icons.videocam : Icons.call,
                         label: "Accept",
-                        color: const Color(0xFF00FF88), // XamePage Accent
+                        color: const Color(0xFF00FF88),
                         onTap: () {
                           webrtc.joinCall(isVideo);
-                          context.push('/call/$userId?video=$isVideo&incoming=true');
+                          context.push('/call/\$userId?video=\$isVideo&incoming=true');
                         },
                         isAccept: true,
                       ),
