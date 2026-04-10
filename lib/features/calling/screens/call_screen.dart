@@ -60,7 +60,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final webrtc = ref.watch(webRTCServiceProvider);
+    final webrtc = ref.read(webRTCServiceProvider);
     final hasRemote = webrtc.remoteRenderer.srcObject != null;
     final bool showLocalFull = !hasRemote || _isLocalMain;
 

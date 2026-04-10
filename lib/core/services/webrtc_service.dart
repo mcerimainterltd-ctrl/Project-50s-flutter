@@ -112,6 +112,8 @@ class WebRTCService {
       'sdpSemantics': 'unified-plan'
     });
     
+    _pc!.onIceConnectionState = (s) => print('[ICE] state: \$s');
+    _pc!.onConnectionState = (s) => print('[CONN] state: \$s');
     _pc!.onIceCandidate = (c) => _socket.emitIceCandidate(currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
     
     _pc!.onTrack = (e) {
