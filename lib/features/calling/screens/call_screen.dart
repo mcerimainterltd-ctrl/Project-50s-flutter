@@ -138,13 +138,29 @@ class _CallScreenState extends ConsumerState<CallScreen>
           children: [
 
             // Main video feed
-            hasRemote
-              ? RTCVideoView(
-                  showLocalFull ? webrtc.localRenderer : webrtc.remoteRenderer,
-                  mirror: showLocalFull,
-                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                )
-              : _videoWaiting(name),
+            // Always show local video as background while connecting
+            RTCVideoView(
+              hasRemote && !showLocalFull
+                  ? webrtc.remoteRenderer
+                  : webrtc.localRenderer,
+              mirror: !hasRemote || showLocalFull,
+              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+            ),
+            // Connecting overlay when no remote yet
+            if (!hasRemote)
+              Container(
+                color: Colors.black.withOpacity(0.35),
+                child: Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const SizedBox(height: 200),
+                    const CircularProgressIndicator(
+                        color: Colors.white38, strokeWidth: 1.5),
+                    const SizedBox(height: 16),
+                    Text("Waiting for \$name...",
+                      style: const TextStyle(color: Colors.white54, fontSize: 15)),
+                  ]),
+                ),
+              ),
 
             // PiP thumbnail
             if (hasRemote)
