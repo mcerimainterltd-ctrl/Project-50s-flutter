@@ -99,6 +99,7 @@ class WebRTCService {
     var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
     // Using YOUR existing emit method
+    Helper.setSpeakerphoneOn(false);
     _audio.playOutgoing();
     _socket.emitCallUser(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
   }
