@@ -60,7 +60,7 @@ class WebRTCService {
     });
      initRenderers();
     // Listening to YOUR existing SocketService streams
-    _socket.incomingCall.listen((data) {
+    _socket.incomingCall.listen((data) async {
       if (data.callerId == _socket.currentUserId) return; // Ignore self
       currentRemoteUserId = data.callerId;
       _pendingOffer = data.offer;
