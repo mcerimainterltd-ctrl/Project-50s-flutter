@@ -27,7 +27,7 @@ class MessageBubble extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return GestureDetector(
       onLongPress: onLongPress,
       onTap:       onTap,
@@ -253,7 +253,7 @@ class _AudioBubbleState extends ConsumerState<_AudioBubble> {
       '${d.inMinutes.toString().padLeft(2,'0')}:${(d.inSeconds % 60).toString().padLeft(2,'0')}';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final voice   = ref.watch(voiceProvider);
     final notifier = ref.read(voiceProvider.notifier);
     final isPlaying = _isThisPlaying &&
