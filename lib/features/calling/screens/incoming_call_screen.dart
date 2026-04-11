@@ -8,16 +8,44 @@ import '../../../core/services/webrtc_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
 
-class IncomingCallScreen extends ConsumerWidget {
+class IncomingCallScreen extends ConsumerStatefulWidget {
   const IncomingCallScreen({super.key});
+  @override
+  ConsumerState<IncomingCallScreen> createState() => _IncomingCallScreenState();
+}
+
+class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
+  StreamSubscription? _endedSub;
+  Timer? _timeoutTimer;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    final socket = ref.read(socketServiceProvider);
+    _endedSub = socket.callEnded.listen((_) {
+      if (mounted) context.pop();
+    });
+    _timeoutTimer = Timer(const Duration(seconds: 60), () {
+      if (mounted) {
+        ref.read(webRTCServiceProvider).rejectCall();
+        context.pop();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _endedSub?.cancel();
+    _timeoutTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final webrtc = ref.watch(webRTCServiceProvider);
     final userId = webrtc.currentRemoteUserId ?? "";
     final isVideo = webrtc.isIncomingVideo;
 
-    // Resolve Identity from ContactModel
     final contactsAsync = ref.watch(contactsProvider);
     final contact = contactsAsync.valueOrNull?.where((c) => c.id == userId).firstOrNull;
 
