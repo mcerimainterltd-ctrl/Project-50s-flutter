@@ -30,6 +30,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _isSpeakerOn  = false;
   bool _isLocalMain  = false;
   bool _showControls = true;
+  String? _callEndReason;
   Offset _thumbnailOffset = const Offset(20, 100);
 
   int    _seconds      = 0;
@@ -52,15 +53,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         setState(() {});
         if (s == CallState.active && !_timerStarted) _startTimer();
         if (s == CallState.ended && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: const Text('Call Declined',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            backgroundColor: const Color(0xFFE53935),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ));
-          await Future.delayed(const Duration(seconds: 2));
+          final webrtc = ref.read(webRTCServiceProvider);
+          // Show declined screen only to caller when recipient declines
+          if (!widget.isIncoming && !_timerStarted) {
+            setState(() => _callEndReason = 'Declined');
+          } else {
+            setState(() => _callEndReason = 'Call Ended');
+          }
+          await Future.delayed(const Duration(seconds: 3));
           if (mounted) context.go('/contacts');
         }
       });
@@ -102,6 +102,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     final topPad = MediaQuery.of(context).padding.top;
     final botPad = MediaQuery.of(context).padding.bottom;
+
+    // Show end reason overlay
+    if (_callEndReason != null) {
+      return _endReasonScreen(_callEndReason!, photoUrl, name, initials);
+    }
 
     return widget.isVideo
         ? _videoUI(webrtc, hasRemote, name, topPad, botPad)
@@ -416,6 +421,63 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   // ═══════════════════════════════════════════════════════════
   // SHARED WIDGETS
   // ═══════════════════════════════════════════════════════════
+  Widget _endReasonScreen(String reason, String? photoUrl,
+      String name, String initials) {
+    final isDeclined = reason == 'Declined';
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(fit: StackFit.expand, children: [
+        if (photoUrl != null)
+          CachedNetworkImage(imageUrl: photoUrl, fit: BoxFit.cover,
+            errorWidget: (_, __, ___) => _voiceBg())
+        else
+          _voiceBg(),
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Container(color: Colors.black.withOpacity(0.75)),
+        ),
+        Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundColor: const Color(0xFF1E2533),
+            backgroundImage: photoUrl != null
+                ? CachedNetworkImageProvider(photoUrl) : null,
+            child: photoUrl == null
+                ? Text(initials, style: const TextStyle(
+                    fontSize: 32, color: Colors.white,
+                    fontWeight: FontWeight.w600))
+                : null,
+          ),
+          const SizedBox(height: 24),
+          Text(name, style: const TextStyle(color: Colors.white,
+              fontSize: 22, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            decoration: BoxDecoration(
+              color: isDeclined
+                  ? Colors.red.withOpacity(0.15)
+                  : Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: isDeclined
+                    ? Colors.red.withOpacity(0.4)
+                    : Colors.white24),
+            ),
+            child: Text(reason,
+              style: TextStyle(
+                color: isDeclined
+                    ? const Color(0xFFFF5252) : Colors.white70,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              )),
+          ),
+        ])),
+      ]),
+    );
+  }
+
   Widget _voiceBg() => Container(
     decoration: const BoxDecoration(
       gradient: RadialGradient(
