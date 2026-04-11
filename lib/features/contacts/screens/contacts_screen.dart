@@ -128,8 +128,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       labelColor: XameColors.primary,
       unselectedLabelColor: Colors.white38,
       labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-      tabs: const [
-        Tab(icon: Icon(Icons.chat_bubble_outline_rounded, size: 22), text: 'Chats'),
+      tabs: [
+        const Tab(icon: Icon(Icons.chat_bubble_outline_rounded, size: 22), text: 'Chats'),
         Tab(
           icon: Consumer(builder: (_, ref, __) {
             final contacts = ref.watch(contactsProvider).valueOrNull ?? [];
@@ -143,8 +143,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               : const Icon(Icons.call_outlined, size: 22);
           }),
           text: 'Calls'),
-        Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
-        Tab(icon: Icon(Icons.person_outline_rounded,      size: 22), text: 'Profile'),
+        const Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
+        const Tab(icon: Icon(Icons.person_outline_rounded,      size: 22), text: 'Profile'),
       ],
     ),
   );
