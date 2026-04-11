@@ -106,7 +106,6 @@ class WebRTCService {
     _socket.emitCallUser(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
     // Only play outgoing if not already cancelled/answered
     if (!_callCancelled && _callState == CallState.outgoing) {
-      await _audio.stopAll();
       await Helper.setSpeakerphoneOn(false);
       _audio.playOutgoing();
     }
