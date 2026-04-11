@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/services/socket_service.dart';
@@ -34,6 +35,7 @@ class WebRTCService {
   bool isIncomingVideo = true;
   
   final AudioService _audio = AudioService();
+  static const _channel = MethodChannel('com.xamepage.app/call');
   bool _callCancelled = false;
   bool isRinging = false;
   bool _remoteDescriptionSet = false;
@@ -74,9 +76,17 @@ class WebRTCService {
       _pendingOffer = data.offer;
       isIncomingVideo = data.callType == 'video';
       _incomingCallController.add(true);
-      await _audio.stopAll(); // Ensure outgoing tone is cleared first
-      await Helper.setSpeakerphoneOn(true); // Ringtone to speaker
+      await _audio.stopAll();
+      await Helper.setSpeakerphoneOn(true);
       _audio.playRingtone();
+      // Start foreground service + lock screen notification
+      try {
+        await _channel.invokeMethod('startCallService', {
+          'callerName': currentRemoteUserId ?? 'Unknown',
+          'callType': isIncomingVideo ? 'video' : 'voice',
+        });
+        await _channel.invokeMethod('keepScreenOn');
+      } catch (_) {}
       _callState = CallState.incoming;
       _callStateController.add(CallState.incoming);
     });
@@ -203,6 +213,7 @@ class WebRTCService {
   void rejectCall() {
     _callCancelled = true;
     _audio.stopAll();
+    try { _channel.invokeMethod('stopCallService'); } catch (_) {}
     _socket.emitCallRejected(currentRemoteUserId ?? "", "declined");
     _callState = CallState.ended; _callStateController.add(CallState.ended);
     _incomingCallController.add(false);
@@ -210,7 +221,9 @@ class WebRTCService {
 
   void endCall() {
     _callCancelled = true;
-    _audio.stopAll(); // fire and forget - void context
+    _audio.stopAll();
+    try { _channel.invokeMethod('stopCallService'); } catch (_) {}
+    try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
     _socket.emitCallEnded(currentRemoteUserId ?? "");
     _cleanup();
     _callState = CallState.ended; _callStateController.add(CallState.ended);
@@ -222,6 +235,8 @@ class WebRTCService {
   void _handleRemoteHangup() {
     _callCancelled = true;
     _audio.stopAll();
+    try { _channel.invokeMethod('stopCallService'); } catch (_) {}
+    try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
     _callState = CallState.ended;
     _callStateController.add(CallState.ended);
     _cleanup();
