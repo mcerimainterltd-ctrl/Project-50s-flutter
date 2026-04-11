@@ -52,6 +52,13 @@ class WebRTCService {
     _socket.callEnded.listen((data) {
       _handleRemoteHangup();
     });
+
+    _socket.callRejected.listen((data) {
+      _callCancelled = true;
+      _audio.stopAll();
+      _callState = CallState.ended;
+      _callStateController.add(CallState.ended);
+    });
      initRenderers();
     // Listening to YOUR existing SocketService streams
     _socket.incomingCall.listen((data) {
@@ -65,6 +72,7 @@ class WebRTCService {
     });
 
     _socket.callAnswer.listen((data) async {
+      _callCancelled = true; // Stop outgoing tone immediately
       if (_pc != null) {
         await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
         _remoteDescriptionSet = true;
