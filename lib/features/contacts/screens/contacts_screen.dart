@@ -130,7 +130,19 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
       tabs: const [
         Tab(icon: Icon(Icons.chat_bubble_outline_rounded, size: 22), text: 'Chats'),
-        Tab(icon: Icon(Icons.call_outlined,               size: 22), text: 'Calls'),
+        Tab(
+          icon: Consumer(builder: (_, ref, __) {
+            final contacts = ref.watch(contactsProvider).valueOrNull ?? [];
+            final missed = contacts.fold(0, (sum, c) => sum + c.missedCallsCount);
+            return missed > 0
+              ? Badge(
+                  label: Text(missed > 99 ? '99+' : '\$missed',
+                      style: const TextStyle(fontSize: 10)),
+                  backgroundColor: const Color(0xFFE53935),
+                  child: const Icon(Icons.call_outlined, size: 22))
+              : const Icon(Icons.call_outlined, size: 22);
+          }),
+          text: 'Calls'),
         Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
         Tab(icon: Icon(Icons.person_outline_rounded,      size: 22), text: 'Profile'),
       ],
