@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/voice_service.dart';
+import '../../../core/services/translation_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/auth_service.dart';
@@ -383,6 +384,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Clipboard.setData(ClipboardData(text: msg.text));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Copied!'), backgroundColor: XameColors.darkCard));
+            }),
+        if (msg.text.isNotEmpty)
+          ListTile(
+            leading: const Text('🌍', style: TextStyle(fontSize: 18)),
+            title: const Text('Translate', style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.pop(context);
+              showTranslateSheet(context, ref, msg.text);
             }),
         ListTile(leading: const Icon(Icons.select_all, color: Colors.white70),
           title: const Text('Select', style: TextStyle(color: Colors.white)),
