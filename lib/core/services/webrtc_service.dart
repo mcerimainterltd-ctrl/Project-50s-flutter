@@ -34,6 +34,7 @@ class WebRTCService {
   bool isIncomingVideo = true;
   
   final AudioService _audio = AudioService();
+  bool _callCancelled = false;
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
   dynamic _pendingOffer;
@@ -175,6 +176,7 @@ class WebRTCService {
 
   
   void rejectCall() {
+    _callCancelled = true;
     _audio.stopAll();
     _socket.emitCallRejected(currentRemoteUserId ?? "", "declined");
     _callState = CallState.ended; _callStateController.add(CallState.ended);
@@ -182,6 +184,7 @@ class WebRTCService {
   }
 
   void endCall() {
+    _callCancelled = true;
     _audio.stopAll();
     _socket.emitCallEnded(currentRemoteUserId ?? "");
     _cleanup();
@@ -192,6 +195,7 @@ class WebRTCService {
   }
 
   void _handleRemoteHangup() {
+    _callCancelled = true;
     _audio.stopAll();
     _callState = CallState.ended;
     _callStateController.add(CallState.ended);
