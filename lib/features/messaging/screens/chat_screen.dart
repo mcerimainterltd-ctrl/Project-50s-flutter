@@ -225,31 +225,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           },
           onDismiss: () => setState(() => _showAttach = false),
         ),
+        // Recording indicator — sits above composer
+        Consumer(builder: (_, ref, __) {
+          final voice = ref.watch(voiceProvider);
+          if (voice.recordState != VoiceRecordState.recording) {
+            return const SizedBox.shrink();
+          }
+          final secs = voice.recordDuration.inSeconds;
+          final m = (secs ~/ 60).toString().padLeft(2, '0');
+          final s = (secs % 60).toString().padLeft(2, '0');
+          final dur = '$m:$s';
+          return Container(
+            color: Colors.red.withValues(alpha: 0.1),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Row(children: [
+              const Icon(Icons.circle, color: Colors.red, size: 10),
+              const SizedBox(width: 8),
+              Text('Recording $dur',
+                style: const TextStyle(color: Colors.red, fontSize: 13,
+                    fontWeight: FontWeight.w500)),
+              const Spacer(),
+              const Text('Release to send · Slide to cancel',
+                style: TextStyle(color: Colors.white38, fontSize: 11)),
+            ]),
+          );
+        }),
         _Composer(
           controller: _msgCtrl,
-          // Recording indicator
-          Consumer(builder: (_, ref, __) {
-            final voice = ref.watch(voiceProvider);
-            if (voice.recordState != VoiceRecordState.recording) {
-              return const SizedBox.shrink();
-            }
-            final secs = voice.recordDuration.inSeconds;
-            final dur  = '\${(secs ~/ 60).toString().padLeft(2,'0')}:\${(secs % 60).toString().padLeft(2,'0')}';
-            return Container(
-              color: Colors.red.withValues(alpha: 0.1),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(children: [
-                const Icon(Icons.circle, color: Colors.red, size: 10),
-                const SizedBox(width: 8),
-                Text('Recording $dur',
-                  style: const TextStyle(color: Colors.red, fontSize: 13,
-                      fontWeight: FontWeight.w500)),
-                const Spacer(),
-                const Text('Release to send · Slide to cancel',
-                  style: TextStyle(color: Colors.white38, fontSize: 11)),
-              ]),
-            );
-          }),
           onChanged:  _onTextChanged,
           onSend:     _send,
           onAttach:   () => setState(() => _showAttach = !_showAttach),

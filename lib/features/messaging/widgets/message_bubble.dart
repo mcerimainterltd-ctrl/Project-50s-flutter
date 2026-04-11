@@ -147,7 +147,7 @@ class _StatusTick extends StatelessWidget {
   const _StatusTick({required this.status});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (status == 'seen')
       return const Icon(Icons.done_all, size: 14, color: Color(0xFF4FC3F7));
     if (status == 'delivered')
@@ -182,7 +182,7 @@ class _ImageBubble extends StatelessWidget {
   const _ImageBubble({required this.url, required this.caption, required this.viewOnce});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (viewOnce) return Container(
       padding: const EdgeInsets.all(16),
       child: const Row(mainAxisSize: MainAxisSize.min, children: [
@@ -358,7 +358,7 @@ class _WaveformBars extends StatelessWidget {
   const _WaveformBars({required this.progress, required this.isSelf});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     const bars = 28;
     final rng  = Random(42);
     return Row(
