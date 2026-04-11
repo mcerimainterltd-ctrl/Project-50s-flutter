@@ -1,7 +1,7 @@
 name: xamepage
 description: XamePage - Ultramodern calling & messaging app
 publish_to: 'none'
-version: 2.1.0+182
+version: 2.1.0+183
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -42,4 +42,13 @@ flutter:
     - assets/audio/xamepage_outgoing.mp3
     - assets/audio/
     - assets/icons/
+    - assets/icons/icon-48.png
+    - assets/icons/icon-72.png
+    - assets/icons/icon-96.png
+    - assets/icons/icon-144.png
+    - assets/icons/icon-192.png
+    - assets/icons/icon-512.png
+    - assets/icons/xamepage_icon.png
     - assets/splash/
+    - assets/splash/splash.png
+    - assets/splash/xamepage_splash.png
