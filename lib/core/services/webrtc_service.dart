@@ -62,7 +62,9 @@ class WebRTCService {
     _socket.callRejected.listen((data) {
       _callCancelled = true;
       _audio.stopAll();
-      // Don't end the call — let caller decide to hang up
+      _cleanup();
+      _callState = CallState.ended;
+      _callStateController.add(CallState.ended);
     });
      initRenderers();
     // Listening to YOUR existing SocketService streams

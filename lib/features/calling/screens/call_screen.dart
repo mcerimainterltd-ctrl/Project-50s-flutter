@@ -51,7 +51,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         if (!mounted) return;
         setState(() {});
         if (s == CallState.active && !_timerStarted) _startTimer();
-        if (s == CallState.ended && mounted) context.go('/contacts');
+        if (s == CallState.ended && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: const Text('Call Declined',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            backgroundColor: const Color(0xFFE53935),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ));
+          await Future.delayed(const Duration(seconds: 2));
+          if (mounted) context.go('/contacts');
+        }
       });
       service.remoteStream$.listen((_) {
         if (mounted) setState(() {});
