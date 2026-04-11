@@ -75,6 +75,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  Future<void> _sendVoiceNote(String filePath) async {
+    final file = dart_io.File(filePath);
+    if (!await file.exists()) return;
+    await ref.read(chatProvider(widget.userId).notifier)
+        .sendFile(file, 'audio/aac');
+  }
+
   Future<void> _send() async {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;

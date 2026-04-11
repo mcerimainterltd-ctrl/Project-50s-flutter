@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 enum VoiceRecordState { idle, recording, recorded, playing }
@@ -22,14 +22,14 @@ class VoiceState {
   final double amplitude;
 
   const VoiceState({
-    this.recordState    = VoiceRecordState.idle,
+    this.recordState       = VoiceRecordState.idle,
     this.recordedPath,
-    this.recordDuration = Duration.zero,
-    this.playPosition   = Duration.zero,
-    this.playDuration   = Duration.zero,
+    this.recordDuration    = Duration.zero,
+    this.playPosition      = Duration.zero,
+    this.playDuration      = Duration.zero,
     this.isSpeechListening = false,
-    this.isTtsPlaying   = false,
-    this.amplitude      = 0.0,
+    this.isTtsPlaying      = false,
+    this.amplitude         = 0.0,
   });
 
   VoiceState copyWith({
@@ -52,14 +52,14 @@ class VoiceState {
 // ── Notifier ──────────────────────────────────────────────────────────────────
 class VoiceNotifier extends StateNotifier<VoiceState> {
   final _recorder = FlutterSoundRecorder();
-  bool _recorderInited = false;
   final _player   = AudioPlayer();
   final _tts      = FlutterTts();
   final _stt      = SpeechToText();
 
+  bool   _recorderInited = false;
   Timer? _recordTimer;
   Timer? _amplitudeTimer;
-  int    _recordSeconds = 0;
+  int    _recordSeconds  = 0;
 
   VoiceNotifier() : super(const VoiceState()) {
     _initTts();
@@ -71,23 +71,26 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     await _tts.setSpeechRate(0.5);
     await _tts.setVolume(1.0);
     await _tts.setPitch(1.0);
-    _tts.setStartHandler(() => state = state.copyWith(isTtsPlaying: true));
-    _tts.setCompletionHandler(() => state = state.copyWith(isTtsPlaying: false));
-    _tts.setCancelHandler(() => state = state.copyWith(isTtsPlaying: false));
-    _tts.setErrorHandler((_) => state = state.copyWith(isTtsPlaying: false));
+    _tts.setStartHandler(() =>
+        state = state.copyWith(isTtsPlaying: true));
+    _tts.setCompletionHandler(() =>
+        state = state.copyWith(isTtsPlaying: false));
+    _tts.setCancelHandler(() =>
+        state = state.copyWith(isTtsPlaying: false));
+    _tts.setErrorHandler((_) =>
+        state = state.copyWith(isTtsPlaying: false));
   }
 
   void _initPlayer() {
-    _player.positionStream.listen((pos) {
-      state = state.copyWith(playPosition: pos);
-    });
+    _player.positionStream.listen((pos) =>
+        state = state.copyWith(playPosition: pos));
     _player.durationStream.listen((dur) {
       if (dur != null) state = state.copyWith(playDuration: dur);
     });
     _player.playerStateStream.listen((ps) {
       if (ps.processingState == ProcessingState.completed) {
         state = state.copyWith(
-          recordState: VoiceRecordState.recorded,
+          recordState:  VoiceRecordState.recorded,
           playPosition: Duration.zero,
         );
       }
@@ -96,19 +99,23 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
   // ── Recording ──────────────────────────────────────────────────────────────
   Future<void> startRecording() async {
-    final hasPermission = await _recorder.hasPermission();
-    if (!hasPermission) return;
+    final status = await Permission.microphone.request();
+    if (!status.isGranted) return;
+
+    if (!_recorderInited) {
+      await _recorder.openRecorder();
+      _recorderInited = true;
+    }
 
     final dir  = await getTemporaryDirectory();
-    final path = '${dir.path}/voicenote_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    final path =
+        '${dir.path}/voicenote_${DateTime.now().millisecondsSinceEpoch}.aac';
 
-    await _recorder.start(
-      RecordConfig(
-        encoder:    AudioEncoder.aacLc,
-        bitRate:    128000,
-        sampleRate: 44100,
-      ),
-      path: path,
+    await _recorder.startRecorder(
+      toFile:   path,
+      codec:    Codec.aacADTS,
+      bitRate:  128000,
+      sampleRate: 44100,
     );
 
     _recordSeconds = 0;
@@ -119,18 +126,17 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
       amplitude:      0.0,
     );
 
-    // Timer for duration display
     _recordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _recordSeconds++;
       state = state.copyWith(
           recordDuration: Duration(seconds: _recordSeconds));
     });
 
-    // Amplitude for waveform animation
-    _amplitudeTimer = Timer.periodic(const Duration(milliseconds: 100), (_) async {
+    _amplitudeTimer =
+        Timer.periodic(const Duration(milliseconds: 150), (_) async {
       try {
-        final db = _recorder.onProgress?.listen(null);
-        state = state.copyWith(amplitude: 0.5); // placeholder
+        final db = await _recorder.getRecordURL(path: path);
+        state = state.copyWith(amplitude: 0.5);
       } catch (_) {}
     });
   }
@@ -140,7 +146,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     _amplitudeTimer?.cancel();
     final path = await _recorder.stopRecorder();
     state = state.copyWith(
-      recordState: path != null
+      recordState:  path != null
           ? VoiceRecordState.recorded
           : VoiceRecordState.idle,
       recordedPath: path,
@@ -149,7 +155,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
     return path;
   }
 
-  void cancelRecording() async {
+  Future<void> cancelRecording() async {
     _recordTimer?.cancel();
     _amplitudeTimer?.cancel();
     await _recorder.stopRecorder();
@@ -204,10 +210,10 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
           state = state.copyWith(isSpeechListening: false);
         }
       },
-      listenFor:    const Duration(seconds: 30),
-      pauseFor:     const Duration(seconds: 3),
-      localeId:     'en_US',
-      listenMode:   ListenMode.confirmation,
+      listenFor:  const Duration(seconds: 30),
+      pauseFor:   const Duration(seconds: 3),
+      localeId:   'en_US',
+      listenMode: ListenMode.confirmation,
     );
   }
 
@@ -234,7 +240,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   void dispose() {
     _recordTimer?.cancel();
     _amplitudeTimer?.cancel();
-    await _recorder.closeRecorder();
+    _recorder.closeRecorder();
     _player.dispose();
     _tts.stop();
     _stt.stop();
@@ -242,5 +248,5 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   }
 }
 
-final voiceProvider = StateNotifierProvider<VoiceNotifier, VoiceState>(
-  (_) => VoiceNotifier());
+final voiceProvider =
+    StateNotifierProvider<VoiceNotifier, VoiceState>((_) => VoiceNotifier());
