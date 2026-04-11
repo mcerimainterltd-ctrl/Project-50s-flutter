@@ -3,11 +3,14 @@
 //          forwarded label, status ticks, long-press menu, view-once
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/voice_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/message.dart';
 
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends ConsumerWidget {
   final XameMessage  message;
   final bool         isSelf;
   final bool         isSelected;
@@ -24,7 +27,7 @@ class MessageBubble extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onLongPress: onLongPress,
       onTap:       onTap,
@@ -97,7 +100,7 @@ class MessageBubble extends StatelessWidget {
       case MessageType.video:
         return _VideoBubble(url: message.fileUrl ?? '', fileName: message.fileName ?? 'video');
       case MessageType.audio:
-        return _AudioBubble(url: message.fileUrl ?? '', fileName: message.fileName ?? 'audio');
+        return _AudioBubble(url: message.fileUrl ?? '', fileName: message.fileName ?? 'audio', isSelf: isSelf);
       case MessageType.file:
         return _FileBubble(url: message.fileUrl ?? '', fileName: message.fileName ?? 'file', mime: '');
       case MessageType.text:
@@ -144,7 +147,7 @@ class _StatusTick extends StatelessWidget {
   const _StatusTick({required this.status});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (status == 'seen')
       return const Icon(Icons.done_all, size: 14, color: Color(0xFF4FC3F7));
     if (status == 'delivered')
@@ -179,7 +182,7 @@ class _ImageBubble extends StatelessWidget {
   const _ImageBubble({required this.url, required this.caption, required this.viewOnce});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (viewOnce) return Container(
       padding: const EdgeInsets.all(16),
       child: const Row(mainAxisSize: MainAxisSize.min, children: [
@@ -233,32 +236,150 @@ class _VideoBubble extends StatelessWidget {
 }
 
 // ── Audio bubble ──────────────────────────────────────────────────────────
-class _AudioBubble extends StatelessWidget {
+class _AudioBubble extends ConsumerStatefulWidget {
   final String url, fileName;
-  const _AudioBubble({required this.url, required this.fileName});
+  final bool isSelf;
+  const _AudioBubble({required this.url, required this.fileName,
+      required this.isSelf});
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    child: Row(children: [
-      Container(width: 44, height: 44,
-        decoration: BoxDecoration(color: XameColors.primary.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(22)),
-        child: const Icon(Icons.play_arrow_rounded, color: XameColors.primary, size: 28)),
-      const SizedBox(width: 10),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(height: 30,
+  ConsumerState<_AudioBubble> createState() => _AudioBubbleState();
+}
+
+class _AudioBubbleState extends ConsumerState<_AudioBubble> {
+  bool _isThisPlaying = false;
+
+  String _fmtDur(Duration d) =>
+      '${d.inMinutes.toString().padLeft(2,'0')}:${(d.inSeconds % 60).toString().padLeft(2,'0')}';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final voice   = ref.watch(voiceProvider);
+    final notifier = ref.read(voiceProvider.notifier);
+    final isPlaying = _isThisPlaying &&
+        voice.recordState == VoiceRecordState.playing;
+    final progress = voice.playDuration.inMilliseconds > 0
+        ? voice.playPosition.inMilliseconds /
+            voice.playDuration.inMilliseconds
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      constraints: const BoxConstraints(minWidth: 200, maxWidth: 280),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          // Play/Pause button
+          GestureDetector(
+            onTap: () async {
+              if (isPlaying) {
+                await notifier.pausePlay();
+                setState(() => _isThisPlaying = false);
+              } else {
+                setState(() => _isThisPlaying = true);
+                await notifier.playFromUrl(widget.url);
+              }
+            },
+            child: Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: XameColors.primary.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: XameColors.primary.withValues(alpha: 0.4)),
+              ),
+              child: Icon(
+                isPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                color: XameColors.primary, size: 26),
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // Waveform + progress
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Animated waveform bars
+              SizedBox(height: 32,
+                child: _WaveformBars(progress: isPlaying ? progress : 0,
+                    isSelf: widget.isSelf)),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isPlaying
+                        ? _fmtDur(voice.playPosition)
+                        : _fmtDur(voice.playDuration),
+                    style: const TextStyle(
+                        color: Colors.white38, fontSize: 10)),
+                  // TTS button
+                  GestureDetector(
+                    onTap: () => ref.read(voiceProvider.notifier)
+                        .speak('Voice message'),
+                    child: Icon(Icons.record_voice_over_outlined,
+                        color: Colors.white24, size: 14)),
+                ],
+              ),
+            ],
+          )),
+        ]),
+
+        // Seek bar
+        if (_isThisPlaying)
+          SliderTheme(
+            data: SliderThemeData(
+              trackHeight:      2,
+              thumbShape:       const RoundSliderThumbShape(enabledThumbRadius: 5),
+              overlayShape:     const RoundSliderOverlayShape(overlayRadius: 10),
+              activeTrackColor: XameColors.primary,
+              inactiveTrackColor: Colors.white12,
+              thumbColor:       XameColors.primary,
+              overlayColor:     XameColors.primary.withValues(alpha: 0.2),
+            ),
+            child: Slider(
+              value:   progress.clamp(0.0, 1.0),
+              onChanged: (v) => notifier.seekTo(
+                Duration(milliseconds:
+                  (v * voice.playDuration.inMilliseconds).round())),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
+// ── Waveform bars ─────────────────────────────────────────────────────────
+class _WaveformBars extends StatelessWidget {
+  final double progress;
+  final bool isSelf;
+  const _WaveformBars({required this.progress, required this.isSelf});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    const bars = 28;
+    final rng  = Random(42);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: List.generate(bars, (i) {
+        final h        = 8.0 + rng.nextDouble() * 20;
+        final isActive = (i / bars) < progress;
+        return Container(
+          width: 3,
+          height: h,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(8)),
-          child: const Center(child: Text('Audio message',
-            style: TextStyle(color: Colors.white38, fontSize: 11)))),
-        const SizedBox(height: 4),
-        Text(fileName, style: const TextStyle(color: Colors.white38, fontSize: 10),
-          maxLines: 1, overflow: TextOverflow.ellipsis),
-      ])),
-    ]),
-  );
+            color: isActive
+                ? XameColors.primary
+                : Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        );
+      }),
+    );
+  }
 }
 
 // ── Document/file bubble ──────────────────────────────────────────────────

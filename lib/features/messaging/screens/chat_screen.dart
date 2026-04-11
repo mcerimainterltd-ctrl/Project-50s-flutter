@@ -2,7 +2,9 @@ import 'dart:io' as dart_io;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/voice_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/auth_service.dart';
@@ -225,9 +227,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
         _Composer(
           controller: _msgCtrl,
+          // Recording indicator
+          Consumer(builder: (_, ref, __) {
+            final voice = ref.watch(voiceProvider);
+            if (voice.recordState != VoiceRecordState.recording) {
+              return const SizedBox.shrink();
+            }
+            final secs = voice.recordDuration.inSeconds;
+            final dur  = '\${(secs ~/ 60).toString().padLeft(2,'0')}:\${(secs % 60).toString().padLeft(2,'0')}';
+            return Container(
+              color: Colors.red.withValues(alpha: 0.1),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(children: [
+                const Icon(Icons.circle, color: Colors.red, size: 10),
+                const SizedBox(width: 8),
+                Text('Recording $dur',
+                  style: const TextStyle(color: Colors.red, fontSize: 13,
+                      fontWeight: FontWeight.w500)),
+                const Spacer(),
+                const Text('Release to send · Slide to cancel',
+                  style: TextStyle(color: Colors.white38, fontSize: 11)),
+              ]),
+            );
+          }),
           onChanged:  _onTextChanged,
           onSend:     _send,
           onAttach:   () => setState(() => _showAttach = !_showAttach),
+          onVoiceNote: _sendVoiceNote,
         ),
       ]),
     );
@@ -529,8 +555,9 @@ class _Composer extends StatefulWidget {
   final TextEditingController controller;
   final Function(String) onChanged;
   final VoidCallback onSend, onAttach;
+  final Function(String)? onVoiceNote;
   const _Composer({required this.controller, required this.onChanged,
-    required this.onSend, required this.onAttach});
+    required this.onSend, required this.onAttach, this.onVoiceNote});
 
   @override
   State<_Composer> createState() => _ComposerState();
@@ -578,19 +605,90 @@ class _ComposerState extends State<_Composer> {
         ),
       ),
       const SizedBox(width: 6),
-      GestureDetector(
-        onTap: widget.onSend,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 42, height: 42,
-          decoration: BoxDecoration(
-            color: _hasText ? XameColors.primary : XameColors.darkCard,
-            shape: BoxShape.circle,
+
+      // STT button — mic to text
+      Consumer(builder: (_, ref, __) {
+        final voice   = ref.watch(voiceProvider);
+        final notifier = ref.read(voiceProvider.notifier);
+        return GestureDetector(
+          onTap: () async {
+            if (voice.isSpeechListening) {
+              await notifier.stopListening();
+            } else {
+              await notifier.startListening((text) {
+                widget.controller.text = text;
+                widget.onChanged(text);
+              });
+            }
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 38, height: 38,
+            decoration: BoxDecoration(
+              color: voice.isSpeechListening
+                  ? Colors.red.withValues(alpha: 0.2)
+                  : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              voice.isSpeechListening
+                  ? Icons.mic : Icons.mic_none_rounded,
+              color: voice.isSpeechListening
+                  ? Colors.red : Colors.white38,
+              size: 22),
           ),
-          child: Icon(Icons.send_rounded,
-            color: _hasText ? Colors.black : Colors.white38, size: 20),
-        ),
-      ),
+        );
+      }),
+
+      const SizedBox(width: 4),
+
+      // Send or voice note button
+      Consumer(builder: (_, ref, __) {
+        final voice    = ref.watch(voiceProvider);
+        final notifier = ref.read(voiceProvider.notifier);
+
+        if (_hasText) {
+          return GestureDetector(
+            onTap: widget.onSend,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 42, height: 42,
+              decoration: const BoxDecoration(
+                color: XameColors.primary, shape: BoxShape.circle),
+              child: const Icon(Icons.send_rounded,
+                  color: Colors.black, size: 20),
+            ),
+          );
+        }
+
+        // Voice note button — hold to record
+        return GestureDetector(
+          onLongPressStart: (_) async {
+            await notifier.startRecording();
+          },
+          onLongPressEnd: (_) async {
+            final path = await notifier.stopRecording();
+            if (path != null) {
+              widget.onVoiceNote?.call(path);
+              notifier.reset();
+            }
+          },
+          onLongPressCancel: () => notifier.cancelRecording(),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 42, height: 42,
+            decoration: BoxDecoration(
+              color: voice.recordState == VoiceRecordState.recording
+                  ? Colors.red : XameColors.primary,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              voice.recordState == VoiceRecordState.recording
+                  ? Icons.stop_rounded : Icons.mic_rounded,
+              color: Colors.black, size: 22),
+          ),
+        );
+      }),
     ])),
   );
 }
