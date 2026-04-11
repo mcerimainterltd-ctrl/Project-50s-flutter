@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../config/constants.dart';
+import 'package:xamepage/core/services/audio_service.dart';
 
 final socketServiceProvider = Provider<SocketService>((ref) => SocketService());
 
@@ -19,6 +20,7 @@ class SocketService {
   Timer? _offlineTimer;
 
   final _connectionStateCtrl  = StreamController<SocketState>.broadcast();
+  final AudioService _audio = AudioService();
   final _receiveMessageCtrl   = StreamController<Map<String, dynamic>>.broadcast();
   final _typingCtrl           = StreamController<String>.broadcast();
   final _stopTypingCtrl       = StreamController<String>.broadcast();
@@ -195,7 +197,10 @@ class SocketService {
 
     // ── Messaging ─────────────────────────────────────────────────────────
     socket.on('receive-message', (d) {
-      if (d != null) _receiveMessageCtrl.add(Map<String,dynamic>.from(d));
+      if (d != null) {
+        _receiveMessageCtrl.add(Map<String,dynamic>.from(d));
+        _audio.playMessage();
+      }
     });
     socket.on('typing', (d) {
       final s = d?['senderId'] as String?;

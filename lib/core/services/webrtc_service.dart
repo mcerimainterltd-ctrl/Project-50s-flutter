@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:xamepage/core/services/socket_service.dart'; 
+import 'package:xamepage/core/services/socket_service.dart';
+import 'package:xamepage/core/services/audio_service.dart'; 
 // Assuming socketServiceProvider is defined in socket_service.dart based on your grep
 
 enum CallState { idle, outgoing, incoming, active, ended }
@@ -32,6 +33,7 @@ class WebRTCService {
   String? currentRemoteUserId;
   bool isIncomingVideo = true;
   
+  final AudioService _audio = AudioService();
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
   dynamic _pendingOffer;
@@ -57,6 +59,7 @@ class WebRTCService {
       _pendingOffer = data.offer;
       isIncomingVideo = data.callType == 'video';
       _incomingCallController.add(true);
+      _audio.playRingtone();
       _callState = CallState.incoming; _callStateController.add(CallState.incoming);
     });
 
@@ -66,6 +69,7 @@ class WebRTCService {
         _remoteDescriptionSet = true;
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
+        _audio.stopAll();
         Helper.setSpeakerphoneOn(false); _callState = CallState.active; _callStateController.add(CallState.active);
       }
     });
@@ -87,6 +91,7 @@ class WebRTCService {
     var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
     // Using YOUR existing emit method
+    _audio.playOutgoing();
     _socket.emitCallUser(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
   }
 
@@ -105,6 +110,7 @@ class WebRTCService {
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
+    _audio.stopAll();
     Helper.setSpeakerphoneOn(false); _callState = CallState.active; _callStateController.add(CallState.active);
   }
 
@@ -169,12 +175,14 @@ class WebRTCService {
 
   
   void rejectCall() {
+    _audio.stopAll();
     _socket.emitCallRejected(currentRemoteUserId ?? "", "declined");
     _callState = CallState.ended; _callStateController.add(CallState.ended);
     _incomingCallController.add(false);
   }
 
   void endCall() {
+    _audio.stopAll();
     _socket.emitCallEnded(currentRemoteUserId ?? "");
     _cleanup();
     _callState = CallState.ended; _callStateController.add(CallState.ended);
@@ -184,6 +192,7 @@ class WebRTCService {
   }
 
   void _handleRemoteHangup() {
+    _audio.stopAll();
     _callState = CallState.ended;
     _callStateController.add(CallState.ended);
     _cleanup();
