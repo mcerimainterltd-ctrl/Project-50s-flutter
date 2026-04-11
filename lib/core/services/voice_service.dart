@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -51,7 +51,8 @@ class VoiceState {
 
 // ── Notifier ──────────────────────────────────────────────────────────────────
 class VoiceNotifier extends StateNotifier<VoiceState> {
-  final _recorder = AudioRecorder();
+  final _recorder = FlutterSoundRecorder();
+  bool _recorderInited = false;
   final _player   = AudioPlayer();
   final _tts      = FlutterTts();
   final _stt      = SpeechToText();
@@ -127,16 +128,17 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
 
     // Amplitude for waveform animation
     _amplitudeTimer = Timer.periodic(const Duration(milliseconds: 100), (_) async {
-      final amp = await _recorder.getAmplitude();
-      final normalized = ((amp.current + 60) / 60).clamp(0.0, 1.0);
-      state = state.copyWith(amplitude: normalized);
+      try {
+        final db = _recorder.onProgress?.listen(null);
+        state = state.copyWith(amplitude: 0.5); // placeholder
+      } catch (_) {}
     });
   }
 
   Future<String?> stopRecording() async {
     _recordTimer?.cancel();
     _amplitudeTimer?.cancel();
-    final path = await _recorder.stop();
+    final path = await _recorder.stopRecorder();
     state = state.copyWith(
       recordState: path != null
           ? VoiceRecordState.recorded
@@ -150,7 +152,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   void cancelRecording() async {
     _recordTimer?.cancel();
     _amplitudeTimer?.cancel();
-    await _recorder.cancel();
+    await _recorder.stopRecorder();
     state = const VoiceState();
   }
 
@@ -232,7 +234,7 @@ class VoiceNotifier extends StateNotifier<VoiceState> {
   void dispose() {
     _recordTimer?.cancel();
     _amplitudeTimer?.cancel();
-    _recorder.dispose();
+    await _recorder.closeRecorder();
     _player.dispose();
     _tts.stop();
     _stt.stop();

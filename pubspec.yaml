@@ -1,7 +1,7 @@
 name: xamepage
 description: XamePage - Ultramodern calling & messaging app
 publish_to: 'none'
-version: 2.1.0+217
+version: 2.1.0+218
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -24,7 +24,7 @@ dependencies:
   flutter_local_notifications: ^17.2.2
   audioplayers: ^6.1.0
   dio: ^5.7.0
-  record: ^5.0.4
+  flutter_sound: ^9.16.3
   just_audio: ^0.9.40
   flutter_tts: ^4.0.2
   speech_to_text: ^7.3.0
