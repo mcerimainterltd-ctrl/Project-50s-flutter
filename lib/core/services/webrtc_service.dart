@@ -237,6 +237,9 @@ class WebRTCService {
     _pc = null;
     _remoteDescriptionSet = false;
     isRinging = false;
+    _pendingOffer = null;
+    _pendingIce.clear();
+    _callCancelled = false;
   }
 
 }
