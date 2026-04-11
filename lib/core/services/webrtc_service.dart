@@ -35,6 +35,7 @@ class WebRTCService {
   
   final AudioService _audio = AudioService();
   bool _callCancelled = false;
+  bool isRinging = false;
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
   dynamic _pendingOffer;
@@ -51,6 +52,11 @@ class WebRTCService {
   WebRTCService(this._socket) { 
     _socket.callEnded.listen((data) {
       _handleRemoteHangup();
+    });
+
+    _socket.callRinging.listen((_) {
+      isRinging = true;
+      _callStateController.add(_callState); // trigger UI rebuild
     });
 
     _socket.callRejected.listen((data) {
@@ -228,6 +234,7 @@ class WebRTCService {
     _pc?.close();
     _pc = null;
     _remoteDescriptionSet = false;
+    isRinging = false;
   }
 
 }

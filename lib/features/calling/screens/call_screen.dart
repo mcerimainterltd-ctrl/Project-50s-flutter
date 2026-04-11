@@ -127,8 +127,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   const CircularProgressIndicator(
                       color: Colors.white38, strokeWidth: 1.5),
                   const SizedBox(height: 14),
-                  Text(widget.isIncoming ? 'Connecting...' : 'Calling $name...',
-                    style: const TextStyle(color: Colors.white60, fontSize: 15)),
+                  Text(
+                      widget.isIncoming
+                          ? 'Connecting...'
+                          : webrtc.isRinging
+                              ? 'Ringing...'
+                              : 'Calling $name...',
+                      style: const TextStyle(color: Colors.white60, fontSize: 15)),
                 ]),
               ),
 
@@ -259,7 +264,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final isActive   = callState == CallState.active || _timerStarted;
     final statusText = isActive
         ? _fmt(_seconds)
-        : callState == CallState.outgoing ? 'Ringing...' : 'Connecting...';
+        : callState == CallState.outgoing
+            ? (webrtc.isRinging ? 'Ringing...' : 'Calling $name...')
+            : 'Connecting...';
 
     return Scaffold(
       backgroundColor: Colors.black,

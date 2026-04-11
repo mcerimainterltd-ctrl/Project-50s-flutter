@@ -34,6 +34,7 @@ class SocketService {
   final _iceCandidateCtrl     = StreamController<IceCandidateData>.broadcast();
   final _callAcceptedCtrl     = StreamController<String>.broadcast();
   final _callRejectedCtrl     = StreamController<CallRejectedData>.broadcast();
+  final _callRingingCtrl      = StreamController<void>.broadcast();
   final _callEndedCtrl        = StreamController<String>.broadcast();
   final _callAcknowledgedCtrl = StreamController<String>.broadcast();
   final _messagesDeletedCtrl  = StreamController<MessagesDeletedData>.broadcast();
@@ -58,6 +59,7 @@ class SocketService {
   Stream<IceCandidateData>          get iceCandidate     => _iceCandidateCtrl.stream;
   Stream<String>                    get callAccepted     => _callAcceptedCtrl.stream;
   Stream<CallRejectedData>          get callRejected     => _callRejectedCtrl.stream;
+  Stream<void>                      get callRinging      => _callRingingCtrl.stream;
   Stream<String>                    get callEnded        => _callEndedCtrl.stream;
   Stream<String>                    get callAcknowledged => _callAcknowledgedCtrl.stream;
   Stream<MessagesDeletedData>       get messagesDeleted  => _messagesDeletedCtrl.stream;
@@ -281,6 +283,7 @@ class SocketService {
     socket.on('call-accepted', (d) {
       if (d?['recipientId'] != null) _callAcceptedCtrl.add(d['recipientId']);
     });
+    socket.on('call-ringing', (d) => _callRingingCtrl.add(null));
     socket.on('call-rejected', (d) => _callRejectedCtrl.add(
       CallRejectedData(senderId: d?['senderId'],
         reason: d?['reason'] ?? 'user-rejected')));
