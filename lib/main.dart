@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'core/services/push_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +28,10 @@ void main() async {
   ]);
   await Hive.initFlutter();
 
+  // Initialize Firebase
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+
   XameUser? savedUser;
   try {
     const storage = FlutterSecureStorage();
@@ -34,6 +41,12 @@ void main() async {
       if (map['xameId'] != null) savedUser = XameUser.fromMap(map);
     }
   } catch (_) {}
+
+  // Init push service if user is logged in
+  if (savedUser != null) {
+    final pushService = PushService();
+    pushService.init(savedUser!.xameId);
+  }
 
   runApp(ProviderScope(
     overrides: [

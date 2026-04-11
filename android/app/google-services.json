@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "821092934550",
+    "project_id": "xamepage",
+    "storage_bucket": "xamepage.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:821092934550:android:275e2ffee52ba3663b33b7",
+        "android_client_info": {
+          "package_name": "com.xamepage.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnK1IBdZbQfjyCYzFg94wo6bX-MKzVNpM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
