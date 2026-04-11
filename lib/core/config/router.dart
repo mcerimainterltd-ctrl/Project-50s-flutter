@@ -8,6 +8,7 @@ import '../../features/contacts/screens/contacts_screen.dart';
 import '../../features/messaging/screens/chat_screen.dart';
 import '../../features/calling/screens/call_screen.dart';
 import '../../features/calling/screens/incoming_call_screen.dart';
+import '../../features/calls/screens/call_history_screen.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;
@@ -46,7 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/incoming-call',
         builder: (context, state) => const IncomingCallScreen()),
       GoRoute(path: '/conference',    builder: (c, s) => const _Placeholder('Conference')),
-      GoRoute(path: '/call-history',  builder: (c, s) => const _Placeholder('Call History')),
+      GoRoute(path: '/call-history',  builder: (c, s) => const CallHistoryScreen()),
       GoRoute(path: '/dialpad',       builder: (c, s) => const _Placeholder('Dialpad')),
       GoRoute(path: '/wallet',        builder: (c, s) => const _Placeholder('Wallet')),
       GoRoute(path: '/settings',      builder: (c, s) => const _Placeholder('Settings')),
