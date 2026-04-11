@@ -47,7 +47,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       } else {
         service.joinCall(widget.isVideo);
       }
-      service.callState.listen((s) {
+      service.callState.listen((s) async {
         if (!mounted) return;
         setState(() {});
         if (s == CallState.active && !_timerStarted) _startTimer();
