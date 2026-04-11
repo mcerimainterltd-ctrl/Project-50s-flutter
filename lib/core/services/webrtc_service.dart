@@ -66,12 +66,16 @@ class WebRTCService {
       _pendingOffer = data.offer;
       isIncomingVideo = data.callType == 'video';
       _incomingCallController.add(true);
+      await _audio.stopAll(); // Ensure outgoing tone is cleared first
+      await Helper.setSpeakerphoneOn(true); // Ringtone to speaker
       _audio.playRingtone();
-      _callState = CallState.incoming; _callStateController.add(CallState.incoming);
+      _callState = CallState.incoming;
+      _callStateController.add(CallState.incoming);
     });
 
     _socket.callAnswer.listen((data) async {
-      _callCancelled = true; // Stop outgoing tone immediately
+      _callCancelled = true;
+      await _audio.stopAll(); // Stop outgoing tone immediately and forcefully
       if (_pc != null) {
         await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
         _remoteDescriptionSet = true;
@@ -98,10 +102,14 @@ class WebRTCService {
     // 2. Create Offer (This now contains the media info)
     var offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
-    // Using YOUR existing emit method
-    Helper.setSpeakerphoneOn(false);
-    _audio.playOutgoing();
+    // Emit offer
     _socket.emitCallUser(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
+    // Only play outgoing if not already cancelled/answered
+    if (!_callCancelled && _callState == CallState.outgoing) {
+      await _audio.stopAll();
+      await Helper.setSpeakerphoneOn(false);
+      _audio.playOutgoing();
+    }
   }
 
   Future<void> joinCall(bool isVideo) async {
@@ -119,8 +127,10 @@ class WebRTCService {
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
-    _audio.stopAll();
-    Helper.setSpeakerphoneOn(false); _callState = CallState.active; _callStateController.add(CallState.active);
+    await _audio.stopAll();
+    await Helper.setSpeakerphoneOn(false);
+    _callState = CallState.active;
+    _callStateController.add(CallState.active);
   }
 
 
@@ -193,7 +203,7 @@ class WebRTCService {
 
   void endCall() {
     _callCancelled = true;
-    _audio.stopAll();
+    _audio.stopAll(); // fire and forget - void context
     _socket.emitCallEnded(currentRemoteUserId ?? "");
     _cleanup();
     _callState = CallState.ended; _callStateController.add(CallState.ended);

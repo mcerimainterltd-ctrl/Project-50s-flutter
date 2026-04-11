@@ -14,9 +14,11 @@ class AudioService {
   Future<void> playRingtone() async {
     if (_ringing) return;
     _ringing = true;
-    await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
-    await _ringtonePlayer.setVolume(1.0);
-    await _ringtonePlayer.play(AssetSource('audio/xamepage_call.mp3'));
+    try {
+      await _ringtonePlayer.setReleaseMode(ReleaseMode.loop);
+      await _ringtonePlayer.setVolume(1.0);
+      await _ringtonePlayer.play(AssetSource('audio/xamepage_call.mp3'));
+    } catch (_) {}
   }
 
   Future<void> stopRingtone() async {
@@ -26,9 +28,11 @@ class AudioService {
 
   // ── Outgoing call tone (loops) ─────────────────────────────
   Future<void> playOutgoing() async {
-    await _outgoingPlayer.setReleaseMode(ReleaseMode.loop);
-    await _outgoingPlayer.setVolume(0.8);
-    await _outgoingPlayer.play(AssetSource('audio/xamepage_outgoing.mp3'));
+    try {
+      await _outgoingPlayer.setReleaseMode(ReleaseMode.loop);
+      await _outgoingPlayer.setVolume(0.8);
+      await _outgoingPlayer.play(AssetSource('audio/xamepage_outgoing.mp3'));
+    } catch (_) {}
   }
 
   Future<void> stopOutgoing() async {
@@ -45,9 +49,12 @@ class AudioService {
   // ── Stop all ───────────────────────────────────────────────
   Future<void> stopAll() async {
     _ringing = false;
-    await _ringtonePlayer.stop();
-    await _outgoingPlayer.stop();
-    await _messagePlayer.stop();
+    try { await _ringtonePlayer.stop(); } catch (_) {}
+    try { await _outgoingPlayer.stop(); } catch (_) {}
+    try { await _messagePlayer.stop(); } catch (_) {}
+    // Release audio focus on older Android
+    try { await _ringtonePlayer.release(); } catch (_) {}
+    try { await _outgoingPlayer.release(); } catch (_) {}
   }
 
   // ── Dispose ────────────────────────────────────────────────
