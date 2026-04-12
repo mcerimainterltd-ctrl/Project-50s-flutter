@@ -1,0 +1,623 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import '../../../core/theme/app_theme.dart';
+import 'theme_picker_screen.dart';
+
+// ── Settings state ────────────────────────────────────────────────────────────
+class _SettingsData {
+  // Privacy
+  final String lastSeen;        // 'everyone' | 'contacts' | 'nobody'
+  final String profilePhoto;    // 'everyone' | 'contacts' | 'nobody'
+  final bool   readReceipts;
+  final bool   typingIndicators;
+
+  // Notifications
+  final bool   msgSound;
+  final bool   msgVibration;
+  final bool   msgPreview;
+  final bool   callSound;
+  final bool   callVibration;
+  final bool   callFullscreen;
+
+  // Chats
+  final bool   enterToSend;
+  final String defaultTimer;    // 'off' | '5m' | '1h' | '1d' | '7d'
+
+  // Calls
+  final bool   silenceUnknown;
+  final bool   lowData;
+  final bool   noiseSuppression;
+  final bool   echoCancellation;
+
+  // Appearance
+  final String fontSize;        // 'small' | 'normal' | 'large'
+  final String bubbleStyle;     // 'modern' | 'classic' | 'minimal'
+  final bool   reducedMotion;
+  final bool   highContrast;
+
+  const _SettingsData({
+    this.lastSeen        = 'contacts',
+    this.profilePhoto    = 'contacts',
+    this.readReceipts    = true,
+    this.typingIndicators = true,
+    this.msgSound        = true,
+    this.msgVibration    = true,
+    this.msgPreview      = true,
+    this.callSound       = true,
+    this.callVibration   = true,
+    this.callFullscreen  = true,
+    this.enterToSend     = false,
+    this.defaultTimer    = 'off',
+    this.silenceUnknown  = false,
+    this.lowData         = false,
+    this.noiseSuppression = true,
+    this.echoCancellation = true,
+    this.fontSize        = 'normal',
+    this.bubbleStyle     = 'modern',
+    this.reducedMotion   = false,
+    this.highContrast    = false,
+  });
+
+  _SettingsData copyWith({
+    String? lastSeen, String? profilePhoto,
+    bool? readReceipts, bool? typingIndicators,
+    bool? msgSound, bool? msgVibration, bool? msgPreview,
+    bool? callSound, bool? callVibration, bool? callFullscreen,
+    bool? enterToSend, String? defaultTimer,
+    bool? silenceUnknown, bool? lowData,
+    bool? noiseSuppression, bool? echoCancellation,
+    String? fontSize, String? bubbleStyle,
+    bool? reducedMotion, bool? highContrast,
+  }) => _SettingsData(
+    lastSeen:         lastSeen         ?? this.lastSeen,
+    profilePhoto:     profilePhoto     ?? this.profilePhoto,
+    readReceipts:     readReceipts     ?? this.readReceipts,
+    typingIndicators: typingIndicators ?? this.typingIndicators,
+    msgSound:         msgSound         ?? this.msgSound,
+    msgVibration:     msgVibration     ?? this.msgVibration,
+    msgPreview:       msgPreview       ?? this.msgPreview,
+    callSound:        callSound        ?? this.callSound,
+    callVibration:    callVibration    ?? this.callVibration,
+    callFullscreen:   callFullscreen   ?? this.callFullscreen,
+    enterToSend:      enterToSend      ?? this.enterToSend,
+    defaultTimer:     defaultTimer     ?? this.defaultTimer,
+    silenceUnknown:   silenceUnknown   ?? this.silenceUnknown,
+    lowData:          lowData          ?? this.lowData,
+    noiseSuppression: noiseSuppression ?? this.noiseSuppression,
+    echoCancellation: echoCancellation ?? this.echoCancellation,
+    fontSize:         fontSize         ?? this.fontSize,
+    bubbleStyle:      bubbleStyle      ?? this.bubbleStyle,
+    reducedMotion:    reducedMotion    ?? this.reducedMotion,
+    highContrast:     highContrast     ?? this.highContrast,
+  );
+
+  Map<String, dynamic> toMap() => {
+    'lastSeen': lastSeen, 'profilePhoto': profilePhoto,
+    'readReceipts': readReceipts, 'typingIndicators': typingIndicators,
+    'msgSound': msgSound, 'msgVibration': msgVibration, 'msgPreview': msgPreview,
+    'callSound': callSound, 'callVibration': callVibration, 'callFullscreen': callFullscreen,
+    'enterToSend': enterToSend, 'defaultTimer': defaultTimer,
+    'silenceUnknown': silenceUnknown, 'lowData': lowData,
+    'noiseSuppression': noiseSuppression, 'echoCancellation': echoCancellation,
+    'fontSize': fontSize, 'bubbleStyle': bubbleStyle,
+    'reducedMotion': reducedMotion, 'highContrast': highContrast,
+  };
+
+  factory _SettingsData.fromMap(Map m) => _SettingsData(
+    lastSeen:         m['lastSeen']         ?? 'contacts',
+    profilePhoto:     m['profilePhoto']     ?? 'contacts',
+    readReceipts:     m['readReceipts']     ?? true,
+    typingIndicators: m['typingIndicators'] ?? true,
+    msgSound:         m['msgSound']         ?? true,
+    msgVibration:     m['msgVibration']     ?? true,
+    msgPreview:       m['msgPreview']       ?? true,
+    callSound:        m['callSound']        ?? true,
+    callVibration:    m['callVibration']    ?? true,
+    callFullscreen:   m['callFullscreen']   ?? true,
+    enterToSend:      m['enterToSend']      ?? false,
+    defaultTimer:     m['defaultTimer']     ?? 'off',
+    silenceUnknown:   m['silenceUnknown']   ?? false,
+    lowData:          m['lowData']          ?? false,
+    noiseSuppression: m['noiseSuppression'] ?? true,
+    echoCancellation: m['echoCancellation'] ?? true,
+    fontSize:         m['fontSize']         ?? 'normal',
+    bubbleStyle:      m['bubbleStyle']      ?? 'modern',
+    reducedMotion:    m['reducedMotion']    ?? false,
+    highContrast:     m['highContrast']     ?? false,
+  );
+}
+
+// ── Provider ──────────────────────────────────────────────────────────────────
+class _SettingsNotifier extends StateNotifier<_SettingsData> {
+  static const _box = 'xame_prefs';
+  static const _key = 'settings_data';
+
+  _SettingsNotifier() : super(const _SettingsData()) { _load(); }
+
+  Future<void> _load() async {
+    final box  = await Hive.openBox(_box);
+    final raw  = box.get(_key);
+    if (raw != null) state = _SettingsData.fromMap(Map.from(raw));
+  }
+
+  Future<void> update(_SettingsData s) async {
+    state = s;
+    final box = await Hive.openBox(_box);
+    await box.put(_key, s.toMap());
+  }
+}
+
+final _settingsProvider =
+    StateNotifierProvider<_SettingsNotifier, _SettingsData>(
+        (_) => _SettingsNotifier());
+
+// ── Screen ────────────────────────────────────────────────────────────────────
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({super.key});
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) setState(() => _version = '${info.version} (${info.buildNumber})');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme    = ref.watch(themeProvider);
+    final settings = ref.watch(_settingsProvider);
+    final notifier = ref.read(_settingsProvider.notifier);
+
+    void save(_SettingsData s) => notifier.update(s);
+
+    return Scaffold(
+      backgroundColor: theme.bg,
+      appBar: AppBar(
+        backgroundColor: theme.surface,
+        title: Text('Settings',
+            style: TextStyle(color: theme.text, fontWeight: FontWeight.w700)),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: theme.text, size: 18),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/contacts')),
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        children: [
+
+          // ── Account & Privacy ───────────────────────────────────────────────
+          _Section(theme: theme, title: 'Account & Privacy', children: [
+            _SelectTile(
+              theme:   theme,
+              icon:    Icons.access_time_rounded,
+              title:   'Last Seen',
+              value:   settings.lastSeen,
+              options: const ['everyone', 'contacts', 'nobody'],
+              labels:  const ['Everyone', 'My Contacts', 'Nobody'],
+              onChanged: (v) => save(settings.copyWith(lastSeen: v)),
+            ),
+            _SelectTile(
+              theme:   theme,
+              icon:    Icons.photo_outlined,
+              title:   'Profile Photo',
+              value:   settings.profilePhoto,
+              options: const ['everyone', 'contacts', 'nobody'],
+              labels:  const ['Everyone', 'My Contacts', 'Nobody'],
+              onChanged: (v) => save(settings.copyWith(profilePhoto: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.done_all_rounded,
+              title:     'Read Receipts',
+              subtitle:  'Show when messages are read',
+              value:     settings.readReceipts,
+              onChanged: (v) => save(settings.copyWith(readReceipts: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.keyboard_outlined,
+              title:     'Typing Indicators',
+              subtitle:  'Show when you are typing',
+              value:     settings.typingIndicators,
+              onChanged: (v) => save(settings.copyWith(typingIndicators: v)),
+            ),
+          ]),
+
+          // ── Notifications ───────────────────────────────────────────────────
+          _Section(theme: theme, title: 'Notifications', children: [
+            _SectionSubtitle(theme: theme, text: 'Messages'),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.volume_up_outlined,
+              title:     'Sound',
+              value:     settings.msgSound,
+              onChanged: (v) => save(settings.copyWith(msgSound: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.vibration_rounded,
+              title:     'Vibration',
+              value:     settings.msgVibration,
+              onChanged: (v) => save(settings.copyWith(msgVibration: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.visibility_outlined,
+              title:     'Message Preview',
+              subtitle:  'Show message content in notifications',
+              value:     settings.msgPreview,
+              onChanged: (v) => save(settings.copyWith(msgPreview: v)),
+            ),
+            _SectionSubtitle(theme: theme, text: 'Calls'),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.ring_volume_outlined,
+              title:     'Ringtone',
+              value:     settings.callSound,
+              onChanged: (v) => save(settings.copyWith(callSound: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.vibration_rounded,
+              title:     'Vibration',
+              value:     settings.callVibration,
+              onChanged: (v) => save(settings.copyWith(callVibration: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.fullscreen_rounded,
+              title:     'Full-Screen Incoming Calls',
+              subtitle:  'Show call UI on lock screen',
+              value:     settings.callFullscreen,
+              onChanged: (v) => save(settings.copyWith(callFullscreen: v)),
+            ),
+          ]),
+
+          // ── Chats ───────────────────────────────────────────────────────────
+          _Section(theme: theme, title: 'Chats', children: [
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.keyboard_return_rounded,
+              title:     'Enter to Send',
+              subtitle:  'Press Enter to send messages',
+              value:     settings.enterToSend,
+              onChanged: (v) => save(settings.copyWith(enterToSend: v)),
+            ),
+            _SelectTile(
+              theme:   theme,
+              icon:    Icons.timer_outlined,
+              title:   'Default Disappearing Timer',
+              value:   settings.defaultTimer,
+              options: const ['off', '5m', '1h', '24h', '7d'],
+              labels:  const ['Off', '5 Minutes', '1 Hour', '24 Hours', '7 Days'],
+              onChanged: (v) => save(settings.copyWith(defaultTimer: v)),
+            ),
+          ]),
+
+          // ── Calls ────────────────────────────────────────────────────────────
+          _Section(theme: theme, title: 'Calls', children: [
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.block_rounded,
+              title:     'Silence Unknown Callers',
+              subtitle:  'Only ring for contacts',
+              value:     settings.silenceUnknown,
+              onChanged: (v) => save(settings.copyWith(silenceUnknown: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.data_saver_on_outlined,
+              title:     'Low Data Mode',
+              subtitle:  'Reduce data usage during calls',
+              value:     settings.lowData,
+              onChanged: (v) => save(settings.copyWith(lowData: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.noise_aware_rounded,
+              title:     'Noise Suppression',
+              value:     settings.noiseSuppression,
+              onChanged: (v) => save(settings.copyWith(noiseSuppression: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.hearing_rounded,
+              title:     'Echo Cancellation',
+              value:     settings.echoCancellation,
+              onChanged: (v) => save(settings.copyWith(echoCancellation: v)),
+            ),
+          ]),
+
+          // ── Appearance ───────────────────────────────────────────────────────
+          _Section(theme: theme, title: 'Appearance', children: [
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.palette_outlined,
+              title:    'Theme',
+              subtitle: '${ref.watch(themeProvider).emoji} ${ref.watch(themeProvider).name}',
+              color:    theme.primary,
+              onTap:    () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ThemePickerScreen())),
+            ),
+            _SelectTile(
+              theme:   theme,
+              icon:    Icons.format_size_rounded,
+              title:   'Font Size',
+              value:   settings.fontSize,
+              options: const ['small', 'normal', 'large'],
+              labels:  const ['Small', 'Normal', 'Large'],
+              onChanged: (v) => save(settings.copyWith(fontSize: v)),
+            ),
+            _SelectTile(
+              theme:   theme,
+              icon:    Icons.chat_bubble_outline_rounded,
+              title:   'Bubble Style',
+              value:   settings.bubbleStyle,
+              options: const ['modern', 'classic', 'minimal'],
+              labels:  const ['Modern', 'Classic', 'Minimal'],
+              onChanged: (v) => save(settings.copyWith(bubbleStyle: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.motion_photos_off_outlined,
+              title:     'Reduce Motion',
+              subtitle:  'Disable animations',
+              value:     settings.reducedMotion,
+              onChanged: (v) => save(settings.copyWith(reducedMotion: v)),
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.contrast_rounded,
+              title:     'High Contrast',
+              value:     settings.highContrast,
+              onChanged: (v) => save(settings.copyWith(highContrast: v)),
+            ),
+          ]),
+
+          // ── Help & About ─────────────────────────────────────────────────────
+          _Section(theme: theme, title: 'Help & About', children: [
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.help_outline_rounded,
+              title:    'FAQ',
+              onTap:    () {},
+            ),
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.support_agent_rounded,
+              title:    'Contact Support',
+              onTap:    () {},
+            ),
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.description_outlined,
+              title:    'Terms of Service',
+              onTap:    () {},
+            ),
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.privacy_tip_outlined,
+              title:    'Privacy Policy',
+              onTap:    () {},
+            ),
+            if (_version.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                child: Text('XamePage v$_version',
+                  style: TextStyle(color: theme.textSecondary,
+                      fontSize: 12, fontWeight: FontWeight.w500)),
+              ),
+          ]),
+
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Shared tile widgets ───────────────────────────────────────────────────────
+class _Section extends StatelessWidget {
+  final XameTheme theme;
+  final String title;
+  final List<Widget> children;
+  const _Section({required this.theme, required this.title,
+      required this.children});
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        child: Text(title,
+          style: TextStyle(color: theme.textSecondary, fontSize: 12,
+              fontWeight: FontWeight.w600, letterSpacing: 0.8)),
+      ),
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color:  theme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Column(children: _separated(children)),
+      ),
+    ],
+  );
+
+  List<Widget> _separated(List<Widget> items) {
+    final result = <Widget>[];
+    for (int i = 0; i < items.length; i++) {
+      result.add(items[i]);
+      if (i < items.length - 1) {
+        result.add(Divider(height: 1, color: Colors.white.withValues(alpha: 0.05),
+            indent: 52));
+      }
+    }
+    return result;
+  }
+}
+
+class _SectionSubtitle extends StatelessWidget {
+  final XameTheme theme;
+  final String text;
+  const _SectionSubtitle({required this.theme, required this.text});
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+    child: Text(text, style: TextStyle(color: theme.primary,
+        fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)));
+}
+
+class _ToggleTile extends StatelessWidget {
+  final XameTheme theme;
+  final IconData  icon;
+  final String    title;
+  final String?   subtitle;
+  final bool      value;
+  final ValueChanged<bool> onChanged;
+  const _ToggleTile({required this.theme, required this.icon,
+      required this.title, this.subtitle, required this.value,
+      required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    child: Row(children: [
+      Icon(icon, color: theme.textSecondary, size: 20),
+      const SizedBox(width: 14),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(color: theme.text, fontSize: 14,
+              fontWeight: FontWeight.w500)),
+          if (subtitle != null)
+            Text(subtitle!, style: TextStyle(color: theme.textSecondary,
+                fontSize: 12)),
+        ])),
+      Switch(
+        value:     value,
+        onChanged: onChanged,
+        activeColor: theme.primary,
+        inactiveTrackColor: Colors.white12,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    ]),
+  );
+}
+
+class _SelectTile extends StatelessWidget {
+  final XameTheme     theme;
+  final IconData      icon;
+  final String        title;
+  final String        value;
+  final List<String>  options;
+  final List<String>  labels;
+  final ValueChanged<String> onChanged;
+  const _SelectTile({required this.theme, required this.icon,
+      required this.title, required this.value, required this.options,
+      required this.labels, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: () => _showPicker(context),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(children: [
+        Icon(icon, color: theme.textSecondary, size: 20),
+        const SizedBox(width: 14),
+        Expanded(child: Text(title, style: TextStyle(color: theme.text,
+            fontSize: 14, fontWeight: FontWeight.w500))),
+        Text(labels[options.indexOf(value)],
+          style: TextStyle(color: theme.primary, fontSize: 13,
+              fontWeight: FontWeight.w500)),
+        const SizedBox(width: 4),
+        Icon(Icons.chevron_right, color: theme.textSecondary, size: 16),
+      ]),
+    ),
+  );
+
+  void _showPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40, height: 4,
+            decoration: BoxDecoration(color: Colors.white24,
+                borderRadius: BorderRadius.circular(2))),
+          Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+            child: Text(title, style: TextStyle(color: theme.text,
+                fontSize: 16, fontWeight: FontWeight.w700))),
+          ...List.generate(options.length, (i) => InkWell(
+            onTap: () { onChanged(options[i]); Navigator.pop(context); },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Row(children: [
+                Text(labels[i], style: TextStyle(
+                  color: options[i] == value ? theme.primary : theme.text,
+                  fontSize: 15,
+                  fontWeight: options[i] == value
+                      ? FontWeight.w600 : FontWeight.normal)),
+                const Spacer(),
+                if (options[i] == value)
+                  Icon(Icons.check_circle, color: theme.primary, size: 18),
+              ]),
+            ),
+          )),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+        ]),
+      ),
+    );
+  }
+}
+
+class _NavTile extends StatelessWidget {
+  final XameTheme  theme;
+  final IconData   icon;
+  final String     title;
+  final String?    subtitle;
+  final Color?     color;
+  final VoidCallback onTap;
+  const _NavTile({required this.theme, required this.icon,
+      required this.title, this.subtitle, this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(children: [
+        Icon(icon, color: color ?? theme.textSecondary, size: 20),
+        const SizedBox(width: 14),
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: TextStyle(
+              color: color ?? theme.text,
+              fontSize: 14, fontWeight: FontWeight.w500)),
+            if (subtitle != null)
+              Text(subtitle!, style: TextStyle(color: theme.textSecondary,
+                  fontSize: 12)),
+          ],
+        )),
+        Icon(Icons.chevron_right, color: theme.textSecondary, size: 16),
+      ]),
+    ),
+  );
+}
