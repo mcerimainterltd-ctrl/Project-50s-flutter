@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../calls/screens/call_history_screen.dart';
+import '../../profile/screens/profile_screen.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
@@ -56,7 +57,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           _ChatsTab(filter: _filter),
           const CallHistoryScreen(),
           const _PlaceholderTab('Discover',      Icons.explore_outlined),
-          const _PlaceholderTab('Profile',       Icons.person_outline_rounded),
+          const ProfileScreen(),
         ])),
       ])),
       bottomNavigationBar: _buildBottomNav(),
