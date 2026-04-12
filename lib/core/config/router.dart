@@ -11,6 +11,7 @@ import '../../features/calling/screens/incoming_call_screen.dart';
 import '../../features/calls/screens/call_history_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/gallery/screens/gallery_screen.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;

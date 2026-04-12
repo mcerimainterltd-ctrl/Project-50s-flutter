@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../calls/screens/call_history_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../settings/screens/settings_screen.dart';
+import '../../gallery/screens/gallery_screen.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
@@ -57,7 +58,13 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         Expanded(child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
           const CallHistoryScreen(),
-          const _PlaceholderTab('Discover',      Icons.explore_outlined),
+          Consumer(builder: (_, ref, __) {
+            final self = ref.read(currentUserProvider);
+            return GalleryScreen(
+              userId:  self?.xameId ?? '',
+              isOwner: true,
+            );
+          }),
           const ProfileScreen(),
         ])),
       ])),
