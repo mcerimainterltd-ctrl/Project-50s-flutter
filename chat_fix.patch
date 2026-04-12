@@ -1,0 +1,5 @@
+--- a/lib/features/messaging/providers/chat_provider.dart
++++ b/lib/features/messaging/providers/chat_provider.dart
+@@ -1,4 +1,4 @@
+-        type:        m['file'] != null ? _typeFromFile(m['file']) : MessageType.text,
++        type:        (m['file'] != null && (m['file'] as Map).isNotEmpty) ? _typeFromFile(m['file']) : MessageType.text,

@@ -43,23 +43,26 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       final m = data['message'] as Map<String, dynamic>?;
       if (m == null) return;
 
+      final fileObj  = m['file'];
+      final hasFile  = fileObj != null && fileObj is Map && fileObj['url'] != null;
+      final mime     = hasFile ? (fileObj['type'] as String? ?? '') : '';
       final msg = XameMessage(
-        id:          m['id']        ?? _uuid.v4(),
-        senderId:    senderId ?? '',
-        recipientId: '',
-        text:        m['text']      ?? '',
-        type:        m['file'] != null ? _typeFromFile(m['file']) : MessageType.text,
+        id:          m['id']   as String? ?? _uuid.v4(),
+        senderId:    senderId  ?? '',
+        recipientId: _ref.read(currentUserProvider)?.xameId ?? '',
+        text:        m['text'] as String? ?? '',
+        type:        hasFile ? _typeFromMime(mime) : MessageType.text,
         direction:   MessageDirection.received,
-        ts:          m['ts']        ?? DateTime.now().millisecondsSinceEpoch,
+        ts:          (m['ts'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
         status:      'delivered',
-        expiresAt:   m['expiresAt'],
-        replyToId:   m['replyTo']?['id'],
-        replyToText: m['replyTo']?['text'],
-        forwarded:   m['forwarded'] ?? false,
-        viewOnce:    m['viewOnce']  ?? false,
-        fileUrl:     m['file']?['url'],
-        fileName:    m['file']?['name'],
-        fileMime:    m['file']?['type'],
+        expiresAt:   m['expiresAt'] as int?,
+        replyToId:   (m['replyTo'] as Map?)?['id'] as String?,
+        replyToText: (m['replyTo'] as Map?)?['text'] as String?,
+        forwarded:   m['forwarded'] as bool? ?? false,
+        viewOnce:    m['viewOnce']  as bool? ?? false,
+        fileUrl:     hasFile ? fileObj['url']  as String? : null,
+        fileName:    hasFile ? fileObj['name'] as String? : null,
+        fileMime:    hasFile ? mime : null,
       );
 
       state = [...state, msg];
@@ -241,35 +244,45 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
   // mirrors intelligentMerge() — deduplicates server + local messages
   void _intelligentMerge(List<Map<String, dynamic>> serverMessages) {
-    final now       = DateTime.now().millisecondsSinceEpoch;
-    final localIds  = state.map((m) => m.id).toSet();
+    final now      = DateTime.now().millisecondsSinceEpoch;
+    final localIds = state.map((m) => m.id).toSet();
+    final selfId   = _ref.read(currentUserProvider)?.xameId ?? '';
 
     final newMsgs = serverMessages
       .where((m) =>
         m['id'] != null &&
-        !localIds.contains(m['id']) &&
+        !localIds.contains(m['id'] as String) &&
         (m['expiresAt'] == null || (m['expiresAt'] as int) > now))
-      .map((m) => XameMessage(
-        id:          m['messageId'] ?? m['id'] ?? _uuid.v4(),
-        senderId:    m['senderId']  ?? '',
-        recipientId: m['recipientId'] ?? _contactId,
-        text:        m['text']     ?? '',
-        type:        m['file'] != null ? _typeFromFile(Map<String,dynamic>.from(m['file'])) : MessageType.text,
-        direction:   (m['senderId'] == _ref.read(currentUserProvider)?.xameId)
-                       ? MessageDirection.sent : MessageDirection.received,
-        ts:          m['ts']       ?? 0,
-        status:      m['status']   ?? 'delivered',
-        expiresAt:   m['expiresAt'],
-        replyToId:   m['replyTo']?['id'],
-        replyToText: m['replyTo']?['text'],
-        forwarded:   m['forwarded'] ?? false,
-        viewOnce:    m['viewOnce']  ?? false,
-        fileUrl:     m['file']?['url'],
-        fileName:    m['file']?['name'],
-        fileMime:    m['file']?['type'],
-        reactions:   m['reactions'] != null
-          ? Map<String,String>.from(m['reactions']) : null,
-      ))
+      .map((m) {
+        // Server sends type as 'sent'/'received' string
+        final dirStr   = m['type'] as String? ?? 'received';
+        final isSent   = dirStr == 'sent';
+        final fileObj  = m['file'];
+        final hasFile  = fileObj != null && fileObj is Map && (fileObj['url'] != null);
+        final mime     = hasFile ? (fileObj['type'] as String? ?? '') : '';
+        final msgType  = hasFile ? _typeFromMime(mime) : MessageType.text;
+
+        return XameMessage(
+          id:          m['id'] as String,
+          senderId:    isSent ? selfId : _contactId,
+          recipientId: isSent ? _contactId : selfId,
+          text:        m['text'] as String? ?? '',
+          type:        msgType,
+          direction:   isSent ? MessageDirection.sent : MessageDirection.received,
+          ts:          (m['ts'] as num?)?.toInt() ?? 0,
+          status:      m['status'] as String? ?? 'delivered',
+          expiresAt:   m['expiresAt'] as int?,
+          replyToId:   (m['replyTo'] as Map?)?['id'] as String?,
+          replyToText: (m['replyTo'] as Map?)?['text'] as String?,
+          forwarded:   m['forwarded'] as bool? ?? false,
+          viewOnce:    m['viewOnce']  as bool? ?? false,
+          fileUrl:     hasFile ? fileObj['url']  as String? : null,
+          fileName:    hasFile ? fileObj['name'] as String? : null,
+          fileMime:    hasFile ? mime : null,
+          reactions:   m['reactions'] != null && (m['reactions'] as Map).isNotEmpty
+            ? Map<String,String>.from(m['reactions'] as Map) : null,
+        );
+      })
       .toList();
 
     if (newMsgs.isEmpty) return;
