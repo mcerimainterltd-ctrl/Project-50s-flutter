@@ -302,26 +302,15 @@ class ThemeNotifier extends StateNotifier<XameTheme> {
 
 // ── Legacy XameColors (kept for backward compat) ──────────────────────────────
 class XameColors {
-  static Color primary(WidgetRef ref) =>
-      ref.watch(themeProvider).primary;
-  static Color danger(WidgetRef ref) =>
-      ref.watch(themeProvider).danger;
-
-  // Static fallbacks for places that don't have ref
-  static const primaryStatic   = Color(0xFF00D4FF);
-  static const secondaryStatic = Color(0xFF7B2FFF);
-  static const accentStatic    = Color(0xFF00FF88);
-  static const danger_         = Color(0xFFFF3B5C);
-  static const darkBg          = Color(0xFF0A0A0F);
-  static const darkSurface     = Color(0xFF141420);
-  static const darkCard        = Color(0xFF1E1E2E);
-  static const lightBg         = Color(0xFFF5F5FA);
-
-  // Direct static access (uses default theme)
+  // Static constants — used throughout the app
   static const primary     = Color(0xFF00D4FF);
   static const secondary   = Color(0xFF7B2FFF);
   static const accent      = Color(0xFF00FF88);
   static const danger      = Color(0xFFFF3B5C);
+  static const darkBg      = Color(0xFF0A0A0F);
+  static const darkSurface = Color(0xFF141420);
+  static const darkCard    = Color(0xFF1E1E2E);
+  static const lightBg     = Color(0xFFF5F5FA);
 }
 
 class AppTheme {
