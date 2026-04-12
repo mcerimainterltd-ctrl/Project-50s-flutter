@@ -10,6 +10,8 @@ import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/models/xame_user.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../settings/screens/theme_picker_screen.dart';
+import '../../../core/theme/app_theme.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 final _sessionsProvider = FutureProvider.autoDispose
@@ -347,6 +349,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   onChanged: (v) => setState(() => _hidePic = v),
                 ),
 
+                const SizedBox(height: 24),
+
+                // ── Appearance ──────────────────────────────────────────
+                _sectionTitle('Appearance'),
+                const SizedBox(height: 10),
+                Consumer(builder: (_, ref, __) {
+                  final theme = ref.watch(themeProvider);
+                  return _actionTile(
+                    icon:    Icons.palette_outlined,
+                    title:   'Theme',
+                    subtitle: '\${theme.emoji} \${theme.name}',
+                    color:   theme.primary,
+                    onTap:   () => Navigator.push(context,
+                        MaterialPageRoute(
+                            builder: (_) => const ThemePickerScreen())),
+                  );
+                }),
                 const SizedBox(height: 24),
 
                 // ── Security ─────────────────────────────────────────────────
