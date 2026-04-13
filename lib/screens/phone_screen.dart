@@ -98,24 +98,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   late TabController _tab;
   double _credits = 0; String _creditsCurr = 'NGN';
   Map<String, dynamic> _rates = {};
-  List<DeviceContact> _contacts = [];
-  bool _contactsLoaded = false;
-  String _q = '';
-  String _dial = '';
-  _Country _country = _kCountries.first;
-
-  Future<void> _fetchContacts() async {
-    if (await Permission.contacts.request().isGranted) {
-      final cts = await FlutterContacts.getContacts(withProperties: true, withPhoto: true);
-      if (mounted) setState(() { _contacts = cts; _contactsLoaded = true; });
-    }
-  }
-
-    with SingleTickerProviderStateMixin {
-  late TabController _tab;
-  double _credits = 0; String _creditsCurr = 'NGN';
-  Map<String, dynamic> _rates = {};
-  List<DeviceContact> _contacts = [];
+  List<Contact> _contacts = [];
   bool _contactsLoaded = false;
   String _q = '';
   String _dial = '';
@@ -124,20 +107,18 @@ class _PhoneScreenState extends State<PhoneScreen>
   @override
   void initState() {
     super.initState();
-    _fetchContacts();
     _tab = TabController(length: 3, vsync: this);
     _loadCredits();
     _loadRates();
+    _fetchContacts();
   }
 
+  Future<void> _fetchContacts() async {
     if (await Permission.contacts.request().isGranted) {
       final cts = await FlutterContacts.getContacts(withProperties: true, withPhoto: true);
       if (mounted) setState(() { _contacts = cts; _contactsLoaded = true; });
     }
   }
-  @override void dispose() { _tab.dispose(); super.dispose(); }
-
-  // ── API ───────────────────────────────────────────────────────────────────
 
   Future<void> _loadCredits() async {
     try {
@@ -913,3 +894,19 @@ class _KeypadWidget extends StatelessWidget {
     );
   }
 }
+
+class _Country {
+  final String code; final String dialCode; final String flag; final String name;
+  const _Country(this.code, this.dialCode, this.flag, this.name);
+}
+
+const List<_Country> _kCountries = [
+  _Country('NG','+234','🇳🇬','Nigeria'),
+  _Country('GH','+233','🇬🇭','Ghana'),
+  _Country('CI','+225','🇨🇮','Côte d'Ivoire'),
+  _Country('FR','+33', '🇫🇷','France'),
+  _Country('DE','+49', '🇩🇪','Germany'),
+  _Country('CA','+1',  '🇨🇦','Canada'),
+  _Country('GB','+44', '🇬🇧','United Kingdom'),
+  _Country('US','+1',  '🇺🇸','United States'),
+];
