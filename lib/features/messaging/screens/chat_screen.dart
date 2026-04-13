@@ -43,9 +43,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.read(activeChatIdProvider.notifier).state = widget.userId;
       ref.read(chatProvider(widget.userId).notifier).markAllSeen();
       ref.read(contactsProvider.notifier).markRead(widget.userId);
-      // Fetch history from REST — fast per-contact load
-      ref.read(chatProvider(widget.userId).notifier)
-          .fetchHistory().then((_) => _scrollToBottom());
+      // Request per-contact history via socket
+      ref.read(socketServiceProvider).emitGetChatHistory(widget.userId);
+      // Scroll after brief delay to allow history to arrive
+      Future.delayed(const Duration(milliseconds: 800), _scrollToBottom);
     });
   }
 

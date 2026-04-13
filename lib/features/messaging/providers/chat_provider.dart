@@ -102,14 +102,11 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       state = state.where((m) => !data.messageIds.contains(m.id)).toList();
     }));
 
-    // chat_history — only merge socket bulk-dump if REST fetchHistory
-    // has not already loaded this chat (avoids 30-min cold-start stall)
+    // chat_history — merge per-contact history from socket response
     _subs.add(socket.chatHistory.listen((historyData) {
       if (historyData == null) return;
-      // If REST already populated state, skip socket bulk-dump for this contact
-      if (state.isNotEmpty) return;
       try {
-        final map = Map<String, dynamic>.from(historyData);
+        final map        = Map<String, dynamic>.from(historyData);
         final serverMsgs = map[_contactId];
         if (serverMsgs == null || serverMsgs is! List) return;
         _intelligentMerge(List<Map<String, dynamic>>.from(
