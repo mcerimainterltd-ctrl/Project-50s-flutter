@@ -197,6 +197,24 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     }
   }
 
+  // mirrors getChat() — GET /api/messages/:contactId
+  Future<void> fetchHistory() async {
+    try {
+      final token = await _storage.read(key: AppConstants.keySessionToken);
+      if (token == null) return;
+      final res = await _dio.get(
+        '/api/messages/$_contactId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      final data = res.data as Map<String, dynamic>?;
+      if (data == null || data['success'] != true) return;
+      final msgs = data['messages'];
+      if (msgs == null || msgs is! List) return;
+      _intelligentMerge(List<Map<String, dynamic>>.from(
+        msgs.map((m) => Map<String, dynamic>.from(m))));
+    } catch (_) {}
+  }
+
   // mirrors markAllSeen() in messaging.js
   void markAllSeen() {
     final unseen = state
