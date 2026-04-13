@@ -305,7 +305,7 @@ class _XamePayScreenState extends State<XamePayScreen>
           .get(Uri.parse('${widget.serverUrl}/api/wallet/me?userId=${widget.userId}'))
           .timeout(const Duration(seconds: 8));
       final d = jsonDecode(r.body);
-      if (d['success'] == true) {
+      if (d['status'] == 'success') {
         setState(() {
           _balance = (d['balance'] as num?)?.toDouble() ?? 0;
           _txs = (d['transactions'] as List? ?? [])
@@ -540,7 +540,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                   try {
                     await http.post(
                       Uri.parse('${widget.serverUrl}/api/wallet/currency'),
-                      headers: {'Content-Type': 'application/json'},
+                      headers: {'Authorization': 'Bearer FLWPUBK_YOUR_KEY', 'Content-Type': 'application/json'},
                       body: jsonEncode({'userId': widget.userId, 'currency': _currency}),
                     );
                   } catch (_) {}
@@ -669,11 +669,11 @@ class _SendTabState extends State<_SendTab> {
     final cc = _ccMap[widget.currency] ?? 'NG';
     try {
       final r = await http.get(
-          Uri.parse('${widget.serverUrl}/api/wallet/banklist?cc=$cc'))
+          Uri.parse('https://api.flutterwave.com/v3/banks/NG'), headers: {'Authorization': 'Bearer FLWPUBK_YOUR_KEY'})
           .timeout(const Duration(seconds: 8));
       final d = jsonDecode(r.body);
-      if (d['success'] == true && (d['banks'] as List).isNotEmpty) {
-        final list = (d['banks'] as List).map((b) => BankItem.fromJson(b)).toList();
+      if (d['status'] == 'success' && (d['data'] as List).isNotEmpty) {
+        final list = (d['data'] as List).map((b) => BankItem.fromJson(b)).toList();
         setState(() { _banks = list; _filtered = list; _loadingBanks = false; });
         return;
       }
@@ -694,13 +694,13 @@ class _SendTabState extends State<_SendTab> {
     try {
       final r = await http.post(
         Uri.parse('${widget.serverUrl}/api/wallet/resolve'),
-        headers: {'Content-Type':'application/json'},
+        headers: {'Authorization': 'Bearer FLWPUBK_YOUR_KEY', 'Content-Type':'application/json'},
         body: jsonEncode({'account_number':_accNum,'account_bank':_selBank!.code,'currency':widget.currency}),
       ).timeout(const Duration(seconds: 10));
       final d = jsonDecode(r.body);
       setState(() {
         _resolving = false;
-        if (d['success'] == true) {
+        if (d['status'] == 'success') {
           _resolved = '✅ ${d['account_name']}';
           _accName  = d['account_name'] ?? '';
         } else { _resolved = '⚠️ Could not verify — proceed with caution'; }
@@ -717,13 +717,13 @@ class _SendTabState extends State<_SendTab> {
     try {
       final r = await http.post(
         Uri.parse('${widget.serverUrl}/api/wallet/send-bank'),
-        headers: {'Content-Type':'application/json'},
+        headers: {'Authorization': 'Bearer FLWPUBK_YOUR_KEY', 'Content-Type':'application/json'},
         body: jsonEncode({'account_bank':_selBank!.code,'account_number':_accNum,
             'amount':_amount,'currency':widget.currency,'narration':'XamePay Transfer',
             'accName':_accName,'userId':widget.userId}),
       ).timeout(const Duration(seconds: 20));
       final d = jsonDecode(r.body);
-      if (d['success'] == true) { await widget.onSuccess(); widget.snack('✅ Transfer successful!'); }
+      if (d['status'] == 'success') { await widget.onSuccess(); widget.snack('✅ Transfer successful!'); }
       else { widget.snack('❌ ${d['message'] ?? 'Transfer failed'}'); }
     } catch (_) { widget.snack('❌ Network error'); }
   }
@@ -891,11 +891,11 @@ class _AirtimeTabState extends State<_AirtimeTab> {
     widget.snack('Processing…');
     try {
       final r = await http.post(Uri.parse('${widget.serverUrl}/api/wallet/airtime'),
-          headers: {'Content-Type':'application/json'},
+          headers: {'Authorization': 'Bearer FLWPUBK_YOUR_KEY', 'Content-Type':'application/json'},
           body: jsonEncode({'phone':_phone,'operatorId':_net,'amount':a,'userId':widget.userId}))
           .timeout(const Duration(seconds: 15));
       final d = jsonDecode(r.body);
-      if (d['success'] == true) { await widget.onSuccess(); widget.snack('✅ Airtime sent!'); }
+      if (d['status'] == 'success') { await widget.onSuccess(); widget.snack('✅ Airtime sent!'); }
       else { widget.snack('❌ ${d['message'] ?? 'Failed'}'); }
     } catch (_) { widget.snack('❌ Network error'); }
   }
@@ -1104,12 +1104,12 @@ class _BillsTab extends StatelessWidget {
                   try {
                     snack('Processing payment…');
                     final r = await http.post(Uri.parse('$serverUrl/api/wallet/bills/pay'),
-                        headers: {'Content-Type':'application/json'},
+                        headers: {'Authorization': 'Bearer FLWPUBK_YOUR_KEY', 'Content-Type':'application/json'},
                         body: jsonEncode({'userId':userId,'biller_code':b[0],
                             'item_code':b[0],'customer':acc,'amount':a,'country':region.countryCode}))
                         .timeout(const Duration(seconds: 20));
                     final d = jsonDecode(r.body);
-                    if (d['success'] == true) { await onSuccess(); snack('✅ Bill paid!'); }
+                    if (d['status'] == 'success') { await onSuccess(); snack('✅ Bill paid!'); }
                     else { snack('❌ ${d['message'] ?? 'Payment failed'}'); }
                   } catch (_) { snack('❌ Network error'); }
                 },

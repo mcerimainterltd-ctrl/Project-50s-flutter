@@ -123,8 +123,8 @@ class _PhoneScreenState extends State<PhoneScreen>
   _Country _country = _kCountries.first;
 
   @override
-  void initState() {
     super.initState();
+    _fetchContacts();
     _tab = TabController(length: 3, vsync: this);
     _loadCredits();
     _loadRates();
@@ -661,7 +661,13 @@ class _RecentsWidget extends StatefulWidget {
 class _RecentsWidgetState extends State<_RecentsWidget> {
   List<CallRecord> _calls = []; bool _loading = true;
 
-  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _fetchContacts() async {
+    if (await Permission.contacts.request().isGranted) {
+      final contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: true);
+      if (mounted) setState(() { _contacts = contacts; _contactsLoaded = true; });
+    }
+  }
 
   Future<void> _load() async {
     try {
