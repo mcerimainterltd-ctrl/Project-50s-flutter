@@ -77,6 +77,8 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   Future<void> _markSeen() async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
+    // Clear badge in local state immediately
+    ref.read(contactsProvider.notifier).clearAllMissedCalls();
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       await dio.patch('/api/call-history/${user.xameId}/seen');

@@ -145,7 +145,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             final missed = contacts.fold<int>(0, (sum, c) => sum + c.missedCallsCount);
             if (missed <= 0) return const Icon(Icons.call_outlined, size: 22);
             return Badge(
-                  label: Text(missed > 99 ? '99+' : '\$missed',
+                  label: Text(missed > 99 ? '99+' : '$missed',
                       style: const TextStyle(fontSize: 10,
                           fontWeight: FontWeight.w700)),
                   backgroundColor: const Color(0xFFE53935),

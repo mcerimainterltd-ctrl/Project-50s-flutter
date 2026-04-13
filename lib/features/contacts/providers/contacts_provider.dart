@@ -207,6 +207,13 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     ).toList());
   }
 
+  void clearAllMissedCalls() {
+    final current = state.valueOrNull ?? [];
+    state = AsyncData(current.map((c) =>
+      c.missedCallsCount > 0 ? c.copyWith(missedCallsCount: 0) : c
+    ).toList());
+  }
+
   Future<Map<String, dynamic>?> searchUser(String xameId) async {
     try {
       final res  = await _dio.post('/api/search-user',

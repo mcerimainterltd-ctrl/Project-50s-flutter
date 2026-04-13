@@ -31,7 +31,7 @@ class AppConstants {
   ];
   static const allowedImageTypes    = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
   static const allowedVideoTypes    = ['video/mp4','video/webm','video/ogg'];
-  static const allowedAudioTypes    = ['audio/mpeg','audio/wav','audio/ogg','audio/webm','audio/mp4'];
+  static const allowedAudioTypes    = ['audio/mpeg','audio/wav','audio/ogg','audio/webm','audio/mp4','audio/aac','audio/x-aac','audio/3gpp','audio/amr'];
   static const allowedDocumentTypes = [
     'application/pdf','application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
