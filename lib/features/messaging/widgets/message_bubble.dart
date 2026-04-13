@@ -249,20 +249,58 @@ class _AudioBubble extends StatefulWidget {
 }
 
 class _AudioBubbleState extends State<_AudioBubble> {
-  bool _isThisPlaying = false;
+  AudioPlayer? _player;
+  bool     _playing  = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  final List<StreamSubscription> _subs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _player = AudioPlayer();
+    _subs.add(_player!.positionStream.listen((p) {
+      if (mounted) setState(() => _position = p);
+    }));
+    _subs.add(_player!.durationStream.listen((d) {
+      if (d != null && mounted) setState(() => _duration = d);
+    }));
+    _subs.add(_player!.playerStateStream.listen((ps) {
+      if (ps.processingState == ProcessingState.completed) {
+        if (mounted) setState(() { _playing = false; _position = Duration.zero; });
+      }
+    }));
+    _player!.setUrl(widget.url).catchError((_) {});
+  }
+
+  @override
+  void dispose() {
+    for (final s in _subs) s.cancel();
+    _player?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlay() async {
+    if (_playing) {
+      await _player?.pause();
+      setState(() => _playing = false);
+    } else {
+      if (_duration > Duration.zero && _position >= _duration) {
+        await _player?.seek(Duration.zero);
+      }
+      await _player?.play();
+      setState(() => _playing = true);
+    }
+  }
 
   String _fmtDur(Duration d) =>
-      '${d.inMinutes.toString().padLeft(2,'0')}:${(d.inSeconds % 60).toString().padLeft(2,'0')}';
+      '${d.inMinutes.toString().padLeft(2, '0')}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
-    final voice   = ref.watch(voiceProvider);
-    final notifier = ref.read(voiceProvider.notifier);
-    final isPlaying = _isThisPlaying &&
-        voice.recordState == VoiceRecordState.playing;
-    final progress = voice.playDuration.inMilliseconds > 0
-        ? voice.playPosition.inMilliseconds /
-            voice.playDuration.inMilliseconds
+    final isPlaying = _playing;
+    final progress  = _duration.inMilliseconds > 0
+        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
 
     return Container(
@@ -270,7 +308,6 @@ class _AudioBubbleState extends State<_AudioBubble> {
       constraints: const BoxConstraints(minWidth: 200, maxWidth: 280),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          // Play/Pause button
           GestureDetector(
             onTap: _togglePlay,
             child: Container(
@@ -282,20 +319,14 @@ class _AudioBubbleState extends State<_AudioBubble> {
                     color: XameColors.primary.withValues(alpha: 0.4)),
               ),
               child: Icon(
-                isPlaying
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
+                isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                 color: XameColors.primary, size: 26),
             ),
           ),
-
           const SizedBox(width: 10),
-
-          // Waveform + progress
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Animated waveform bars
               SizedBox(height: 32,
                 child: _WaveformBars(progress: isPlaying ? progress : 0,
                     isSelf: widget.isSelf)),
@@ -304,19 +335,13 @@ class _AudioBubbleState extends State<_AudioBubble> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    isPlaying
-                        ? _fmtDur(_position)
-                        : _fmtDur(_duration),
-                    style: const TextStyle(
-                        color: Colors.white38, fontSize: 10)),
-
+                    isPlaying ? _fmtDur(_position) : _fmtDur(_duration),
+                    style: const TextStyle(color: Colors.white38, fontSize: 10)),
                 ],
               ),
             ],
           )),
         ]),
-
-        // Seek bar
         if (_playing)
           SliderTheme(
             data: SliderThemeData(
@@ -329,7 +354,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
               overlayColor:     XameColors.primary.withValues(alpha: 0.2),
             ),
             child: Slider(
-              value:   progress.clamp(0.0, 1.0),
+              value:     progress,
               onChanged: (v) => _player?.seek(Duration(
                   milliseconds: (v * _duration.inMilliseconds).round())),
             ),
