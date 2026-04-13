@@ -24,20 +24,16 @@ class _PhoneScreenState extends State<PhoneScreen> with SingleTickerProviderStat
   late TabController _tab;
   double _credits = 0;
   String _creditsCurr = 'NGN';
-  Map<String, dynamic> _rates = {};
   List<Contact> _contacts = [];
   bool _contactsLoaded = false;
-  String _q = '';
   String _dial = '';
-  _Country _country = _kCountries.first;
 
   @override
   void initState() {
     super.initState();
     _tab = TabController(length: 3, vsync: this);
-    _loadCredits();
-    _loadRates();
     _fetchContacts();
+    _loadCredits();
   }
 
   @override
@@ -63,32 +59,21 @@ class _PhoneScreenState extends State<PhoneScreen> with SingleTickerProviderStat
     } catch (_) {}
   }
 
-  Future<void> _loadRates() async {
-    try {
-      final r = await http.get(Uri.parse('${widget.serverUrl}/api/call-rates'));
-      if (r.statusCode == 200) {
-        if (mounted) setState(() { _rates = jsonDecode(r.body); });
-      }
-    } catch (_) {}
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false, 
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        // If we are on Contacts or Keypad, go back to Recents (Tab 0)
         if (_tab.index > 0) {
           _tab.animateTo(0);
         } else {
-          // If we are already on Recents, actually close the screen
           Navigator.of(context).pop();
         }
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Phone', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text('Phone ($_credits $_creditsCurr)'),
           bottom: TabBar(
             controller: _tab,
             tabs: const [Tab(text: 'Recents'), Tab(text: 'Contacts'), Tab(text: 'Keypad')],
@@ -99,7 +84,7 @@ class _PhoneScreenState extends State<PhoneScreen> with SingleTickerProviderStat
           children: [
             const Center(child: Text("Recent Calls")),
             _buildContacts(),
-            Center(child: Text("Dialpad: $_dial")),
+            _buildKeypad(),
           ],
         ),
       ),
@@ -108,23 +93,20 @@ class _PhoneScreenState extends State<PhoneScreen> with SingleTickerProviderStat
 
   Widget _buildContacts() {
     if (!_contactsLoaded) return const Center(child: CircularProgressIndicator());
-    final filtered = _contacts.where((c) => c.displayName.toLowerCase().contains(_q.toLowerCase())).toList();
-    if (filtered.isEmpty) return const Center(child: Text("No contacts found"));
-    
     return ListView.builder(
-      itemCount: filtered.length,
+      itemCount: _contacts.length,
       itemBuilder: (context, i) {
-        final c = filtered[i];
+        final c = _contacts[i];
         return ListTile(
-          leading: (c.photo != null) 
-            ? CircleAvatar(backgroundImage: MemoryImage(c.photo!)) 
-            : CircleAvatar(child: Text(c.displayName.isNotEmpty ? c.displayName[0] : '?')),
+          leading: (c.photo != null) ? CircleAvatar(backgroundImage: MemoryImage(c.photo!)) : CircleAvatar(child: Text(c.displayName.isNotEmpty ? c.displayName[0] : '?')),
           title: Text(c.displayName),
           onTap: () => widget.onCall(c, 'xame', 'voice'),
         );
       },
     );
   }
+
+  Widget _buildKeypad() => Center(child: Text("Dial: $_dial"));
 }
 
 class _Country {
@@ -134,7 +116,5 @@ class _Country {
 
 const List<_Country> _kCountries = [
   _Country('NG','+234','🇳🇬','Nigeria'),
-  _Country('GH','+233','🇬🇭','Ghana'),
-  _Country('CI','+225','🇨🇮','Côte d\'Ivoire'),
   _Country('US','+1','🇺🇸','USA'),
 ];
