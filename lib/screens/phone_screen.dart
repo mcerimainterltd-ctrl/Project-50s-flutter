@@ -94,37 +94,31 @@ class PhoneScreen extends StatefulWidget {
 }
 
 class _PhoneScreenState extends State<PhoneScreen>
-  @override
-Future<void> _fetchContacts() async {    if (await Permission.contacts.request().isGranted) {      final cts = await FlutterContacts.getContacts(withProperties: true, withPhoto: true);      if (mounted) setState(() { _contacts = cts; _contactsLoaded = true; });    }  }
-  void initState() {
-    super.initState();
-    _fetchContacts();
-    _tab = TabController(length: 3, vsync: this);
-    _loadCredits();
-    _loadRates();
-    _fetchContacts();
-  }
     with SingleTickerProviderStateMixin {
   late TabController _tab;
-
   double _credits = 0; String _creditsCurr = 'NGN';
   Map<String, dynamic> _rates = {};
-
   List<DeviceContact> _contacts = [];
   bool _contactsLoaded = false;
   String _q = '';
-
   String _dial = '';
   _Country _country = _kCountries.first;
 
   @override
+  void initState() {
     super.initState();
-    _fetchContacts();
     _tab = TabController(length: 3, vsync: this);
     _loadCredits();
     _loadRates();
+    _fetchContacts();
   }
 
+  Future<void> _fetchContacts() async {
+    if (await Permission.contacts.request().isGranted) {
+      final cts = await FlutterContacts.getContacts(withProperties: true, withPhoto: true);
+      if (mounted) setState(() { _contacts = cts; _contactsLoaded = true; });
+    }
+  }
   @override void dispose() { _tab.dispose(); super.dispose(); }
 
   // ── API ───────────────────────────────────────────────────────────────────
