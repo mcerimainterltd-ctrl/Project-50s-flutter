@@ -56,7 +56,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       backgroundColor: XameColors.darkBg,
       body: SafeArea(child: Column(children: [
         _buildHeader(user),
-        Expanded(child: IndexedStack(index: _tab, children: [
+        Expanded(child: PopScope(canPop: _tab == 0, onPopInvoked: (didPop) { if (!didPop && _tab != 0) setState(() => _tab = 0); }, child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
           const CallHistoryScreen(),
           Consumer(builder: (_, ref, __) {
