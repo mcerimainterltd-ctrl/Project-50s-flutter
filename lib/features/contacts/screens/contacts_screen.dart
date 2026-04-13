@@ -67,7 +67,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             );
           }),
           PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: 'https://api.xamepage.com'),
-        ])),
+        ]))),
       ])),
       bottomNavigationBar: _buildBottomNav(),
       floatingActionButton: _tab == 0 ? FloatingActionButton(
