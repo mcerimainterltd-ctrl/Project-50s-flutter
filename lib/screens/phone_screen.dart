@@ -57,22 +57,6 @@ class CallRecord {
         duration    = (j['duration'] as num?)?.toInt();
 }
 
-class _Country {
-  final String code, dial, flag, name;
-  const _Country(this.code, this.dial, this.flag, this.name);
-}
-
-// ── COUNTRY LIST ──────────────────────────────────────────────────────────────
-
-const _kCountries = [
-  _Country('NG','+234','🇳🇬','Nigeria'),
-  _Country('US','+1',  '🇺🇸','United States'),
-  _Country('GB','+44', '🇬🇧','United Kingdom'),
-  _Country('GH','+233','🇬🇭','Ghana'),
-  _Country('KE','+254','🇰🇪','Kenya'),
-  _Country('ZA','+27', '🇿🇦','South Africa'),
-  _Country('CM','+237','🇨🇲','Cameroon'),
-  _Country('SN','+221','🇸🇳','Senegal'),
   _Country('CI','+225','🇨🇮','Côte d\'Ivoire'),
   _Country('FR','+33', '🇫🇷','France'),
   _Country('DE','+49', '🇩🇪','Germany'),
@@ -109,6 +93,14 @@ class PhoneScreen extends StatefulWidget {
 }
 
 class _PhoneScreenState extends State<PhoneScreen>
+  @override
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 3, vsync: this);
+    _loadCredits();
+    _loadRates();
+    _fetchContacts();
+  }
     with SingleTickerProviderStateMixin {
   late TabController _tab;
 
@@ -666,6 +658,13 @@ class _RecentsWidgetState extends State<_RecentsWidget> {
     if (await Permission.contacts.request().isGranted) {
       final contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: true);
       if (mounted) setState(() { _contacts = contacts; _contactsLoaded = true; });
+    }
+  }
+
+  Future<void> _fetchContacts() async {
+    if (await Permission.contacts.request().isGranted) {
+      final cts = await FlutterContacts.getContacts(withProperties: true, withPhoto: true);
+      if (mounted) setState(() { _contacts = cts; _contactsLoaded = true; });
     }
   }
 
