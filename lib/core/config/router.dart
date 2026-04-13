@@ -1,3 +1,5 @@
+import "../../screens/phone_screen.dart";
+import "../../screens/xame_pay_screen.dart";
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,8 +53,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const IncomingCallScreen()),
       GoRoute(path: '/conference',    builder: (c, s) => const _Placeholder('Conference')),
       GoRoute(path: '/call-history',  builder: (c, s) => const CallHistoryScreen()),
-      GoRoute(path: '/dialpad',       builder: (c, s) => const _Placeholder('Dialpad')),
-      GoRoute(path: '/wallet',        builder: (c, s) => const _Placeholder('Wallet')),
+      GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: user?.id ?? '', serverUrl: 'https://api.xamepage.com')),
+      GoRoute(path: '/wallet',        builder: (c, s) => XamePayScreen(userId: user?.id ?? '', serverUrl: 'https://api.xamepage.com')),
       GoRoute(path: '/settings',      builder: (c, s) => const SettingsScreen()),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
     ],

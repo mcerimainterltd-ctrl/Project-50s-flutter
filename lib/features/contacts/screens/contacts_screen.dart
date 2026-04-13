@@ -1,3 +1,4 @@
+import "../../../screens/phone_screen.dart";
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,7 +66,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               isOwner: true,
             );
           }),
-          const ProfileScreen(),
+          PhoneScreen(userId: ref.read(currentUserProvider)?.id ?? '', serverUrl: 'https://api.xamepage.com'),
         ])),
       ])),
       bottomNavigationBar: _buildBottomNav(),
@@ -153,7 +154,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           }),
           text: 'Calls'),
         const Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
-        const Tab(icon: Icon(Icons.person_outline_rounded,      size: 22), text: 'Profile'),
+        const Tab(icon: Icon(Icons.phone_outline_rounded,      size: 22), text: 'Phone'),
       ],
     ),
   );
