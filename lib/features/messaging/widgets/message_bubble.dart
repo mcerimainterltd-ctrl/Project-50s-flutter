@@ -3,7 +3,9 @@
 //          forwarded label, status ticks, long-press menu, view-once
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async';
 import 'dart:math';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/voice_service.dart';
@@ -236,17 +238,17 @@ class _VideoBubble extends StatelessWidget {
 }
 
 // ── Audio bubble ──────────────────────────────────────────────────────────
-class _AudioBubble extends ConsumerStatefulWidget {
+class _AudioBubble extends StatefulWidget {
   final String url, fileName;
   final bool isSelf;
   const _AudioBubble({required this.url, required this.fileName,
       required this.isSelf});
 
   @override
-  ConsumerState<_AudioBubble> createState() => _AudioBubbleState();
+  State<_AudioBubble> createState() => _AudioBubbleState();
 }
 
-class _AudioBubbleState extends ConsumerState<_AudioBubble> {
+class _AudioBubbleState extends State<_AudioBubble> {
   bool _isThisPlaying = false;
 
   String _fmtDur(Duration d) =>
@@ -270,15 +272,7 @@ class _AudioBubbleState extends ConsumerState<_AudioBubble> {
         Row(children: [
           // Play/Pause button
           GestureDetector(
-            onTap: () async {
-              if (isPlaying) {
-                await notifier.pausePlay();
-                setState(() => _isThisPlaying = false);
-              } else {
-                setState(() => _isThisPlaying = true);
-                await notifier.playFromUrl(widget.url);
-              }
-            },
+            onTap: _togglePlay,
             child: Container(
               width: 42, height: 42,
               decoration: BoxDecoration(
@@ -311,16 +305,11 @@ class _AudioBubbleState extends ConsumerState<_AudioBubble> {
                 children: [
                   Text(
                     isPlaying
-                        ? _fmtDur(voice.playPosition)
-                        : _fmtDur(voice.playDuration),
+                        ? _fmtDur(_position)
+                        : _fmtDur(_duration),
                     style: const TextStyle(
                         color: Colors.white38, fontSize: 10)),
-                  // TTS button
-                  GestureDetector(
-                    onTap: () => ref.read(voiceProvider.notifier)
-                        .speak('Voice message'),
-                    child: Icon(Icons.record_voice_over_outlined,
-                        color: Colors.white24, size: 14)),
+
                 ],
               ),
             ],
@@ -328,7 +317,7 @@ class _AudioBubbleState extends ConsumerState<_AudioBubble> {
         ]),
 
         // Seek bar
-        if (_isThisPlaying)
+        if (_playing)
           SliderTheme(
             data: SliderThemeData(
               trackHeight:      2,
@@ -341,9 +330,8 @@ class _AudioBubbleState extends ConsumerState<_AudioBubble> {
             ),
             child: Slider(
               value:   progress.clamp(0.0, 1.0),
-              onChanged: (v) => notifier.seekTo(
-                Duration(milliseconds:
-                  (v * voice.playDuration.inMilliseconds).round())),
+              onChanged: (v) => _player?.seek(Duration(
+                  milliseconds: (v * _duration.inMilliseconds).round())),
             ),
           ),
       ]),

@@ -43,7 +43,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.read(activeChatIdProvider.notifier).state = widget.userId;
       ref.read(chatProvider(widget.userId).notifier).markAllSeen();
       ref.read(contactsProvider.notifier).markRead(widget.userId);
-      _scrollToBottom();
+      // Fetch history from REST — fast per-contact load
+      ref.read(chatProvider(widget.userId).notifier)
+          .fetchHistory().then((_) => _scrollToBottom());
     });
   }
 
