@@ -1,3 +1,4 @@
+import 'package:flutter_contacts/flutter_contacts.dart';
 // lib/screens/phone_screen.dart
 // XamePage Phone — Flutter/Dart conversion of phone.js  (Build 237+)
 //
@@ -94,8 +95,10 @@ class PhoneScreen extends StatefulWidget {
 
 class _PhoneScreenState extends State<PhoneScreen>
   @override
+Future<void> _fetchContacts() async {    if (await Permission.contacts.request().isGranted) {      final cts = await FlutterContacts.getContacts(withProperties: true, withPhoto: true);      if (mounted) setState(() { _contacts = cts; _contactsLoaded = true; });    }  }
   void initState() {
     super.initState();
+    _fetchContacts();
     _tab = TabController(length: 3, vsync: this);
     _loadCredits();
     _loadRates();
