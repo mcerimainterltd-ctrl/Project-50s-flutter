@@ -328,8 +328,10 @@ class _AudioBubbleState extends State<_AudioBubble> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 32,
-                child: _WaveformBars(progress: isPlaying ? progress : 0,
-                    isSelf: widget.isSelf)),
+                child: _WaveformBars(
+                    progress:  progress,
+                    isSelf:    widget.isSelf,
+                    isPlaying: isPlaying)),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -342,55 +344,107 @@ class _AudioBubbleState extends State<_AudioBubble> {
             ],
           )),
         ]),
-        if (_playing)
-          SliderTheme(
-            data: SliderThemeData(
-              trackHeight:      2,
-              thumbShape:       const RoundSliderThumbShape(enabledThumbRadius: 5),
-              overlayShape:     const RoundSliderOverlayShape(overlayRadius: 10),
-              activeTrackColor: XameColors.primary,
-              inactiveTrackColor: Colors.white12,
-              thumbColor:       XameColors.primary,
-              overlayColor:     XameColors.primary.withValues(alpha: 0.2),
-            ),
-            child: Slider(
-              value:     progress,
-              onChanged: (v) => _player?.seek(Duration(
-                  milliseconds: (v * _duration.inMilliseconds).round())),
-            ),
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight:        2,
+            thumbShape:         const RoundSliderThumbShape(enabledThumbRadius: 5),
+            overlayShape:       const RoundSliderOverlayShape(overlayRadius: 10),
+            activeTrackColor:   XameColors.primary,
+            inactiveTrackColor: Colors.white12,
+            thumbColor:         XameColors.primary,
+            overlayColor:       XameColors.primary.withValues(alpha: 0.2),
           ),
+          child: Slider(
+            value:     progress,
+            onChanged: _duration.inMilliseconds > 0
+                ? (v) => _player?.seek(Duration(
+                    milliseconds: (v * _duration.inMilliseconds).round()))
+                : null,
+          ),
+        ),
       ]),
     );
   }
 }
 
-// ── Waveform bars ─────────────────────────────────────────────────────────
-class _WaveformBars extends StatelessWidget {
+// ── Waveform bars — animated during playback ─────────────────────────────
+class _WaveformBars extends StatefulWidget {
   final double progress;
-  final bool isSelf;
-  const _WaveformBars({required this.progress, required this.isSelf});
+  final bool   isSelf;
+  final bool   isPlaying;
+  const _WaveformBars({
+    required this.progress,
+    required this.isSelf,
+    required this.isPlaying,
+  });
+  @override
+  State<_WaveformBars> createState() => _WaveformBarsState();
+}
+
+class _WaveformBarsState extends State<_WaveformBars>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  static const _bars = 28;
+  // Fixed heights seeded once — same shape every render
+  static final _heights = List.generate(
+    _bars, (i) => 8.0 + Random(i * 7 + 3).nextDouble() * 20,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    if (widget.isPlaying) _ctrl.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(_WaveformBars old) {
+    super.didUpdateWidget(old);
+    if (widget.isPlaying && !_ctrl.isAnimating) {
+      _ctrl.repeat(reverse: true);
+    } else if (!widget.isPlaying && _ctrl.isAnimating) {
+      _ctrl.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    const bars = 28;
-    final rng  = Random(42);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: List.generate(bars, (i) {
-        final h        = 8.0 + rng.nextDouble() * 20;
-        final isActive = (i / bars) < progress;
-        return Container(
-          width: 3,
-          height: h,
-          decoration: BoxDecoration(
-            color: isActive
-                ? XameColors.primary
-                : Colors.white.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(2),
-          ),
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: List.generate(_bars, (i) {
+            final base     = _heights[i];
+            final fraction = i / _bars;
+            final isPast   = fraction < widget.progress;
+            // Active bars pulse with animation
+            final animH = widget.isPlaying && isPast
+                ? base * (0.6 + 0.4 * (sin(_ctrl.value * pi + i * 0.4) * 0.5 + 0.5))
+                : base;
+            return Container(
+              width: 3,
+              height: animH,
+              decoration: BoxDecoration(
+                color: isPast
+                    ? XameColors.primary
+                    : Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            );
+          }),
         );
-      }),
+      },
     );
   }
 }
