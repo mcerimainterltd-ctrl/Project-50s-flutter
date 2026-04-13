@@ -12,6 +12,7 @@ import 'core/config/constants.dart';
 import 'core/services/auth_service.dart';
 import 'shared/models/xame_user.dart';
 import 'app.dart';
+import 'core/services/cache_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   await Hive.initFlutter();
+  await CacheService.init();
 
   // Initialize Firebase
   await Firebase.initializeApp();

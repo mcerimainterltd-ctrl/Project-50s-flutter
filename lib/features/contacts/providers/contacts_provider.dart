@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
+import '../../../core/services/cache_service.dart';
 
 final activeContactIdProvider = StateProvider<String?>((ref) => null);
 
@@ -72,9 +73,15 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
   Future<List<ContactModel>> build() async {
     _listenToSocket();
     ref.onDispose(() { for (final s in _subs) s.cancel(); });
-    // Request contacts immediately — socket may already be connected
+    // Load cached contacts instantly — show UI before socket responds
+    final cached = CacheService.loadContacts();
+    if (cached.isNotEmpty) {
+      state = AsyncData(cached.map((m) =>
+        ContactModel.fromSocketMap(m)).toList());
+    }
+    // Request fresh data from socket
     _requestContacts();
-    return [];
+    return state.valueOrNull ?? [];
   }
 
   // Request contacts — called on build and after addContact
@@ -135,6 +142,9 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
         ));
       }
       state = AsyncData(updated);
+      // Persist to Hive for instant load next time
+      CacheService.saveContacts(list.map((m) =>
+        Map<String,dynamic>.from(m)).toList());
     }));
 
     // online_users

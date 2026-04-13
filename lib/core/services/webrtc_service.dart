@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/services/socket_service.dart';
-import 'package:xamepage/core/services/audio_service.dart'; 
+import 'package:xamepage/core/services/audio_service.dart';
+import 'package:xamepage/core/services/cache_service.dart'; 
 // Assuming socketServiceProvider is defined in socket_service.dart based on your grep
 
 enum CallState { idle, outgoing, incoming, active, ended }
@@ -37,6 +38,8 @@ class WebRTCService {
   final AudioService _audio = AudioService();
   static const _channel = MethodChannel('com.xamepage.app/call');
   bool _callCancelled = false;
+  Timer? _callTimeoutTimer;
+  DateTime? _callStartTime;
   bool isRinging = false;
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
@@ -63,7 +66,12 @@ class WebRTCService {
 
     _socket.callRejected.listen((data) {
       _callCancelled = true;
+      _callTimeoutTimer?.cancel();
       _audio.stopAll();
+      // Record as missed — recipient rejected or didn't answer
+      if (_callState == CallState.outgoing && currentRemoteUserId != null) {
+        _recordMissedCall(currentRemoteUserId!, 'voice');
+      }
       _cleanup();
       _callState = CallState.ended;
       _callStateController.add(CallState.ended);
@@ -127,6 +135,15 @@ class WebRTCService {
       await Helper.setSpeakerphoneOn(false);
       _audio.playOutgoing();
     }
+    // Start timeout — record missed if no answer within callTimeoutSeconds
+    _callStartTime = DateTime.now();
+    _callTimeoutTimer = Timer(
+      Duration(seconds: AppConstants.callTimeoutSeconds), () {
+      if (_callState == CallState.outgoing) {
+        _recordMissedCall(userId, 'voice');
+        endCall();
+      }
+    });
   }
 
   Future<void> joinCall(bool isVideo) async {
@@ -255,6 +272,22 @@ class WebRTCService {
     _pendingOffer = null;
     _pendingIce.clear();
     _callCancelled = false;
+    _callTimeoutTimer?.cancel();
+    _callTimeoutTimer = null;
+  }
+
+  void _recordMissedCall(String recipientId, String callType) {
+    final record = {
+      'callId':      'local_\${DateTime.now().millisecondsSinceEpoch}',
+      'callerId':    _socket.currentUserId ?? '',
+      'recipientId': recipientId,
+      'callType':    callType,
+      'status':      'missed',
+      'startTime':   (_callStartTime ?? DateTime.now()).toIso8601String(),
+      'duration':    0,
+      'seen':        false,
+    };
+    CacheService.addCallRecord(record);
   }
 
 }

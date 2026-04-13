@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
+import '../../../core/services/cache_service.dart';
 import '../../../shared/models/message.dart';
 
 // ── Active chat ID — mirrors ACTIVE_ID ───────────────────────────────────
@@ -30,6 +31,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
   final List<StreamSubscription> _subs = [];
 
   ChatNotifier(this._ref, this._contactId) : super([]) {
+    // Load cached messages instantly before socket arrives
+    final cached = CacheService.loadChat(_contactId);
+    if (cached.isNotEmpty) state = cached;
     _listenSocket();
   }
 
@@ -132,6 +136,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
     // Optimistic add — mirrors: chat.push(newMsg); setChat(); renderMessages()
     state = [...state, msg];
+    CacheService.saveChat(_contactId, state);
 
     final socketMsg = <String, dynamic>{'id': msgId, 'text': text, 'ts': ts};
     if (expiresAt != null) socketMsg['expiresAt'] = expiresAt;
@@ -308,6 +313,8 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     final merged = [...state, ...newMsgs];
     merged.sort((a, b) => a.ts.compareTo(b.ts));
     state = merged;
+    // Persist to Hive for instant load next open
+    CacheService.saveChat(_contactId, state);
   }
 
   void loadInitial(List<XameMessage> messages) {

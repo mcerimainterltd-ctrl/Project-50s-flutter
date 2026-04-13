@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/config/constants.dart';
+import '../../../core/services/cache_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/webrtc_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
@@ -38,14 +39,23 @@ class CallRecord {
 // ── Provider ─────────────────────────────────────────────────────────────────
 final callHistoryProvider = FutureProvider.autoDispose
     .family<List<CallRecord>, String>((ref, userId) async {
-  final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-  final res  = await dio.get('/api/call-history/$userId');
-  if (res.data['success'] == true) {
-    return (res.data['calls'] as List)
-        .map((c) => CallRecord.fromJson(Map<String, dynamic>.from(c)))
-        .toList();
-  }
-  return [];
+  // Load cache instantly first
+  final cached = CacheService.loadCallHistory()
+    .map((c) => CallRecord.fromJson(c)).toList();
+  try {
+    final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+    final res  = await dio.get('/api/call-history/$userId');
+    if (res.data['success'] == true) {
+      final fresh = (res.data['calls'] as List)
+          .map((c) => CallRecord.fromJson(Map<String, dynamic>.from(c)))
+          .toList();
+      // Persist fresh data
+      await CacheService.saveCallHistory(res.data['calls']
+        .map<Map<String,dynamic>>((c) => Map<String,dynamic>.from(c)).toList());
+      return fresh;
+    }
+  } catch (_) {}
+  return cached;
 });
 
 // ── Screen ───────────────────────────────────────────────────────────────────
