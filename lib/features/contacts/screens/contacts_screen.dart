@@ -66,7 +66,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               isOwner: true,
             );
           }),
-          PhoneScreen(userId: ref.read(currentUserProvider)?.id ?? '', serverUrl: 'https://api.xamepage.com'),
+          PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: 'https://api.xamepage.com'),
         ])),
       ])),
       bottomNavigationBar: _buildBottomNav(),
@@ -154,7 +154,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           }),
           text: 'Calls'),
         const Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
-        const Tab(icon: Icon(Icons.phone_outline_rounded,      size: 22), text: 'Phone'),
+        const Tab(icon: Icon(Icons.phone_outlined,      size: 22), text: 'Phone'),
       ],
     ),
   );

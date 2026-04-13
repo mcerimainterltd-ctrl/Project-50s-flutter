@@ -1,12 +1,13 @@
 name: xamepage
 description: XamePage - Ultramodern calling & messaging app
 publish_to: 'none'
-version: 2.1.0+237
+version: 2.1.0+238
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
 
 dependencies:
+  shared_preferences: ^2.2.0
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.5.1
@@ -37,6 +38,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
+  shared_preferences: ^2.2.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0

@@ -762,7 +762,7 @@ class _ContactsWidget extends StatelessWidget {
       Expanded(child: fil.isEmpty
         ? const Center(child: Text('No contacts found', style: TextStyle(color: _kMuted)))
         : ListView.builder(
-            itemCount: keys.fold(0, (s, k) => s + 1 + grp[k]!.length),
+            itemCount: keys.fold(0, (s, k) => (s ?? 0) + 1 + (grp[k]?.length ?? 0)),
             itemBuilder: (_, idx) {
               int cur = 0;
               for (final k in keys) {
