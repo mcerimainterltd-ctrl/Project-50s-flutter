@@ -586,10 +586,12 @@ class XameAvatar extends StatelessWidget {
   final String? profilePic;
   final double  size;
   final bool    isOnline;
+  final bool    hasNewGallery;
 
   const XameAvatar({
     super.key, required this.name,
     this.profilePic, this.size = 44, this.isOnline = false,
+    this.hasNewGallery = false,
   });
 
   String get _initials {
@@ -623,8 +625,11 @@ class XameAvatar extends StatelessWidget {
         child: Container(
           width: size * 0.26, height: size * 0.26,
           decoration: BoxDecoration(
-            color: XameColors.accent, shape: BoxShape.circle,
-            border: Border.all(color: XameColors.darkBg, width: 1.5)),
+            color: hasNewGallery ? XameColors.accent : Colors.transparent,
+            shape: BoxShape.circle,
+            border: hasNewGallery
+                ? Border.all(color: XameColors.darkBg, width: 1.5)
+                : null),
         )),
   ]);
 }
