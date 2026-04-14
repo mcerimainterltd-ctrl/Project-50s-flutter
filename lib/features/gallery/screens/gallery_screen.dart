@@ -98,7 +98,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     final gallery = ref.watch(_galleryProvider(widget.userId));
     final self    = ref.read(currentUserProvider);
 
-    return Scaffold(backgroundColor: Colors.black,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverAppBar(
             pinned:           true,
@@ -192,8 +194,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                 onTap:    (item) => _openLightbox(context, item, items),
               ),
             ],
-          ),
-        ),
+      ),
+    );
       ),
     );
   }
@@ -664,7 +666,7 @@ class _LightboxState extends State<_Lightbox> {
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.items[_current];
+    return Scaffold(backgroundColor: Colors.black,
 
     return Scaffold(backgroundColor: Colors.black,
       body: GestureDetector(
