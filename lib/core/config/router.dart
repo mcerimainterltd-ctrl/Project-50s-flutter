@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
+import '../config/constants.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/contacts/screens/contacts_screen.dart';
@@ -53,8 +54,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const IncomingCallScreen()),
       GoRoute(path: '/conference',    builder: (c, s) => const _Placeholder('Conference')),
       GoRoute(path: '/call-history',  builder: (c, s) => const CallHistoryScreen()),
-      GoRoute(path: '/dialpad',       builder: (c, s) => const PhoneScreen()),
-      GoRoute(path: '/wallet',        builder: (c, s) => const XamePayScreen()),
+      GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl)),
+      GoRoute(path: '/wallet',        builder: (c, s) => XamePayScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl, onBack: () => c.go('/contacts'))),
       GoRoute(path: '/settings',      builder: (c, s) => const SettingsScreen()),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
     ],

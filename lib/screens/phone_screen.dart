@@ -6,7 +6,7 @@
 // READ_CONTACTS permission already declared in AndroidManifest.xml.
 
 import 'dart:convert';
-import 'package:contacts_service/contacts_service.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
@@ -173,7 +173,7 @@ class _PhoneScreenState extends State<PhoneScreen>
 
     try {
       // contacts_service fetches full contact list with phones
-      final raw = await ContactsService.getContacts(
+      final raw = await FlutterContacts.getContacts(
         withThumbnails: false, // thumbnails slow; enable if you want photos
         orderByGivenName: true,
       );
@@ -940,7 +940,7 @@ class _ContactsTab extends StatelessWidget {
         ? const Center(child: Text('No contacts found',
               style: TextStyle(color: _kMuted)))
         : ListView.builder(
-            itemCount: keys.fold(0, (s, k) => s + 1 + grp[k]!.length),
+            itemCount: keys.fold<int>(0, (s, k) => s + 1 + (grp[k]?.length ?? 0)),
             itemBuilder: (_, idx) {
               int cur = 0;
               for (final k in keys) {

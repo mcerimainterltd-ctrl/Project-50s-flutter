@@ -67,7 +67,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               isOwner: true,
             );
           }),
-          const PhoneScreen(),
+          Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return PhoneScreen(userId: u?.xameId ?? '', serverUrl: 'https://project-50s.onrender.com'); }),
         ])),
       ])),
       bottomNavigationBar: _buildBottomNav(),
