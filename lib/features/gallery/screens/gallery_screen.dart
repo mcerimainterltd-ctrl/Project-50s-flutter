@@ -665,6 +665,7 @@ class _LightboxState extends State<_Lightbox> {
   @override
   Widget build(BuildContext context) {
     final item = widget.items[_current];
+
     return Scaffold(backgroundColor: Colors.black,
       body: GestureDetector(
         child: Stack(children: [
