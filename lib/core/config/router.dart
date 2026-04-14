@@ -12,6 +12,8 @@ import '../../features/calls/screens/call_history_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/gallery/screens/gallery_screen.dart';
+import '../../screens/xame_pay_screen.dart';
+import '../../screens/phone_screen.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;
@@ -51,8 +53,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const IncomingCallScreen()),
       GoRoute(path: '/conference',    builder: (c, s) => const _Placeholder('Conference')),
       GoRoute(path: '/call-history',  builder: (c, s) => const CallHistoryScreen()),
-      GoRoute(path: '/dialpad',       builder: (c, s) => const _Placeholder('Dialpad')),
-      GoRoute(path: '/wallet',        builder: (c, s) => const _Placeholder('Wallet')),
+      GoRoute(path: '/dialpad',       builder: (c, s) => const PhoneScreen()),
+      GoRoute(path: '/wallet',        builder: (c, s) => const XamePayScreen()),
       GoRoute(path: '/settings',      builder: (c, s) => const SettingsScreen()),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
     ],

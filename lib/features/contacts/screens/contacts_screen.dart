@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../calls/screens/call_history_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../../screens/phone_screen.dart';
+import '../../../screens/xame_pay_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../gallery/screens/gallery_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -65,7 +67,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               isOwner: true,
             );
           }),
-          const ProfileScreen(),
+          const PhoneScreen(),
         ])),
       ])),
       bottomNavigationBar: _buildBottomNav(),
@@ -114,7 +116,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 horizontal: 12, vertical: 10),
             ),
           )
-        : Text(['Chats','Calls','Discover','Profile'][_tab],
+        : Text(['Chats','Calls','Discover','Phone'][_tab],
             style: const TextStyle(color: Colors.white, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
@@ -153,7 +155,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           }),
           text: 'Calls'),
         const Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
-        const Tab(icon: Icon(Icons.person_outline_rounded,      size: 22), text: 'Profile'),
+        const Tab(icon: Icon(Icons.phone_outlined,              size: 22), text: 'Phone'),
       ],
     ),
   );
