@@ -1,3 +1,19 @@
+
+// Fix for contacts_service missing namespace (AGP 8.x compatibility)
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            if (!project.android.namespace) {
+                def manifest = project.android.sourceSets.main.manifest.srcFile
+                if (manifest.exists()) {
+                    def pkg = new groovy.xml.XmlSlurper().parse(manifest).@package.text()
+                    if (pkg) project.android.namespace = pkg
+                }
+            }
+        }
+    }
+}
+
 plugins {
     id "com.android.application"
     id "kotlin-android"
