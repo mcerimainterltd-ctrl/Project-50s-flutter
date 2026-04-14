@@ -98,8 +98,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     final gallery = ref.watch(_galleryProvider(widget.userId));
     final self    = ref.read(currentUserProvider);
 
-    return Scaffold(backgroundColor: Colors.black,
-      backgroundColor: theme.bg,
+    return Scaffold(backgroundColor: Colors.black,backgroundColor: Colors.black,
       body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverAppBar(
@@ -667,7 +666,7 @@ class _LightboxState extends State<_Lightbox> {
   @override
   Widget build(BuildContext context) {
     final item = widget.items[_current];
-    return Scaffold(backgroundColor: Colors.black,
+    return Scaffold(backgroundColor: Colors.black,backgroundColor: Colors.black,
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTap: () => setState(() => _showInfo = !_showInfo),
@@ -683,8 +682,8 @@ class _LightboxState extends State<_Lightbox> {
                 child: InteractiveViewer(
                   boundaryMargin: const EdgeInsets.all(double.infinity),
                   minScale: 0.5,
-                  maxScale: 4.0,));
-                  child: Container(color: Colors.black, child: CachedNetworkImage(
+                  maxScale: 4.0,
+                  child: CachedNetworkImage(
                     imageUrl:    it.url,
                     fit:         BoxFit.contain,
                     width:       MediaQuery.of(context).size.width,
