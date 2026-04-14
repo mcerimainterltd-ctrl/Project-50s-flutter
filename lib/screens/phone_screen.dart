@@ -1,5 +1,5 @@
 // lib/screens/phone_screen.dart
-// XamePage Phone â€” embedded in ContactsScreen tab 3  (Build 239+)
+// XamePage Phone — embedded in ContactsScreen tab 3  (Build 239+)
 //
 // Tabs: Recents | Contacts | Keypad
 // Contacts: reads native device address book via contacts_service plugin.
@@ -11,13 +11,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 
-// â”€â”€ COLOURS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— COLOURS ———————————————————————————————————————————————————————————————————
 const _kTeal  = Color(0xFF00B0A0);
 const _kBg    = Color(0xFF0D1520);
 const _kCard  = Color(0xFF1A2332);
 const _kMuted = Color(0xFFAAAAAA);
 
-// â”€â”€ MODELS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— MODELS ————————————————————————————————————————————————————————————————————
 
 class _DevContact {
   final String name;
@@ -54,39 +54,39 @@ class _Country {
   const _Country(this.code, this.dial, this.flag, this.name);
 }
 
-// â”€â”€ COUNTRY LIST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— COUNTRY LIST ——————————————————————————————————————————————————————————————
 
 const _kCountries = [
-  _Country('NG', '+234', 'ðŸ‡³ðŸ‡¬', 'Nigeria'),
-  _Country('US', '+1',   'ðŸ‡ºðŸ‡¸', 'United States'),
-  _Country('GB', '+44',  'ðŸ‡¬ðŸ‡§', 'United Kingdom'),
-  _Country('GH', '+233', 'ðŸ‡¬ðŸ‡­', 'Ghana'),
-  _Country('KE', '+254', 'ðŸ‡°ðŸ‡ª', 'Kenya'),
-  _Country('ZA', '+27',  'ðŸ‡¿ðŸ‡¦', 'South Africa'),
-  _Country('CM', '+237', 'ðŸ‡¨ðŸ‡²', 'Cameroon'),
-  _Country('SN', '+221', 'ðŸ‡¸ðŸ‡³', 'Senegal'),
-  _Country('CI', '+225', 'ðŸ‡¨ðŸ‡®', 'CÃ´te d\'Ivoire'),
-  _Country('FR', '+33',  'ðŸ‡«ðŸ‡·', 'France'),
-  _Country('DE', '+49',  'ðŸ‡©ðŸ‡ª', 'Germany'),
-  _Country('CA', '+1',   'ðŸ‡¨ðŸ‡¦', 'Canada'),
-  _Country('AU', '+61',  'ðŸ‡¦ðŸ‡º', 'Australia'),
-  _Country('IN', '+91',  'ðŸ‡®ðŸ‡³', 'India'),
-  _Country('AE', '+971', 'ðŸ‡¦ðŸ‡ª', 'UAE'),
-  _Country('BR', '+55',  'ðŸ‡§ðŸ‡·', 'Brazil'),
-  _Country('PH', '+63',  'ðŸ‡µðŸ‡­', 'Philippines'),
-  _Country('ZM', '+260', 'ðŸ‡¿ðŸ‡²', 'Zambia'),
-  _Country('UG', '+256', 'ðŸ‡ºðŸ‡¬', 'Uganda'),
-  _Country('TZ', '+255', 'ðŸ‡¹ðŸ‡¿', 'Tanzania'),
-  _Country('RW', '+250', 'ðŸ‡·ðŸ‡¼', 'Rwanda'),
-  _Country('EG', '+20',  'ðŸ‡ªðŸ‡¬', 'Egypt'),
-  _Country('SA', '+966', 'ðŸ‡¸ðŸ‡¦', 'Saudi Arabia'),
-  _Country('JP', '+81',  'ðŸ‡¯ðŸ‡µ', 'Japan'),
-  _Country('SG', '+65',  'ðŸ‡¸ðŸ‡¬', 'Singapore'),
-  _Country('MY', '+60',  'ðŸ‡²ðŸ‡¾', 'Malaysia'),
-  _Country('ZW', '+263', 'ðŸ‡¿ðŸ‡¼', 'Zimbabwe'),
+  _Country('NG', '+234', '🔳🔬', 'Nigeria'),
+  _Country('US', '+1',   '🔺🔸', 'United States'),
+  _Country('GB', '+44',  '🔬🔧', 'United Kingdom'),
+  _Country('GH', '+233', '🔬🔭', 'Ghana'),
+  _Country('KE', '+254', '🔰🔪', 'Kenya'),
+  _Country('ZA', '+27',  '🔿🔦', 'South Africa'),
+  _Country('CM', '+237', '🔨🔲', 'Cameroon'),
+  _Country('SN', '+221', '🔸🔳', 'Senegal'),
+  _Country('CI', '+225', '🔨🔮', 'CÃ´te d\'Ivoire'),
+  _Country('FR', '+33',  '🔫🔷', 'France'),
+  _Country('DE', '+49',  '🔩🔪', 'Germany'),
+  _Country('CA', '+1',   '🔨🔦', 'Canada'),
+  _Country('AU', '+61',  '🔦🔺', 'Australia'),
+  _Country('IN', '+91',  '🔮🔳', 'India'),
+  _Country('AE', '+971', '🔦🔪', 'UAE'),
+  _Country('BR', '+55',  '🔧🔷', 'Brazil'),
+  _Country('PH', '+63',  '🔵🔭', 'Philippines'),
+  _Country('ZM', '+260', '🔿🔲', 'Zambia'),
+  _Country('UG', '+256', '🔺🔬', 'Uganda'),
+  _Country('TZ', '+255', '🔹🔿', 'Tanzania'),
+  _Country('RW', '+250', '🔷🔼', 'Rwanda'),
+  _Country('EG', '+20',  '🔪🔬', 'Egypt'),
+  _Country('SA', '+966', '🔸🔦', 'Saudi Arabia'),
+  _Country('JP', '+81',  '🔯🔵', 'Japan'),
+  _Country('SG', '+65',  '🔸🔬', 'Singapore'),
+  _Country('MY', '+60',  '🔲🔾', 'Malaysia'),
+  _Country('ZW', '+263', '🔿🔼', 'Zimbabwe'),
 ];
 
-// â”€â”€ SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— SCREEN ————————————————————————————————————————————————————————————————————
 
 class PhoneScreen extends StatefulWidget {
   final String userId, serverUrl;
@@ -127,7 +127,7 @@ class _PhoneScreenState extends State<PhoneScreen>
 
   @override void dispose() { _tab.dispose(); super.dispose(); }
 
-  // â”€â”€ API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— API ———————————————————————————————————————————————————————————————————
 
   Future<void> _loadCredits() async {
     try {
@@ -154,13 +154,13 @@ class _PhoneScreenState extends State<PhoneScreen>
     } catch (_) {}
   }
 
-  // â”€â”€ DEVICE CONTACTS via contacts_service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— DEVICE CONTACTS via contacts_service ——————————————————————————————————
 
   Future<void> _loadContacts() async {
     if (_contactsLoading) return;
     setState(() => _contactsLoading = true);
 
-    // Runtime permission â€” READ_CONTACTS is already in AndroidManifest.xml
+    // Runtime permission — READ_CONTACTS is already in AndroidManifest.xml
     final status = await Permission.contacts.request();
     if (status.isDenied || status.isPermanentlyDenied) {
       if (mounted) {
@@ -226,13 +226,13 @@ class _PhoneScreenState extends State<PhoneScreen>
     }
   }
 
-  // â”€â”€ CALL HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— CALL HELPERS ——————————————————————————————————————————————————————————
 
   void _initiateCall(String number, String type, String callType) {
     if (type == 'xame') {
       // Delegate to the existing WebRTC call flow in the app
       // ContactsScreen already handles /call/:userId via context.go
-      _snack('Opening XamePage callâ€¦');
+      _snack('Opening XamePage call…');
     } else {
       _showPSTNConfirm(number);
     }
@@ -248,7 +248,7 @@ class _PhoneScreenState extends State<PhoneScreen>
       builder: (_) => Padding(padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('ðŸ“ž PSTN Call',
+          const Text('🔾 PSTN Call',
               style: TextStyle(color: Colors.white,
                   fontSize: 17, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
@@ -256,7 +256,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               style: const TextStyle(color: _kMuted, fontSize: 14)),
           const SizedBox(height: 8),
           Text(
-            'Rate: $_creditsCurr $rate/min  â€¢  '
+            'Rate: $_creditsCurr $rate/min  •  '
             'Balance: $_creditsCurr ${_credits.toStringAsFixed(2)}',
             style: const TextStyle(color: _kMuted, fontSize: 13)),
           const SizedBox(height: 20),
@@ -280,7 +280,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               onPressed: () async {
                 Navigator.pop(context);
                 try {
-                  _snack('ðŸ“ž Connectingâ€¦');
+                  _snack('🔾 Connecting…');
                   final r = await http.post(
                     Uri.parse('${widget.serverUrl}/api/pstn/call'),
                     headers: {'Content-Type': 'application/json'},
@@ -292,7 +292,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                     setState(() => _credits = (_credits -
                         ((d['deducted'] as num?)?.toDouble() ?? 0))
                         .clamp(0, 999999));
-                    _snack('ðŸ“ž Call connected');
+                    _snack('🔾 Call connected');
                   } else { _snack(d['message'] ?? 'Call failed'); }
                 } catch (_) { _snack('Call failed. Check connection.'); }
               },
@@ -305,7 +305,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     );
   }
 
-  // â”€â”€ CONTACT OPTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— CONTACT OPTIONS ———————————————————————————————————————————————————————
 
   void _showContactOpts(_DevContact c) {
     showModalBottomSheet(
@@ -321,22 +321,22 @@ class _PhoneScreenState extends State<PhoneScreen>
               style: const TextStyle(color: _kMuted, fontSize: 13)),
           const SizedBox(height: 20),
           if (c.isOnXame) ...[
-            _optTile('ðŸ’¬', 'Voice Call via XamePage (Free)', _kTeal, () {
+            _optTile('🔬', 'Voice Call via XamePage (Free)', _kTeal, () {
               Navigator.pop(context);
               _initiateCall(c.primary, 'xame', 'voice');
             }),
             const SizedBox(height: 10),
-            _optTile('ðŸ“¹', 'Video Call via XamePage (Free)', _kTeal, () {
+            _optTile('🔹', 'Video Call via XamePage (Free)', _kTeal, () {
               Navigator.pop(context);
               _initiateCall(c.primary, 'xame', 'video');
             }),
             const SizedBox(height: 10),
           ],
-          _optTile('ðŸ“ž', 'Call via Phone (Credits)', Colors.white, () {
+          _optTile('🔾', 'Call via Phone (Credits)', Colors.white, () {
             Navigator.pop(context); _showPSTNConfirm(c.primary);
           }),
           const SizedBox(height: 10),
-          _optTile('âœ‰ï¸', 'Send SMS (Credits)', Colors.white, () {
+          _optTile('âœ‰️', 'Send SMS (Credits)', Colors.white, () {
             Navigator.pop(context); _showSms(c.primary);
           }),
           const SizedBox(height: 10),
@@ -363,7 +363,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               style: TextStyle(color: col,
                   fontSize: 14, fontWeight: FontWeight.w500))));
 
-  // â”€â”€ SMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— SMS ———————————————————————————————————————————————————————————————————
 
   void _showSms(String to) {
     final ctrl = TextEditingController();
@@ -377,7 +377,7 @@ class _PhoneScreenState extends State<PhoneScreen>
         child: Padding(padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('âœ‰ï¸ Send SMS',
+            const Text('âœ‰️ Send SMS',
                 style: TextStyle(color: Colors.white,
                     fontSize: 17, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
@@ -387,7 +387,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               const TextSpan(text: 'To: '),
               TextSpan(text: to, style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.w600)),
-              const TextSpan(text: '  â€¢  Cost: '),
+              const TextSpan(text: '  •  Cost: '),
               const TextSpan(text: '5 credits',
                   style: TextStyle(color: _kTeal)),
             ])),
@@ -395,7 +395,7 @@ class _PhoneScreenState extends State<PhoneScreen>
             TextField(controller: ctrl, maxLines: 4,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Type your messageâ€¦',
+                hintText: 'Type your message…',
                 hintStyle: const TextStyle(color: _kMuted),
                 filled: true, fillColor: _kBg,
                 border: OutlineInputBorder(
@@ -436,7 +436,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                         .timeout(const Duration(seconds: 15));
                     final d = jsonDecode(r.body);
                     _snack(d['success'] == true
-                        ? 'âœ… SMS sent!'
+                        ? '… SMS sent!'
                         : (d['message'] ?? 'SMS failed'));
                   } catch (_) { _snack('SMS failed'); }
                 },
@@ -450,7 +450,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     );
   }
 
-  // â”€â”€ TOP UP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— TOP UP ————————————————————————————————————————————————————————————————
 
   void _showTopup() {
     int? selAmt;
@@ -463,7 +463,7 @@ class _PhoneScreenState extends State<PhoneScreen>
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('ðŸ’° Top Up Call Credits',
+          const Text('🔰 Top Up Call Credits',
               style: TextStyle(color: Colors.white,
                   fontSize: 17, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
@@ -486,7 +486,7 @@ class _PhoneScreenState extends State<PhoneScreen>
           TextField(controller: custCtrl, keyboardType: TextInputType.number,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: 'Custom amountâ€¦',
+              hintText: 'Custom amount…',
               hintStyle: const TextStyle(color: _kMuted),
               filled: true, fillColor: _kBg,
               border: OutlineInputBorder(
@@ -535,7 +535,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                   if (d['success'] == true) {
                     setState(() => _credits =
                         (d['balance'] as num?)?.toDouble() ?? _credits);
-                    _snack('âœ… $_creditsCurr $amount added');
+                    _snack('… $_creditsCurr $amount added');
                   } else { _snack(d['message'] ?? 'Top up failed'); }
                 } catch (_) { _snack('Top up failed'); }
               },
@@ -548,7 +548,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     );
   }
 
-  // â”€â”€ RECHARGE TOKEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— RECHARGE TOKEN ————————————————————————————————————————————————————————
 
   void _showRecharge() {
     final ctrl = TextEditingController();
@@ -562,7 +562,7 @@ class _PhoneScreenState extends State<PhoneScreen>
         child: Padding(padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('ðŸŽŸï¸ Recharge Token',
+            const Text('🏽️ Recharge Token',
                 style: TextStyle(color: Colors.white,
                     fontSize: 17, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
@@ -621,7 +621,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                     if (d['success'] == true) {
                       setState(() => _credits =
                           (d['balance'] as num?)?.toDouble() ?? _credits);
-                      _snack('âœ… Credits added! '
+                      _snack('… Credits added! '
                           'Balance: $_creditsCurr ${_credits.toStringAsFixed(2)}');
                     } else { _snack(d['message'] ?? 'Invalid token'); }
                   } catch (_) { _snack('Recharge failed'); }
@@ -636,7 +636,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     );
   }
 
-  // â”€â”€ COUNTRY PICKER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— COUNTRY PICKER ————————————————————————————————————————————————————————
 
   void _pickCountry() {
     showModalBottomSheet(
@@ -651,7 +651,7 @@ class _PhoneScreenState extends State<PhoneScreen>
           children: [
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              child: Text('ðŸŒ Select Country',
+              child: Text('🌀 Select Country',
                   style: TextStyle(color: Colors.white,
                       fontSize: 17, fontWeight: FontWeight.w700))),
             ..._kCountries.map((c) => InkWell(
@@ -682,7 +682,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     );
   }
 
-  // â”€â”€ BUILD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— BUILD —————————————————————————————————————————————————————————————————
 
   @override
   Widget build(BuildContext context) => Column(children: [
@@ -716,9 +716,9 @@ class _PhoneScreenState extends State<PhoneScreen>
         labelStyle: const TextStyle(
             fontSize: 13, fontWeight: FontWeight.w600),
         tabs: const [
-          Tab(text: 'ðŸ• Recents'),
-          Tab(text: 'ðŸ‘¥ Contacts'),
-          Tab(text: 'âŒ¨ï¸ Keypad'),
+          Tab(text: '🕐 Recents'),
+          Tab(text: '👥 Contacts'),
+          Tab(text: '⌨️ Keypad'),
         ],
       ),
     ),
@@ -726,13 +726,13 @@ class _PhoneScreenState extends State<PhoneScreen>
     // Content
     Expanded(child: TabBarView(controller: _tab, children: [
 
-      // â”€â”€ RECENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // —— RECENTS ———————————————————————————————————————————————————————
       _RecentsTab(
           userId: widget.userId,
           serverUrl: widget.serverUrl,
           onCall: _initiateCall),
 
-      // â”€â”€ CONTACTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // —— CONTACTS ——————————————————————————————————————————————————————
       _contactsLoaded
           ? _ContactsTab(
               contacts: _contacts, q: _q,
@@ -756,7 +756,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                   style: TextStyle(color: _kMuted, fontSize: 12)),
             ])),
 
-      // â”€â”€ KEYPAD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // —— KEYPAD ————————————————————————————————————————————————————————
       _KeypadTab(
         dial: _dial, country: _country,
         creditsCurr: _creditsCurr, credits: _credits, rates: _rates,
@@ -794,7 +794,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   }
 }
 
-// â”€â”€ RECENTS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— RECENTS TAB ———————————————————————————————————————————————————————————————
 
 class _RecentsTab extends StatefulWidget {
   final String userId, serverUrl;
@@ -857,11 +857,11 @@ class _RecentsTabState extends State<_RecentsTab> {
                   color: missed ? const Color(0xFFFF6464) : Colors.white,
                   fontSize: 14, fontWeight: FontWeight.w600)),
           subtitle: Text(
-            '${missed ? 'ðŸ“µ' : incoming ? 'ðŸ“²' : 'ðŸ“¤'} '
+            '${missed ? '🔵' : incoming ? '🔲' : '🔤'} '
             '${missed ? 'Missed' : incoming ? 'Incoming' : 'Outgoing'} '
-            '${pstn ? 'ðŸ“ž' : 'ðŸ’¬'}'
-            '${c.duration != null ? ' Â· ${c.duration! ~/ 60}m ${c.duration! % 60}s' : ''}'
-            ' Â· ${_ago(c.startTime)}',
+            '${pstn ? '🔾' : '🔬'}'
+            '${c.duration != null ? ' · ${c.duration! ~/ 60}m ${c.duration! % 60}s' : ''}'
+            ' · ${_ago(c.startTime)}',
             style: const TextStyle(color: _kMuted, fontSize: 12)),
           trailing: TextButton(
             style: TextButton.styleFrom(
@@ -892,7 +892,7 @@ class _RecentsTabState extends State<_RecentsTab> {
   }
 }
 
-// â”€â”€ CONTACTS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— CONTACTS TAB ——————————————————————————————————————————————————————————————
 
 class _ContactsTab extends StatelessWidget {
   final List<_DevContact> contacts;
@@ -921,7 +921,7 @@ class _ContactsTab extends StatelessWidget {
         child: TextField(
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            hintText: 'ðŸ” Search contactsâ€¦',
+            hintText: '🔝 Search contacts…',
             hintStyle: const TextStyle(color: _kMuted, fontSize: 14),
             filled: true, fillColor: const Color(0x12FFFFFF),
             border: OutlineInputBorder(
@@ -975,7 +975,7 @@ class _ContactsTab extends StatelessWidget {
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                         color: _kBg, width: 2)),
-                                child: const Center(child: Text('âœ“',
+                                child: const Center(child: Text('‘',
                                     style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 8))))),
@@ -992,7 +992,7 @@ class _ContactsTab extends StatelessWidget {
                             Text(c.primary, style: const TextStyle(
                                 color: _kMuted, fontSize: 12)),
                             if (c.isOnXame) ...[
-                              const Text(' Â· ', style: TextStyle(
+                              const Text(' · ', style: TextStyle(
                                   color: _kMuted, fontSize: 12)),
                               const Text('On XamePage', style: TextStyle(
                                   color: _kTeal, fontSize: 12)),
@@ -1010,7 +1010,7 @@ class _ContactsTab extends StatelessWidget {
   }
 }
 
-// â”€â”€ KEYPAD TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— KEYPAD TAB ————————————————————————————————————————————————————————————————
 
 class _KeypadTab extends StatelessWidget {
   final String dial, creditsCurr;
@@ -1052,7 +1052,7 @@ class _KeypadTab extends StatelessWidget {
               Text(country.dial,
                   style: const TextStyle(color: _kMuted, fontSize: 13)),
               const SizedBox(width: 4),
-              const Text('â–¼',
+              const Text('–¼',
                   style: TextStyle(color: _kMuted, fontSize: 10)),
             ]))),
         const SizedBox(height: 8),
@@ -1096,7 +1096,7 @@ class _KeypadTab extends StatelessWidget {
                   horizontal: 20, vertical: 8)),
           onPressed: onBackspace,
           icon: const Icon(Icons.backspace_outlined, size: 16),
-          label: const Text('âŒ«', style: TextStyle(fontSize: 16))),
+          label: const Text('⌫', style: TextStyle(fontSize: 16))),
         const SizedBox(height: 12),
 
         // Call / SMS row
@@ -1109,7 +1109,7 @@ class _KeypadTab extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12))),
             onPressed: onSms,
-            child: const Text('ðŸ’¬ SMS', style: TextStyle(fontSize: 13)))),
+            child: const Text('🔬 SMS', style: TextStyle(fontSize: 13)))),
           const SizedBox(width: 12),
           Expanded(flex: 2, child: ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1118,7 +1118,7 @@ class _KeypadTab extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12))),
             onPressed: onCall,
-            child: const Text('ðŸ“ž Call',
+            child: const Text('🔾 Call',
                 style: TextStyle(color: Colors.black,
                     fontSize: 15, fontWeight: FontWeight.w700)))),
         ]),

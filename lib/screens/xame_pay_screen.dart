@@ -1,18 +1,18 @@
 // lib/screens/xame_pay_screen.dart
-// XamePay â€” go_router-aware wallet for XamePage 2.1  (Build 239+)
+// XamePay — go_router-aware wallet for XamePage 2.1  (Build 239+)
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-// â”€â”€ COLOURS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— COLOURS ———————————————————————————————————————————————————————————————————
 const _kTeal  = Color(0xFF00B0A0);
 const _kBg    = Color(0xFF0D1520);
 const _kCard  = Color(0xFF111E2E);
 const _kMuted = Color(0xFF7A9BB5);
 
-// â”€â”€ MODELS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— MODELS ————————————————————————————————————————————————————————————————————
 
 class WalletTx {
   final String id, label, icon, type, status, ts;
@@ -20,7 +20,7 @@ class WalletTx {
   WalletTx.fromJson(Map<String, dynamic> j)
       : id     = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
         label  = j['label']  ?? '',
-        icon   = j['icon']   ?? 'ðŸ’³',
+        icon   = j['icon']   ?? '🔳',
         type   = j['type']   ?? 'debit',
         status = j['status'] ?? 'Completed',
         ts     = j['ts']     ?? DateTime.now().toIso8601String(),
@@ -34,7 +34,7 @@ class BankItem {
       : name = j['name'] ?? '', code = j['code'] ?? '';
 }
 
-// â”€â”€ REGION INFO â€” symbol + networks ONLY; bank names always from server â”€â”€â”€â”€â”€â”€â”€
+// —— REGION INFO — symbol + networks ONLY; bank names always from server ———————
 class RegionInfo {
   final String currency, country, countryCode, symbol;
   final List<List<String>> networks; // [id, label, emoji]
@@ -43,45 +43,45 @@ class RegionInfo {
 }
 
 const _kRegions = <RegionInfo>[
-  RegionInfo('NGN','Nigeria','NG','â‚¦',         [['MTN-NG','MTN','ðŸŸ¡'],['AIRTEL-NG','Airtel','ðŸ”´'],['GLO-NG','Glo','ðŸŸ¢'],['9MOBILE-NG','9mobile','ðŸ’š']]),
-  RegionInfo('GHS','Ghana','GH','GHâ‚µ',         [['MTN-GH','MTN','ðŸŸ¡'],['VODAFONE-GH','Vodafone','ðŸ”´'],['AIRTELTIGO-GH','AirtelTigo','ðŸŸ ']]),
-  RegionInfo('KES','Kenya','KE','KSh',         [['SAFARICOM-KE','Safaricom','ðŸŸ¢'],['AIRTEL-KE','Airtel','ðŸ”´'],['TELKOM-KE','Telkom','ðŸ”µ']]),
-  RegionInfo('ZAR','South Africa','ZA','R',    [['VODACOM-ZA','Vodacom','ðŸ”´'],['MTN-ZA','MTN','ðŸŸ¡'],['CELL-ZA','Cell C','âš«'],['TELKOM-ZA','Telkom','ðŸ”µ']]),
-  RegionInfo('USD','United States','US','\$',  [['ATT-US','AT&T','ðŸ”µ'],['TMOBILE-US','T-Mobile','ðŸ©·'],['VERIZON-US','Verizon','ðŸ”´'],['CRICKET-US','Cricket','ðŸŸ¢']]),
-  RegionInfo('GBP','United Kingdom','GB','Â£',  [['EE-UK','EE','ðŸŸ¢'],['O2-UK','O2','ðŸ”µ'],['VODAFONE-UK','Vodafone','ðŸ”´'],['THREE-UK','Three','âš«']]),
-  RegionInfo('EUR','Europe','DE','â‚¬',          [['VODAFONE-EU','Vodafone','ðŸ”´'],['ORANGE-EU','Orange','ðŸŸ '],['TMOBILE-EU','T-Mobile','ðŸ©·'],['O2-EU','O2','ðŸ”µ']]),
-  RegionInfo('INR','India','IN','â‚¹',           [['JIO-IN','Jio','ðŸ”µ'],['AIRTEL-IN','Airtel','ðŸ”´'],['VI-IN','Vi','ðŸŸ£'],['BSNL-IN','BSNL','ðŸŸ ']]),
-  RegionInfo('AED','UAE','AE','Ø¯.Ø¥',           [['ETISALAT-AE','e&','ðŸŸ¢'],['DU-AE','du','ðŸŸ£']]),
-  RegionInfo('CAD','Canada','CA','CA\$',       [['ROGERS-CA','Rogers','ðŸ”´'],['BELL-CA','Bell','ðŸ”µ'],['TELUS-CA','Telus','ðŸŸ¢'],['FREEDOM-CA','Freedom','ðŸŸ£']]),
-  RegionInfo('AUD','Australia','AU','A\$',     [['TELSTRA-AU','Telstra','ðŸ”µ'],['OPTUS-AU','Optus','ðŸŸ¡'],['VODAFONE-AU','Vodafone','ðŸ”´'],['TPG-AU','TPG','âš«']]),
-  RegionInfo('JPY','Japan','JP','Â¥',           [['DOCOMO-JP','NTT Docomo','ðŸ”´'],['SOFTBANK-JP','SoftBank','âš«'],['AU-JP','au','ðŸŸ '],['RAKUTEN-JP','Rakuten','ðŸ©·']]),
-  RegionInfo('SGD','Singapore','SG','S\$',     [['SINGTEL-SG','Singtel','ðŸ”´'],['STARHUB-SG','StarHub','ðŸŸ¢'],['M1-SG','M1','ðŸ”µ'],['TPG-SG','TPG','ðŸŸ£']]),
-  RegionInfo('EGP','Egypt','EG','EÂ£',          [['ORANGE-EG','Orange','ðŸŸ '],['VODAFONE-EG','Vodafone','ðŸ”´'],['ETISALAT-EG','Etisalat','ðŸŸ¢'],['WE-EG','WE','ðŸ”µ']]),
-  RegionInfo('SAR','Saudi Arabia','SA','Ø±.Ø³',  [['STC-SA','STC','ðŸŸ£'],['MOBILY-SA','Mobily','ðŸŸ¢'],['ZAIN-SA','Zain','ðŸ”µ']]),
-  RegionInfo('TRY','Turkey','TR','â‚º',          [['TURKCELL-TR','Turkcell','ðŸ”µ'],['VODAFONE-TR','Vodafone TR','ðŸ”´'],['TURKTELEKOM-TR','Turk Telekom','ðŸŸ ']]),
-  RegionInfo('MXN','Mexico','MX','MX\$',       [['TELCEL-MX','Telcel','ðŸ”µ'],['MOVISTAR-MX','Movistar','ðŸŸ¢'],['ATT-MX','AT&T Mexico','ðŸ”µ']]),
-  RegionInfo('IDR','Indonesia','ID','Rp',      [['TELKOMSEL-ID','Telkomsel','ðŸ”´'],['INDOSAT-ID','Indosat','ðŸŸ¡'],['XL-ID','XL Axiata','ðŸ”µ']]),
-  RegionInfo('PHP','Philippines','PH','â‚±',     [['GLOBE-PH','Globe','ðŸ”µ'],['SMART-PH','Smart','ðŸŸ¢'],['DITO-PH','DITO','ðŸŸ ']]),
-  RegionInfo('MYR','Malaysia','MY','RM',       [['MAXIS-MY','Maxis','ðŸ”µ'],['CELCOM-MY','Celcom','ðŸŸ¡'],['DIGI-MY','Digi','ðŸŸ¡'],['UMOBILE-MY','U Mobile','ðŸŸ¢']]),
-  RegionInfo('BRL','Brazil','BR','R\$',        [['VIVO-BR','Vivo','ðŸŸ£'],['CLARO-BR','Claro','ðŸ”´'],['TIM-BR','TIM','ðŸ”µ']]),
-  RegionInfo('ZMW','Zambia','ZM','ZK',         [['MTN-ZM','MTN','ðŸŸ¡'],['AIRTEL-ZM','Airtel','ðŸ”´'],['ZAMTEL-ZM','Zamtel','ðŸŸ¢']]),
-  RegionInfo('UGX','Uganda','UG','USh',        [['MTN-UG','MTN','ðŸŸ¡'],['AIRTEL-UG','Airtel','ðŸ”´'],['AFRICELL-UG','Africell','ðŸ”µ']]),
-  RegionInfo('TZS','Tanzania','TZ','TSh',      [['VODACOM-TZ','Vodacom','ðŸ”´'],['AIRTEL-TZ','Airtel','ðŸŸ '],['TIGO-TZ','Tigo','ðŸ”µ']]),
-  RegionInfo('RWF','Rwanda','RW','Fr',         [['MTN-RW','MTN','ðŸŸ¡'],['AIRTEL-RW','Airtel','ðŸ”´']]),
-  RegionInfo('XOF','West Africa (CFA)','SN','CFA',[['ORANGE-WA','Orange','ðŸŸ '],['MTN-WA','MTN','ðŸŸ¡'],['MOOV-WA','Moov','ðŸ”µ']]),
-  RegionInfo('CMR','Cameroon','CM','FCFA',     [['MTN-CM','MTN','ðŸŸ¡'],['ORANGE-CM','Orange','ðŸŸ ']]),
-  RegionInfo('QAR','Qatar','QA','QR',          [['OOREDOO-QA','Ooredoo','ðŸ”´'],['VODAFONE-QA','Vodafone QA','ðŸ”´']]),
-  RegionInfo('VND','Vietnam','VN','â‚«',         [['VIETTEL-VN','Viettel','ðŸ”´'],['VINAPHONE-VN','Vinaphone','ðŸ”µ'],['MOBIFONE-VN','Mobifone','ðŸŸ¢']]),
-  RegionInfo('THB','Thailand','TH','à¸¿',        [['AIS-TH','AIS','ðŸŸ¢'],['DTAC-TH','DTAC','ðŸ”µ'],['TRUE-TH','True Move','ðŸ”´']]),
-  RegionInfo('PKR','Pakistan','PK','â‚¨',        [['JAZZ-PK','Jazz','ðŸŸ '],['TELENOR-PK','Telenor','ðŸ”µ'],['ZONG-PK','Zong','ðŸ”´'],['UFONE-PK','Ufone','ðŸŸ¢']]),
-  RegionInfo('MAD','Morocco','MA','MAD',       [['MAROCTELECOM-MA','Maroc Telecom','ðŸŸ¢'],['ORANGE-MA','Orange','ðŸŸ '],['INWI-MA','Inwi','ðŸ”µ']]),
-  RegionInfo('ETB','Ethiopia','ET','Br',       [['ETHIOTELECOM-ET','Ethio Telecom','ðŸŸ¢'],['SAFARICOM-ET','Safaricom ET','ðŸ”µ']]),
-  RegionInfo('ZWL','Zimbabwe','ZW','Z\$',      [['ECONET-ZW','Econet','ðŸ”µ'],['NETONE-ZW','NetOne','ðŸŸ¢'],['TELECEL-ZW','Telecel','ðŸ”´']]),
-  RegionInfo('COP','Colombia','CO','COL\$',    [['CLARO-CO','Claro','ðŸ”´'],['MOVISTAR-CO','Movistar','ðŸŸ¢'],['TIGO-CO','Tigo','ðŸ”µ']]),
-  RegionInfo('ARS','Argentina','AR','AR\$',    [['CLARO-AR','Claro','ðŸ”´'],['PERSONAL-AR','Personal','ðŸ”µ'],['MOVISTAR-AR','Movistar','ðŸŸ¢']]),
+  RegionInfo('NGN','Nigeria','NG','₦',         [['MTN-NG','MTN','🟡'],['AIRTEL-NG','Airtel','🔴'],['GLO-NG','Glo','🟢'],['9MOBILE-NG','9mobile','💚']]),
+  RegionInfo('GHS','Ghana','GH','GH₵',         [['MTN-GH','MTN','🟡'],['VODAFONE-GH','Vodafone','🔴'],['AIRTELTIGO-GH','AirtelTigo','🟠']]),
+  RegionInfo('KES','Kenya','KE','KSh',         [['SAFARICOM-KE','Safaricom','🟢'],['AIRTEL-KE','Airtel','🔴'],['TELKOM-KE','Telkom','🔵']]),
+  RegionInfo('ZAR','South Africa','ZA','R',    [['VODACOM-ZA','Vodacom','🔴'],['MTN-ZA','MTN','🟡'],['CELL-ZA','Cell C','⚫'],['TELKOM-ZA','Telkom','🔵']]),
+  RegionInfo('USD','United States','US','\$',  [['ATT-US','AT&T','🔵'],['TMOBILE-US','T-Mobile','💷'],['VERIZON-US','Verizon','🔴'],['CRICKET-US','Cricket','🟢']]),
+  RegionInfo('GBP','United Kingdom','GB','£',  [['EE-UK','EE','🟢'],['O2-UK','O2','🔵'],['VODAFONE-UK','Vodafone','🔴'],['THREE-UK','Three','⚫']]),
+  RegionInfo('EUR','Europe','DE','€',          [['VODAFONE-EU','Vodafone','🔴'],['ORANGE-EU','Orange','🟠'],['TMOBILE-EU','T-Mobile','💷'],['O2-EU','O2','🔵']]),
+  RegionInfo('INR','India','IN','₹',           [['JIO-IN','Jio','🔵'],['AIRTEL-IN','Airtel','🔴'],['VI-IN','Vi','🟣'],['BSNL-IN','BSNL','🟠']]),
+  RegionInfo('AED','UAE','AE','Ø¯.Ø¥',           [['ETISALAT-AE','e&','🟢'],['DU-AE','du','🟣']]),
+  RegionInfo('CAD','Canada','CA','CA\$',       [['ROGERS-CA','Rogers','🔴'],['BELL-CA','Bell','🔵'],['TELUS-CA','Telus','🟢'],['FREEDOM-CA','Freedom','🟣']]),
+  RegionInfo('AUD','Australia','AU','A\$',     [['TELSTRA-AU','Telstra','🔵'],['OPTUS-AU','Optus','🟡'],['VODAFONE-AU','Vodafone','🔴'],['TPG-AU','TPG','⚫']]),
+  RegionInfo('JPY','Japan','JP','¥',           [['DOCOMO-JP','NTT Docomo','🔴'],['SOFTBANK-JP','SoftBank','⚫'],['AU-JP','au','🟠'],['RAKUTEN-JP','Rakuten','💷']]),
+  RegionInfo('SGD','Singapore','SG','S\$',     [['SINGTEL-SG','Singtel','🔴'],['STARHUB-SG','StarHub','🟢'],['M1-SG','M1','🔵'],['TPG-SG','TPG','🟣']]),
+  RegionInfo('EGP','Egypt','EG','E£',          [['ORANGE-EG','Orange','🟠'],['VODAFONE-EG','Vodafone','🔴'],['ETISALAT-EG','Etisalat','🟢'],['WE-EG','WE','🔵']]),
+  RegionInfo('SAR','Saudi Arabia','SA','Ø±.Ø³',  [['STC-SA','STC','🟣'],['MOBILY-SA','Mobily','🟢'],['ZAIN-SA','Zain','🔵']]),
+  RegionInfo('TRY','Turkey','TR','₺',          [['TURKCELL-TR','Turkcell','🔵'],['VODAFONE-TR','Vodafone TR','🔴'],['TURKTELEKOM-TR','Turk Telekom','🟠']]),
+  RegionInfo('MXN','Mexico','MX','MX\$',       [['TELCEL-MX','Telcel','🔵'],['MOVISTAR-MX','Movistar','🟢'],['ATT-MX','AT&T Mexico','🔵']]),
+  RegionInfo('IDR','Indonesia','ID','Rp',      [['TELKOMSEL-ID','Telkomsel','🔴'],['INDOSAT-ID','Indosat','🟡'],['XL-ID','XL Axiata','🔵']]),
+  RegionInfo('PHP','Philippines','PH','₱',     [['GLOBE-PH','Globe','🔵'],['SMART-PH','Smart','🟢'],['DITO-PH','DITO','🟠']]),
+  RegionInfo('MYR','Malaysia','MY','RM',       [['MAXIS-MY','Maxis','🔵'],['CELCOM-MY','Celcom','🟡'],['DIGI-MY','Digi','🟡'],['UMOBILE-MY','U Mobile','🟢']]),
+  RegionInfo('BRL','Brazil','BR','R\$',        [['VIVO-BR','Vivo','🟣'],['CLARO-BR','Claro','🔴'],['TIM-BR','TIM','🔵']]),
+  RegionInfo('ZMW','Zambia','ZM','ZK',         [['MTN-ZM','MTN','🟡'],['AIRTEL-ZM','Airtel','🔴'],['ZAMTEL-ZM','Zamtel','🟢']]),
+  RegionInfo('UGX','Uganda','UG','USh',        [['MTN-UG','MTN','🟡'],['AIRTEL-UG','Airtel','🔴'],['AFRICELL-UG','Africell','🔵']]),
+  RegionInfo('TZS','Tanzania','TZ','TSh',      [['VODACOM-TZ','Vodacom','🔴'],['AIRTEL-TZ','Airtel','🟠'],['TIGO-TZ','Tigo','🔵']]),
+  RegionInfo('RWF','Rwanda','RW','Fr',         [['MTN-RW','MTN','🟡'],['AIRTEL-RW','Airtel','🔴']]),
+  RegionInfo('XOF','West Africa (CFA)','SN','CFA',[['ORANGE-WA','Orange','🟠'],['MTN-WA','MTN','🟡'],['MOOV-WA','Moov','🔵']]),
+  RegionInfo('CMR','Cameroon','CM','FCFA',     [['MTN-CM','MTN','🟡'],['ORANGE-CM','Orange','🟠']]),
+  RegionInfo('QAR','Qatar','QA','QR',          [['OOREDOO-QA','Ooredoo','🔴'],['VODAFONE-QA','Vodafone QA','🔴']]),
+  RegionInfo('VND','Vietnam','VN','₫',         [['VIETTEL-VN','Viettel','🔴'],['VINAPHONE-VN','Vinaphone','🔵'],['MOBIFONE-VN','Mobifone','🟢']]),
+  RegionInfo('THB','Thailand','TH','฿',        [['AIS-TH','AIS','🟢'],['DTAC-TH','DTAC','🔵'],['TRUE-TH','True Move','🔴']]),
+  RegionInfo('PKR','Pakistan','PK','₨',        [['JAZZ-PK','Jazz','🟠'],['TELENOR-PK','Telenor','🔵'],['ZONG-PK','Zong','🔴'],['UFONE-PK','Ufone','🟢']]),
+  RegionInfo('MAD','Morocco','MA','MAD',       [['MAROCTELECOM-MA','Maroc Telecom','🟢'],['ORANGE-MA','Orange','🟠'],['INWI-MA','Inwi','🔵']]),
+  RegionInfo('ETB','Ethiopia','ET','Br',       [['ETHIOTELECOM-ET','Ethio Telecom','🟢'],['SAFARICOM-ET','Safaricom ET','🔵']]),
+  RegionInfo('ZWL','Zimbabwe','ZW','Z\$',      [['ECONET-ZW','Econet','🔵'],['NETONE-ZW','NetOne','🟢'],['TELECEL-ZW','Telecel','🔴']]),
+  RegionInfo('COP','Colombia','CO','COL\$',    [['CLARO-CO','Claro','🔴'],['MOVISTAR-CO','Movistar','🟢'],['TIGO-CO','Tigo','🔵']]),
+  RegionInfo('ARS','Argentina','AR','AR\$',    [['CLARO-AR','Claro','🔴'],['PERSONAL-AR','Personal','🔵'],['MOVISTAR-AR','Movistar','🟢']]),
 ];
 
-// currency â†’ Flutterwave country code
+// currency ↑ Flutterwave country code
 const _kCurrToCC = {
   'NGN':'NG','GHS':'GH','KES':'KE','ZAR':'ZA','TZS':'TZ','UGX':'UG',
   'ZMW':'ZM','RWF':'RW','ETB':'ET','USD':'US','GBP':'GB','EUR':'DE',
@@ -95,7 +95,7 @@ RegionInfo _region(String c) =>
     _kRegions.firstWhere((r) => r.currency == c,
         orElse: () => _kRegions.first);
 
-// â”€â”€ CURRENCY CONVERTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— CURRENCY CONVERTER ————————————————————————————————————————————————————————
 
 class _FxService {
   static Map<String, double> _r = {};
@@ -136,12 +136,12 @@ class _FxService {
   }
 }
 
-// â”€â”€ SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— SCREEN ————————————————————————————————————————————————————————————————————
 
 class XamePayScreen extends StatefulWidget {
   final String userId, serverUrl;
   // Provided by router.dart as: onBack: () => context.go('/contacts')
-  // This is the ONLY back mechanism â€” no Navigator.pop anywhere.
+  // This is the ONLY back mechanism — no Navigator.pop anywhere.
   final VoidCallback? onBack;
 
   const XamePayScreen({
@@ -226,7 +226,7 @@ class _XamePayScreenState extends State<XamePayScreen>
     if (widget.onBack != null) {
       widget.onBack!(); // e.g. context.go('/contacts') from router.dart
     }
-    // If no onBack provided (e.g. opened in a test), do nothing â€”
+    // If no onBack provided (e.g. opened in a test), do nothing —
     // go_router controls the stack, not us.
   }
 
@@ -250,7 +250,7 @@ class _XamePayScreenState extends State<XamePayScreen>
     if (_dispCurrency == _currency) return '';
     final v = _FxService.convert(_balance, _currency, _dispCurrency);
     if (v == null) return '';
-    return 'â‰ˆ ${_region(_dispCurrency).symbol}${_fmtN(v)} $_dispCurrency';
+    return '≈ ${_region(_dispCurrency).symbol}${_fmtN(v)} $_dispCurrency';
   }
 
   void _snack(String m) {
@@ -259,12 +259,12 @@ class _XamePayScreenState extends State<XamePayScreen>
         SnackBar(content: Text(m), behavior: SnackBarBehavior.floating));
   }
 
-  // â”€â”€ BUILD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— BUILD —————————————————————————————————————————————————————————————————
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      // Intercept Android hardware back â€” route through _goBack().
+      // Intercept Android hardware back — route through _goBack().
       canPop: false,
       onPopInvoked: (_) => _goBack(),
       child: Scaffold(
@@ -277,7 +277,7 @@ class _XamePayScreenState extends State<XamePayScreen>
             onPressed: _goBack,
           ),
           title: const Row(mainAxisSize: MainAxisSize.min, children: [
-            Text('ðŸ’³', style: TextStyle(fontSize: 18)),
+            Text('🔳', style: TextStyle(fontSize: 18)),
             SizedBox(width: 6),
             Text('XamePay',
                 style: TextStyle(color: Colors.white,
@@ -325,7 +325,7 @@ class _XamePayScreenState extends State<XamePayScreen>
     );
   }
 
-  // â”€â”€ BALANCE CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— BALANCE CARD ——————————————————————————————————————————————————————————
 
   Widget _balanceCard() {
     final conv = _convLine();
@@ -352,15 +352,15 @@ class _XamePayScreenState extends State<XamePayScreen>
             child: Text(conv,
                 style: const TextStyle(
                     color: Color(0xB3FFFFFF), fontSize: 13))),
-        Text('XamePay â€¢ $_currency',
+        Text('XamePay • $_currency',
             style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 12)),
         const SizedBox(height: 20),
         Row(children: [
           _cBtn('+ Add Money', () => _showAddMoney()),
           const SizedBox(width: 8),
-          _cBtn('â†— Send',     () => _tab.animateTo(3)),
+          _cBtn('↗ Send',     () => _tab.animateTo(3)),
           const SizedBox(width: 8),
-          _cBtn('ðŸ“Š History', () => _tab.animateTo(4)),
+          _cBtn('🔠 History', () => _tab.animateTo(4)),
         ]),
       ]),
     );
@@ -385,7 +385,7 @@ class _XamePayScreenState extends State<XamePayScreen>
     ),
   );
 
-  // â”€â”€ TAB BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— TAB BAR ———————————————————————————————————————————————————————————————
 
   Widget _tabBar() => Container(
     color: _kCard,
@@ -398,23 +398,23 @@ class _XamePayScreenState extends State<XamePayScreen>
       unselectedLabelColor: _kMuted,
       labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
       tabs: const [
-        Tab(text: 'ðŸ“± Airtime'),
-        Tab(text: 'ðŸ“¶ Data'),
-        Tab(text: 'ðŸ§¾ Bills'),
-        Tab(text: 'ðŸ’¸ Send'),
-        Tab(text: 'ðŸ“Š History'),
+        Tab(text: '🔱 Airtime'),
+        Tab(text: '🔶 Data'),
+        Tab(text: '🧾 Bills'),
+        Tab(text: '🔸 Send'),
+        Tab(text: '🔠 History'),
       ],
     ),
   );
 
-  // â”€â”€ ADD MONEY SHEET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— ADD MONEY SHEET ———————————————————————————————————————————————————————
 
   void _showAddMoney() {
     final methods = [
-      ['ðŸ’³', 'Debit / Credit Card',   'Instant â€¢ Visa, Mastercard, Verve'],
-      ['ðŸ¦', 'Bank Transfer',          'Instant â€¢ Virtual account'],
-      ['ðŸ“Ÿ', 'USSD',                   'No internet needed'],
-      ['ðŸ“¥', 'Receive from Contact',   'From another XamePage user'],
+      ['🔳', 'Debit / Credit Card',   'Instant • Visa, Mastercard, Verve'],
+      ['🦁', 'Bank Transfer',          'Instant • Virtual account'],
+      ['🔸', 'USSD',                   'No internet needed'],
+      ['🔥', 'Receive from Contact',   'From another XamePage user'],
     ];
     showModalBottomSheet(
       context: context,
@@ -427,7 +427,7 @@ class _XamePayScreenState extends State<XamePayScreen>
           controller: sc,
           padding: const EdgeInsets.all(24),
           children: [
-            const Text('ðŸ’³ Add Money',
+            const Text('🔳 Add Money',
                 style: TextStyle(color: Colors.white,
                     fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 20),
@@ -462,7 +462,7 @@ class _XamePayScreenState extends State<XamePayScreen>
     );
   }
 
-  // â”€â”€ SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // —— SETTINGS ——————————————————————————————————————————————————————————————
 
   void _showSettings() {
     String tc = _currency, td = _dispCurrency;
@@ -480,7 +480,7 @@ class _XamePayScreenState extends State<XamePayScreen>
             padding: const EdgeInsets.all(24),
             children: [
               Row(children: [
-                const Expanded(child: Text('âš™ï¸ Wallet Settings',
+                const Expanded(child: Text('™️ Wallet Settings',
                     style: TextStyle(color: Colors.white,
                         fontSize: 17, fontWeight: FontWeight.w700))),
                 IconButton(
@@ -488,7 +488,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                     onPressed: () => Navigator.pop(ctx)),
               ]),
               const SizedBox(height: 16),
-              _sLabel('ðŸŒ Region & Currency'),
+              _sLabel('🌀 Region & Currency'),
               const SizedBox(height: 8),
               _sDrop<String>(
                 value: tc,
@@ -500,7 +500,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                 onChange: (v) { if (v != null) ss(() => tc = v); },
               ),
               const SizedBox(height: 20),
-              _sLabel('ðŸ’± Display Balance In'),
+              _sLabel('🔱 Display Balance In'),
               const SizedBox(height: 4),
               const Text(
                 'Shows your balance converted to another currency '
@@ -511,7 +511,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                 value: td,
                 items: _kRegions.map((r) => DropdownMenuItem(
                   value: r.currency,
-                  child: Text('${r.symbol} ${r.currency} â€” ${r.country}',
+                  child: Text('${r.symbol} ${r.currency} — ${r.country}',
                       style: const TextStyle(
                           color: Colors.white, fontSize: 14)))).toList(),
                 onChange: (v) { if (v != null) ss(() => td = v); },
@@ -532,8 +532,8 @@ class _XamePayScreenState extends State<XamePayScreen>
                       ),
                       child: Text(
                         rv != null
-                            ? '1 $tc â‰ˆ ${dr.symbol}${rv.toStringAsFixed(4)} $td'
-                            : 'Fetching live rateâ€¦',
+                            ? '1 $tc ≈ ${dr.symbol}${rv.toStringAsFixed(4)} $td'
+                            : 'Fetching live rate…',
                         style: const TextStyle(color: _kTeal, fontSize: 13)),
                     );
                   },
@@ -563,7 +563,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                   await _FxService.load(_currency);
                   if (mounted) {
                     Navigator.pop(ctx);
-                    _snack('âœ… Settings saved');
+                    _snack('… Settings saved');
                   }
                 },
                 child: const Text('Save Settings',
@@ -607,7 +607,7 @@ class _XamePayScreenState extends State<XamePayScreen>
       );
 }
 
-// â”€â”€ SEND TAB â€” banks exclusively from Flutterwave API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— SEND TAB — banks exclusively from Flutterwave API ————————————————————————
 
 class _SendTab extends StatefulWidget {
   final RegionInfo region;
@@ -663,7 +663,7 @@ class _SendTabState extends State<_SendTab> {
         return;
       }
     } catch (_) {}
-    // API failed â€” show retry, never show hardcoded names
+    // API failed — show retry, never show hardcoded names
     setState(() { _loadingBanks = false; _bankError = true; });
   }
 
@@ -677,7 +677,7 @@ class _SendTabState extends State<_SendTab> {
 
   Future<void> _resolve() async {
     if (_accNum.length < 10 || _selBank == null) return;
-    setState(() { _resolving = true; _resolved = 'Verifyingâ€¦'; });
+    setState(() { _resolving = true; _resolved = 'Verifying…'; });
     try {
       final r = await http.post(
         Uri.parse('${widget.serverUrl}/api/wallet/resolve'),
@@ -692,14 +692,14 @@ class _SendTabState extends State<_SendTab> {
       setState(() {
         _resolving = false;
         if (d['success'] == true) {
-          _resolved = 'âœ… ${d['account_name']}';
+          _resolved = '… ${d['account_name']}';
           _accName  = d['account_name'] ?? '';
         } else {
-          _resolved = 'âš ï¸ Could not verify â€” proceed with caution';
+          _resolved = ' ️ Could not verify — proceed with caution';
         }
       });
     } catch (_) {
-      setState(() { _resolving = false; _resolved = 'âš ï¸ Verification unavailable'; });
+      setState(() { _resolving = false; _resolved = ' ️ Verification unavailable'; });
     }
   }
 
@@ -708,7 +708,7 @@ class _SendTabState extends State<_SendTab> {
     if (_accNum.length < 6)        { widget.snack('Enter account number'); return; }
     if (_amount < 1)               { widget.snack('Enter a valid amount'); return; }
     if (_amount > widget.balance)  { widget.snack('Insufficient balance'); return; }
-    widget.snack('Processing transferâ€¦');
+    widget.snack('Processing transfer…');
     try {
       final r = await http.post(
         Uri.parse('${widget.serverUrl}/api/wallet/send-bank'),
@@ -726,18 +726,18 @@ class _SendTabState extends State<_SendTab> {
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess();
-        widget.snack('âœ… Transfer successful!');
+        widget.snack('… Transfer successful!');
       } else {
-        widget.snack('âŒ ${d['message'] ?? 'Transfer failed'}');
+        widget.snack('⌨ ${d['message'] ?? 'Transfer failed'}');
       }
-    } catch (_) { widget.snack('âŒ Network error'); }
+    } catch (_) { widget.snack('⌨ Network error'); }
   }
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('ðŸ’¸ Send Money',
+      const Text('🔸 Send Money',
           style: TextStyle(color: Colors.white,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 4),
@@ -764,7 +764,7 @@ class _SendTabState extends State<_SendTab> {
         ),
       ] else ...[
 
-        // â”€â”€ Bank search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // —— Bank search ——————————————————————————————————————————————————
         const Text('Select Bank',
             style: TextStyle(color: _kMuted,
                 fontSize: 13, fontWeight: FontWeight.w600)),
@@ -791,7 +791,7 @@ class _SendTabState extends State<_SendTab> {
             ]),
           ),
         ] else ...[
-          _xf(_srchCtrl, 'ðŸ” Search bank or microfinanceâ€¦',
+          _xf(_srchCtrl, '🔝 Search bank or microfinance…',
               TextInputType.text, (v) {
             _filter(v);
             if (_selBank != null) setState(() { _selBank = null; });
@@ -799,7 +799,7 @@ class _SendTabState extends State<_SendTab> {
 
           if (_selBank != null) ...[
             const SizedBox(height: 8),
-            _chip('âœ… ${_selBank!.name}'),
+            _chip('… ${_selBank!.name}'),
           ] else if (_loadingBanks) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
@@ -863,7 +863,7 @@ class _SendTabState extends State<_SendTab> {
         if (_resolving)
           const Padding(
             padding: EdgeInsets.only(bottom: 8),
-            child: Text('Verifyingâ€¦',
+            child: Text('Verifying…',
                 style: TextStyle(color: _kMuted, fontSize: 12))),
         if (!_resolving && _resolved.isNotEmpty)
           Container(
@@ -874,7 +874,7 @@ class _SendTabState extends State<_SendTab> {
                 border: Border.all(color: Colors.white10)),
             child: Text(_resolved,
                 style: TextStyle(
-                    color: _resolved.startsWith('âœ…')
+                    color: _resolved.startsWith('…')
                         ? _kTeal
                         : const Color(0xFFF0A500),
                     fontSize: 13)),
@@ -944,7 +944,7 @@ class _SendTabState extends State<_SendTab> {
   );
 }
 
-// â”€â”€ AIRTIME TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— AIRTIME TAB ———————————————————————————————————————————————————————————————
 
 class _AirtimeTab extends StatefulWidget {
   final RegionInfo region; final double balance;
@@ -970,7 +970,7 @@ class _AirtimeTabState extends State<_AirtimeTab> {
     final a = double.tryParse(_amt) ?? 0;
     if (a < 1)                 { widget.snack('Enter amount'); return; }
     if (a > widget.balance)    { widget.snack('Insufficient balance'); return; }
-    widget.snack('Processingâ€¦');
+    widget.snack('Processing…');
     try {
       final r = await http.post(
           Uri.parse('${widget.serverUrl}/api/wallet/airtime'),
@@ -980,16 +980,16 @@ class _AirtimeTabState extends State<_AirtimeTab> {
           .timeout(const Duration(seconds: 15));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
-        await widget.onSuccess(); widget.snack('âœ… Airtime sent!');
-      } else { widget.snack('âŒ ${d['message'] ?? 'Failed'}'); }
-    } catch (_) { widget.snack('âŒ Network error'); }
+        await widget.onSuccess(); widget.snack('… Airtime sent!');
+      } else { widget.snack('⌨ ${d['message'] ?? 'Failed'}'); }
+    } catch (_) { widget.snack('⌨ Network error'); }
   }
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('ðŸ“± Buy Airtime',
+      const Text('🔱 Buy Airtime',
           style: TextStyle(color: Colors.white,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 20),
@@ -1074,7 +1074,7 @@ class _AirtimeTabState extends State<_AirtimeTab> {
   );
 }
 
-// â”€â”€ DATA TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— DATA TAB ——————————————————————————————————————————————————————————————————
 
 class _DataTab extends StatefulWidget {
   final RegionInfo region; final double balance;
@@ -1098,7 +1098,7 @@ class _DataTabState extends State<_DataTab> {
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('ðŸ“¶ Buy Data',
+      const Text('🔶 Buy Data',
           style: TextStyle(color: Colors.white,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 20),
@@ -1144,7 +1144,7 @@ class _DataTabState extends State<_DataTab> {
   );
 }
 
-// â”€â”€ BILLS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— BILLS TAB —————————————————————————————————————————————————————————————————
 
 class _BillsTab extends StatelessWidget {
   final RegionInfo region; final double balance;
@@ -1158,18 +1158,18 @@ class _BillsTab extends StatelessWidget {
 
   // Bill categories fetched from server per region
   static const _skeletonBills = [
-    ['electricity', 'Electricity', 'ðŸ’¡'],
-    ['cable',       'Cable TV',    'ðŸ“º'],
-    ['internet',    'Internet',    'ðŸŒ'],
-    ['water',       'Water',       'ðŸ’§'],
-    ['gas',         'Gas',         'ðŸ”¥'],
+    ['electricity', 'Electricity', '🔡'],
+    ['cable',       'Cable TV',    '🔺'],
+    ['internet',    'Internet',    '🌀'],
+    ['water',       'Water',       '🔧'],
+    ['gas',         'Gas',         '🔥'],
   ];
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('ðŸ§¾ Pay Bills',
+      const Text('🧾 Pay Bills',
           style: TextStyle(color: Colors.white,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 20),
@@ -1244,7 +1244,7 @@ class _BillsTab extends StatelessWidget {
                   if (a < 1)       { snack('Enter amount'); return; }
                   Navigator.pop(ctx);
                   try {
-                    snack('Processing paymentâ€¦');
+                    snack('Processing payment…');
                     final r = await http.post(
                         Uri.parse('$serverUrl/api/wallet/bills/pay'),
                         headers: {'Content-Type': 'application/json'},
@@ -1259,11 +1259,11 @@ class _BillsTab extends StatelessWidget {
                         .timeout(const Duration(seconds: 20));
                     final d = jsonDecode(r.body);
                     if (d['success'] == true) {
-                      await onSuccess(); snack('âœ… Bill paid!');
+                      await onSuccess(); snack('… Bill paid!');
                     } else {
-                      snack('âŒ ${d['message'] ?? 'Payment failed'}');
+                      snack('⌨ ${d['message'] ?? 'Payment failed'}');
                     }
-                  } catch (_) { snack('âŒ Network error'); }
+                  } catch (_) { snack('⌨ Network error'); }
                 },
                 child: Text('Pay ${b[1]}',
                     style: const TextStyle(color: Colors.black,
@@ -1277,7 +1277,7 @@ class _BillsTab extends StatelessWidget {
   }
 }
 
-// â”€â”€ HISTORY TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— HISTORY TAB ———————————————————————————————————————————————————————————————
 
 class _HistoryTab extends StatelessWidget {
   final List<WalletTx> txs;
@@ -1289,7 +1289,7 @@ class _HistoryTab extends StatelessWidget {
     if (txs.isEmpty) {
       return const Center(child: Column(mainAxisSize: MainAxisSize.min,
           children: [
-        Text('ðŸ“­', style: TextStyle(fontSize: 48)),
+        Text('🔭', style: TextStyle(fontSize: 48)),
         SizedBox(height: 14),
         Text('No transactions yet',
             style: TextStyle(color: _kMuted,
@@ -1322,7 +1322,7 @@ class _HistoryTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(tx.label, style: const TextStyle(color: Colors.white,
                   fontSize: 14, fontWeight: FontWeight.w600)),
-              Text('${tx.ts.substring(0, 10)} â€¢ ${tx.status}',
+              Text('${tx.ts.substring(0, 10)} • ${tx.status}',
                   style: const TextStyle(color: _kMuted, fontSize: 11)),
             ])),
             Text('${cr ? '+' : '-'}${fmt(tx.amount)}',
@@ -1336,7 +1336,7 @@ class _HistoryTab extends StatelessWidget {
   }
 }
 
-// â”€â”€ SHARED FIELD WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// —— SHARED FIELD WIDGET ———————————————————————————————————————————————————————
 
 Widget _xf(TextEditingController c, String hint, TextInputType kt,
     void Function(String) fn) =>
