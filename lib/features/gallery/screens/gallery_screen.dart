@@ -673,20 +673,23 @@ class _LightboxState extends State<_Lightbox> {
             onPageChanged: (i) => setState(() => _current = i),
             itemBuilder: (_, i) {
               final it = widget.items[i];
-              return InteractiveViewer(
-                boundaryMargin: const EdgeInsets.all(double.infinity),
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: SizedBox.expand(
-                  child: Center(child: CachedNetworkImage(
+              return Center(
+                child: InteractiveViewer(
+                  boundaryMargin: const EdgeInsets.all(double.infinity),
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: CachedNetworkImage(
                     imageUrl:    it.url,
                     fit:         BoxFit.contain,
-                    placeholder: (_, __) => const CircularProgressIndicator(
-                        color: Colors.white38, strokeWidth: 1.5),
+                    width:       MediaQuery.of(context).size.width,
+                    placeholder: (_, __) => const SizedBox(
+                      width: 40, height: 40,
+                      child: CircularProgressIndicator(
+                          color: Colors.white38, strokeWidth: 1.5)),
                     errorWidget: (_, __, ___) => const Icon(
                         Icons.broken_image_outlined,
                         color: Colors.white30, size: 48),
-                  )),
+                  ),
                 ),
               );
             },

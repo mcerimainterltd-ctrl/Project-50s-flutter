@@ -516,6 +516,7 @@ class _ContactTile extends ConsumerWidget {
               profilePic: contact.isProfilePicHidden
                 ? null : contact.profilePic,
               size: 50, isOnline: contact.isOnline,
+              hasNewGallery: contact.hasNewGallery,
             ),
             if (contact.unreadCount > 0)
               Positioned(right: 0, top: 0,
