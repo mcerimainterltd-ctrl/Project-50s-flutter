@@ -1,15 +1,9 @@
+subprojects { afterEvaluate { project -> if (project.hasProperty("android") && project.name == "contacts_service") { project.android { namespace = "com.baseflow.contacts_service" } } } }
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
-    subprojects {
-        afterEvaluate {
-            if (it.hasProperty('android')) {
-                it.android.compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_17
-                    targetCompatibility = JavaVersion.VERSION_17
-                }
                 it.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
                     kotlinOptions { jvmTarget = "17" }
                 }
@@ -19,8 +13,6 @@ allprojects {
 }
 
 rootProject.buildDir = "../build"
-subprojects { project.buildDir = "${rootProject.buildDir}/${project.name}" }
-subprojects { project.evaluationDependsOn(":app") }
 
 buildscript {
     repositories {
@@ -34,32 +26,14 @@ buildscript {
 
 tasks.register("clean", Delete) { delete rootProject.buildDir }
 
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android') && project.name == 'contacts_service') {
-            project.android {
-                namespace = "com.baseflow.contacts_service"
-            }
         }
     }
 }
 
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android') && project.name == 'contacts_service') {
-            project.android {
-                namespace = "com.baseflow.contacts_service"
-            }
         }
     }
 }
 
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android') && project.name == 'contacts_service') {
-            project.android {
-                namespace = "com.baseflow.contacts_service"
-            }
         }
     }
 }
