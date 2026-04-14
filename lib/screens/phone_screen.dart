@@ -180,8 +180,8 @@ class _PhoneScreenState extends State<PhoneScreen>
       for (final c in raw) {
         final name = c.displayName?.trim() ?? 'Unknown';
         if (name.isEmpty) continue;
-        final phones = (c.phones ?? [])
-            .map((p) => p.value?.replaceAll(RegExp(r'\s'), '') ?? '')
+        final phones = c.phones
+            .map((p) => p.number.replaceAll(RegExp(r'\s'), ''))
             .where((p) => p.isNotEmpty)
             .toList();
         if (phones.isEmpty) continue;
