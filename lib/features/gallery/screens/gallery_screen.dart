@@ -99,7 +99,6 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     final self    = ref.read(currentUserProvider);
 
     return Scaffold(backgroundColor: Colors.black,
-      body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverAppBar(
             pinned:           true,
@@ -668,7 +667,6 @@ class _LightboxState extends State<_Lightbox> {
     final item = widget.items[_current];
     return Scaffold(backgroundColor: Colors.black,
       body: GestureDetector(
-        onTap: () => setState(() => _showInfo = !_showInfo),
         child: Stack(children: [
           // Swipeable images
           PageView.builder(
