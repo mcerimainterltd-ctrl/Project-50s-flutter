@@ -1,6 +1,8 @@
 import 'dart:io' as dart_io;
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../gallery/screens/gallery_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -299,13 +301,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
         onPressed: () => context.go('/contacts')),
       title: GestureDetector(
-        onTap: () {/* TODO: contact profile */},
+        onTap: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => GalleryScreen(
+            userId:  widget.userId,
+            isOwner: false,
+          ))),
         child: Row(children: [
-          XameAvatar(
-            name:       contact?.name ?? widget.userId,
-            profilePic: contact?.isProfilePicHidden == true ? null : contact?.profilePic,
-            size:       36,
-            isOnline:   contact?.isOnline ?? false,
+          GestureDetector(
+            onTap: () {
+              final pic = contact?.isProfilePicHidden == true ? null : contact?.profilePic;
+              if (pic == null || pic.isEmpty) return;
+              showDialog(context: context, builder: (_) => Dialog(
+                backgroundColor: Colors.black,
+                insetPadding: EdgeInsets.zero,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: SizedBox.expand(
+                    child: InteractiveViewer(
+                      child: Center(child: CachedNetworkImage(
+                        imageUrl: pic,
+                        fit: BoxFit.contain,
+                      )),
+                    ),
+                  ),
+                ),
+              ));
+            },
+            child: XameAvatar(
+              name:       contact?.name ?? widget.userId,
+              profilePic: contact?.isProfilePicHidden == true ? null : contact?.profilePic,
+              size:       36,
+              isOnline:   contact?.isOnline ?? false,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

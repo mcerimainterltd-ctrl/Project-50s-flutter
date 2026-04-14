@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
@@ -71,6 +72,15 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
+    // Mark gallery as viewed
+    if (!widget.isOwner) _markViewed();
+  }
+
+  Future<void> _markViewed() async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      await dio.post('/api/gallery/${widget.userId}/viewed');
+    } catch (_) {}
   }
 
   @override
@@ -93,7 +103,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios_new, color: theme.text, size: 18),
-              onPressed: () => Navigator.pop(context)),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  context.go('/contacts');
+                }
+              }),
             actions: [
               // View toggle
               IconButton(
@@ -658,12 +674,20 @@ class _LightboxState extends State<_Lightbox> {
             itemBuilder: (_, i) {
               final it = widget.items[i];
               return InteractiveViewer(
-                child: Center(child: CachedNetworkImage(
-                  imageUrl:    it.url,
-                  fit:         BoxFit.contain,
-                  placeholder: (_, __) => const CircularProgressIndicator(
-                      color: Colors.white38, strokeWidth: 1.5),
-                )),
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: SizedBox.expand(
+                  child: Center(child: CachedNetworkImage(
+                    imageUrl:    it.url,
+                    fit:         BoxFit.contain,
+                    placeholder: (_, __) => const CircularProgressIndicator(
+                        color: Colors.white38, strokeWidth: 1.5),
+                    errorWidget: (_, __, ___) => const Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.white30, size: 48),
+                  )),
+                ),
               );
             },
           ),
@@ -684,7 +708,13 @@ class _LightboxState extends State<_Lightbox> {
                 child: Row(children: [
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context)),
+                    onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  context.go('/contacts');
+                }
+              }),
                   const Spacer(),
                   Text('${_current + 1} / ${widget.items.length}',
                     style: const TextStyle(color: Colors.white70, fontSize: 13)),

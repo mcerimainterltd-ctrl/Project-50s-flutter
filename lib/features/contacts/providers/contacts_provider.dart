@@ -14,6 +14,7 @@ class ContactModel {
   final String? profilePic, personalStatusEmoji, personalStatusMessage;
   final bool   isOnline, isProfilePicHidden;
   final int    unreadCount, missedCallsCount, lastInteractionTs;
+  final bool   hasNewGallery;
   final String lastInteractionPreview;
 
   const ContactModel({
@@ -22,6 +23,7 @@ class ContactModel {
     this.isOnline = false, this.isProfilePicHidden = false,
     this.unreadCount = 0, this.missedCallsCount = 0,
     this.lastInteractionTs = 0, this.lastInteractionPreview = '',
+    this.hasNewGallery = false,
   });
 
   factory ContactModel.fromSocketMap(Map<String, dynamic> m,
@@ -38,12 +40,14 @@ class ContactModel {
       lastInteractionPreview: m['lastInteractionPreview'] as String? ?? '',
       personalStatusEmoji:    m['personalStatus']?['emoji']   as String?,
       personalStatusMessage:  m['personalStatus']?['message'] as String?,
+      hasNewGallery:          m['hasNewGallery']            as bool? ?? false,
     );
 
   ContactModel copyWith({
     bool? isOnline, int? unreadCount, int? missedCallsCount,
     String? lastInteractionPreview, int? lastInteractionTs,
     String? name, String? profilePic, bool? isProfilePicHidden,
+    bool? hasNewGallery,
   }) => ContactModel(
     id: id,
     name:                   name                   ?? this.name,
@@ -56,6 +60,7 @@ class ContactModel {
     lastInteractionPreview: lastInteractionPreview ?? this.lastInteractionPreview,
     personalStatusEmoji:    personalStatusEmoji,
     personalStatusMessage:  personalStatusMessage,
+    hasNewGallery:          hasNewGallery          ?? this.hasNewGallery,
   );
 }
 
