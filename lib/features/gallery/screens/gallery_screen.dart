@@ -101,6 +101,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: NestedScrollView(
+      backgroundColor: Colors.black,
+      body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverAppBar(
             pinned:           true,
@@ -192,8 +194,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                 view:     _view,
                 onDelete: (id) => _delete(id, self?.xameId ?? ''),
                 onTap:    (item) => _openLightbox(context, item, items),
-              ),
-            ],
+        ),
+      );
       ),
     );
       ),
@@ -664,7 +666,7 @@ class _LightboxState extends State<_Lightbox> {
     super.dispose();
   }
 
-  @override
+    return Scaffold(backgroundColor: Colors.black,
   Widget build(BuildContext context) {
     return Scaffold(backgroundColor: Colors.black,
 
