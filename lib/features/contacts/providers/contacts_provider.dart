@@ -226,14 +226,14 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     final current = state.valueOrNull ?? [];
     state = AsyncData(current.map((c) =>
       c.missedCallsCount > 0 ? c.copyWith(missedCallsCount: 0) : c
+    ).toList());
+  }
 
   void clearGalleryDot(String contactId) {
     final current = state.valueOrNull;
     if (current == null) return;
     state = AsyncValue.data(current.map((c) =>
         c.id == contactId ? c.copyWith(hasNewGallery: false) : c).toList());
-  }
-    ).toList());
   }
 
 
