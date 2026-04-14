@@ -377,6 +377,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ListTile(leading: const Icon(Icons.search, color: Colors.white70),
           title: const Text('Search', style: TextStyle(color: Colors.white)),
           onTap: () => Navigator.pop(context)),
+        ListTile(leading: const Icon(Icons.edit_outlined, color: Colors.white70),
+          title: const Text('Edit Contact', style: TextStyle(color: Colors.white)),
+          onTap: () { Navigator.pop(context); _showEditContact(); }),
+        ListTile(leading: const Icon(Icons.person_remove_outlined, color: Colors.redAccent),
+          title: const Text('Delete Contact', style: TextStyle(color: Colors.redAccent)),
+          onTap: () { Navigator.pop(context); _showDeleteContact(); }),
         ListTile(leading: const Icon(Icons.block, color: Colors.white70),
           title: const Text('Block Contact', style: TextStyle(color: Colors.white)),
           onTap: () => Navigator.pop(context)),
@@ -389,6 +395,85 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           }),
         const SizedBox(height: 8),
       ])),
+    );
+  }
+
+  void _showEditContact() {
+    final contact = ref.read(contactsProvider).valueOrNull
+        ?.firstWhere((c) => c.id == widget.userId,
+            orElse: () => ContactModel(id: widget.userId, name: widget.userId));
+    final ctrl = TextEditingController(text: contact?.name ?? '');
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Edit Contact',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: ctrl,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: 'Display name',
+            hintStyle: const TextStyle(color: Colors.white38),
+            filled: true, fillColor: const Color(0xFF0D1117),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          TextButton(
+            onPressed: () async {
+              final newName = ctrl.text.trim();
+              if (newName.isEmpty) return;
+              final self = ref.read(currentUserProvider);
+              if (self == null) return;
+              await ref.read(contactsProvider.notifier)
+                  .renameContact(self.xameId, widget.userId, newName);
+              if (mounted) Navigator.pop(context);
+            },
+            child: const Text('Save',
+                style: TextStyle(color: XameColors.primary,
+                    fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteContact() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Contact',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content: const Text('Remove this contact? Chat history will remain.',
+            style: TextStyle(color: Colors.white54)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          TextButton(
+            onPressed: () async {
+              final self = ref.read(currentUserProvider);
+              if (self == null) return;
+              await ref.read(contactsProvider.notifier)
+                  .removeContact(self.xameId, widget.userId);
+              if (mounted) {
+                Navigator.pop(context);
+                context.go('/contacts');
+              }
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: Colors.redAccent,
+                    fontWeight: FontWeight.w700))),
+        ],
+      ),
     );
   }
 

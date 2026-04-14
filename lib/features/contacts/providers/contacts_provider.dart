@@ -236,6 +236,46 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     ).toList());
   }
 
+
+  Future<void> renameContact(String selfId, String contactId, String newName) async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      await dio.post('/api/rename-contact',
+          data: {'userId': selfId, 'contactId': contactId, 'newName': newName});
+      final current = state.valueOrNull ?? [];
+      state = AsyncData(current.map((c) =>
+          c.id == contactId ? c.copyWith(name: newName) : c).toList());
+    } catch (_) {}
+  }
+
+  Future<void> removeContact(String selfId, String contactId) async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      await dio.post('/api/remove-contact',
+          data: {'userId': selfId, 'contactId': contactId});
+      final current = state.valueOrNull ?? [];
+      state = AsyncData(current.where((c) => c.id != contactId).toList());
+    } catch (_) {}
+  }
+
+  Future<void> blockContact(String selfId, String contactId) async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      await dio.post('/api/block-contact',
+          data: {'userId': selfId, 'contactId': contactId});
+      final current = state.valueOrNull ?? [];
+      state = AsyncData(current.where((c) => c.id != contactId).toList());
+    } catch (_) {}
+  }
+
+  Future<void> clearChat(String selfId, String contactId) async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      await dio.post('/api/clear-chat',
+          data: {'userId': selfId, 'contactId': contactId});
+    } catch (_) {}
+  }
+
   Future<Map<String, dynamic>?> searchUser(String xameId) async {
     try {
       final res  = await _dio.post('/api/search-user',
