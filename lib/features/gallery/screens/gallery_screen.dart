@@ -101,8 +101,6 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: NestedScrollView(
-      backgroundColor: Colors.black,
-      body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverAppBar(
             pinned:           true,
@@ -196,15 +194,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                 onTap:    (item) => _openLightbox(context, item, items),
         ),
       );
+        ),
       ),
     );
-      ),
-    );
-  }
-
-  Future<void> _delete(String itemId, String userId) async {
-    final confirm = await showDialog<bool>(
-      context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF161B22),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -674,13 +666,10 @@ class _LightboxState extends State<_Lightbox> {
       body: GestureDetector(
         child: Stack(children: [
           // Swipeable images
-          PageView.builder(
-            controller:  _page,
-            itemCount:   widget.items.length,
-            onPageChanged: (i) => setState(() => _current = i),
-            itemBuilder: (_, i) {
-              final it = widget.items[i];
-              return Center(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
                 child: InteractiveViewer(
                   boundaryMargin: const EdgeInsets.all(double.infinity),
                   minScale: 0.5,
