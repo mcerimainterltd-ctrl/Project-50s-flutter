@@ -173,10 +173,7 @@ class _PhoneScreenState extends State<PhoneScreen>
 
     try {
       // contacts_service fetches full contact list with phones
-      final raw = await FlutterContacts.getContacts(
-        withThumbnails: false, // thumbnails slow; enable if you want photos
-        orderByGivenName: true,
-      );
+      final raw = await FlutterContacts.getContacts(withProperties: true);
 
       // Flatten: one _DevContact per person, all numbers collected
       final Map<String, _DevContact> byName = {};
