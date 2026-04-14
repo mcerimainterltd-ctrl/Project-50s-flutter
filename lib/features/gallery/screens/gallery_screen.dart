@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
+import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
 // ── Model ─────────────────────────────────────────────────────────────────────
@@ -78,8 +79,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
 
   Future<void> _markViewed() async {
     try {
+      final self = ref.read(currentUserProvider);
+      if (self == null) return;
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      await dio.post('/api/gallery/${widget.userId}/viewed');
+      await dio.post('/api/gallery/${widget.userId}/viewed',
+          data: {'viewerId': self.xameId});
+      // Clear dot locally
+      ref.read(contactsProvider.notifier).clearGalleryDot(widget.userId);
     } catch (_) {}
   }
 
@@ -228,7 +234,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     final sameMode = all.where((i) => i.mode == item.mode).toList();
     final idx      = sameMode.indexOf(item);
     Navigator.push(context, PageRouteBuilder(
-      opaque: false,
+      opaque: true,
       barrierColor: Colors.black,
       pageBuilder: (_, __, ___) => _Lightbox(
           items: sameMode, initialIndex: idx),
