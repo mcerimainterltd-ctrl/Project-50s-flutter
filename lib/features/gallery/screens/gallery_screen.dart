@@ -55,11 +55,17 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.white10, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
                     onPressed: () {
-                      // FORCE LAUNCH ENGINE
-                      Navigator.push(context, MaterialPageRoute(
-                        builder: (context) => MyGalleryViewer(items: [], initialIndex: 0) // Engine handles data
-                      ));
-                    }, 
+                      final filteredItems = allItems.where((item) => item.mode == _activeTab).toList();
+                      if (filteredItems.isNotEmpty) {
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) => MyGalleryViewer(items: filteredItems, initialIndex: 0),
+                        ));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("No items in this world yet")),
+                        );
+                      }
+                    },
                     child: const Text('OPEN CINEMATIC VIEW', style: TextStyle(color: Colors.white))
                   ),
                 ],
