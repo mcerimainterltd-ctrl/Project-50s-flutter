@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../providers/gallery_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'my_gallery_engine.dart';
 import '../models/gallery_item.dart';
@@ -18,6 +19,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Fetching the cinematic data
+    final allItems = ref.watch(galleryProvider(widget.userId)).asData?.value ?? [];
     return Scaffold(
       backgroundColor: const Color(0xFF060609),
       appBar: AppBar(
