@@ -814,9 +814,9 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
               ),
             ),
 
-            ProfilePortfolioGrid(
+            SizedBox(height: 400, child: ProfilePortfolioGrid(
               items: List.generate(6, (i) => "item"),
-              onShowLightbox: (index) {},
+              onShowLightbox: (index) {},),
             ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
           ],
