@@ -1,23 +1,25 @@
-import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 class GalleryItem {
   final String id;
-  final String url;
-  final String mode; // 'personal' or 'business'
+  final String mediaPath; // Standardizing this
+  final String? caption;   // Standardizing this
+  final bool isBusiness;
+  final String visibility;
+  final String? price;
+  final String? contactInfo;
   final String? description;
-  final double? price;
-  final String? contactPhone;
-  final String? contactEmail;
-  final DateTime? createdAt;
+  final DateTime timestamp;
 
   GalleryItem({
     required this.id,
-    required this.url,
-    required this.mode,
-    this.description,
+    required this.mediaPath,
+    this.caption,
+    this.isBusiness = false,
+    required this.visibility,
     this.price,
-    this.contactPhone,
-    this.contactEmail,
-    this.createdAt,
+    this.contactInfo,
+    this.description,
+    required this.timestamp,
   });
 }
