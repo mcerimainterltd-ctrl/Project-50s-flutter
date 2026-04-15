@@ -359,7 +359,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           leading: const Icon(Icons.photo_library_outlined, color: Colors.white70),
           title: const Text('My Portfolio',
             style: TextStyle(color: Colors.white)),
-          onTap: () { Navigator.pop(context); /* Gallery Navigation Logic Here */ }),
+          onTap: () => context.push("/gallery")),
         ListTile(
           leading: const Icon(
             Icons.account_balance_wallet_outlined, color: Colors.white70),
