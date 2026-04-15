@@ -20,7 +20,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   @override
   Widget build(BuildContext context) {
     // Fetching the cinematic data
-    final allItems = ref.watch(galleryProvider(widget.userId)).asData?.value ?? [];
+    final allItems = ref.watch(galleryProvider(widget.userId));
     return Scaffold(
       backgroundColor: const Color(0xFF060609),
       appBar: AppBar(
