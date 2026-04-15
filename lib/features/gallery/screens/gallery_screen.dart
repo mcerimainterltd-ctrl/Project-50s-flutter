@@ -47,7 +47,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.AutoAwesome, color: Colors.cyanAccent, size: 50),
+                  const Icon(Icons.auto_awesome, color: Colors.cyanAccent, size: 50),
                   const SizedBox(height: 16),
                   Text('EXPLORE ${_activeTab.toUpperCase()} WORLD', 
                        style: const TextStyle(color: Colors.white, letterSpacing: 2)),
