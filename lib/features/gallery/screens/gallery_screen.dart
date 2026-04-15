@@ -15,9 +15,16 @@ class GalleryScreen extends ConsumerWidget {
     final galleryItems = ref.watch(galleryProvider(userId));
     return Scaffold(
       backgroundColor: const Color(0xFF0F101C),
-      appBar: AppBar(title: const Text("Xame Gallery"), actions: [
-        if (isOwner) IconButton(icon: const Icon(Icons.add_a_photo, color: Colors.cyanAccent), onPressed: () => showModalBottomSheet(context: context, builder: (_) => AddGalleryItemSheet(userId: userId))),
-      ]),
+      appBar: AppBar(
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, size: 20), onPressed: () => Navigator.pop(context)),
+        title: const Text("Xame Gallery", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white70)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        actions: [
+          if (isOwner) IconButton(icon: const Icon(Icons.add_circle_outline, color: Colors.cyanAccent, size: 28), onPressed: () => showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (_) => AddGalleryItemSheet(userId: userId))),
+        ],
+      ),
       body: galleryItems.isEmpty 
         ? const Center(child: Text("Gallery is empty", style: TextStyle(color: Colors.white24)))
         : GridView.builder(
@@ -28,7 +35,7 @@ class GalleryScreen extends ConsumerWidget {
               final item = galleryItems[index];
               return GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GalleryViewerScreen(mediaPath: item.mediaPath, caption: item.caption))),
-                child: Hero(tag: item.mediaPath, child: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(item.mediaPath), fit: BoxFit.cover))),
+                child: Hero(tag: item.mediaPath, child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(item.mediaPath), fit: BoxFit.cover))),
               );
             },
           ),
