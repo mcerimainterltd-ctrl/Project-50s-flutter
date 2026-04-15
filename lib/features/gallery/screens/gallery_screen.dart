@@ -1,94 +1,82 @@
 import 'package:flutter/material.dart';
-import '../providers/gallery_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'my_gallery_engine.dart';
-import '../models/gallery_item.dart';
+import '../widgets/add_item_sheet.dart';
+import '../providers/gallery_provider.dart';
+import '../widgets/gallery_viewer.dart';
 
-// THE NEW CINEMATIC GALLERY ENTRY
 class GalleryScreen extends ConsumerStatefulWidget {
   final String userId;
-  final bool isOwner;
-  const GalleryScreen({super.key, required this.userId, required this.isOwner});
+  const GalleryScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
-  ConsumerState<GalleryScreen> createState() => _GalleryScreenState();
+  _GalleryScreenState createState() => _GalleryScreenState();
 }
 
 class _GalleryScreenState extends ConsumerState<GalleryScreen> {
-  String _activeTab = 'business'; // Default to Business World
+  String _activeTab = 'business';
 
   @override
   Widget build(BuildContext context) {
-    // Fetching the cinematic data
     final allItems = ref.watch(galleryProvider(widget.userId));
+
     return Scaffold(
       backgroundColor: const Color(0xFF060609),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('XAME GALLERY', style: TextStyle(letterSpacing: 4, fontWeight: FontWeight.w900, fontSize: 14)),
+        title: const Text('XAME GALLERY', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w900)),
         centerTitle: true,
       ),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // THE WORLD SWITCHER
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildTabButton('BUSINESS', _activeTab == 'business'),
-                const SizedBox(width: 20),
-                _buildTabButton('PERSONAL', _activeTab == 'personal'),
-              ],
-            ),
-          ),
-          
-          // THE CINEMATIC GRID (Simplified Entry)
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.auto_awesome, color: Colors.cyanAccent, size: 50),
-                  const SizedBox(height: 16),
-                  Text('EXPLORE ${_activeTab.toUpperCase()} WORLD', 
-                       style: const TextStyle(color: Colors.white, letterSpacing: 2)),
-                  const SizedBox(height: 30),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white10, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
-                    onPressed: () {
-                      final filteredItems = allItems.where((item) => item.mode == _activeTab).toList();
-                      if (filteredItems.isNotEmpty) {
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) => MyGalleryViewer(items: filteredItems, initialIndex: 0),
-                        ));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("No items in this world yet")),
-                        );
-                      }
-                    },
-                    child: const Text('OPEN CINEMATIC VIEW', style: TextStyle(color: Colors.white))
-                  ),
-                ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () => setState(() => _activeTab = 'business'),
+                child: Text('BUSINESS', style: TextStyle(color: _activeTab == 'business' ? Colors.cyanAccent : Colors.white24)),
               ),
-            ),
+              TextButton(
+                onPressed: () => setState(() => _activeTab = 'personal'),
+                child: Text('PERSONAL', style: TextStyle(color: _activeTab == 'personal' ? Colors.pinkAccent : Colors.white24)),
+              ),
+            ],
           ),
+          const Spacer(),
+          const Icon(Icons.auto_awesome, color: Colors.cyanAccent, size: 64),
+          const SizedBox(height: 20),
+          Text('EXPLORE ${_activeTab.toUpperCase()} WORLD', style: const TextStyle(color: Colors.white, letterSpacing: 1.5)),
+          const SizedBox(height: 40),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white10,
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            ),
+            onPressed: () {
+              final filteredItems = allItems.where((item) => item.mode == _activeTab).toList();
+              if (filteredItems.isNotEmpty) {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) => MyGalleryViewer(items: filteredItems, initialIndex: 0),
+                ));
+              }
+            },
+            child: const Text('OPEN CINEMATIC VIEW', style: TextStyle(color: Colors.white)),
+          ),
+          const Spacer(),
         ],
       ),
-    );
-  }
-
-  Widget _buildTabButton(String label, bool active) {
-    return GestureDetector(
-      onTap: () => setState(() => _activeTab = label.toLowerCase()),
-      child: Text(label, style: TextStyle(
-        color: active ? Colors.cyanAccent : Colors.white24,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 2,
-        fontSize: 12
-      )),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.cyanAccent,
+        onPressed: () => showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => const AddGalleryItemSheet(),
+        ),
+        child: const Icon(Icons.add, color: Colors.black),
+      ),
     );
   }
 }
