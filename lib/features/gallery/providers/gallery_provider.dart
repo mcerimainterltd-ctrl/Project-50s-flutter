@@ -1,10 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/gallery_item.dart';
 
-// THE XAME GALLERY DATA ENGINE
 final galleryProvider = StateProvider.family<List<GalleryItem>, String>((ref, userId) {
-  // This is where your data logic sits. 
-  // For now, it returns an empty list to keep the build green, 
-  // but it's ready to be populated from Firestore/API.
-  return []; 
+  return [
+    GalleryItem(
+      id: '1',
+      url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+      mode: 'business',
+      description: 'Ultramodern Architecture Concept',
+      price: 2500.00,
+      contactEmail: 'sales@xame.com',
+      contactPhone: '+123456789',
+      createdAt: DateTime.now(),
+    ),
+    GalleryItem(
+      id: '2',
+      url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+      mode: 'personal',
+      description: 'Sunset at the Valley',
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+  ]; 
 });
