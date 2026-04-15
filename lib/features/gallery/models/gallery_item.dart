@@ -6,8 +6,8 @@ class GalleryItem {
   final bool isBusiness;
   final String visibility; // 'public', 'contacts', 'private'
   final String? price;
-  final String? contactInfo;
-  final String? description;
+  final String? contactInfo; // For Business Phone/Email
+  final String? description; // For Business Details
   final DateTime timestamp;
 
   GalleryItem({

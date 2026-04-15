@@ -30,9 +30,9 @@ class _AddGalleryItemSheetState extends ConsumerState<AddGalleryItemSheet> {
       caption: _capC.text,
       isBusiness: _mode == 'business',
       visibility: _visibility,
-      price: _priC.text,
-      contactInfo: _conC.text,
-      description: _desC.text,
+      price: _mode == 'business' ? _priC.text : null,
+      contactInfo: _mode == 'business' ? _conC.text : null,
+      description: _mode == 'business' ? _desC.text : null,
       timestamp: DateTime.now(),
     );
     ref.read(galleryProvider(widget.userId).notifier).addItem(newItem);
@@ -55,11 +55,11 @@ class _AddGalleryItemSheetState extends ConsumerState<AddGalleryItemSheet> {
               },
               child: Container(
                 height: 150, width: double.infinity,
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.cyanAccent.withOpacity(0.3))),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.cyanAccent.withOpacity(0.2))),
                 child: _selectedMedia == null ? const Icon(Icons.add_photo_alternate, color: Colors.cyanAccent) : ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.file(_selectedMedia!, fit: BoxFit.cover)),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
             _input("Caption", _capC),
             const SizedBox(height: 15),
             Row(children: [
@@ -71,9 +71,9 @@ class _AddGalleryItemSheetState extends ConsumerState<AddGalleryItemSheet> {
               const SizedBox(height: 15),
               _input("Price (₦)", _priC),
               const SizedBox(height: 10),
-              _input("Contact Email/Phone", _conC),
+              _input("Phone / Email", _conC),
               const SizedBox(height: 10),
-              _input("Detailed Description", _desC, lines: 3),
+              _input("Description", _desC, lines: 3),
             ],
             const SizedBox(height: 20),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -82,7 +82,7 @@ class _AddGalleryItemSheetState extends ConsumerState<AddGalleryItemSheet> {
               _vis("Private", _visibility == 'private', () => setState(() => _visibility = 'private')),
             ]),
             const SizedBox(height: 25),
-            ElevatedButton(onPressed: _handleUpload, style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, minimumSize: const Size(double.infinity, 55)), child: const Text("UPLOAD", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
+            ElevatedButton(onPressed: _handleUpload, style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, minimumSize: const Size(double.infinity, 55), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))), child: const Text("UPLOAD", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900))),
           ],
         ),
       ),
