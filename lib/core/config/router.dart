@@ -58,7 +58,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/wallet',        builder: (c, s) => XamePayScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl, onBack: () => c.go('/contacts'))),
       GoRoute(path: '/settings',      builder: (c, s) => const SettingsScreen()),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
-      GoRoute(path: '/gallery', builder: (c, s) => const GalleryScreen()),
+      GoRoute(path: '/gallery', builder: (c, s) => GalleryScreen(userId: user?.xameId ?? '', isOwner: true)),
     ],
   );
 });
