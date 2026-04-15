@@ -684,7 +684,7 @@ class _LightboxState extends State<_Lightbox> {
                   boundaryMargin: const EdgeInsets.all(double.infinity),
                   minScale: 0.5,
                   maxScale: 4.0,
-                  child: CachedNetworkImage(
+                  child: CachedNetworkImage(filterQuality: FilterQuality.high, memCacheWidth: 1080,
                     imageUrl:    it.url,
                     fit:         BoxFit.contain,
                     width:       MediaQuery.of(context).size.width,
