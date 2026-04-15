@@ -23,7 +23,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('MY GALLERY', style: TextStyle(letterSpacing: 4, fontWeight: FontWeight.w900, fontSize: 14)),
+        title: const Text('XAME GALLERY', style: TextStyle(letterSpacing: 4, fontWeight: FontWeight.w900, fontSize: 14)),
         centerTitle: true,
       ),
       body: Column(
