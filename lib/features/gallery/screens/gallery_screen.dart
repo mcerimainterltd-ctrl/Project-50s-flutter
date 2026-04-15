@@ -5,8 +5,8 @@ import '../providers/gallery_provider.dart';
 import '../widgets/gallery_viewer.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
-  final String userId;
-  const GalleryScreen({Key? key, required this.userId}) : super(key: key);
+  final String userId; final bool isOwner;
+  const GalleryScreen({Key? key, required this.userId, required this.isOwner}) : super(key: key);
 
   @override
   _GalleryScreenState createState() => _GalleryScreenState();
