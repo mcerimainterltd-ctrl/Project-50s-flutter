@@ -1,3 +1,4 @@
+import '../../discovery/screens/discovery_aura_feed.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,10 +63,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           const CallHistoryScreen(),
           Consumer(builder: (_, ref, __) {
             final self = ref.read(currentUserProvider);
-            return GalleryScreen(
-              userId:  self?.xameId ?? '',
-              isOwner: true,
-            );
+            return const DiscoveryAuraFeed();
           }),
           Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return PhoneScreen(userId: u?.xameId ?? '', serverUrl: 'https://project-50s.onrender.com'); }),
         ])),

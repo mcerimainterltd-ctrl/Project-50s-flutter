@@ -1,3 +1,4 @@
+import '../../gallery/widgets/profile_portfolio_grid.dart';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -813,6 +814,10 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
               ),
             ),
 
+            ProfilePortfolioGrid(
+              items: [],
+              onShowLightbox: (index) {},
+            ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
           ],
         ),
