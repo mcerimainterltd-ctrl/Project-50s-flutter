@@ -24,22 +24,27 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('XAME GALLERY', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w900)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white24),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('XAME GALLERY', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w900, color: Colors.white70)),
         centerTitle: true,
       ),
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextButton(
                 onPressed: () => setState(() => _activeTab = 'business'),
-                child: Text('BUSINESS', style: TextStyle(color: _activeTab == 'business' ? Colors.cyanAccent : Colors.white24)),
+                child: Text('BUSINESS', style: TextStyle(color: _activeTab == 'business' ? Colors.cyanAccent : Colors.white24, fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(width: 20),
               TextButton(
                 onPressed: () => setState(() => _activeTab = 'personal'),
-                child: Text('PERSONAL', style: TextStyle(color: _activeTab == 'personal' ? Colors.pinkAccent : Colors.white24)),
+                child: Text('PERSONAL', style: TextStyle(color: _activeTab == 'personal' ? Colors.cyanAccent : Colors.white24, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -50,7 +55,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           const SizedBox(height: 40),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white10,
+              backgroundColor: const Color(0xFF1A1A1A),
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
@@ -60,6 +65,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 Navigator.push(context, MaterialPageRoute(
                   builder: (context) => MyGalleryViewer(items: filteredItems, initialIndex: 0),
                 ));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("No items in $_activeTab world yet"), backgroundColor: Colors.black87),
+                );
               }
             },
             child: const Text('OPEN CINEMATIC VIEW', style: TextStyle(color: Colors.white)),
