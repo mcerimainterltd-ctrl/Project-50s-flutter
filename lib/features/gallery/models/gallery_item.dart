@@ -1,11 +1,10 @@
-import 'dart:io';
-
 class GalleryItem {
   final String id;
-  final String mediaPath; // Standardizing this
-  final String? caption;   // Standardizing this
+  final String ownerId;
+  final String mediaPath;
+  final String? caption;
   final bool isBusiness;
-  final String visibility;
+  final String visibility; // 'public', 'contacts', 'private'
   final String? price;
   final String? contactInfo;
   final String? description;
@@ -13,9 +12,10 @@ class GalleryItem {
 
   GalleryItem({
     required this.id,
+    required this.ownerId,
     required this.mediaPath,
     this.caption,
-    this.isBusiness = false,
+    required this.isBusiness,
     required this.visibility,
     this.price,
     this.contactInfo,
