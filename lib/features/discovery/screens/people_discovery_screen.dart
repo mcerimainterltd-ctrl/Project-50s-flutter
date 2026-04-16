@@ -1,63 +1,83 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
-class PeopleDiscoveryScreen extends StatelessWidget {
+class PeopleDiscoveryScreen extends StatefulWidget {
   const PeopleDiscoveryScreen({super.key});
+
+  @override
+  State<PeopleDiscoveryScreen> createState() => _PeopleDiscoveryScreenState();
+}
+
+class _PeopleDiscoveryScreenState extends State<PeopleDiscoveryScreen> {
+  String searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Discover People', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-      ),
       body: Stack(
         children: [
-          // Background Gradient to match Nebula theme
-          Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topLeft,
-                radius: 1.5,
-                colors: [Colors.teal.withOpacity(0.2), Colors.black],
+          // Aura Background
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.purple.withOpacity(0.15),
               ),
+              child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50), child: Container()),
             ),
           ),
-          Column(
-            children: [
-              const SizedBox(height: 100),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search by XameID...',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                  ),
-                  style: const TextStyle(color: Colors.white),
+          
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: true,
+                backgroundColor: Colors.black.withOpacity(0.5),
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: const Text('Social Aura', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  centerTitle: true,
                 ),
               ),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
+              
+              // Search Bar Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    onChanged: (val) => setState(() => searchQuery = val),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search XameID...',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                      prefixIcon: const Icon(Icons.search, color: Colors.purpleAccent),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.05),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Results Grid
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.85,
-                    crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 0.8,
                   ),
-                  itemCount: 6,
-                  itemBuilder: (context, index) => _buildPersonCard(),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => _buildUserCard(index),
+                    childCount: 8,
+                  ),
                 ),
               ),
             ],
@@ -67,7 +87,7 @@ class PeopleDiscoveryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPersonCard() {
+  Widget _buildUserCard(int index) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -80,23 +100,23 @@ class PeopleDiscoveryScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircleAvatar(radius: 35, backgroundColor: Colors.teal),
+              const CircleAvatar(
+                radius: 35,
+                backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=xame'),
+              ),
               const SizedBox(height: 12),
-              const Text('User Search', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-              Text('@xame_id', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 30,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: const Text('Add', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const Text('Peer Node', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              Text('@xame_00${index}', style: TextStyle(color: Colors.purpleAccent.withOpacity(0.7), fontSize: 12)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purpleAccent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
                 ),
+                child: const Text('Connect', style: TextStyle(fontSize: 12)),
               )
             ],
           ),
