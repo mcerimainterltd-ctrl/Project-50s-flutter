@@ -15,7 +15,7 @@ class _DiscoveryAuraFeedState extends ConsumerState<DiscoveryAuraFeed> {
   double _currentPage = 0.0;
 
   final List<DiscoveryItem> _items = [
-    DiscoveryItem(id: '1', title: 'Data Plans', subtitle: 'Global Bundles', type: DiscoveryType.plan),
+    DiscoveryItem(id: '1', title: 'Utility Bills', subtitle: 'Pay subtitle: 'Global Bundles' Manage Utilities', type: DiscoveryType.plan),
     DiscoveryItem(id: '2', title: 'Xame Wallet', subtitle: 'Manage Assets', type: DiscoveryType.wallet),
     DiscoveryItem(id: '3', title: 'Call Logs', subtitle: 'Recent Activity', type: DiscoveryType.creator),
     DiscoveryItem(id: '4', title: 'Social Aura', subtitle: 'Find Friends', type: DiscoveryType.creator, customColor: Colors.purple),

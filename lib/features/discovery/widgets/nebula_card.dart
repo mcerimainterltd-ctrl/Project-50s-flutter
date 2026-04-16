@@ -27,7 +27,7 @@ class NebulaCard extends StatelessWidget {
     
     switch (item.type) {
       case DiscoveryType.plan:
-        context.push('/data');
+        context.push('/bills');
         break;
       case DiscoveryType.wallet:
         context.push('/wallet');
