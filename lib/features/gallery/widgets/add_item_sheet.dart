@@ -79,7 +79,7 @@ class _AddGalleryItemSheetState extends ConsumerState<AddGalleryItemSheet> {
                   description: _mode == 'business' ? _desC.text : null,
                   timestamp: DateTime.now(),
                 );
-                ref.read(galleryProvider(widget.userId).notifier).addItem(newItem);
+                await FirebaseFirestore.instance.collection("gallery").add({ "ownerId": newItem.ownerId, "mediaPath": newItem.mediaPath, "caption": newItem.caption, "isBusiness": newItem.isBusiness, "visibility": newItem.visibility, "price": newItem.price, "contactInfo": newItem.contactInfo, "description": newItem.description, "timestamp": FieldValue.serverTimestamp() });
                 Navigator.pop(context);
               }, 
               style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, minimumSize: const Size(double.infinity, 55), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))), 

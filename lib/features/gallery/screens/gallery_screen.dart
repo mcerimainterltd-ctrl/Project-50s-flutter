@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/gallery_provider.dart';
 import '../widgets/add_item_sheet.dart';
-import 'gallery_viewer_screen.dart';
 
 class GalleryScreen extends ConsumerWidget {
   final String userId;
@@ -12,33 +11,33 @@ class GalleryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final galleryItems = ref.watch(galleryProvider(userId));
+    final galleryAsync = ref.watch(galleryProvider(userId));
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F101C),
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, size: 20), onPressed: () => Navigator.pop(context)),
-        title: const Text("Xame Gallery", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white70)),
+        title: const Text("Xame Gallery", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white70)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
         actions: [
-          if (isOwner) IconButton(icon: const Icon(Icons.add_circle_outline, color: Colors.cyanAccent, size: 28), onPressed: () => showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (_) => AddGalleryItemSheet(userId: userId))),
+          if (isOwner) IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: Colors.cyanAccent), 
+            onPressed: () => showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (_) => AddGalleryItemSheet(userId: userId))
+          )
         ],
       ),
-      body: galleryItems.isEmpty 
-        ? const Center(child: Text("Gallery is empty", style: TextStyle(color: Colors.white24)))
-        : GridView.builder(
-            padding: const EdgeInsets.all(10),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 8),
-            itemCount: galleryItems.length,
-            itemBuilder: (context, index) {
-              final item = galleryItems[index];
-              return GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GalleryViewerScreen(mediaPath: item.mediaPath, caption: item.caption))),
-                child: Hero(tag: item.mediaPath, child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(item.mediaPath), fit: BoxFit.cover))),
-              );
-            },
-          ),
+      body: galleryAsync.when(
+        data: (items) => items.isEmpty 
+            ? const Center(child: Text("No posts found", style: TextStyle(color: Colors.white10)))
+            : GridView.builder(
+                padding: const EdgeInsets.all(10),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 8, mainAxisSpacing: 8),
+                itemCount: items.length,
+                itemBuilder: (c, i) => ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(items[i].mediaPath, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.white10))),
+              ),
+        loading: () => const Center(child: CircularProgressIndicator(color: Colors.cyanAccent)),
+        error: (err, stack) => Center(child: Text("Error: $err", style: const TextStyle(color: Colors.red))),
+      ),
     );
   }
 }

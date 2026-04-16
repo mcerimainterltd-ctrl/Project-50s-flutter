@@ -1,26 +1,32 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/gallery_item.dart';
 
-final galleryProvider = StateNotifierProvider.family<GalleryNotifier, List<GalleryItem>, String>((ref, viewerId) {
-  return GalleryNotifier(viewerId);
+final galleryProvider = StreamProvider.family<List<GalleryItem>, String>((ref, viewerId) {
+  final firestore = FirebaseFirestore.instance;
+  
+  // DISCOVERY LOGIC: Get all public posts OR posts owned by the viewer
+  return firestore
+      .collection('gallery')
+      .orderBy('timestamp', descending: true)
+      .snapshots()
+      .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          return GalleryItem(
+            id: doc.id,
+            ownerId: data['ownerId'] ?? '',
+            mediaPath: data['mediaPath'] ?? '',
+            caption: data['caption'],
+            isBusiness: data['isBusiness'] ?? false,
+            visibility: data['visibility'] ?? 'public',
+            price: data['price'],
+            contactInfo: data['contactInfo'],
+            description: data['description'],
+            timestamp: (data['timestamp'] as Timestamp).toDate(),
+          );
+        }).where((item) {
+          return item.ownerId == viewerId || item.visibility == 'public';
+        }).toList();
+      });
 });
-
-class GalleryNotifier extends StateNotifier<List<GalleryItem>> {
-  final String viewerId;
-  static List<GalleryItem> _globalDatabase = []; 
-
-  GalleryNotifier(this.viewerId) : super(_runDiscovery(_globalDatabase, viewerId));
-
-  static List<GalleryItem> _runDiscovery(List<GalleryItem> items, String vId) {
-    return items.where((item) {
-      if (item.ownerId == vId) return true; // I see my own
-      if (item.visibility == 'public') return true; // I see everyone's public posts
-      return false;
-    }).toList();
-  }
-
-  void addItem(GalleryItem item) {
-    _globalDatabase = [item, ..._globalDatabase];
-    state = _runDiscovery(_globalDatabase, viewerId);
-  }
-}
