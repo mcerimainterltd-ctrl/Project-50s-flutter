@@ -22,13 +22,14 @@ class NebulaCard extends StatelessWidget {
   void _handleExplore(BuildContext context) {
     switch (item.type) {
       case DiscoveryType.plan:
-        context.push('/data'); // New route we just added
+        // Your grep shows no /plans, so we point to /wallet where data resides
+        context.push('/wallet');
         break;
       case DiscoveryType.wallet:
-        context.push('/wallet'); // Confirmed by your grep
+        context.push('/wallet');
         break;
       case DiscoveryType.creator:
-        context.push('/call-history'); // Confirmed by your grep
+        context.push('/call-history');
         break;
     }
   }
