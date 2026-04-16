@@ -20,16 +20,20 @@ class NebulaCard extends StatelessWidget {
   });
 
   void _handleExplore(BuildContext context) {
+    if (item.title == 'Social Aura') {
+      context.push('/people');
+      return;
+    }
+    
     switch (item.type) {
       case DiscoveryType.plan:
-        context.push('/data'); // Now a real route
+        context.push('/data');
         break;
       case DiscoveryType.wallet:
-        context.push('/wallet'); // Confirmed by grep
+        context.push('/wallet');
         break;
       case DiscoveryType.creator:
-        if (item.title == "Social Aura") { context.push("/people"); return; }
-        context.push('/call-history'); // Confirmed by grep
+        context.push('/call-history');
         break;
     }
   }
