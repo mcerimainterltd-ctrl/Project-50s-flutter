@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../models/discovery_item.dart';
 
@@ -17,6 +18,20 @@ class NebulaCard extends StatelessWidget {
     required this.accentColor,
     required this.item,
   });
+
+  void _handleExplore(BuildContext context) {
+    switch (item.type) {
+      case DiscoveryType.plan:
+        context.push('/plans'); // Adjust if your plan route name differs
+        break;
+      case DiscoveryType.wallet:
+        context.push('/wallet');
+        break;
+      case DiscoveryType.creator:
+        context.push('/calls');
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,10 +55,7 @@ class NebulaCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.1),
-                  Colors.transparent,
-                ],
+                colors: [Colors.white.withOpacity(0.1), Colors.transparent],
               ),
             ),
             child: Column(
@@ -51,16 +63,10 @@ class NebulaCard extends StatelessWidget {
               children: [
                 _buildChip(),
                 const Spacer(),
-                Text(
-                  item.title,
-                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  item.subtitle,
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 16),
-                ),
+                Text(item.title, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                Text(item.subtitle, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16)),
                 const SizedBox(height: 20),
-                _buildActionButton(),
+                _buildActionButton(context),
               ],
             ),
           ),
@@ -72,30 +78,20 @@ class NebulaCard extends StatelessWidget {
   Widget _buildChip() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        item.type.name.toUpperCase(),
-        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
-      ),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+      child: Text(item.type.name.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
     );
   }
 
-  Widget _buildActionButton() {
-    return Container(
-      width: double.infinity,
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Text(
-          'EXPLORE',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+  Widget _buildActionButton(BuildContext context) {
+    return InkWell(
+      onTap: () => _handleExplore(context),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        height: 50,
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        child: const Center(child: Text('EXPLORE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
       ),
     );
   }
