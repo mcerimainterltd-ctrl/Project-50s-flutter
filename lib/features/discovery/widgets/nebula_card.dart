@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import '../models/discovery_item.dart';
 
 class NebulaCard extends StatelessWidget {
   final int index;
   final double glowIntensity;
   final Color primaryColor;
   final Color accentColor;
+  final DiscoveryItem item;
 
   const NebulaCard({
     super.key,
@@ -13,44 +15,86 @@ class NebulaCard extends StatelessWidget {
     required this.glowIntensity,
     required this.primaryColor,
     required this.accentColor,
+    required this.item,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 300,
-      height: 450,
+      width: 310,
+      height: 480,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: primaryColor.withOpacity(0.2 * glowIntensity), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withOpacity(0.1 * glowIntensity),
-            blurRadius: 20 * glowIntensity,
-            spreadRadius: 5 * glowIntensity,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: (item.customColor ?? primaryColor).withOpacity(0.3 * glowIntensity),
+          width: 1.5,
+        ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(32),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.white.withOpacity(0.1), Colors.transparent],
+                colors: [
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.transparent,
+                ],
               ),
             ),
-            child: Center(
-              child: Text(
-                'Aura #$index',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildChip(),
+                const Spacer(),
+                Text(
+                  item.title,
+                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  item.subtitle,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 16),
+                ),
+                const SizedBox(height: 20),
+                _buildActionButton(),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        item.type.name.toUpperCase(),
+        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+      ),
+    );
+  }
+
+  Widget _buildActionButton() {
+    return Container(
+      width: double.infinity,
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: Text(
+          'EXPLORE',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
     );
