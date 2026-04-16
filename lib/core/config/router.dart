@@ -1,68 +1,35 @@
-import "../../features/discovery/screens/people_discovery_screen.dart";
-import "../../features/discovery/screens/discovery_aura_feed.dart";
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../services/auth_service.dart';
-import '../config/constants.dart';
-import '../../features/auth/screens/login_screen.dart';
-import '../../features/auth/screens/register_screen.dart';
-import '../../features/contacts/screens/contacts_screen.dart';
-import '../../features/messaging/screens/chat_screen.dart';
-import '../../features/calling/screens/call_screen.dart';
-import '../../features/calling/screens/incoming_call_screen.dart';
-import '../../features/calls/screens/call_history_screen.dart';
-import '../../features/profile/screens/profile_screen.dart';
-import '../../features/settings/screens/settings_screen.dart';
-import '../../features/gallery/screens/gallery_screen.dart';
-import '../../screens/xame_pay_screen.dart';
-import '../../screens/phone_screen.dart';
-
-class _Placeholder extends StatelessWidget {
-  final String name;
-  const _Placeholder(this.name);
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF0A0A0F),
-    body: Center(child: Text(name,
-      style: const TextStyle(color: Colors.white, fontSize: 18))));
-}
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../features/discovery/screens/people_discovery_screen.dart';
+import '../features/wallet/screens/xame_pay_screen.dart';
+import '../features/home/screens/home_screen.dart';
+import '../features/calls/screens/call_history_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final user = ref.watch(currentUserProvider);
   return GoRouter(
-    initialLocation: '/login',
-    redirect: (context, state) {
-      final loggedIn    = user != null;
-      final isAuthRoute = state.matchedLocation == '/login' ||
-                          state.matchedLocation == '/register';
-      if (!loggedIn && !isAuthRoute) return '/login';
-      if (loggedIn  &&  isAuthRoute) return '/contacts';
-      return null;
-    },
+    initialLocation: '/discovery',
     routes: [
-    GoRoute(path: "/discovery", name: "discovery", builder: (context, state) => const DiscoveryAuraFeed()),
-      GoRoute(path: "/people", name: "people", builder: (c, s) => const PeopleDiscoveryScreen()),
-      GoRoute(path: '/login',    builder: (c, s) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
-      GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
-      GoRoute(path: '/chat/:userId',
-        builder: (c, s) => ChatScreen(userId: s.pathParameters['userId']!)),
-      GoRoute(path: '/call/:userId',
-        builder: (context, state) => CallScreen(
-          userId: state.pathParameters['userId']!,
-          isVideo: state.uri.queryParameters['video'] == 'true',
-          isIncoming: state.uri.queryParameters['incoming'] == 'true',
-        )),
-      GoRoute(path: '/incoming-call',
-        builder: (context, state) => const IncomingCallScreen()),
-      GoRoute(path: '/conference',    builder: (c, s) => const _Placeholder('Conference')),
-      GoRoute(path: '/call-history',  builder: (c, s) => const CallHistoryScreen()),
-      GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl)),
-      GoRoute(path: '/wallet',        builder: (c, s) => XamePayScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl, onBack: () => c.go('/contacts'))),
-      GoRoute(path: '/settings',      builder: (c, s) => const SettingsScreen()),
-      GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
-      GoRoute(path: '/gallery', builder: (c, s) => GalleryScreen(userId: user?.xameId ?? '', isOwner: true)),
+      GoRoute(path: '/discovery', builder: (c, s) => const HomeScreen()),
+      GoRoute(path: '/call-history', builder: (c, s) => const CallHistoryScreen()),
+      GoRoute(
+        path: '/wallet',
+        builder: (c, s) => XamePayScreen(
+          initialTab: 0, 
+          onBack: () => c.go('/discovery')
+        ),
+      ),
+      GoRoute(
+        path: '/bills', // The fix for your 'Page Not Found'
+        builder: (c, s) => XamePayScreen(
+          initialTab: 2, // Lands on Bills tab
+          onBack: () => c.go('/discovery')
+        ),
+      ),
+      GoRoute(path: '/people', builder: (c, s) => const PeopleDiscoveryScreen()),
     ],
+    errorBuilder: (c, s) => Scaffold(
+      body: Center(child: Text('Route not found: ${s.location}')),
+    ),
   );
 });
