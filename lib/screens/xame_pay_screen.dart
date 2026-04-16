@@ -1180,6 +1180,517 @@ class _AirtimeTabState extends State<_AirtimeTab> {
 
 // ── DATA TAB ──────────────────────────────────────────────────────────────────
 
+// Data plan model
+class DataPlan {
+  final String size, operatorId;
+  final int days;
+  final double price;
+  const DataPlan(this.operatorId, this.size, this.days, this.price);
+}
+
+// Full data plan catalogue — mirrors wallet.js GD.dataPlans
+// Keyed by operatorId. Buy endpoint: /api/vtu/data
+const _kDataPlans = <String, List<DataPlan>>{
+  // ── Nigeria ──────────────────────────────────────────────────────────────
+  'MTN-NG': [
+    DataPlan('MTN-NG','500MB',30,300), DataPlan('MTN-NG','1GB',30,500),
+    DataPlan('MTN-NG','2GB',30,1000),  DataPlan('MTN-NG','5GB',30,2000),
+    DataPlan('MTN-NG','10GB',30,3500),
+  ],
+  'AIRTEL-NG': [
+    DataPlan('AIRTEL-NG','500MB',30,300), DataPlan('AIRTEL-NG','1GB',30,500),
+    DataPlan('AIRTEL-NG','2GB',30,1000),  DataPlan('AIRTEL-NG','5GB',30,2000),
+  ],
+  'GLO-NG': [
+    DataPlan('GLO-NG','1GB',30,500), DataPlan('GLO-NG','2GB',30,1000),
+    DataPlan('GLO-NG','5GB',30,2000),
+  ],
+  '9MOBILE-NG': [
+    DataPlan('9MOBILE-NG','1GB',30,500), DataPlan('9MOBILE-NG','2GB',30,1000),
+    DataPlan('9MOBILE-NG','5GB',30,2500),
+  ],
+  // ── Ghana ────────────────────────────────────────────────────────────────
+  'MTN-GH': [
+    DataPlan('MTN-GH','1GB',30,10), DataPlan('MTN-GH','2GB',30,18),
+    DataPlan('MTN-GH','5GB',30,40),
+  ],
+  'VODAFONE-GH': [
+    DataPlan('VODAFONE-GH','1GB',30,10), DataPlan('VODAFONE-GH','2GB',30,18),
+    DataPlan('VODAFONE-GH','5GB',30,38),
+  ],
+  'AIRTELTIGO-GH': [
+    DataPlan('AIRTELTIGO-GH','1GB',30,9), DataPlan('AIRTELTIGO-GH','2GB',30,16),
+    DataPlan('AIRTELTIGO-GH','5GB',30,36),
+  ],
+  // ── Kenya ────────────────────────────────────────────────────────────────
+  'SAFARICOM-KE': [
+    DataPlan('SAFARICOM-KE','1GB',30,99), DataPlan('SAFARICOM-KE','2GB',30,149),
+    DataPlan('SAFARICOM-KE','5GB',30,349),
+  ],
+  'AIRTEL-KE': [
+    DataPlan('AIRTEL-KE','1GB',30,89), DataPlan('AIRTEL-KE','2GB',30,139),
+    DataPlan('AIRTEL-KE','5GB',30,299),
+  ],
+  'TELKOM-KE': [
+    DataPlan('TELKOM-KE','1GB',30,85), DataPlan('TELKOM-KE','2GB',30,130),
+    DataPlan('TELKOM-KE','5GB',30,280),
+  ],
+  // ── South Africa ─────────────────────────────────────────────────────────
+  'VODACOM-ZA': [
+    DataPlan('VODACOM-ZA','1GB',30,99), DataPlan('VODACOM-ZA','2GB',30,169),
+    DataPlan('VODACOM-ZA','5GB',30,349),
+  ],
+  'MTN-ZA': [
+    DataPlan('MTN-ZA','1GB',30,89), DataPlan('MTN-ZA','2GB',30,149),
+    DataPlan('MTN-ZA','5GB',30,299),
+  ],
+  'CELL-ZA': [
+    DataPlan('CELL-ZA','1GB',30,79), DataPlan('CELL-ZA','2GB',30,139),
+    DataPlan('CELL-ZA','5GB',30,269),
+  ],
+  'TELKOM-ZA': [
+    DataPlan('TELKOM-ZA','1GB',30,69), DataPlan('TELKOM-ZA','2GB',30,129),
+    DataPlan('TELKOM-ZA','5GB',30,249),
+  ],
+  // ── United States ────────────────────────────────────────────────────────
+  'ATT-US': [
+    DataPlan('ATT-US','5GB',30,35), DataPlan('ATT-US','15GB',30,50),
+    DataPlan('ATT-US','Unlimited',30,65),
+  ],
+  'TMOBILE-US': [
+    DataPlan('TMOBILE-US','5GB',30,30), DataPlan('TMOBILE-US','15GB',30,45),
+    DataPlan('TMOBILE-US','Unlimited',30,60),
+  ],
+  'VERIZON-US': [
+    DataPlan('VERIZON-US','5GB',30,40), DataPlan('VERIZON-US','15GB',30,55),
+    DataPlan('VERIZON-US','Unlimited',30,70),
+  ],
+  'CRICKET-US': [
+    DataPlan('CRICKET-US','5GB',30,25), DataPlan('CRICKET-US','10GB',30,35),
+    DataPlan('CRICKET-US','Unlimited',30,55),
+  ],
+  // ── United Kingdom ───────────────────────────────────────────────────────
+  'EE-UK': [
+    DataPlan('EE-UK','5GB',30,10), DataPlan('EE-UK','20GB',30,18),
+    DataPlan('EE-UK','Unlimited',30,28),
+  ],
+  'O2-UK': [
+    DataPlan('O2-UK','5GB',30,9), DataPlan('O2-UK','20GB',30,16),
+    DataPlan('O2-UK','Unlimited',30,25),
+  ],
+  'VODAFONE-UK': [
+    DataPlan('VODAFONE-UK','5GB',30,10), DataPlan('VODAFONE-UK','20GB',30,17),
+    DataPlan('VODAFONE-UK','Unlimited',30,27),
+  ],
+  'THREE-UK': [
+    DataPlan('THREE-UK','5GB',30,8), DataPlan('THREE-UK','20GB',30,15),
+    DataPlan('THREE-UK','Unlimited',30,22),
+  ],
+  // ── Europe ───────────────────────────────────────────────────────────────
+  'VODAFONE-EU': [
+    DataPlan('VODAFONE-EU','5GB',30,15), DataPlan('VODAFONE-EU','20GB',30,25),
+    DataPlan('VODAFONE-EU','Unlimited',30,40),
+  ],
+  'ORANGE-EU': [
+    DataPlan('ORANGE-EU','5GB',30,12), DataPlan('ORANGE-EU','20GB',30,22),
+    DataPlan('ORANGE-EU','Unlimited',30,38),
+  ],
+  'TMOBILE-EU': [
+    DataPlan('TMOBILE-EU','5GB',30,10), DataPlan('TMOBILE-EU','20GB',30,20),
+    DataPlan('TMOBILE-EU','Unlimited',30,35),
+  ],
+  'O2-EU': [
+    DataPlan('O2-EU','5GB',30,13), DataPlan('O2-EU','20GB',30,23),
+    DataPlan('O2-EU','Unlimited',30,37),
+  ],
+  // ── India ────────────────────────────────────────────────────────────────
+  'JIO-IN': [
+    DataPlan('JIO-IN','1GB/day',28,239), DataPlan('JIO-IN','2GB/day',28,479),
+    DataPlan('JIO-IN','Unlimited',84,719),
+  ],
+  'AIRTEL-IN': [
+    DataPlan('AIRTEL-IN','1GB/day',28,265), DataPlan('AIRTEL-IN','2GB/day',28,499),
+    DataPlan('AIRTEL-IN','Unlimited',84,839),
+  ],
+  'VI-IN': [
+    DataPlan('VI-IN','1GB/day',28,249), DataPlan('VI-IN','2GB/day',28,479),
+  ],
+  'BSNL-IN': [
+    DataPlan('BSNL-IN','1GB/day',30,187), DataPlan('BSNL-IN','Unlimited',90,599),
+  ],
+  // ── UAE ──────────────────────────────────────────────────────────────────
+  'ETISALAT-AE': [
+    DataPlan('ETISALAT-AE','5GB',30,65), DataPlan('ETISALAT-AE','15GB',30,110),
+    DataPlan('ETISALAT-AE','Unlimited',30,180),
+  ],
+  'DU-AE': [
+    DataPlan('DU-AE','5GB',30,55), DataPlan('DU-AE','15GB',30,95),
+    DataPlan('DU-AE','Unlimited',30,160),
+  ],
+  // ── Canada ───────────────────────────────────────────────────────────────
+  'ROGERS-CA': [
+    DataPlan('ROGERS-CA','5GB',30,35), DataPlan('ROGERS-CA','20GB',30,55),
+    DataPlan('ROGERS-CA','Unlimited',30,75),
+  ],
+  'BELL-CA': [
+    DataPlan('BELL-CA','5GB',30,35), DataPlan('BELL-CA','20GB',30,55),
+    DataPlan('BELL-CA','Unlimited',30,75),
+  ],
+  'TELUS-CA': [
+    DataPlan('TELUS-CA','5GB',30,33), DataPlan('TELUS-CA','20GB',30,52),
+    DataPlan('TELUS-CA','Unlimited',30,70),
+  ],
+  'FREEDOM-CA': [
+    DataPlan('FREEDOM-CA','5GB',30,25), DataPlan('FREEDOM-CA','20GB',30,40),
+    DataPlan('FREEDOM-CA','Unlimited',30,55),
+  ],
+  // ── Australia ────────────────────────────────────────────────────────────
+  'TELSTRA-AU': [
+    DataPlan('TELSTRA-AU','10GB',30,30), DataPlan('TELSTRA-AU','30GB',30,50),
+    DataPlan('TELSTRA-AU','Unlimited',30,65),
+  ],
+  'OPTUS-AU': [
+    DataPlan('OPTUS-AU','10GB',30,25), DataPlan('OPTUS-AU','30GB',30,45),
+    DataPlan('OPTUS-AU','Unlimited',30,60),
+  ],
+  'VODAFONE-AU': [
+    DataPlan('VODAFONE-AU','10GB',30,22), DataPlan('VODAFONE-AU','30GB',30,40),
+    DataPlan('VODAFONE-AU','Unlimited',30,55),
+  ],
+  'TPG-AU': [
+    DataPlan('TPG-AU','10GB',30,20), DataPlan('TPG-AU','30GB',30,35),
+    DataPlan('TPG-AU','Unlimited',30,50),
+  ],
+  // ── Japan ────────────────────────────────────────────────────────────────
+  'DOCOMO-JP': [
+    DataPlan('DOCOMO-JP','3GB',30,1078), DataPlan('DOCOMO-JP','15GB',30,2970),
+    DataPlan('DOCOMO-JP','Unlimited',30,4928),
+  ],
+  'SOFTBANK-JP': [
+    DataPlan('SOFTBANK-JP','3GB',30,990), DataPlan('SOFTBANK-JP','15GB',30,2970),
+    DataPlan('SOFTBANK-JP','Unlimited',30,4928),
+  ],
+  'AU-JP': [
+    DataPlan('AU-JP','3GB',30,990), DataPlan('AU-JP','15GB',30,2970),
+    DataPlan('AU-JP','Unlimited',30,4928),
+  ],
+  'RAKUTEN-JP': [
+    DataPlan('RAKUTEN-JP','3GB',30,1078), DataPlan('RAKUTEN-JP','Unlimited',30,3278),
+  ],
+  // ── Singapore ────────────────────────────────────────────────────────────
+  'SINGTEL-SG': [
+    DataPlan('SINGTEL-SG','10GB',30,20), DataPlan('SINGTEL-SG','50GB',30,35),
+    DataPlan('SINGTEL-SG','Unlimited',30,50),
+  ],
+  'STARHUB-SG': [
+    DataPlan('STARHUB-SG','10GB',30,18), DataPlan('STARHUB-SG','50GB',30,32),
+    DataPlan('STARHUB-SG','Unlimited',30,48),
+  ],
+  'M1-SG': [
+    DataPlan('M1-SG','10GB',30,18), DataPlan('M1-SG','50GB',30,30),
+    DataPlan('M1-SG','Unlimited',30,45),
+  ],
+  'TPG-SG': [
+    DataPlan('TPG-SG','10GB',30,15), DataPlan('TPG-SG','50GB',30,25),
+    DataPlan('TPG-SG','Unlimited',30,38),
+  ],
+  // ── Egypt ────────────────────────────────────────────────────────────────
+  'ORANGE-EG': [
+    DataPlan('ORANGE-EG','1GB',30,25), DataPlan('ORANGE-EG','3GB',30,60),
+    DataPlan('ORANGE-EG','10GB',30,150),
+  ],
+  'VODAFONE-EG': [
+    DataPlan('VODAFONE-EG','1GB',30,23), DataPlan('VODAFONE-EG','3GB',30,55),
+    DataPlan('VODAFONE-EG','10GB',30,140),
+  ],
+  'ETISALAT-EG': [
+    DataPlan('ETISALAT-EG','1GB',30,22), DataPlan('ETISALAT-EG','3GB',30,52),
+    DataPlan('ETISALAT-EG','10GB',30,135),
+  ],
+  'WE-EG': [
+    DataPlan('WE-EG','1GB',30,20), DataPlan('WE-EG','3GB',30,50),
+    DataPlan('WE-EG','10GB',30,130),
+  ],
+  // ── Saudi Arabia ─────────────────────────────────────────────────────────
+  'STC-SA': [
+    DataPlan('STC-SA','10GB',30,75), DataPlan('STC-SA','30GB',30,130),
+    DataPlan('STC-SA','Unlimited',30,200),
+  ],
+  'MOBILY-SA': [
+    DataPlan('MOBILY-SA','10GB',30,70), DataPlan('MOBILY-SA','30GB',30,120),
+    DataPlan('MOBILY-SA','Unlimited',30,185),
+  ],
+  'ZAIN-SA': [
+    DataPlan('ZAIN-SA','10GB',30,68), DataPlan('ZAIN-SA','30GB',30,115),
+    DataPlan('ZAIN-SA','Unlimited',30,175),
+  ],
+  // ── Turkey ───────────────────────────────────────────────────────────────
+  'TURKCELL-TR': [
+    DataPlan('TURKCELL-TR','10GB',30,150), DataPlan('TURKCELL-TR','30GB',30,250),
+    DataPlan('TURKCELL-TR','Unlimited',30,400),
+  ],
+  'VODAFONE-TR': [
+    DataPlan('VODAFONE-TR','10GB',30,140), DataPlan('VODAFONE-TR','30GB',30,235),
+    DataPlan('VODAFONE-TR','Unlimited',30,380),
+  ],
+  'TURKTELEKOM-TR': [
+    DataPlan('TURKTELEKOM-TR','10GB',30,135), DataPlan('TURKTELEKOM-TR','30GB',30,225),
+    DataPlan('TURKTELEKOM-TR','Unlimited',30,360),
+  ],
+  // ── Mexico ───────────────────────────────────────────────────────────────
+  'TELCEL-MX': [
+    DataPlan('TELCEL-MX','3GB',30,199), DataPlan('TELCEL-MX','10GB',30,349),
+    DataPlan('TELCEL-MX','Unlimited',30,499),
+  ],
+  'MOVISTAR-MX': [
+    DataPlan('MOVISTAR-MX','3GB',30,179), DataPlan('MOVISTAR-MX','10GB',30,299),
+    DataPlan('MOVISTAR-MX','Unlimited',30,449),
+  ],
+  'ATT-MX': [
+    DataPlan('ATT-MX','3GB',30,189), DataPlan('ATT-MX','10GB',30,329),
+    DataPlan('ATT-MX','Unlimited',30,479),
+  ],
+  // ── Indonesia ────────────────────────────────────────────────────────────
+  'TELKOMSEL-ID': [
+    DataPlan('TELKOMSEL-ID','7GB',30,65000), DataPlan('TELKOMSEL-ID','20GB',30,130000),
+    DataPlan('TELKOMSEL-ID','Unlimited',30,199000),
+  ],
+  'INDOSAT-ID': [
+    DataPlan('INDOSAT-ID','7GB',30,55000), DataPlan('INDOSAT-ID','20GB',30,110000),
+    DataPlan('INDOSAT-ID','Unlimited',30,179000),
+  ],
+  'XL-ID': [
+    DataPlan('XL-ID','7GB',30,50000), DataPlan('XL-ID','20GB',30,100000),
+    DataPlan('XL-ID','Unlimited',30,159000),
+  ],
+  // ── Philippines ──────────────────────────────────────────────────────────
+  'GLOBE-PH': [
+    DataPlan('GLOBE-PH','8GB',30,299), DataPlan('GLOBE-PH','25GB',30,499),
+    DataPlan('GLOBE-PH','Unlimited',30,799),
+  ],
+  'SMART-PH': [
+    DataPlan('SMART-PH','8GB',30,279), DataPlan('SMART-PH','25GB',30,479),
+    DataPlan('SMART-PH','Unlimited',30,749),
+  ],
+  'DITO-PH': [
+    DataPlan('DITO-PH','8GB',30,199), DataPlan('DITO-PH','25GB',30,349),
+    DataPlan('DITO-PH','Unlimited',30,599),
+  ],
+  // ── Malaysia ─────────────────────────────────────────────────────────────
+  'MAXIS-MY': [
+    DataPlan('MAXIS-MY','10GB',30,38), DataPlan('MAXIS-MY','30GB',30,68),
+    DataPlan('MAXIS-MY','Unlimited',30,98),
+  ],
+  'CELCOM-MY': [
+    DataPlan('CELCOM-MY','10GB',30,35), DataPlan('CELCOM-MY','30GB',30,65),
+    DataPlan('CELCOM-MY','Unlimited',30,95),
+  ],
+  'DIGI-MY': [
+    DataPlan('DIGI-MY','10GB',30,33), DataPlan('DIGI-MY','30GB',30,60),
+    DataPlan('DIGI-MY','Unlimited',30,88),
+  ],
+  'UMOBILE-MY': [
+    DataPlan('UMOBILE-MY','10GB',30,28), DataPlan('UMOBILE-MY','30GB',30,55),
+    DataPlan('UMOBILE-MY','Unlimited',30,80),
+  ],
+  // ── Brazil ───────────────────────────────────────────────────────────────
+  'VIVO-BR': [
+    DataPlan('VIVO-BR','5GB',30,35), DataPlan('VIVO-BR','15GB',30,55),
+    DataPlan('VIVO-BR','Unlimited',30,80),
+  ],
+  'CLARO-BR': [
+    DataPlan('CLARO-BR','5GB',30,32), DataPlan('CLARO-BR','15GB',30,50),
+    DataPlan('CLARO-BR','Unlimited',30,75),
+  ],
+  'TIM-BR': [
+    DataPlan('TIM-BR','5GB',30,30), DataPlan('TIM-BR','15GB',30,48),
+    DataPlan('TIM-BR','Unlimited',30,70),
+  ],
+  // ── Zambia ───────────────────────────────────────────────────────────────
+  'MTN-ZM': [
+    DataPlan('MTN-ZM','1GB',30,25), DataPlan('MTN-ZM','3GB',30,60),
+    DataPlan('MTN-ZM','5GB',30,95),
+  ],
+  'AIRTEL-ZM': [
+    DataPlan('AIRTEL-ZM','1GB',30,22), DataPlan('AIRTEL-ZM','3GB',30,55),
+    DataPlan('AIRTEL-ZM','5GB',30,90),
+  ],
+  'ZAMTEL-ZM': [
+    DataPlan('ZAMTEL-ZM','1GB',30,20), DataPlan('ZAMTEL-ZM','3GB',30,50),
+    DataPlan('ZAMTEL-ZM','5GB',30,85),
+  ],
+  // ── Uganda ───────────────────────────────────────────────────────────────
+  'MTN-UG': [
+    DataPlan('MTN-UG','1GB',30,7000), DataPlan('MTN-UG','3GB',30,18000),
+    DataPlan('MTN-UG','5GB',30,28000),
+  ],
+  'AIRTEL-UG': [
+    DataPlan('AIRTEL-UG','1GB',30,6500), DataPlan('AIRTEL-UG','3GB',30,16000),
+    DataPlan('AIRTEL-UG','5GB',30,25000),
+  ],
+  'AFRICELL-UG': [
+    DataPlan('AFRICELL-UG','1GB',30,6000), DataPlan('AFRICELL-UG','3GB',30,15000),
+    DataPlan('AFRICELL-UG','5GB',30,23000),
+  ],
+  // ── Tanzania ─────────────────────────────────────────────────────────────
+  'VODACOM-TZ': [
+    DataPlan('VODACOM-TZ','1GB',30,3000), DataPlan('VODACOM-TZ','3GB',30,7500),
+    DataPlan('VODACOM-TZ','5GB',30,12000),
+  ],
+  'AIRTEL-TZ': [
+    DataPlan('AIRTEL-TZ','1GB',30,2800), DataPlan('AIRTEL-TZ','3GB',30,7000),
+    DataPlan('AIRTEL-TZ','5GB',30,11000),
+  ],
+  'TIGO-TZ': [
+    DataPlan('TIGO-TZ','1GB',30,2500), DataPlan('TIGO-TZ','3GB',30,6500),
+    DataPlan('TIGO-TZ','5GB',30,10000),
+  ],
+  // ── Rwanda ───────────────────────────────────────────────────────────────
+  'MTN-RW': [
+    DataPlan('MTN-RW','1GB',30,1200), DataPlan('MTN-RW','3GB',30,3000),
+    DataPlan('MTN-RW','5GB',30,4500),
+  ],
+  'AIRTEL-RW': [
+    DataPlan('AIRTEL-RW','1GB',30,1100), DataPlan('AIRTEL-RW','3GB',30,2800),
+    DataPlan('AIRTEL-RW','5GB',30,4200),
+  ],
+  // ── West Africa CFA ──────────────────────────────────────────────────────
+  'ORANGE-WA': [
+    DataPlan('ORANGE-WA','1GB',30,1500), DataPlan('ORANGE-WA','3GB',30,3500),
+    DataPlan('ORANGE-WA','5GB',30,6000),
+  ],
+  'MTN-WA': [
+    DataPlan('MTN-WA','1GB',30,1400), DataPlan('MTN-WA','3GB',30,3200),
+    DataPlan('MTN-WA','5GB',30,5500),
+  ],
+  'MOOV-WA': [
+    DataPlan('MOOV-WA','1GB',30,1200), DataPlan('MOOV-WA','3GB',30,3000),
+    DataPlan('MOOV-WA','5GB',30,5000),
+  ],
+  // ── Cameroon ─────────────────────────────────────────────────────────────
+  'MTN-CM': [
+    DataPlan('MTN-CM','1GB',30,1500), DataPlan('MTN-CM','3GB',30,3500),
+    DataPlan('MTN-CM','5GB',30,6000),
+  ],
+  'ORANGE-CM': [
+    DataPlan('ORANGE-CM','1GB',30,1400), DataPlan('ORANGE-CM','3GB',30,3200),
+    DataPlan('ORANGE-CM','5GB',30,5500),
+  ],
+  // ── Qatar ────────────────────────────────────────────────────────────────
+  'OOREDOO-QA': [
+    DataPlan('OOREDOO-QA','10GB',30,60), DataPlan('OOREDOO-QA','30GB',30,110),
+    DataPlan('OOREDOO-QA','Unlimited',30,170),
+  ],
+  'VODAFONE-QA': [
+    DataPlan('VODAFONE-QA','10GB',30,55), DataPlan('VODAFONE-QA','30GB',30,100),
+    DataPlan('VODAFONE-QA','Unlimited',30,160),
+  ],
+  // ── Vietnam ──────────────────────────────────────────────────────────────
+  'VIETTEL-VN': [
+    DataPlan('VIETTEL-VN','5GB',30,70000), DataPlan('VIETTEL-VN','15GB',30,150000),
+    DataPlan('VIETTEL-VN','Unlimited',30,220000),
+  ],
+  'VINAPHONE-VN': [
+    DataPlan('VINAPHONE-VN','5GB',30,65000), DataPlan('VINAPHONE-VN','15GB',30,140000),
+    DataPlan('VINAPHONE-VN','Unlimited',30,210000),
+  ],
+  'MOBIFONE-VN': [
+    DataPlan('MOBIFONE-VN','5GB',30,65000), DataPlan('MOBIFONE-VN','15GB',30,140000),
+    DataPlan('MOBIFONE-VN','Unlimited',30,200000),
+  ],
+  // ── Thailand ─────────────────────────────────────────────────────────────
+  'AIS-TH': [
+    DataPlan('AIS-TH','10GB',30,299), DataPlan('AIS-TH','30GB',30,499),
+    DataPlan('AIS-TH','Unlimited',30,699),
+  ],
+  'DTAC-TH': [
+    DataPlan('DTAC-TH','10GB',30,279), DataPlan('DTAC-TH','30GB',30,479),
+    DataPlan('DTAC-TH','Unlimited',30,659),
+  ],
+  'TRUE-TH': [
+    DataPlan('TRUE-TH','10GB',30,269), DataPlan('TRUE-TH','30GB',30,459),
+    DataPlan('TRUE-TH','Unlimited',30,629),
+  ],
+  // ── Pakistan ─────────────────────────────────────────────────────────────
+  'JAZZ-PK': [
+    DataPlan('JAZZ-PK','2GB',30,200), DataPlan('JAZZ-PK','6GB',30,450),
+    DataPlan('JAZZ-PK','12GB',30,800),
+  ],
+  'TELENOR-PK': [
+    DataPlan('TELENOR-PK','2GB',30,190), DataPlan('TELENOR-PK','6GB',30,430),
+    DataPlan('TELENOR-PK','12GB',30,780),
+  ],
+  'ZONG-PK': [
+    DataPlan('ZONG-PK','2GB',30,185), DataPlan('ZONG-PK','6GB',30,420),
+    DataPlan('ZONG-PK','12GB',30,760),
+  ],
+  'UFONE-PK': [
+    DataPlan('UFONE-PK','2GB',30,180), DataPlan('UFONE-PK','6GB',30,400),
+    DataPlan('UFONE-PK','12GB',30,740),
+  ],
+  // ── Morocco ──────────────────────────────────────────────────────────────
+  'MAROCTELECOM-MA': [
+    DataPlan('MAROCTELECOM-MA','1GB',30,20), DataPlan('MAROCTELECOM-MA','5GB',30,70),
+    DataPlan('MAROCTELECOM-MA','10GB',30,120),
+  ],
+  'ORANGE-MA': [
+    DataPlan('ORANGE-MA','1GB',30,18), DataPlan('ORANGE-MA','5GB',30,65),
+    DataPlan('ORANGE-MA','10GB',30,110),
+  ],
+  'INWI-MA': [
+    DataPlan('INWI-MA','1GB',30,15), DataPlan('INWI-MA','5GB',30,60),
+    DataPlan('INWI-MA','10GB',30,100),
+  ],
+  // ── Ethiopia ─────────────────────────────────────────────────────────────
+  'ETHIOTELECOM-ET': [
+    DataPlan('ETHIOTELECOM-ET','1GB',30,50), DataPlan('ETHIOTELECOM-ET','3GB',30,130),
+    DataPlan('ETHIOTELECOM-ET','5GB',30,200),
+  ],
+  'SAFARICOM-ET': [
+    DataPlan('SAFARICOM-ET','1GB',30,45), DataPlan('SAFARICOM-ET','3GB',30,120),
+    DataPlan('SAFARICOM-ET','5GB',30,190),
+  ],
+  // ── Zimbabwe ─────────────────────────────────────────────────────────────
+  'ECONET-ZW': [
+    DataPlan('ECONET-ZW','1GB',30,5), DataPlan('ECONET-ZW','3GB',30,12),
+    DataPlan('ECONET-ZW','5GB',30,18),
+  ],
+  'NETONE-ZW': [
+    DataPlan('NETONE-ZW','1GB',30,4), DataPlan('NETONE-ZW','3GB',30,10),
+    DataPlan('NETONE-ZW','5GB',30,16),
+  ],
+  'TELECEL-ZW': [
+    DataPlan('TELECEL-ZW','1GB',30,4), DataPlan('TELECEL-ZW','3GB',30,10),
+    DataPlan('TELECEL-ZW','5GB',30,15),
+  ],
+  // ── Colombia ─────────────────────────────────────────────────────────────
+  'CLARO-CO': [
+    DataPlan('CLARO-CO','3GB',30,25000), DataPlan('CLARO-CO','10GB',30,50000),
+    DataPlan('CLARO-CO','Unlimited',30,80000),
+  ],
+  'MOVISTAR-CO': [
+    DataPlan('MOVISTAR-CO','3GB',30,22000), DataPlan('MOVISTAR-CO','10GB',30,45000),
+    DataPlan('MOVISTAR-CO','Unlimited',30,75000),
+  ],
+  'TIGO-CO': [
+    DataPlan('TIGO-CO','3GB',30,20000), DataPlan('TIGO-CO','10GB',30,42000),
+    DataPlan('TIGO-CO','Unlimited',30,70000),
+  ],
+  // ── Argentina ────────────────────────────────────────────────────────────
+  'CLARO-AR': [
+    DataPlan('CLARO-AR','5GB',30,2500), DataPlan('CLARO-AR','15GB',30,4500),
+    DataPlan('CLARO-AR','Unlimited',30,7000),
+  ],
+  'PERSONAL-AR': [
+    DataPlan('PERSONAL-AR','5GB',30,2400), DataPlan('PERSONAL-AR','15GB',30,4300),
+    DataPlan('PERSONAL-AR','Unlimited',30,6800),
+  ],
+  'MOVISTAR-AR': [
+    DataPlan('MOVISTAR-AR','5GB',30,2300), DataPlan('MOVISTAR-AR','15GB',30,4100),
+    DataPlan('MOVISTAR-AR','Unlimited',30,6500),
+  ],
+};
+
 class _DataTab extends StatefulWidget {
   final RegionInfo region; final double balance;
   final String serverUrl, userId;
@@ -1193,9 +1704,40 @@ class _DataTab extends StatefulWidget {
 }
 
 class _DataTabState extends State<_DataTab> {
-  String? _net; String _phone = '';
+  String? _net;
+  DataPlan? _plan;
+  String _phone = '';
   final _pCtrl = TextEditingController();
   @override void dispose() { _pCtrl.dispose(); super.dispose(); }
+
+  List<DataPlan> get _plans => _net == null ? [] : (_kDataPlans[_net] ?? []);
+
+  Future<void> _buy() async {
+    if (_net == null)          { widget.snack('Select a network'); return; }
+    if (_phone.length < 6)     { widget.snack('Enter phone number'); return; }
+    if (_plan == null)         { widget.snack('Select a plan'); return; }
+    if (_plan!.price > widget.balance) { widget.snack('Insufficient balance'); return; }
+    widget.snack('Processing…');
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/vtu/data'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'phone':      _phone,
+          'operatorId': _net,
+          'amount':     _plan!.price,
+          'userId':     widget.userId,
+        }),
+      ).timeout(const Duration(seconds: 20));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        await widget.onSuccess();
+        widget.snack('✅ ${_plan!.size} data sent to $_phone');
+      } else {
+        widget.snack('❌ ${d['message'] ?? 'Failed'}');
+      }
+    } catch (_) { widget.snack('❌ Network error'); }
+  }
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -1205,24 +1747,132 @@ class _DataTabState extends State<_DataTab> {
           style: TextStyle(color: Colors.white,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 20),
+
+      // ── Network picker ──────────────────────────────────────────────────
       const Text('Select Network',
           style: TextStyle(color: _kMuted,
               fontSize: 13, fontWeight: FontWeight.w600)),
       const SizedBox(height: 10),
-      _netGrid(widget.region.networks, _net,
-          (id) => setState(() => _net = id)),
+      _netGrid(widget.region.networks, _net, (id) {
+        setState(() { _net = id; _plan = null; });
+      }),
       const SizedBox(height: 16),
+
+      // ── Phone number ────────────────────────────────────────────────────
       const Text('Phone Number',
           style: TextStyle(color: _kMuted,
               fontSize: 13, fontWeight: FontWeight.w600)),
       const SizedBox(height: 8),
       _xf(_pCtrl, 'Enter phone number',
           TextInputType.phone, (v) => _phone = v),
+
+      // ── Plans ───────────────────────────────────────────────────────────
       if (_net != null) ...[
-        const SizedBox(height: 16),
-        const Text('Plans loaded from server per network.',
-            style: TextStyle(color: _kMuted, fontSize: 12)),
+        const SizedBox(height: 20),
+        const Text('Select Plan',
+            style: TextStyle(color: _kMuted,
+                fontSize: 13, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 10),
+        if (_plans.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('No plans available for this network.',
+                style: TextStyle(color: _kMuted, fontSize: 13)))
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _plans.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (_, i) {
+              final p = _plans[i];
+              final selected = _plan == p;
+              return GestureDetector(
+                onTap: () => setState(() => _plan = p),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? const Color(0x1A00B0A0)
+                        : _kCard,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                        color: selected
+                            ? _kTeal
+                            : Colors.white12,
+                        width: selected ? 2 : 1),
+                  ),
+                  child: Row(children: [
+                    // Size badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? _kTeal
+                            : const Color(0x22FFFFFF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(p.size,
+                          style: TextStyle(
+                              color: selected ? Colors.black : Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800)),
+                    ),
+                    const SizedBox(width: 12),
+                    // Validity
+                    Expanded(
+                      child: Text('${p.days} days',
+                          style: const TextStyle(
+                              color: _kMuted, fontSize: 13)),
+                    ),
+                    // Price
+                    Text(widget.fmt(p.price),
+                        style: TextStyle(
+                            color: selected ? _kTeal : Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+              );
+            },
+          ),
       ],
+
+      const SizedBox(height: 24),
+
+      // ── Balance row ─────────────────────────────────────────────────────
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(color: _kCard,
+            borderRadius: BorderRadius.circular(12)),
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('Balance',
+              style: TextStyle(color: _kMuted, fontSize: 13)),
+          Text(widget.fmt(widget.balance),
+              style: const TextStyle(color: Colors.white,
+                  fontSize: 13, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+      const SizedBox(height: 16),
+
+      // ── Buy button ──────────────────────────────────────────────────────
+      SizedBox(width: double.infinity,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _kTeal,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+          ),
+          onPressed: _buy,
+          child: const Text('Buy Data',
+              style: TextStyle(color: Colors.black,
+                  fontSize: 16, fontWeight: FontWeight.w700)),
+        ),
+      ),
     ]),
   );
 }
