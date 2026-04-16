@@ -28,6 +28,7 @@ class NebulaCard extends StatelessWidget {
         context.push('/wallet'); // Confirmed by grep
         break;
       case DiscoveryType.creator:
+        if (item.title == "Social Aura") { context.push("/people"); return; }
         context.push('/call-history'); // Confirmed by grep
         break;
     }

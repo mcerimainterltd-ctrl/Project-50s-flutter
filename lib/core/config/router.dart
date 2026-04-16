@@ -41,6 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
     GoRoute(path: "/discovery", name: "discovery", builder: (context, state) => const DiscoveryAuraFeed()),
+      GoRoute(path: "/people", name: "people", builder: (c, s) => const PeopleDiscoveryScreen()),
       GoRoute(path: '/login',    builder: (c, s) => const LoginScreen()),
       GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
       GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
