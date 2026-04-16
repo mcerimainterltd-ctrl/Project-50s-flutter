@@ -7,21 +7,20 @@ final galleryProvider = StateNotifierProvider.family<GalleryNotifier, List<Galle
 
 class GalleryNotifier extends StateNotifier<List<GalleryItem>> {
   final String viewerId;
-  // This would normally be a database call; we use a static list to simulate cross-user discovery
-  static List<GalleryItem> _sharedDatabase = []; 
+  static List<GalleryItem> _globalDatabase = []; 
 
-  GalleryNotifier(this.viewerId) : super(_filterItems(_sharedDatabase, viewerId));
+  GalleryNotifier(this.viewerId) : super(_runDiscovery(_globalDatabase, viewerId));
 
-  static List<GalleryItem> _filterItems(List<GalleryItem> items, String vId) {
+  static List<GalleryItem> _runDiscovery(List<GalleryItem> items, String vId) {
     return items.where((item) {
-      if (item.ownerId == vId) return true; // Owner sees everything
-      if (item.visibility == 'public') return true; // Discovery: Others see public posts
+      if (item.ownerId == vId) return true; // I see my own
+      if (item.visibility == 'public') return true; // I see everyone's public posts
       return false;
     }).toList();
   }
 
   void addItem(GalleryItem item) {
-    _sharedDatabase = [item, ..._sharedDatabase];
-    state = _filterItems(_sharedDatabase, viewerId);
+    _globalDatabase = [item, ..._globalDatabase];
+    state = _runDiscovery(_globalDatabase, viewerId);
   }
 }
