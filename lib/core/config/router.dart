@@ -1,3 +1,4 @@
+import "../features/discovery/screens/people_discovery_screen.dart";
 import "../../features/discovery/screens/discovery_aura_feed.dart";
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
