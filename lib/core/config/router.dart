@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:xamepage/features/discovery/screens/people_discovery_screen.dart';
-import 'package:xamepage/core/features/wallet/screens/xame_pay_screen.dart';
-import 'package:xamepage/core/features/home/screens/home_screen.dart';
-import 'package:xamepage/core/features/calls/screens/call_history_screen.dart';
+
+// EXACT PATHS FROM YOUR FIND COMMAND
+import '../../features/discovery/screens/people_discovery_screen.dart';
+import '../../screens/xame_pay_screen.dart';
+import '../../screens/home_screen.dart'; 
+import '../features/calls/screens/call_history_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
