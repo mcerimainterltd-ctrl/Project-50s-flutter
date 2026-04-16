@@ -1,3 +1,4 @@
+import "../../features/discovery/screens/discovery_aura_feed.dart";
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,6 +40,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+    GoRoute(path: "/discovery", name: "discovery", builder: (context, state) => const DiscoveryAuraFeed()),
       GoRoute(path: '/login',    builder: (c, s) => const LoginScreen()),
       GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
       GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
