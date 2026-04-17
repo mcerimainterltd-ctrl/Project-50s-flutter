@@ -19,12 +19,19 @@ class _DiscoveryVideoPlayerState extends State<DiscoveryVideoPlayer> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(widget.videoUrl)
-      ..setLooping(true)
-      ..setVolume(0) // Muted by default for discovery
-      ..initialize().then((_) {
-        if (mounted) setState(() => _isInitialized = true);
-      });
+    _initController();
+  }
+
+  void _initController() async {
+    _controller = VideoPlayerController.network(widget.videoUrl);
+    try {
+      await _controller!.initialize();
+      await _controller!.setLooping(true);
+      await _controller!.setVolume(0);
+      if (mounted) setState(() => _isInitialized = true);
+    } catch (e) {
+      debugPrint("Video init error: $e");
+    }
   }
 
   @override
@@ -38,7 +45,7 @@ class _DiscoveryVideoPlayerState extends State<DiscoveryVideoPlayer> {
     return VisibilityDetector(
       key: Key(widget.videoUrl),
       onVisibilityChanged: (info) {
-        if (info.visibleFraction > 0.8) {
+        if (info.visibleFraction > 0.8 && _isInitialized) {
           _controller?.play();
         } else {
           _controller?.pause();
@@ -47,19 +54,20 @@ class _DiscoveryVideoPlayerState extends State<DiscoveryVideoPlayer> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Poster Image (shown while loading or when off-screen)
           Image.network(widget.posterUrl, fit: BoxFit.cover),
-          
           if (_isInitialized)
-            AnimatedOpacity(
-              opacity: _isInitialized ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 500),
-              child: VideoPlayer(_controller!),
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller!.value.size.width,
+                  height: _controller!.value.size.height,
+                  child: VideoPlayer(_controller!),
+                ),
+              ),
             ),
-            
-          // Loading Indicator for Video
           if (!_isInitialized)
-            const Center(child: CircularProgressIndicator(color: Colors.blueAccent, strokeWidth: 2)),
+            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ],
       ),
     );
