@@ -1879,7 +1879,56 @@ class _DataTabState extends State<_DataTab> {
 
 // ── BILLS TAB ─────────────────────────────────────────────────────────────────
 
-class _BillsTab extends StatelessWidget {
+// Biller item (one package/product within a biller)
+class _BillItem {
+  final String itemCode, label, labelName;
+  final double amount; // 0 = user enters amount
+  const _BillItem(this.itemCode, this.label, this.labelName, this.amount);
+  factory _BillItem.fromJson(Map<String, dynamic> j) => _BillItem(
+    j['item_code'] ?? '',
+    j['label']     ?? '',
+    j['label_name'] ?? 'Customer ID',
+    (j['amount'] as num?)?.toDouble() ?? 0,
+  );
+}
+
+// A biller (e.g. "IKEDC", "DSTV")
+class _Biller {
+  final String name, billerCode;
+  final List<_BillItem> items;
+  const _Biller(this.name, this.billerCode, this.items);
+  factory _Biller.fromJson(Map<String, dynamic> j) => _Biller(
+    j['name']        ?? '',
+    j['biller_code'] ?? '',
+    ((j['items'] as List?) ?? []).map((i) => _BillItem.fromJson(i)).toList(),
+  );
+}
+
+// Bill category descriptor
+class _BillCat {
+  final String type, label, icon;
+  const _BillCat(this.type, this.label, this.icon);
+}
+
+const _kBillCats = [
+  _BillCat('electricity', 'Electricity', '💡'),
+  _BillCat('cable',       'Cable TV',    '📺'),
+  _BillCat('internet',    'Internet',    '🌐'),
+  _BillCat('water',       'Water',       '💧'),
+  _BillCat('gas',         'Gas',         '🔥'),
+];
+
+// currency → 2-letter country code for bills API
+const _kBillsCC = {
+  'NGN':'NG','GHS':'GH','KES':'KE','ZAR':'ZA','USD':'US','GBP':'GB',
+  'EUR':'DE','INR':'IN','AED':'AE','CAD':'CA','AUD':'AU','JPY':'JP',
+  'SGD':'SG','EGP':'EG','SAR':'SA','TRY':'TR','MXN':'MX','IDR':'ID',
+  'PHP':'PH','MYR':'MY','BRL':'BR','ZMW':'ZM','UGX':'UG','TZS':'TZ',
+  'RWF':'RW','XOF':'SN','CMR':'CM','QAR':'QA','VND':'VN','THB':'TH',
+  'PKR':'PK','MAD':'MA','ETB':'ET','ZWL':'ZW','COP':'CO','ARS':'AR',
+};
+
+class _BillsTab extends StatefulWidget {
   final RegionInfo region; final double balance;
   final String serverUrl, userId, currency;
   final String Function(double) fmt;
@@ -1888,17 +1937,132 @@ class _BillsTab extends StatelessWidget {
   const _BillsTab({required this.region, required this.balance,
       required this.serverUrl, required this.userId, required this.currency,
       required this.fmt, required this.onSuccess, required this.snack});
+  @override State<_BillsTab> createState() => _BillsTabState();
+}
 
-  static const _bills = [
-    ['electricity', 'Electricity', '💡'],
-    ['cable',       'Cable TV',    '📺'],
-    ['internet',    'Internet',    '🌐'],
-    ['water',       'Water',       '💧'],
-    ['gas',         'Gas',         '🔥'],
-  ];
+class _BillsTabState extends State<_BillsTab> {
+  // Navigation state: null = category grid, set = drill-down
+  _BillCat? _cat;
+  _Biller?  _biller;
+
+  // Biller list state
+  bool _loadingBillers = false, _billersError = false;
+  List<_Biller> _billers = [];
+
+  // Payment form state
+  _BillItem? _selItem;
+  String _customer = '', _amtStr = '', _validated = '';
+  bool _validating = false;
+  final _custCtrl = TextEditingController();
+  final _amtCtrl  = TextEditingController();
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
+  void dispose() { _custCtrl.dispose(); _amtCtrl.dispose(); super.dispose(); }
+
+  String get _cc => _kBillsCC[widget.currency] ?? 'NG';
+
+  // ── Step 1 → 2: load billers for category ──────────────────────────────────
+  Future<void> _loadBillers(_BillCat cat) async {
+    setState(() { _cat = cat; _billers = []; _billersError = false; _loadingBillers = true; _biller = null; });
+    try {
+      final r = await http.get(Uri.parse(
+        '${widget.serverUrl}/api/wallet/bills/categories'
+        '?type=${cat.type}&country=$_cc'))
+          .timeout(const Duration(seconds: 10));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true && (d['categories'] as List).isNotEmpty) {
+        setState(() {
+          _billers = (d['categories'] as List).map((b) => _Biller.fromJson(b)).toList();
+          _loadingBillers = false;
+        });
+      } else {
+        setState(() { _loadingBillers = false; _billersError = true; });
+      }
+    } catch (_) {
+      setState(() { _loadingBillers = false; _billersError = true; });
+    }
+  }
+
+  // ── Step 2 → 3: select biller ──────────────────────────────────────────────
+  void _selectBiller(_Biller b) {
+    setState(() {
+      _biller  = b;
+      _selItem = b.items.isNotEmpty ? b.items.first : null;
+      _customer = ''; _amtStr = ''; _validated = '';
+      _custCtrl.clear(); _amtCtrl.clear();
+    });
+  }
+
+  // ── Validate customer ID ────────────────────────────────────────────────────
+  Future<void> _validate(String val) async {
+    if (val.length < 4 || _biller == null || _selItem == null) return;
+    setState(() { _validating = true; _validated = 'Verifying…'; });
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/wallet/bills/validate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'item_code':    _selItem!.itemCode,
+          'biller_code':  _biller!.billerCode,
+          'customer':     val,
+        }),
+      ).timeout(const Duration(seconds: 10));
+      final d = jsonDecode(r.body);
+      setState(() {
+        _validating = false;
+        _validated = d['success'] == true
+            ? '✅ ${d['name']}${d['address'] != null ? '  •  ${d['address']}' : ''}'
+            : '⚠️ Could not verify — you can still proceed';
+      });
+    } catch (_) {
+      setState(() { _validating = false; _validated = '⚠️ Validation unavailable'; });
+    }
+  }
+
+  // ── Pay ─────────────────────────────────────────────────────────────────────
+  Future<void> _pay() async {
+    if (_customer.isEmpty) { widget.snack('Enter ${_selItem?.labelName ?? 'Customer ID'}'); return; }
+    final amt = _selItem!.amount > 0 ? _selItem!.amount : (double.tryParse(_amtStr) ?? 0);
+    if (amt < 1) { widget.snack('Enter amount'); return; }
+    if (amt > widget.balance) { widget.snack('Insufficient balance'); return; }
+    widget.snack('Processing payment…');
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/wallet/bills/pay'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId':       widget.userId,
+          'biller_code':  _biller!.billerCode,
+          'item_code':    _selItem!.itemCode,
+          'customer':     _customer,
+          'amount':       amt,
+          'country':      _cc,
+        }),
+      ).timeout(const Duration(seconds: 20));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        await widget.onSuccess();
+        widget.snack('✅ ${_cat!.label} paid!'
+            '${d['fee'] != null ? '  Fee: ${widget.fmt((d['fee'] as num).toDouble())}' : ''}');
+        // Return to category grid
+        setState(() { _cat = null; _biller = null; _billers = []; });
+      } else {
+        widget.snack('❌ ${d['message'] ?? 'Payment failed'}');
+      }
+    } catch (_) { widget.snack('❌ Network error'); }
+  }
+
+  // ── BUILD ──────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    if (_biller != null)  return _buildPayForm();
+    if (_cat != null)     return _buildBillerList();
+    return _buildCategoryGrid();
+  }
+
+  // ── STEP 1: Category grid ──────────────────────────────────────────────────
+  Widget _buildCategoryGrid() => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text('🧾 Pay Bills',
@@ -1909,17 +2073,17 @@ class _BillsTab extends StatelessWidget {
         crossAxisCount: 2, shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 1.3,
-        children: _bills.map((b) => GestureDetector(
-          onTap: () => _billForm(context, b),
+        children: _kBillCats.map((c) => GestureDetector(
+          onTap: () => _loadBillers(c),
           child: Container(
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white10)),
             child: Column(mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-              Text(b[2], style: const TextStyle(fontSize: 32)),
+              Text(c.icon, style: const TextStyle(fontSize: 32)),
               const SizedBox(height: 10),
-              Text(b[1], style: const TextStyle(color: Colors.white,
+              Text(c.label, style: const TextStyle(color: Colors.white,
                   fontSize: 14, fontWeight: FontWeight.w700)),
             ]),
           ),
@@ -1928,72 +2092,234 @@ class _BillsTab extends StatelessWidget {
     ]),
   );
 
-  void _billForm(BuildContext ctx, List<String> b) {
-    String acc = '', amtS = '';
-    final aC = TextEditingController(), amC = TextEditingController();
-    showModalBottomSheet(
-      context: ctx, isScrollControlled: true, backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: SingleChildScrollView(padding: const EdgeInsets.all(24),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-            Text('${b[2]} ${b[1]}', style: const TextStyle(color: Colors.white,
-                fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 16),
-            const Text('Account / Meter Number',
-                style: TextStyle(color: _kMuted,
-                    fontSize: 13, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            _xf(aC, 'Enter account number', TextInputType.text, (v) => acc = v),
-            const SizedBox(height: 16),
-            const Text('Amount', style: TextStyle(color: _kMuted,
-                fontSize: 13, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            _xf(amC, 'Enter amount',
-                const TextInputType.numberWithOptions(decimal: true),
-                (v) => amtS = v),
-            const SizedBox(height: 20),
-            SizedBox(width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14))),
-                onPressed: () async {
-                  final a = double.tryParse(amtS) ?? 0;
-                  if (acc.isEmpty) { snack('Enter account number'); return; }
-                  if (a < 1)       { snack('Enter amount'); return; }
-                  Navigator.pop(ctx);
-                  try {
-                    snack('Processing payment…');
-                    final r = await http.post(
-                        Uri.parse('$serverUrl/api/wallet/bills/pay'),
-                        headers: {'Content-Type': 'application/json'},
-                        body: jsonEncode({'userId': userId,
-                            'biller_code': b[0], 'item_code': b[0],
-                            'customer': acc, 'amount': a,
-                            'country': region.countryCode}))
-                        .timeout(const Duration(seconds: 20));
-                    final d = jsonDecode(r.body);
-                    if (d['success'] == true) {
-                      await onSuccess(); snack('✅ Bill paid!');
-                    } else { snack('❌ ${d['message'] ?? 'Payment failed'}'); }
-                  } catch (_) { snack('❌ Network error'); }
+  // ── STEP 2: Biller list ────────────────────────────────────────────────────
+  Widget _buildBillerList() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Header with back
+      Container(
+        padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+        child: Row(children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left, color: _kTeal, size: 28),
+            onPressed: () => setState(() { _cat = null; _billers = []; _billersError = false; })),
+          Text('${_cat!.icon}  ${_cat!.label}',
+              style: const TextStyle(color: Colors.white,
+                  fontSize: 17, fontWeight: FontWeight.w700)),
+        ]),
+      ),
+      Expanded(child: _loadingBillers
+        ? const Center(child: CircularProgressIndicator(color: _kTeal))
+        : _billersError
+            ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.wifi_off_rounded, color: _kMuted, size: 40),
+                const SizedBox(height: 12),
+                const Text('Could not load billers.',
+                    style: TextStyle(color: _kMuted, fontSize: 14)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                      foregroundColor: Colors.black,
+                      shape: const StadiumBorder()),
+                  onPressed: () => _loadBillers(_cat!),
+                  child: const Text('Retry')),
+              ]))
+            : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemCount: _billers.length,
+                itemBuilder: (_, i) {
+                  final b = _billers[i];
+                  return GestureDetector(
+                    onTap: () => _selectBiller(b),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(color: _kCard,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white10)),
+                      child: Row(children: [
+                        Expanded(child: Text(b.name,
+                            style: const TextStyle(color: Colors.white,
+                                fontSize: 14, fontWeight: FontWeight.w600))),
+                        const Icon(Icons.chevron_right, color: _kMuted, size: 20),
+                      ]),
+                    ),
+                  );
                 },
-                child: Text('Pay ${b[1]}', style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16, fontWeight: FontWeight.w700)),
-              ),
-            ),
+              )),
+    ],
+  );
+
+  // ── STEP 3: Payment form ───────────────────────────────────────────────────
+  Widget _buildPayForm() {
+    final firstItem = _biller!.items.isNotEmpty ? _biller!.items.first : null;
+    final labelName = _selItem?.labelName ?? firstItem?.labelName ?? 'Customer ID';
+    final isFixed   = (_selItem?.amount ?? 0) > 0;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Back button
+        GestureDetector(
+          onTap: () => setState(() { _biller = null; _validated = ''; }),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.chevron_left, color: _kTeal, size: 24),
+            Text(_biller!.name,
+                style: const TextStyle(color: _kTeal,
+                    fontSize: 14, fontWeight: FontWeight.w600)),
           ]),
         ),
-      ),
+        const SizedBox(height: 16),
+
+        Text('${_cat!.icon}  ${_biller!.name}',
+            style: const TextStyle(color: Colors.white,
+                fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text('Balance: ${widget.fmt(widget.balance)}',
+            style: const TextStyle(color: _kMuted, fontSize: 12)),
+        const SizedBox(height: 20),
+
+        // Package selector (only when biller has multiple items)
+        if (_biller!.items.length > 1) ...[
+          const Text('Select Package',
+              style: TextStyle(color: _kMuted,
+                  fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _selItem?.itemCode,
+            dropdownColor: _kBg,
+            isExpanded: true,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              filled: true, fillColor: _kBg,
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white12)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white12)),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 12),
+            ),
+            items: _biller!.items.map((item) => DropdownMenuItem(
+              value: item.itemCode,
+              child: Text(
+                item.amount > 0
+                    ? '${item.label}  —  ${widget.fmt(item.amount)}'
+                    : item.label,
+                style: const TextStyle(color: Colors.white, fontSize: 14)),
+            )).toList(),
+            onChanged: (v) => setState(() {
+              _selItem = _biller!.items.firstWhere(
+                  (i) => i.itemCode == v, orElse: () => _biller!.items.first);
+              _validated = '';
+              if (_customer.length >= 4) _validate(_customer);
+            }),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Customer ID
+        Text(labelName,
+            style: const TextStyle(color: _kMuted,
+                fontSize: 13, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _custCtrl,
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+          decoration: InputDecoration(
+            hintText: 'Enter $labelName',
+            hintStyle: const TextStyle(color: _kMuted, fontSize: 14),
+            filled: true, fillColor: _kCard,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.white12)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.white12)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: _kTeal)),
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
+          ),
+          onChanged: (v) {
+            _customer = v;
+            if (v.length >= 4) {
+              Future.delayed(const Duration(milliseconds: 600), () {
+                if (_custCtrl.text == v) _validate(v);
+              });
+            } else {
+              setState(() => _validated = '');
+            }
+          },
+        ),
+        // Validation result
+        if (_validating)
+          const Padding(padding: EdgeInsets.only(top: 6),
+              child: Text('Verifying…',
+                  style: TextStyle(color: _kMuted, fontSize: 12))),
+        if (!_validating && _validated.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(_validated,
+                style: TextStyle(
+                    color: _validated.startsWith('✅')
+                        ? _kTeal : const Color(0xFFF0A500),
+                    fontSize: 12)),
+          ),
+        const SizedBox(height: 16),
+
+        // Amount (hidden for fixed-price packages)
+        if (!isFixed) ...[
+          const Text('Amount',
+              style: TextStyle(color: _kMuted,
+                  fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          _xf(_amtCtrl, 'Enter amount',
+              const TextInputType.numberWithOptions(decimal: true),
+              (v) => _amtStr = v),
+          const SizedBox(height: 16),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: _kCard,
+                borderRadius: BorderRadius.circular(12)),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+              const Text('Amount',
+                  style: TextStyle(color: _kMuted, fontSize: 13)),
+              Text(widget.fmt(_selItem!.amount),
+                  style: const TextStyle(color: _kTeal,
+                      fontSize: 15, fontWeight: FontWeight.w700)),
+            ]),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Pay button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kTeal,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: _pay,
+            child: Text('Pay ${_cat!.label}',
+                style: const TextStyle(color: Colors.black,
+                    fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
+        ),
+      ]),
     );
   }
 }
+
+
 
 // ── HISTORY TAB ───────────────────────────────────────────────────────────────
 
