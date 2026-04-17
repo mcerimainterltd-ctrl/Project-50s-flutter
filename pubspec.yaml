@@ -31,7 +31,7 @@ dependencies:
   flutter_secure_storage: ^8.0.0
   
   # Notifications
-  flutter_local_notifications: ^16.1.0
+  flutter_local_notifications: ^17.2.1
   
   # Media & UI
   video_player: ^2.4.7
