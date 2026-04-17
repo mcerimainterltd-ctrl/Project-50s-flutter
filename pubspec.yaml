@@ -52,7 +52,7 @@ dependencies:
   flutter_sound: ^9.2.0
   flutter_tts: ^4.1.0
   speech_to_text: ^7.0.0
-  just_audio: ^0.12.0
+  just_audio: ^0.10.5
 dev_dependencies:
   flutter_test:
     sdk: flutter
