@@ -648,7 +648,7 @@ class _FileBubbleState extends State<_FileBubble> {
       final page = await doc.getPage(1);
       final img  = await page.render(
         width:           480,
-        height:          (480 * page.height / page.width).round(),
+        height:          (480 * page.height / page.width).roundToDouble(),
         format:          PdfPageImageFormat.jpeg,
         backgroundColor: '#FFFFFF',
       );
