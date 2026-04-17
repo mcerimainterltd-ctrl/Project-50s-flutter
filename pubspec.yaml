@@ -61,3 +61,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  just_audio: ^0.12.0
