@@ -38,7 +38,6 @@ dependencies:
   visibility_detector: ^0.3.3
   cached_network_image: ^3.2.3
 
-  just_audio: ^0.9.40
   open_filex: ^4.7.0
   pdfx: ^2.9.2
   video_thumbnail: ^0.5.6
