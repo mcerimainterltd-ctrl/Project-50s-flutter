@@ -1,6 +1,6 @@
 name: xamepage
 description: Project-50s Final Production Build.
-version: 1.0.0+1
+version: 2.1.0+237
 
 environment:
   sdk: ">=2.17.0 <4.0.0"
