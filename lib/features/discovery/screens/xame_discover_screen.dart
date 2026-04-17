@@ -3,6 +3,7 @@ import '../widgets/discovery_cards.dart';
 import '../widgets/kinetic_story_item.dart';
 import '../widgets/people_carousel.dart';
 import '../widgets/discovery_search.dart';
+import '../widgets/stories_bar.dart';
 
 class XameDiscoverScreen extends StatefulWidget {
   const XameDiscoverScreen({Key? key}) : super(key: key);
@@ -38,20 +39,9 @@ class _XameDiscoverScreenState extends State<XameDiscoverScreen> {
                 centerTitle: true,
               ),
               
-              // Stories Section
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 110,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    itemCount: 10,
-                    itemBuilder: (context, i) => const KineticStoryAvatar(
-                      avatarUrl: "https://i.pravatar.cc/150?u=xame",
-                      isActive: true,
-                    ),
-                  ),
-                ),
+              // New Modernized Stories Bar
+              const SliverToBoxAdapter(
+                child: DiscoveryStoriesBar(),
               ),
 
               // People You May Know
@@ -98,7 +88,7 @@ class _XameDiscoverScreenState extends State<XameDiscoverScreen> {
           ),
         ),
         
-        // The Search Overlay
+        // Search Overlay
         DiscoverySearchOverlay(
           isVisible: _isSearchOpen,
           onClose: () => setState(() => _isSearchOpen = false),
