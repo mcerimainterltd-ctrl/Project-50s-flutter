@@ -667,34 +667,39 @@ class _LightboxState extends State<_Lightbox> {
   @override
   Widget build(BuildContext context) {
     final item = widget.items[_current];
+    final size = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTap: () => setState(() => _showInfo = !_showInfo),
         child: Stack(children: [
-          // Swipeable images
+          // Swipeable images — pure black bg, image loaded via Image.network
           PageView.builder(
-            controller:  _page,
-            itemCount:   widget.items.length,
+            controller:    _page,
+            itemCount:     widget.items.length,
             onPageChanged: (i) => setState(() => _current = i),
-            itemBuilder: (_, i) {
+            itemBuilder:   (_, i) {
               final it = widget.items[i];
-              return Center(
+              return SizedBox(
+                width:  size.width,
+                height: size.height,
                 child: InteractiveViewer(
                   boundaryMargin: const EdgeInsets.all(double.infinity),
-                  minScale: 0.5,
+                  minScale: 0.8,
                   maxScale: 4.0,
-                  child: CachedNetworkImage(
-                    imageUrl:    it.url,
+                  child: Image.network(
+                    it.url,
                     fit:         BoxFit.contain,
-                    width:       MediaQuery.of(context).size.width,
-                    placeholder: (_, __) => const SizedBox(
-                      width: 40, height: 40,
-                      child: CircularProgressIndicator(
-                          color: Colors.white38, strokeWidth: 1.5)),
-                    errorWidget: (_, __, ___) => const Icon(
+                    width:       size.width,
+                    height:      size.height,
+                    loadingBuilder: (_, child, progress) {
+                      if (progress == null) return child;
+                      return const Center(child: CircularProgressIndicator(
+                          color: Colors.white38, strokeWidth: 1.5));
+                    },
+                    errorBuilder: (_, __, ___) => const Center(child: Icon(
                         Icons.broken_image_outlined,
-                        color: Colors.white30, size: 48),
+                        color: Colors.white30, size: 48)),
                   ),
                 ),
               );

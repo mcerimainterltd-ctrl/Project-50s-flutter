@@ -1,21 +1,28 @@
-// Mirrors: messageBubble() in messaging.js
-// Handles: text, emoji-only, image, video, audio, file, reply quote,
-//          forwarded label, status ticks, long-press menu, view-once
-// BUG 3 FIX: images open full-screen viewer, videos/files download & open
+// lib/features/messaging/widgets/message_bubble.dart
+// XamePage 2.1 — Build 237+
+// Full media bubbles: video frame thumbnails, PDF page-1 preview,
+// rich document cards, shimmer loading, download + open.
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdfx/pdfx.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../../core/services/voice_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/message.dart';
+
+// ─── In-memory thumbnail caches (process lifetime) ────────────────────────
+final _videoThumbCache = <String, Uint8List?>{};
+final _pdfThumbCache   = <String, Uint8List?>{};
 
 class MessageBubble extends ConsumerWidget {
   final XameMessage  message;
@@ -69,7 +76,7 @@ class MessageBubble extends ConsumerWidget {
                       topLeft:     const Radius.circular(18),
                       topRight:    const Radius.circular(18),
                       bottomLeft:  Radius.circular(isSelf ? 18 : 4),
-                      bottomRight: Radius.circular(isSelf ? 4 : 18),
+                      bottomRight: Radius.circular(isSelf ? 4  : 18),
                     ),
                   ),
                   child: Column(
@@ -82,10 +89,8 @@ class MessageBubble extends ConsumerWidget {
                             Icon(Icons.forward, size: 12, color: Colors.white38),
                             SizedBox(width: 4),
                             Text('Forwarded',
-                                style: TextStyle(
-                                    color: Colors.white38,
-                                    fontSize: 11,
-                                    fontStyle: FontStyle.italic)),
+                                style: TextStyle(color: Colors.white38,
+                                    fontSize: 11, fontStyle: FontStyle.italic)),
                           ]),
                         ),
                       _buildContent(context),
@@ -113,18 +118,20 @@ class MessageBubble extends ConsumerWidget {
             viewOnce: message.viewOnce);
       case MessageType.video:
         return _VideoBubble(
-            url: message.fileUrl ?? '',
-            fileName: message.fileName ?? 'video');
+            url:      message.fileUrl ?? '',
+            fileName: message.fileName ?? 'video',
+            fileSize: message.fileSize);
       case MessageType.audio:
         return _AudioBubble(
-            url: message.fileUrl ?? '',
+            url:      message.fileUrl ?? '',
             fileName: message.fileName ?? 'audio',
-            isSelf: isSelf);
+            isSelf:   isSelf);
       case MessageType.file:
         return _FileBubble(
-            url: message.fileUrl ?? '',
+            url:      message.fileUrl ?? '',
             fileName: message.fileName ?? 'file',
-            mime: message.fileMime ?? '');
+            mime:     message.fileMime ?? '',
+            fileSize: message.fileSize);
       case MessageType.text:
         return _TextContent(text: message.text, isSelf: isSelf);
     }
@@ -139,8 +146,7 @@ class MessageBubble extends ConsumerWidget {
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(time,
-            style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        Text(time, style: const TextStyle(color: Colors.white38, fontSize: 10)),
         if (isSelf) ...[
           const SizedBox(width: 4),
           _StatusTick(status: message.status),
@@ -150,17 +156,91 @@ class MessageBubble extends ConsumerWidget {
   }
 }
 
-// ── Text content ──────────────────────────────────────────────────────────
+// ─── Shimmer loading placeholder ─────────────────────────────────────────
+class _Shimmer extends StatefulWidget {
+  final double width, height;
+  final double radius;
+  const _Shimmer({required this.width, required this.height, this.radius = 14});
+
+  @override
+  State<_Shimmer> createState() => _ShimmerState();
+}
+
+class _ShimmerState extends State<_Shimmer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double>   _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200))
+      ..repeat();
+    _anim = Tween<double>(begin: -1, end: 2).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _anim,
+    builder: (_, __) => ClipRRect(
+      borderRadius: BorderRadius.circular(widget.radius),
+      child: SizedBox(
+        width: widget.width, height: widget.height,
+        child: CustomPaint(painter: _ShimmerPainter(_anim.value)),
+      ),
+    ),
+  );
+}
+
+class _ShimmerPainter extends CustomPainter {
+  final double position;
+  _ShimmerPainter(this.position);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final base    = const Color(0xFF1E2D3D);
+    final highlight = const Color(0xFF2A3F52);
+    canvas.drawRect(Offset.zero & size, Paint()..color = base);
+    final gradient = LinearGradient(
+      begin: Alignment(-1 + position * 2, 0),
+      end:   Alignment(position * 2, 0),
+      colors: [base, highlight, base],
+      stops: const [0.0, 0.5, 1.0],
+    );
+    final paint = Paint()
+      ..shader = gradient.createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, paint);
+  }
+
+  @override
+  bool shouldRepaint(_ShimmerPainter old) => old.position != position;
+}
+
+// ─── File size formatter ──────────────────────────────────────────────────
+String _fmtSize(int? bytes) {
+  if (bytes == null || bytes <= 0) return '';
+  if (bytes < 1024) return '${bytes}B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
+  if (bytes < 1024 * 1024 * 1024)
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
+}
+
+// ─── Text content ─────────────────────────────────────────────────────────
 class _TextContent extends StatelessWidget {
-  final String text;
-  final bool   isSelf;
+  final String text; final bool isSelf;
   const _TextContent({required this.text, required this.isSelf});
 
   bool get _isEmojiOnly {
-    final cleaned = text.trim();
-    if (cleaned.isEmpty) return false;
+    final c = text.trim();
+    if (c.isEmpty) return false;
     return RegExp(r'^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\s]+$', unicode: true)
-        .hasMatch(cleaned);
+        .hasMatch(c);
   }
 
   @override
@@ -171,11 +251,10 @@ class _TextContent extends StatelessWidget {
                 color: Colors.white, fontSize: 15, height: 1.4));
 }
 
-// ── Status ticks ──────────────────────────────────────────────────────────
+// ─── Status ticks ─────────────────────────────────────────────────────────
 class _StatusTick extends StatelessWidget {
   final String status;
   const _StatusTick({required this.status});
-
   @override
   Widget build(BuildContext context) {
     if (status == 'seen')
@@ -186,11 +265,10 @@ class _StatusTick extends StatelessWidget {
   }
 }
 
-// ── Reply quote ───────────────────────────────────────────────────────────
+// ─── Reply quote ──────────────────────────────────────────────────────────
 class _ReplyQuote extends StatelessWidget {
   final String text;
   const _ReplyQuote({required this.text});
-
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 4),
@@ -198,8 +276,7 @@ class _ReplyQuote extends StatelessWidget {
     decoration: BoxDecoration(
       color: Colors.white.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(10),
-      border: const Border(
-          left: BorderSide(color: XameColors.primary, width: 3)),
+      border: const Border(left: BorderSide(color: XameColors.primary, width: 3)),
     ),
     child: Text(text.isNotEmpty ? text : '📎 Attachment',
         style: const TextStyle(color: Colors.white54, fontSize: 12),
@@ -207,10 +284,9 @@ class _ReplyQuote extends StatelessWidget {
   );
 }
 
-// ── Image bubble — BUG 3 FIX: tapping opens full-screen hero viewer ───────
+// ─── Image bubble ─────────────────────────────────────────────────────────
 class _ImageBubble extends StatelessWidget {
-  final String url;
-  final String caption;
+  final String url, caption;
   final bool   viewOnce;
   const _ImageBubble(
       {required this.url, required this.caption, required this.viewOnce});
@@ -241,25 +317,20 @@ class _ImageBubble extends StatelessWidget {
         ),
       );
     }
-
     return GestureDetector(
       onTap: () => _openFullScreen(context),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Hero(
           tag: url,
           child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(14)),
             child: CachedNetworkImage(
-              imageUrl: url,
-              fit:      BoxFit.cover,
-              width:    double.infinity,
-              placeholder: (_, __) => const SizedBox(
-                  height: 180,
-                  child: Center(
-                      child: CircularProgressIndicator(
-                          color: XameColors.primary, strokeWidth: 2))),
-              errorWidget: (_, __, ___) => const SizedBox(
-                  height: 80,
+              imageUrl: url, fit: BoxFit.cover,
+              width: double.infinity,
+              placeholder: (_, __) => _Shimmer(
+                  width: double.infinity, height: 180),
+              errorWidget: (_, __, ___) => const SizedBox(height: 80,
                   child: Center(
                       child: Icon(Icons.broken_image, color: Colors.white24))),
             ),
@@ -275,18 +346,17 @@ class _ImageBubble extends StatelessWidget {
   }
 }
 
-// ── Full-screen image viewer with download ────────────────────────────────
+// ─── Full-screen image viewer ─────────────────────────────────────────────
 class _FullScreenImageViewer extends StatefulWidget {
   final String url;
   const _FullScreenImageViewer({required this.url});
-
   @override
   State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
 }
 
 class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
-  bool _downloading = false;
-  double _progress  = 0;
+  bool   _downloading = false;
+  double _progress    = 0;
 
   Future<void> _download() async {
     setState(() { _downloading = true; _progress = 0; });
@@ -296,25 +366,21 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
       final name = widget.url.split('/').last.split('?').first;
       final path = '${dir.path}/$name';
       await Dio().download(widget.url, path,
-          onReceiveProgress: (recv, total) {
-        if (total > 0 && mounted) {
-          setState(() => _progress = recv / total);
-        }
+          onReceiveProgress: (r, t) {
+        if (t > 0 && mounted) setState(() => _progress = r / t);
       });
       if (mounted) {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Saved to $path'),
-          backgroundColor: XameColors.darkCard,
-        ));
+            content: Text('Saved to $path'),
+            backgroundColor: XameColors.darkCard));
       }
     } catch (e) {
       if (mounted) {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Download failed: $e'),
-          backgroundColor: Colors.redAccent,
-        ));
+            content: Text('Download failed: $e'),
+            backgroundColor: Colors.redAccent));
       }
     }
   }
@@ -329,15 +395,11 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
           onPressed: () => Navigator.pop(context)),
       actions: [
         if (_downloading)
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: SizedBox(
-              width: 22, height: 22,
+          Padding(padding: const EdgeInsets.all(14),
+            child: SizedBox(width: 22, height: 22,
               child: CircularProgressIndicator(
                   value: _progress > 0 ? _progress : null,
-                  color: Colors.white, strokeWidth: 2),
-            ),
-          )
+                  color: Colors.white, strokeWidth: 2)))
         else
           IconButton(
               icon: const Icon(Icons.download_outlined, color: Colors.white),
@@ -347,38 +409,70 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
     body: Hero(
       tag: widget.url,
       child: InteractiveViewer(
-        minScale: 0.5,
-        maxScale: 5.0,
-        child: Center(
-          child: CachedNetworkImage(
-            imageUrl: widget.url,
-            fit: BoxFit.contain,
-            placeholder: (_, __) => const CircularProgressIndicator(
-                color: XameColors.primary),
-            errorWidget: (_, __, ___) =>
-                const Icon(Icons.broken_image, color: Colors.white24, size: 60),
-          ),
-        ),
+        minScale: 0.5, maxScale: 5.0,
+        child: Center(child: CachedNetworkImage(
+          imageUrl: widget.url, fit: BoxFit.contain,
+          placeholder: (_, __) =>
+              const CircularProgressIndicator(color: XameColors.primary),
+          errorWidget: (_, __, ___) =>
+              const Icon(Icons.broken_image, color: Colors.white24, size: 60),
+        )),
       ),
     ),
   );
 }
 
-// ── Video bubble — BUG 3 FIX: tap downloads then opens with system player ─
+// ─── Video bubble — frame thumbnail ──────────────────────────────────────
 class _VideoBubble extends StatefulWidget {
   final String url, fileName;
-  const _VideoBubble({required this.url, required this.fileName});
-
+  final int?   fileSize;
+  const _VideoBubble(
+      {required this.url, required this.fileName, this.fileSize});
   @override
   State<_VideoBubble> createState() => _VideoBubbleState();
 }
 
 class _VideoBubbleState extends State<_VideoBubble> {
-  bool   _loading  = false;
+  Uint8List? _thumb;
+  bool _thumbLoading = true;
+
+  // Download + open state
+  bool   _opening  = false;
   double _progress = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadThumbnail();
+  }
+
+  Future<void> _loadThumbnail() async {
+    // Return cached result immediately
+    if (_videoThumbCache.containsKey(widget.url)) {
+      if (mounted) setState(() {
+        _thumb = _videoThumbCache[widget.url];
+        _thumbLoading = false;
+      });
+      return;
+    }
+    try {
+      final bytes = await VideoThumbnail.thumbnailData(
+        video:        widget.url,
+        imageFormat:  ImageFormat.JPEG,
+        maxWidth:     480,
+        quality:      72,
+        timeMs:       0,
+      );
+      _videoThumbCache[widget.url] = bytes;
+      if (mounted) setState(() { _thumb = bytes; _thumbLoading = false; });
+    } catch (_) {
+      _videoThumbCache[widget.url] = null;
+      if (mounted) setState(() => _thumbLoading = false);
+    }
+  }
+
   Future<void> _open() async {
-    setState(() { _loading = true; _progress = 0; });
+    setState(() { _opening = true; _progress = 0; });
     try {
       final dir  = await getTemporaryDirectory();
       final name = widget.url.split('/').last.split('?').first
@@ -386,91 +480,193 @@ class _VideoBubbleState extends State<_VideoBubble> {
       final path = '${dir.path}/$name';
       if (!File(path).existsSync()) {
         await Dio().download(widget.url, path,
-            onReceiveProgress: (recv, total) {
-          if (total > 0 && mounted) setState(() => _progress = recv / total);
+            onReceiveProgress: (r, t) {
+          if (t > 0 && mounted) setState(() => _progress = r / t);
         });
       }
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _opening = false);
       await OpenFilex.open(path);
     } catch (e) {
       if (mounted) {
-        setState(() => _loading = false);
+        setState(() => _opening = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Could not open video: $e'),
-          backgroundColor: Colors.redAccent,
-        ));
+            content: Text('Could not open video: $e'),
+            backgroundColor: Colors.redAccent));
       }
     }
   }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: _loading ? null : _open,
-    child: Container(
-      padding: const EdgeInsets.all(12),
-      child: Row(children: [
-        Stack(alignment: Alignment.center, children: [
-          Container(
-            width: 44, height: 44,
-            decoration: BoxDecoration(
-                color: XameColors.secondary.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12)),
-          ),
-          if (_loading)
-            SizedBox(
-              width: 28, height: 28,
-              child: CircularProgressIndicator(
-                  value: _progress > 0 ? _progress : null,
-                  color: XameColors.secondary, strokeWidth: 2),
-            )
-          else
-            const Icon(Icons.play_circle_outline,
-                color: XameColors.secondary, size: 28),
-        ]),
-        const SizedBox(width: 10),
-        Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(widget.fileName,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              maxLines: 1, overflow: TextOverflow.ellipsis),
-          Text(_loading
-              ? 'Opening${_progress > 0 ? ' ${(_progress * 100).toInt()}%' : '...'}'
-              : 'Tap to play',
-              style: const TextStyle(color: Colors.white38, fontSize: 11)),
-        ])),
-      ]),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final w = MediaQuery.of(context).size.width * 0.72;
+    final h = w * 9 / 16; // 16:9
+
+    return GestureDetector(
+      onTap: _opening ? null : _open,
+      child: ClipRRect(
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(14)),
+        child: SizedBox(
+          width: w, height: h,
+          child: Stack(fit: StackFit.expand, children: [
+
+            // ── Thumbnail / shimmer ──────────────────────────────────
+            if (_thumbLoading)
+              _Shimmer(width: w, height: h, radius: 0)
+            else if (_thumb != null)
+              Image.memory(_thumb!, fit: BoxFit.cover)
+            else
+              // Fallback gradient when no frame could be extracted
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end:   Alignment.bottomRight,
+                    colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+                  ),
+                ),
+                child: const Center(
+                  child: Icon(Icons.movie_outlined,
+                      color: Colors.white24, size: 48)),
+              ),
+
+            // ── Dark overlay ─────────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end:   Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
+                ),
+              ),
+            ),
+
+            // ── Centre play / progress button ────────────────────────
+            Center(
+              child: _opening
+                  ? SizedBox(width: 52, height: 52,
+                      child: Stack(alignment: Alignment.center, children: [
+                        CircularProgressIndicator(
+                          value: _progress > 0 ? _progress : null,
+                          color: Colors.white, strokeWidth: 3),
+                        Text(
+                          _progress > 0
+                              ? '${(_progress * 100).toInt()}%'
+                              : '',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 10)),
+                      ]))
+                  : Container(
+                      width: 52, height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            width: 2),
+                      ),
+                      child: const Icon(Icons.play_arrow_rounded,
+                          color: Colors.white, size: 32),
+                    ),
+            ),
+
+            // ── Bottom metadata bar ──────────────────────────────────
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+                child: Row(children: [
+                  const Icon(Icons.videocam_outlined,
+                      color: Colors.white70, size: 14),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(widget.fileName,
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 11),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                  if (widget.fileSize != null) ...[
+                    const SizedBox(width: 6),
+                    Text(_fmtSize(widget.fileSize),
+                        style: const TextStyle(
+                            color: Colors.white54, fontSize: 10)),
+                  ],
+                ]),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
-// ── File bubble — BUG 3 FIX: tap downloads to cache then opens ────────────
+// ─── File bubble — PDF page-1 preview + rich doc cards ───────────────────
 class _FileBubble extends StatefulWidget {
   final String url, fileName, mime;
-  const _FileBubble(
-      {required this.url, required this.fileName, required this.mime});
-
+  final int?   fileSize;
+  const _FileBubble({
+    required this.url,      required this.fileName,
+    required this.mime,     this.fileSize,
+  });
   @override
   State<_FileBubble> createState() => _FileBubbleState();
 }
 
 class _FileBubbleState extends State<_FileBubble> {
-  bool   _loading  = false;
-  double _progress = 0;
+  Uint8List? _pdfThumb;
+  bool _pdfLoading  = false;
+  bool _opening     = false;
+  double _progress  = 0;
 
-  IconData get _icon {
-    final m = widget.mime.toLowerCase();
-    if (m.contains('pdf'))                         return Icons.picture_as_pdf_outlined;
-    if (m.contains('word') || m.contains('doc'))   return Icons.description_outlined;
-    if (m.contains('sheet') || m.contains('excel'))return Icons.table_chart_outlined;
-    if (m.contains('image'))                        return Icons.image_outlined;
-    if (m.contains('audio'))                        return Icons.audio_file_outlined;
-    if (m.contains('video'))                        return Icons.video_file_outlined;
-    if (m.contains('zip') || m.contains('rar'))     return Icons.folder_zip_outlined;
-    return Icons.insert_drive_file_outlined;
+  bool get _isPdf => widget.mime.toLowerCase().contains('pdf') ||
+      widget.fileName.toLowerCase().endsWith('.pdf');
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isPdf) _loadPdfThumb();
+  }
+
+  Future<void> _loadPdfThumb() async {
+    if (_pdfThumbCache.containsKey(widget.url)) {
+      if (mounted) setState(() {
+        _pdfThumb   = _pdfThumbCache[widget.url];
+        _pdfLoading = false;
+      });
+      return;
+    }
+    setState(() => _pdfLoading = true);
+    try {
+      // Download PDF to temp, render page 1
+      final dir  = await getTemporaryDirectory();
+      final path = '${dir.path}/${widget.url.hashCode}.pdf';
+      if (!File(path).existsSync()) {
+        await Dio().download(widget.url, path);
+      }
+      final doc  = await PdfDocument.openFile(path);
+      final page = await doc.getPage(1);
+      final img  = await page.render(
+        width:           480,
+        height:          (480 * page.height / page.width).round(),
+        format:          PdfPageImageFormat.jpeg,
+        backgroundColor: '#FFFFFF',
+      );
+      await page.close();
+      await doc.close();
+      _pdfThumbCache[widget.url] = img?.bytes;
+      if (mounted) setState(() {
+        _pdfThumb   = img?.bytes;
+        _pdfLoading = false;
+      });
+    } catch (_) {
+      _pdfThumbCache[widget.url] = null;
+      if (mounted) setState(() => _pdfLoading = false);
+    }
   }
 
   Future<void> _openFile() async {
-    setState(() { _loading = true; _progress = 0; });
+    setState(() { _opening = true; _progress = 0; });
     try {
       final dir  = await getTemporaryDirectory();
       final name = widget.fileName.isNotEmpty
@@ -479,75 +675,209 @@ class _FileBubbleState extends State<_FileBubble> {
       final path = '${dir.path}/$name';
       if (!File(path).existsSync()) {
         await Dio().download(widget.url, path,
-            onReceiveProgress: (recv, total) {
-          if (total > 0 && mounted) setState(() => _progress = recv / total);
+            onReceiveProgress: (r, t) {
+          if (t > 0 && mounted) setState(() => _progress = r / t);
         });
       }
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _opening = false);
       final result = await OpenFilex.open(path);
       if (result.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('No app found to open this file type'),
-          backgroundColor: XameColors.darkCard,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('No app found to open this file type'),
+            backgroundColor: XameColors.darkCard));
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _loading = false);
+        setState(() => _opening = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Download failed: $e'),
-          backgroundColor: Colors.redAccent,
-        ));
+            content: Text('Download failed: $e'),
+            backgroundColor: Colors.redAccent));
       }
     }
   }
 
+  // ── Per-type visual config ───────────────────────────────────────────
+  _DocStyle get _style {
+    final m = widget.mime.toLowerCase();
+    final n = widget.fileName.toLowerCase();
+    if (m.contains('pdf')   || n.endsWith('.pdf'))
+      return _DocStyle(Icons.picture_as_pdf_outlined,
+          const Color(0xFFE53935), const Color(0xFF23111100), 'PDF');
+    if (m.contains('word')  || n.endsWith('.doc') || n.endsWith('.docx'))
+      return _DocStyle(Icons.description_outlined,
+          const Color(0xFF1565C0), const Color(0xFF23001155), 'WORD');
+    if (m.contains('sheet') || m.contains('excel') ||
+        n.endsWith('.xls')  || n.endsWith('.xlsx'))
+      return _DocStyle(Icons.table_chart_outlined,
+          const Color(0xFF2E7D32), const Color(0xFF23001100), 'EXCEL');
+    if (m.contains('presentation') || m.contains('powerpoint') ||
+        n.endsWith('.ppt')  || n.endsWith('.pptx'))
+      return _DocStyle(Icons.slideshow_outlined,
+          const Color(0xFFD84315), const Color(0xFF23110000), 'PPT');
+    if (m.contains('zip')   || m.contains('rar') || m.contains('tar') ||
+        n.endsWith('.zip')  || n.endsWith('.rar'))
+      return _DocStyle(Icons.folder_zip_outlined,
+          const Color(0xFFF9A825), const Color(0xFF23110B00), 'ZIP');
+    if (m.contains('audio') || n.endsWith('.mp3') || n.endsWith('.aac'))
+      return _DocStyle(Icons.audio_file_outlined,
+          const Color(0xFF6A1B9A), const Color(0xFF23050011), 'AUDIO');
+    if (m.contains('video') || n.endsWith('.mp4') || n.endsWith('.mov'))
+      return _DocStyle(Icons.video_file_outlined,
+          const Color(0xFF00838F), const Color(0xFF23001111), 'VIDEO');
+    if (m.contains('text')  || n.endsWith('.txt'))
+      return _DocStyle(Icons.article_outlined,
+          Colors.white70, const Color(0xFF23111111), 'TXT');
+    return _DocStyle(Icons.insert_drive_file_outlined,
+        XameColors.accent, const Color(0xFF23000B1A), 'FILE');
+  }
+
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: _loading ? null : _openFile,
-    child: Row(children: [
-      Stack(alignment: Alignment.center, children: [
-        Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(
-              color: XameColors.accent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10)),
+  Widget build(BuildContext context) {
+    final st = _style;
+    final w  = MediaQuery.of(context).size.width * 0.68;
+
+    return GestureDetector(
+      onTap: _opening ? null : _openFile,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          width: w,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+
+            // ── Preview area ─────────────────────────────────────────
+            SizedBox(
+              height: w * 0.56,
+              child: Stack(fit: StackFit.expand, children: [
+
+                // PDF thumbnail or styled doc card
+                if (_isPdf && _pdfLoading)
+                  _Shimmer(width: w, height: w * 0.56, radius: 0)
+                else if (_isPdf && _pdfThumb != null)
+                  Image.memory(_pdfThumb!, fit: BoxFit.cover)
+                else
+                  // Rich document preview card (non-PDF or PDF fallback)
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end:   Alignment.bottomRight,
+                        colors: [
+                          XameColors.darkCard,
+                          st.bgTint,
+                          XameColors.darkCard,
+                        ],
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Large file type icon with glow
+                        Container(
+                          width: 72, height: 72,
+                          decoration: BoxDecoration(
+                            color: st.color.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: st.color.withValues(alpha: 0.25),
+                                blurRadius: 24, spreadRadius: 2),
+                            ],
+                          ),
+                          child: Icon(st.icon, color: st.color, size: 36),
+                        ),
+                        const SizedBox(height: 10),
+                        // Extension badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: st.color.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                                color: st.color.withValues(alpha: 0.35)),
+                          ),
+                          child: Text(st.label,
+                              style: TextStyle(
+                                  color: st.color,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.2)),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Opening overlay
+                if (_opening)
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    child: Center(
+                      child: SizedBox(width: 44, height: 44,
+                        child: Stack(alignment: Alignment.center, children: [
+                          CircularProgressIndicator(
+                              value: _progress > 0 ? _progress : null,
+                              color: st.color, strokeWidth: 3),
+                          if (_progress > 0)
+                            Text('${(_progress * 100).toInt()}%',
+                                style: TextStyle(
+                                    color: st.color, fontSize: 10,
+                                    fontWeight: FontWeight.w600)),
+                        ])),
+                    ),
+                  ),
+              ]),
+            ),
+
+            // ── Metadata footer bar ──────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              color: XameColors.darkCard,
+              child: Row(children: [
+                Icon(st.icon, color: st.color, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(widget.fileName,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 12,
+                            fontWeight: FontWeight.w500),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if (widget.fileSize != null)
+                      Text(_fmtSize(widget.fileSize),
+                          style: const TextStyle(
+                              color: Colors.white38, fontSize: 10)),
+                  ]),
+                ),
+                const SizedBox(width: 6),
+                _opening
+                    ? const SizedBox.shrink()
+                    : Icon(Icons.download_outlined,
+                        color: st.color.withValues(alpha: 0.7), size: 18),
+              ]),
+            ),
+          ]),
         ),
-        if (_loading)
-          SizedBox(
-            width: 24, height: 24,
-            child: CircularProgressIndicator(
-                value: _progress > 0 ? _progress : null,
-                color: XameColors.accent, strokeWidth: 2),
-          )
-        else
-          Icon(_icon, color: XameColors.accent, size: 22),
-      ]),
-      const SizedBox(width: 10),
-      Expanded(child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(widget.fileName,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-            maxLines: 2, overflow: TextOverflow.ellipsis),
-        Text(_loading
-            ? '${(_progress * 100).toInt()}%'
-            : (widget.mime.split('/').lastOrNull?.toUpperCase() ?? 'FILE'),
-            style: const TextStyle(color: Colors.white38, fontSize: 10)),
-      ])),
-      _loading
-          ? const SizedBox.shrink()
-          : const Icon(Icons.download_outlined, color: Colors.white38, size: 20),
-    ]),
-  );
+      ),
+    );
+  }
 }
 
-// ── Audio bubble ──────────────────────────────────────────────────────────
+class _DocStyle {
+  final IconData icon;
+  final Color    color;
+  final Color    bgTint;
+  final String   label;
+  const _DocStyle(this.icon, this.color, this.bgTint, this.label);
+}
+
+// ─── Audio bubble ─────────────────────────────────────────────────────────
 class _AudioBubble extends StatefulWidget {
   final String url, fileName;
   final bool   isSelf;
   const _AudioBubble(
       {required this.url, required this.fileName, required this.isSelf});
-
   @override
   State<_AudioBubble> createState() => _AudioBubbleState();
 }
@@ -563,10 +893,10 @@ class _AudioBubbleState extends State<_AudioBubble> {
   void initState() {
     super.initState();
     _player = AudioPlayer();
-    _subs.add(_player!.positionStream.listen(
-        (p) { if (mounted) setState(() => _position = p); }));
-    _subs.add(_player!.durationStream.listen(
-        (d) { if (d != null && mounted) setState(() => _duration = d); }));
+    _subs.add(_player!.positionStream
+        .listen((p) { if (mounted) setState(() => _position = p); }));
+    _subs.add(_player!.durationStream
+        .listen((d) { if (d != null && mounted) setState(() => _duration = d); }));
     _subs.add(_player!.playerStateStream.listen((ps) {
       if (ps.processingState == ProcessingState.completed && mounted) {
         setState(() { _playing = false; _position = Duration.zero; });
@@ -595,8 +925,9 @@ class _AudioBubbleState extends State<_AudioBubble> {
     }
   }
 
-  String _fmtDur(Duration d) =>
-      '${d.inMinutes.toString().padLeft(2, '0')}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+  String _fmt(Duration d) =>
+      '${d.inMinutes.toString().padLeft(2, '0')}:'
+      '${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -620,21 +951,19 @@ class _AudioBubbleState extends State<_AudioBubble> {
                     color: XameColors.primary.withValues(alpha: 0.4)),
               ),
               child: Icon(
-                  _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: XameColors.primary, size: 26),
+                _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                color: XameColors.primary, size: 26),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(
-              height: 32,
+            SizedBox(height: 32,
               child: _WaveformBars(
-                  progress:  progress,
-                  isSelf:    widget.isSelf,
+                  progress: progress, isSelf: widget.isSelf,
                   isPlaying: _playing)),
             const SizedBox(height: 4),
-            Text(_playing ? _fmtDur(_position) : _fmtDur(_duration),
+            Text(_playing ? _fmt(_position) : _fmt(_duration),
                 style: const TextStyle(color: Colors.white38, fontSize: 10)),
           ])),
         ]),
@@ -661,14 +990,12 @@ class _AudioBubbleState extends State<_AudioBubble> {
   }
 }
 
-// ── Waveform bars ─────────────────────────────────────────────────────────
+// ─── Waveform bars ────────────────────────────────────────────────────────
 class _WaveformBars extends StatefulWidget {
   final double progress;
-  final bool   isSelf;
-  final bool   isPlaying;
+  final bool   isSelf, isPlaying;
   const _WaveformBars(
       {required this.progress, required this.isSelf, required this.isPlaying});
-
   @override
   State<_WaveformBars> createState() => _WaveformBarsState();
 }
@@ -677,8 +1004,8 @@ class _WaveformBarsState extends State<_WaveformBars>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   static const _bars = 28;
-  static final _heights = List.generate(
-      _bars, (i) => 8.0 + Random(i * 7 + 3).nextDouble() * 20);
+  static final _heights =
+      List.generate(_bars, (i) => 8.0 + Random(i * 7 + 3).nextDouble() * 20);
 
   @override
   void initState() {
@@ -691,11 +1018,8 @@ class _WaveformBarsState extends State<_WaveformBars>
   @override
   void didUpdateWidget(_WaveformBars old) {
     super.didUpdateWidget(old);
-    if (widget.isPlaying && !_ctrl.isAnimating) {
-      _ctrl.repeat(reverse: true);
-    } else if (!widget.isPlaying && _ctrl.isAnimating) {
-      _ctrl.stop();
-    }
+    if (widget.isPlaying && !_ctrl.isAnimating)  _ctrl.repeat(reverse: true);
+    if (!widget.isPlaying && _ctrl.isAnimating)   _ctrl.stop();
   }
 
   @override
