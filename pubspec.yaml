@@ -1,6 +1,6 @@
 name: xamepage
 description: Project-50s Final Production Build.
-version: 2.1.0+237
+version: 2.1.0+238
 
 environment:
   sdk: ">=2.17.0 <4.0.0"
@@ -38,6 +38,10 @@ dependencies:
   visibility_detector: ^0.3.3
   cached_network_image: ^3.2.3
 
+  just_audio: ^0.9.40
+  open_filex: ^1.3.6
+  pdfx: ^2.6.0
+  video_thumbnail: ^0.5.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
