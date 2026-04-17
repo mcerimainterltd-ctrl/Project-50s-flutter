@@ -1,13 +1,21 @@
+import '../widgets/discovery_search.dart';
 import 'package:flutter/material.dart';
 import '../widgets/discovery_cards.dart';
 import '../widgets/story_ring.dart';
 import '../widgets/people_carousel.dart';
 
-class XameDiscoverScreen extends StatelessWidget {
+class XameDiscoverScreen extends StatefulWidget {
+  @override
+  _XameDiscoverScreenState createState() => _XameDiscoverScreenState();
+}
+
+class _XameDiscoverScreenState extends State<XameDiscoverScreen> {
+  bool _isSearchOpen = false;
   const XameDiscoverScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    return Stack(children: [
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A), // Ultramodern Dark Base
       body: CustomScrollView(
@@ -15,7 +23,7 @@ class XameDiscoverScreen extends StatelessWidget {
           const SliverAppBar(
             backgroundColor: Colors.transparent,
             floating: true,
-            title: Text("DISCOVERY", style: TextStyle(letterSpacing: 3, fontWeight: FontWeight.w900)),
+            actions: [IconButton(icon: Icon(Icons.search), onPressed: () => setState(() => _isSearchOpen = true))], title: Text("DISCOVERY", style: TextStyle(letterSpacing: 3, fontWeight: FontWeight.w900)),
             centerTitle: true,
           ),
           
@@ -73,4 +81,8 @@ class XameDiscoverScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+DiscoverySearchOverlay(isVisible: _isSearchOpen, onClose: () => setState(() => _isSearchOpen = false)),]);
+}
 }
