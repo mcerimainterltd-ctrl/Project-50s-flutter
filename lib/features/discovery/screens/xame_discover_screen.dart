@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/discovery_cards.dart';
-import '../widgets/story_ring.dart';
+import '../widgets/kinetic_story_item.dart';
 import '../widgets/people_carousel.dart';
 import '../widgets/discovery_search.dart';
 
