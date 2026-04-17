@@ -34,8 +34,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/login',
     redirect: (context, state) {
       final loggedIn    = user != null;
-      final isAuthRoute = state.matchedLocation == '/login' ||
-                          state.matchedLocation == '/register';
+      final isAuthRoute = state.location == '/login' ||
+                          state.location == '/register';
       if (!loggedIn && !isAuthRoute) return '/login';
       if (loggedIn  &&  isAuthRoute) return '/contacts';
       return null;
@@ -51,8 +51,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/call/:userId',
         builder: (context, state) => CallScreen(
           userId: state.pathParameters['userId']!,
-          isVideo: state.uri.queryParameters['video'] == 'true',
-          isIncoming: state.uri.queryParameters['incoming'] == 'true',
+          isVideo:  Uri.parse(state.location).queryParameters['video'] == 'true',
+          isIncoming:  Uri.parse(state.location).queryParameters['incoming'] == 'true',
         )),
       GoRoute(path: '/incoming-call',
         builder: (context, state) => const IncomingCallScreen()),
