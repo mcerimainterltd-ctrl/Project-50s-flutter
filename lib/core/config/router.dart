@@ -47,10 +47,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
       GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
       GoRoute(path: '/chat/:userId',
-        builder: (c, s) => ChatScreen(userId: s.pathParameters['userId']!)),
+        builder: (c, s) => ChatScreen(userId: s.params['userId']!)),
       GoRoute(path: '/call/:userId',
         builder: (context, state) => CallScreen(
-          userId: state.pathParameters['userId']!,
+          userId: state.params['userId']!,
           isVideo:  Uri.parse(state.location).queryParameters['video'] == 'true',
           isIncoming:  Uri.parse(state.location).queryParameters['incoming'] == 'true',
         )),
