@@ -4,16 +4,17 @@ import '../widgets/kinetic_story_item.dart';
 import '../widgets/people_carousel.dart';
 import '../widgets/discovery_search.dart';
 import '../widgets/stories_bar.dart';
+import '../widgets/region_filter_bar.dart';
 
 class XameDiscoverScreen extends StatefulWidget {
   const XameDiscoverScreen({Key? key}) : super(key: key);
-
   @override
   _XameDiscoverScreenState createState() => _XameDiscoverScreenState();
 }
 
 class _XameDiscoverScreenState extends State<XameDiscoverScreen> {
   bool _isSearchOpen = false;
+  String _activeRegion = "Global";
 
   @override
   Widget build(BuildContext context) {
@@ -32,63 +33,31 @@ class _XameDiscoverScreenState extends State<XameDiscoverScreen> {
                     onPressed: () => setState(() => _isSearchOpen = true),
                   )
                 ],
-                title: const Text(
-                  "DISCOVERY",
-                  style: TextStyle(letterSpacing: 3, fontWeight: FontWeight.w900),
-                ),
+                title: const Text("DISCOVERY", style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w900)),
                 centerTitle: true,
               ),
-              
-              // New Modernized Stories Bar
-              const SliverToBoxAdapter(
-                child: DiscoveryStoriesBar(),
-              ),
-
-              // People You May Know
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    "PEOPLE YOU MAY KNOW",
-                    style: TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 1.5),
-                  ),
-                ),
+              const SliverToBoxAdapter(child: DiscoveryStoriesBar()),
+              SliverToBoxAdapter(
+                child: RegionFilterBar(onRegionSelected: (r) => setState(() => _activeRegion = r)),
               ),
               SliverToBoxAdapter(
                 child: PeoplePerspectiveCarousel(
-                  users: List.generate(5, (i) => {
-                    "name": "User $i",
-                    "mutuals": "${i + 2}",
-                    "avatar": "https://i.pravatar.cc/150?img=$i"
-                  }),
-                ),
-              ),
-
-              // Hero Feed Section
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    "TRENDING MOMENTS",
-                    style: TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 1.5),
-                  ),
+                  users: List.generate(5, (i) => {"name": "User $i", "mutuals": "3", "avatar": "https://i.pravatar.cc/150?u=$i"}),
                 ),
               ),
               SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) => const MediaDiscoverCard(
-                    mediaUrl: "https://picsum.photos/800/1200",
-                    title: "A Glimpse into the Maritime Archive",
-                    category: "History",
+                  (context, index) => MediaDiscoverCard(
+                    mediaUrl: "https://picsum.photos/seed/$index/800/1200",
+                    title: "Trending in $_activeRegion",
+                    category: _activeRegion,
                   ),
-                  childCount: 10,
+                  childCount: 5,
                 ),
               ),
             ],
           ),
         ),
-        
-        // Search Overlay
         DiscoverySearchOverlay(
           isVisible: _isSearchOpen,
           onClose: () => setState(() => _isSearchOpen = false),
