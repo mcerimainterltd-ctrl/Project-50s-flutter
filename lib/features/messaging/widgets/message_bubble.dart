@@ -257,6 +257,12 @@ class _StatusTick extends StatelessWidget {
   const _StatusTick({required this.status});
   @override
   Widget build(BuildContext context) {
+    if (status == 'uploading')
+      return const SizedBox(
+          width: 14, height: 14,
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38));
+    if (status == 'failed')
+      return const Icon(Icons.error_outline, size: 14, color: Color(0xFFFF6464));
     if (status == 'seen')
       return const Icon(Icons.done_all, size: 14, color: Color(0xFF4FC3F7));
     if (status == 'delivered')

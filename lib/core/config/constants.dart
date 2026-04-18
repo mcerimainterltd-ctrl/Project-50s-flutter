@@ -29,14 +29,59 @@ class AppConstants {
       'credential': 'openrelayproject',
     },
   ];
-  static const allowedImageTypes    = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
-  static const allowedVideoTypes    = ['video/mp4','video/webm','video/ogg'];
-  static const allowedAudioTypes    = ['audio/mpeg','audio/wav','audio/ogg','audio/webm','audio/mp4','audio/aac','audio/x-aac','audio/3gpp','audio/amr'];
+
+  static const allowedImageTypes = [
+    'image/jpeg', 'image/jpg', 'image/png',
+    'image/gif',  'image/webp', 'image/heic', 'image/heif',
+  ];
+
+  static const allowedVideoTypes = [
+    'video/mp4', 'video/webm', 'video/ogg',
+    'video/quicktime',       // MOV
+    'video/x-matroska',      // MKV
+    'video/x-msvideo',       // AVI
+    'video/3gpp',            // 3GP
+  ];
+
+  static const allowedAudioTypes = [
+    'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm',
+    'audio/mp4',  'audio/aac', 'audio/x-aac', 'audio/3gpp',
+    'audio/amr',  'audio/flac', 'audio/x-flac', 'audio/x-wav',
+    'audio/x-m4a',
+  ];
+
   static const allowedDocumentTypes = [
-    'application/pdf','application/msword',
+    // PDF
+    'application/pdf',
+    // Word
+    'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    // Excel
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'text/plain','text/html','application/vnd.android.package-archive',
+    // PowerPoint
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    // Archives
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/x-rar-compressed',
+    'application/x-7z-compressed',
+    'application/x-tar',
+    'application/gzip',
+    // Text
+    'text/plain', 'text/html', 'text/csv',
+    // APK
+    'application/vnd.android.package-archive',
+    // Generic fallback — file_picker returns this for unknown types
+    'application/octet-stream',
+  ];
+
+  // All types combined — used by validateFile()
+  static List<String> get allAllowedTypes => [
+    ...allowedImageTypes,
+    ...allowedVideoTypes,
+    ...allowedAudioTypes,
+    ...allowedDocumentTypes,
   ];
 }
