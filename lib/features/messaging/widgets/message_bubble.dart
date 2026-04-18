@@ -524,7 +524,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
       // 1. Use local path directly if file still exists on device
       if (widget.localPath != null && File(widget.localPath!).existsSync()) {
         if (mounted) setState(() => _opening = false);
-        await OpenFilex.open(widget.localPath!);
+        await OpenFilex.open(widget.localPath!, type: 'video/*');
         return;
       }
 
@@ -742,10 +742,11 @@ class _FileBubbleState extends State<_FileBubble> {
       // 1. Use local path directly if file still exists on device
       if (widget.localPath != null && File(widget.localPath!).existsSync()) {
         if (mounted) setState(() => _opening = false);
-        final result = await OpenFilex.open(widget.localPath!);
+        final mimeType = widget.mime.isNotEmpty ? widget.mime : null;
+        final result = await OpenFilex.open(widget.localPath!, type: mimeType);
         if (result.type != ResultType.done && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('No app found to open this file type'),
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('No app found to open this file (${result.message})'),
               backgroundColor: XameColors.darkCard));
         }
         return;
