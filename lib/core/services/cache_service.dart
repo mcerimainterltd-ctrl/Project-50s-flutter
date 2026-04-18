@@ -13,6 +13,7 @@ class CacheService {
     await Hive.openBox<String>(_boxContacts);
     await Hive.openBox<String>(_boxChats);
     await Hive.openBox<String>(_boxCallHistory);
+    await Hive.openBox<bool>('xame_discovery_likes');
   }
 
   // ── Contacts ──────────────────────────────────────────────────────────
