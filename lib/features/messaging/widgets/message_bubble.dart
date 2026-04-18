@@ -138,9 +138,10 @@ class MessageBubble extends ConsumerWidget {
             viewOnce: message.viewOnce);
       case MessageType.video:
         return _VideoBubble(
-            url:      message.fileUrl ?? '',
-            fileName: message.fileName ?? 'video',
-            fileSize: message.fileSize);
+            url:       message.fileUrl ?? '',
+            fileName:  message.fileName ?? 'video',
+            fileSize:  message.fileSize,
+            localPath: message.localPath);
       case MessageType.audio:
         return _AudioBubble(
             url:      message.fileUrl ?? '',
@@ -148,10 +149,11 @@ class MessageBubble extends ConsumerWidget {
             isSelf:   isSelf);
       case MessageType.file:
         return _FileBubble(
-            url:      message.fileUrl ?? '',
-            fileName: message.fileName ?? 'file',
-            mime:     message.fileMime ?? '',
-            fileSize: message.fileSize);
+            url:       message.fileUrl ?? '',
+            fileName:  message.fileName ?? 'file',
+            mime:      message.fileMime ?? '',
+            fileSize:  message.fileSize,
+            localPath: message.localPath);
       case MessageType.text:
         return _TextContent(text: message.text, isSelf: isSelf);
     }
@@ -455,10 +457,12 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
 
 // ─── Video bubble — frame thumbnail ──────────────────────────────────────
 class _VideoBubble extends StatefulWidget {
-  final String url, fileName;
-  final int?   fileSize;
+  final String  url, fileName;
+  final int?    fileSize;
+  final String? localPath;
   const _VideoBubble(
-      {required this.url, required this.fileName, this.fileSize});
+      {required this.url, required this.fileName, this.fileSize,
+       this.localPath});
   @override
   State<_VideoBubble> createState() => _VideoBubbleState();
 }
@@ -517,10 +521,22 @@ class _VideoBubbleState extends State<_VideoBubble> {
   Future<void> _open() async {
     setState(() { _opening = true; _progress = 0; });
     try {
+      // 1. Use local path directly if file still exists on device
+      if (widget.localPath != null && File(widget.localPath!).existsSync()) {
+        if (mounted) setState(() => _opening = false);
+        await OpenFilex.open(widget.localPath!);
+        return;
+      }
+
+      // 2. Download from remote
+      if (widget.url.isEmpty) {
+        if (mounted) setState(() => _opening = false);
+        return;
+      }
       final dir  = await getTemporaryDirectory();
       final name = widget.url.split('/').last.split('?').first
           .replaceAll(RegExp(r'[^\w.\-]'), '_');
-      final path = '${dir.path}/$name';
+      final path = '\${dir.path}/\$name';
       final cached = File(path);
       if (!cached.existsSync() || cached.lengthSync() == 0) {
         if (cached.existsSync()) await cached.delete();
@@ -651,11 +667,13 @@ class _VideoBubbleState extends State<_VideoBubble> {
 
 // ─── File bubble — PDF page-1 preview + rich doc cards ───────────────────
 class _FileBubble extends StatefulWidget {
-  final String url, fileName, mime;
-  final int?   fileSize;
+  final String  url, fileName, mime;
+  final int?    fileSize;
+  final String? localPath;
   const _FileBubble({
     required this.url,      required this.fileName,
     required this.mime,     this.fileSize,
+    this.localPath,
   });
   @override
   State<_FileBubble> createState() => _FileBubbleState();
@@ -719,14 +737,32 @@ class _FileBubbleState extends State<_FileBubble> {
   }
 
   Future<void> _openFile() async {
-    if (widget.url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('File URL not available yet — try again shortly'),
-          backgroundColor: Colors.orange));
-      return;
-    }
     setState(() { _opening = true; _progress = 0; });
     try {
+      // 1. Use local path directly if file still exists on device
+      if (widget.localPath != null && File(widget.localPath!).existsSync()) {
+        if (mounted) setState(() => _opening = false);
+        final result = await OpenFilex.open(widget.localPath!);
+        if (result.type != ResultType.done && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('No app found to open this file type'),
+              backgroundColor: XameColors.darkCard));
+        }
+        return;
+      }
+
+      // 2. No local file — need remote URL to download
+      if (widget.url.isEmpty) {
+        if (mounted) {
+          setState(() => _opening = false);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('File not available — upload may still be in progress'),
+              backgroundColor: Colors.orange));
+        }
+        return;
+      }
+
+      // 3. Download to cache then open
       final dir  = await getTemporaryDirectory();
       final name = widget.fileName.isNotEmpty
           ? widget.fileName
@@ -734,12 +770,10 @@ class _FileBubbleState extends State<_FileBubble> {
       final path = '${dir.path}/$name';
       final cached = File(path);
       if (!cached.existsSync() || cached.lengthSync() == 0) {
-        // Remove zero-byte corrupt cache before re-downloading
         if (cached.existsSync()) await cached.delete();
         await Dio(BaseOptions(
           connectTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(minutes: 5),
-          // No baseUrl — URL is absolute Cloudinary link
         )).download(_resolveUrl(widget.url), path,
             onReceiveProgress: (r, t) {
           if (t > 0 && mounted) setState(() => _progress = r / t);

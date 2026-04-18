@@ -173,6 +173,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       ts: ts,            status:      'uploading',
       fileName: fileName, fileMime:   mimeType,
       fileSize: fileSize, viewOnce:   viewOnce,
+      localPath: file.path,  // keep local path for instant open without download
       // fileUrl is null while uploading — bubble handles this gracefully
     );
     state = [...state, pending];
@@ -206,6 +207,8 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           ts: ts,            status:      'sending',
           fileUrl: fileUrl,  fileName:    fileName,
           fileMime: mimeType, fileSize:   fileSize,   viewOnce: viewOnce,
+          localPath: file.path,
+          localPath: file.path,
         );
         state = state.map((m) => m.id == msgId ? finalMsg : m).toList();
         CacheService.saveChat(_contactId, state);
