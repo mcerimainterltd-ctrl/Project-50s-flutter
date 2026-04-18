@@ -585,30 +585,17 @@ class _LightboxState extends State<_Lightbox> {
             onPageChanged: (i) => setState(() => _idx = i),
             itemBuilder: (_, i) {
               final it = widget.items[i];
-              return SizedBox.expand(
-                child: InteractiveViewer(
-                  minScale: 0.5, maxScale: 5.0,
-                  child: Image.network(it.url,
-                    fit: BoxFit.contain,
-                    width: size.width, height: size.height,
-                    loadingBuilder: (_, child, progress) {
-                      if (progress == null) return child;
-                      final pct = progress.expectedTotalBytes != null
-                          ? progress.cumulativeBytesLoaded /
-                            progress.expectedTotalBytes! : null;
-                      return Center(child: CircularProgressIndicator(
-                          value: pct, color: _kTeal, strokeWidth: 1.5));
-                    },
-                    errorBuilder: (_, __, ___) => const Center(child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.broken_image_outlined,
-                            color: Colors.white24, size: 64),
-                        SizedBox(height: 12),
-                        Text('Could not load image',
-                            style: TextStyle(color: Colors.white38)),
-                      ])),
-                  ),
+              return Center(
+                child: Image.network(
+                  it.url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (_, child, progress) =>
+                      progress == null ? child : const Center(
+                          child: CircularProgressIndicator(
+                              color: _kTeal, strokeWidth: 1.5)),
+                  errorBuilder: (_, __, ___) => const Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.white24, size: 64),
                 ),
               );
             },
