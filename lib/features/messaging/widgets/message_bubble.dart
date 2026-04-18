@@ -19,7 +19,18 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import '../../../core/services/voice_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/message.dart';
+import '../../../core/config/constants.dart';
 
+
+// ─── Resolve relative URLs from server ───────────────────────────────────
+String _resolveUrl(String url) {
+  if (url.isEmpty) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Relative path e.g. /uploads/file.pdf → prepend server base
+  final base = AppConstants.serverUrl.replaceAll(RegExp(r'/$'), '');
+  final path = url.startsWith('/') ? url : '/$url';
+  return '$base$path';
+}
 // ─── In-memory thumbnail caches (process lifetime) ────────────────────────
 final _videoThumbCache = <String, Uint8List?>{};
 final _pdfThumbCache   = <String, Uint8List?>{};
@@ -332,7 +343,7 @@ class _ImageBubble extends StatelessWidget {
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(14)),
             child: CachedNetworkImage(
-              imageUrl: url, fit: BoxFit.cover,
+              imageUrl: _resolveUrl(url), fit: BoxFit.cover,
               width: double.infinity,
               placeholder: (_, __) => _Shimmer(
                   width: double.infinity, height: 180),
@@ -371,7 +382,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
                    await getApplicationDocumentsDirectory();
       final name = widget.url.split('/').last.split('?').first;
       final path = '${dir.path}/$name';
-      await Dio().download(widget.url, path,
+      await Dio().download(_resolveUrl(widget.url), path,
           onReceiveProgress: (r, t) {
         if (t > 0 && mounted) setState(() => _progress = r / t);
       });
@@ -417,7 +428,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
       child: InteractiveViewer(
         minScale: 0.5, maxScale: 5.0,
         child: Center(child: CachedNetworkImage(
-          imageUrl: widget.url, fit: BoxFit.contain,
+          imageUrl: _resolveUrl(widget.url), fit: BoxFit.contain,
           placeholder: (_, __) =>
               const CircularProgressIndicator(color: XameColors.primary),
           errorWidget: (_, __, ___) =>
@@ -485,7 +496,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
           .replaceAll(RegExp(r'[^\w.\-]'), '_');
       final path = '${dir.path}/$name';
       if (!File(path).existsSync()) {
-        await Dio().download(widget.url, path,
+        await Dio().download(_resolveUrl(widget.url), path,
             onReceiveProgress: (r, t) {
           if (t > 0 && mounted) setState(() => _progress = r / t);
         });
@@ -648,7 +659,7 @@ class _FileBubbleState extends State<_FileBubble> {
       final dir  = await getTemporaryDirectory();
       final path = '${dir.path}/${widget.url.hashCode}.pdf';
       if (!File(path).existsSync()) {
-        await Dio().download(widget.url, path);
+        await Dio().download(_resolveUrl(widget.url), path);
       }
       final doc  = await PdfDocument.openFile(path);
       final page = await doc.getPage(1);
@@ -672,6 +683,12 @@ class _FileBubbleState extends State<_FileBubble> {
   }
 
   Future<void> _openFile() async {
+    if (widget.url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('File URL not available yet — try again shortly'),
+          backgroundColor: Colors.orange));
+      return;
+    }
     setState(() { _opening = true; _progress = 0; });
     try {
       final dir  = await getTemporaryDirectory();
@@ -680,7 +697,7 @@ class _FileBubbleState extends State<_FileBubble> {
           : widget.url.split('/').last.split('?').first;
       final path = '${dir.path}/$name';
       if (!File(path).existsSync()) {
-        await Dio().download(widget.url, path,
+        await Dio().download(_resolveUrl(widget.url), path,
             onReceiveProgress: (r, t) {
           if (t > 0 && mounted) setState(() => _progress = r / t);
         });
