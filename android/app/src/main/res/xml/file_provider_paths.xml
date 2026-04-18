@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- getTemporaryDirectory() — where we save downloaded files before opening -->
+    <cache-path name="cache" path="."/>
+    <!-- getApplicationDocumentsDirectory() -->
+    <files-path name="files" path="."/>
+    <!-- getExternalStorageDirectory() — saved downloads -->
+    <external-files-path name="external_files" path="."/>
+    <!-- General external storage -->
+    <external-path name="external" path="."/>
+</paths>
