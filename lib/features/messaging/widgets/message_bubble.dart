@@ -25,11 +25,20 @@ import '../../../core/config/constants.dart';
 // ─── Resolve relative URLs from server ───────────────────────────────────
 String _resolveUrl(String url) {
   if (url.isEmpty) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    // Cloudinary raw/upload URLs require fl_attachment for public download access
+    // e.g. .../raw/upload/v123/... → .../raw/upload/fl_attachment/v123/...
+    if (url.contains('res.cloudinary.com') &&
+        url.contains('/raw/upload/') &&
+        !url.contains('fl_attachment')) {
+      return url.replaceFirst('/raw/upload/', '/raw/upload/fl_attachment/');
+    }
+    return url;
+  }
   // Relative path e.g. /uploads/file.pdf → prepend server base
-  final base = AppConstants.serverUrl.replaceAll(RegExp(r'/$'), '');
-  final path = url.startsWith('/') ? url : '/$url';
-  return '$base$path';
+  final base = AppConstants.serverUrl.replaceAll(RegExp(r'/\$'), '');
+  final path = url.startsWith('/') ? url : '/\$url';
+  return '\$base\$path';
 }
 // ─── In-memory thumbnail caches (process lifetime) ────────────────────────
 final _videoThumbCache = <String, Uint8List?>{};
