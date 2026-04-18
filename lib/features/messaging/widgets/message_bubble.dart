@@ -477,6 +477,18 @@ class _VideoBubbleState extends State<_VideoBubble> {
       });
       return;
     }
+
+    // VideoThumbnail uses MediaMetadataRetriever internally which makes raw
+    // HTTP requests without auth headers — this causes 401 on Cloudinary
+    // raw uploads. Only attempt for local file paths, not remote URLs.
+    final isLocal = widget.url.startsWith('/') || widget.url.startsWith('file://');
+    if (!isLocal) {
+      // Remote video — use styled placeholder, no thumbnail extraction
+      _videoThumbCache[widget.url] = null;
+      if (mounted) setState(() => _thumbLoading = false);
+      return;
+    }
+
     try {
       final bytes = await VideoThumbnail.thumbnailData(
         video:        widget.url,
