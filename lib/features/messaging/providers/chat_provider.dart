@@ -17,9 +17,6 @@ import '../../../shared/models/message.dart';
 // ── Active chat ID ────────────────────────────────────────────────────────
 final activeChatIdProvider = StateProvider<String?>((ref) => null);
 
-// ── Typing provider ───────────────────────────────────────────────────────
-final typingProvider = StateProvider<Set<String>>((ref) => {});
-
 // ── Chat messages provider ────────────────────────────────────────────────
 final chatProvider = StateNotifierProvider.family<ChatNotifier, List<XameMessage>, String>(
   (ref, contactId) => ChatNotifier(ref, contactId),
