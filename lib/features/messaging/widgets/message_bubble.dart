@@ -281,9 +281,11 @@ class _StatusTick extends StatelessWidget {
     if (status == 'uploading')
       return const SizedBox(
           width: 14, height: 14,
-          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38));
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white54));
     if (status == 'failed')
-      return const Icon(Icons.error_outline, size: 14, color: Color(0xFFFF6464));
+      return const Tooltip(
+        message: 'Upload failed — long press to retry',
+        child: Icon(Icons.error_outline, size: 14, color: Color(0xFFFF6464)));
     if (status == 'seen')
       return const Icon(Icons.done_all, size: 14, color: Color(0xFF4FC3F7));
     if (status == 'delivered')

@@ -29,9 +29,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
   final _storage = const FlutterSecureStorage();
   final _dio     = Dio(BaseOptions(
     baseUrl:        AppConstants.serverUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(minutes: 5), // large files need time
-    sendTimeout:    const Duration(minutes: 5),
+    connectTimeout: const Duration(seconds: 60), // Render cold start can take 50s
+    receiveTimeout: const Duration(seconds: 60),
+    sendTimeout:    const Duration(minutes: 3),
   ));
   final List<StreamSubscription> _subs = [];
 
@@ -178,6 +178,34 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     );
     state = [...state, pending];
 
+    // Hard 2-minute wall clock timeout — prevents infinite spinner
+    final uploadFuture = _doUpload(
+      msgId: msgId, file: file, mimeType: mimeType,
+      caption: caption, viewOnce: viewOnce,
+      fileName: fileName, fileSize: fileSize, ts: ts,
+      msgType: msgType,
+    );
+    try {
+      await uploadFuture.timeout(
+        const Duration(minutes: 2),
+        onTimeout: () => _markFailed(msgId,
+            hint: 'Upload timed out — check your connection and try again'),
+      );
+    } catch (e) {
+      _markFailed(msgId, hint: e.toString());
+    }
+  }
+
+  // Internal upload worker — called by sendFile()
+  Future<void> _doUpload({
+    required String msgId,      required File   file,
+    required String mimeType,   required String? caption,
+    required bool   viewOnce,   required String fileName,
+    required int?   fileSize,   required int    ts,
+    required MessageType msgType,
+  }) async {
+    final self = _ref.read(currentUserProvider);
+    if (self == null) return;
     try {
       // Validate MIME — if not in allowed list, use octet-stream fallback
       // so the server still accepts it rather than rejecting outright
@@ -194,7 +222,23 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
       // Server: POST /api/gallery/upload
       // Response: { success: true, item: { url: 'https://res.cloudinary.com/...' } }
-      final res        = await _dio.post('/api/gallery/upload', data: formData);
+      // Track upload progress — updates the pending bubble status text
+      int _lastPct = 0;
+      final res = await _dio.post(
+        '/api/gallery/upload',
+        data: formData,
+        onSendProgress: (sent, total) {
+          if (total <= 0) return;
+          final pct = (sent / total * 100).round();
+          if (pct != _lastPct && pct % 10 == 0) {
+            _lastPct = pct;
+            // Update pending message text to show progress
+            state = state.map((m) => m.id == msgId
+                ? m.copyWith(status: 'uploading')
+                : m).toList();
+          }
+        },
+      );
       final data       = res.data as Map<String, dynamic>?;
       final fileUrl    = (data?['item'] as Map?)?['url'] as String?;
 
@@ -230,11 +274,10 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         _markFailed(msgId);
       }
     } on DioException catch (e) {
-      // Network/server error — mark failed with error detail, never delete
       _markFailed(msgId,
           hint: e.response?.data?['message'] as String? ??
                 e.message ??
-                'Upload failed');
+                'Upload failed — check connection');
     } catch (e) {
       _markFailed(msgId, hint: e.toString());
     }
