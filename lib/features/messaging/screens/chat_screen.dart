@@ -124,6 +124,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollToBottom();
   }
 
+  Future<void> _pickVideo() async {
+    final file = await _picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 10),
+    );
+    if (file == null) return;
+    setState(() => _showAttach = false);
+    final ext  = file.path.split('.').last.toLowerCase();
+    final mime = ext == 'mov' ? 'video/quicktime'
+               : ext == 'mkv' ? 'video/x-matroska'
+               : ext == '3gp' ? 'video/3gpp'
+               : 'video/mp4';
+    await ref.read(chatProvider(widget.userId).notifier)
+        .sendFile(dart_io.File(file.path), mime);
+    _scrollToBottom();
+  }
+
   // BUG 1 FIX: Full file picker — any file type from local storage
   Future<void> _pickFile() async {
     setState(() => _showAttach = false);
@@ -292,6 +309,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
         if (_showAttach) _AttachPanel(
           onImage:  _pickImage,
+          onVideo:  _pickVideo,
           onFile:   _pickFile,
           onCamera: () async {
             final file = await _picker.pickImage(
@@ -709,10 +727,11 @@ class _ReplyPreview extends StatelessWidget {
 
 // ── Attachment panel ──────────────────────────────────────────────────────
 class _AttachPanel extends StatelessWidget {
-  final VoidCallback onImage, onFile, onCamera, onDismiss;
+  final VoidCallback onImage, onFile, onCamera, onDismiss, onVideo;
   const _AttachPanel({
     required this.onImage,  required this.onFile,
     required this.onCamera, required this.onDismiss,
+    required this.onVideo,
   });
 
   @override
@@ -720,11 +739,13 @@ class _AttachPanel extends StatelessWidget {
     color: XameColors.darkSurface,
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-      _AttachBtn(icon: Icons.photo_library_outlined, label: 'Gallery',
+      _AttachBtn(icon: Icons.photo_library_outlined,     label: 'Gallery',
           onTap: onImage,  color: XameColors.primary),
-      _AttachBtn(icon: Icons.camera_alt_outlined,    label: 'Camera',
+      _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
+          onTap: onVideo,  color: const Color(0xFF7C4DFF)),
+      _AttachBtn(icon: Icons.camera_alt_outlined,         label: 'Camera',
           onTap: onCamera, color: XameColors.secondary),
-      _AttachBtn(icon: Icons.insert_drive_file_outlined, label: 'File',
+      _AttachBtn(icon: Icons.insert_drive_file_outlined,  label: 'File',
           onTap: onFile,   color: XameColors.accent),
     ]),
   );
