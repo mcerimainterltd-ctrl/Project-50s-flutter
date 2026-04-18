@@ -21,7 +21,6 @@ class XameMessage {
   final String?          fileMime;
   final int?             fileSize;
   final String?          localPath;  // local device path — open without download
-  final String?          localPath;  // local device path — open without download
   final Map<String, String>? reactions;
 
   const XameMessage({
@@ -44,7 +43,6 @@ class XameMessage {
     this.fileMime,
     this.fileSize,
     this.localPath,
-    this.localPath,
     this.reactions,
   });
 
@@ -58,7 +56,6 @@ class XameMessage {
     forwarded:      forwarded,      viewOnce:      viewOnce,
     fileUrl:        fileUrl,        fileName:      fileName,
     fileMime:       fileMime,       fileSize:      fileSize,
-    localPath:      localPath ?? this.localPath,
     localPath:      localPath ?? this.localPath,
     reactions:      reactions ?? this.reactions,
   );

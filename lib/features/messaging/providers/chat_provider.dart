@@ -208,7 +208,6 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           fileUrl: fileUrl,  fileName:    fileName,
           fileMime: mimeType, fileSize:   fileSize,   viewOnce: viewOnce,
           localPath: file.path,
-          localPath: file.path,
         );
         state = state.map((m) => m.id == msgId ? finalMsg : m).toList();
         CacheService.saveChat(_contactId, state);
