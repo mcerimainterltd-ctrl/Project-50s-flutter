@@ -202,7 +202,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           recipientId: _contactId,        text:        caption ?? '',
           type: msgType,     direction:   MessageDirection.sent,
           ts: ts,            status:      'sending',
-          fileUrl: data['url'] as String, fileName:    fileName,
+          fileUrl: resolvedUrl, fileName:    fileName,
           fileMime: mimeType, fileSize:   fileSize,   viewOnce: viewOnce,
         );
         state = state.map((m) => m.id == msgId ? finalMsg : m).toList();
@@ -213,7 +213,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           'message': {
             'id': msgId, 'text': caption ?? '', 'ts': ts,
             'file': {
-              'url':  data['url'],
+              'url':  resolvedUrl,
               'name': fileName,
               'type': effectiveMime,
               'size': fileSize,
