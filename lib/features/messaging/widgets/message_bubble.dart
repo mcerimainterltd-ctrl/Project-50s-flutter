@@ -23,19 +23,18 @@ import '../../../core/config/constants.dart';
 
 
 // ─── Resolve relative URLs from server ───────────────────────────────────
-String _resolveUrl(String url) {
+String _resolveUrl(String url, {bool forDisplay = false}) {
   if (url.isEmpty) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    // Cloudinary raw/upload URLs require fl_attachment for public download access
-    // e.g. .../raw/upload/v123/... → .../raw/upload/fl_attachment/v123/...
-    if (url.contains('res.cloudinary.com') &&
-        url.contains('/raw/upload/') &&
-        !url.contains('fl_attachment')) {
-      return url.replaceFirst('/raw/upload/', '/raw/upload/fl_attachment/');
+    if (url.contains('res.cloudinary.com')) {
+      // All Cloudinary raw uploads need fl_attachment to be publicly accessible
+      if (url.contains('/raw/upload/') && !url.contains('fl_attachment')) {
+        return url.replaceFirst('/raw/upload/', '/raw/upload/fl_attachment/');
+      }
     }
     return url;
   }
-  // Relative path e.g. /uploads/file.pdf → prepend server base
+  // Relative path → prepend server base
   final base = AppConstants.serverUrl.replaceAll(RegExp(r'/\$'), '');
   final path = url.startsWith('/') ? url : '/\$url';
   return '\$base\$path';
