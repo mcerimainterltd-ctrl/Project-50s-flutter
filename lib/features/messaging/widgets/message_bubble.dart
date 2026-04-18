@@ -382,7 +382,12 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
                    await getApplicationDocumentsDirectory();
       final name = widget.url.split('/').last.split('?').first;
       final path = '${dir.path}/$name';
-      await Dio().download(_resolveUrl(widget.url), path,
+      final cached = File(path);
+      if (cached.existsSync() && cached.lengthSync() == 0) await cached.delete();
+      await Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(minutes: 5),
+      )).download(_resolveUrl(widget.url), path,
           onReceiveProgress: (r, t) {
         if (t > 0 && mounted) setState(() => _progress = r / t);
       });
@@ -495,8 +500,13 @@ class _VideoBubbleState extends State<_VideoBubble> {
       final name = widget.url.split('/').last.split('?').first
           .replaceAll(RegExp(r'[^\w.\-]'), '_');
       final path = '${dir.path}/$name';
-      if (!File(path).existsSync()) {
-        await Dio().download(_resolveUrl(widget.url), path,
+      final cached = File(path);
+      if (!cached.existsSync() || cached.lengthSync() == 0) {
+        if (cached.existsSync()) await cached.delete();
+        await Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(minutes: 5),
+        )).download(_resolveUrl(widget.url), path,
             onReceiveProgress: (r, t) {
           if (t > 0 && mounted) setState(() => _progress = r / t);
         });
@@ -658,8 +668,13 @@ class _FileBubbleState extends State<_FileBubble> {
       // Download PDF to temp, render page 1
       final dir  = await getTemporaryDirectory();
       final path = '${dir.path}/${widget.url.hashCode}.pdf';
-      if (!File(path).existsSync()) {
-        await Dio().download(_resolveUrl(widget.url), path);
+      final pdfCached = File(path);
+      if (!pdfCached.existsSync() || pdfCached.lengthSync() == 0) {
+        if (pdfCached.existsSync()) await pdfCached.delete();
+        await Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(minutes: 5),
+        )).download(_resolveUrl(widget.url), path);
       }
       final doc  = await PdfDocument.openFile(path);
       final page = await doc.getPage(1);
@@ -696,8 +711,15 @@ class _FileBubbleState extends State<_FileBubble> {
           ? widget.fileName
           : widget.url.split('/').last.split('?').first;
       final path = '${dir.path}/$name';
-      if (!File(path).existsSync()) {
-        await Dio().download(_resolveUrl(widget.url), path,
+      final cached = File(path);
+      if (!cached.existsSync() || cached.lengthSync() == 0) {
+        // Remove zero-byte corrupt cache before re-downloading
+        if (cached.existsSync()) await cached.delete();
+        await Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(minutes: 5),
+          // No baseUrl — URL is absolute Cloudinary link
+        )).download(_resolveUrl(widget.url), path,
             onReceiveProgress: (r, t) {
           if (t > 0 && mounted) setState(() => _progress = r / t);
         });
