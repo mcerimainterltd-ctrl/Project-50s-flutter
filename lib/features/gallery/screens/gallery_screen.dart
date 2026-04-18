@@ -233,11 +233,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
       List<GalleryItem> all) {
     final sameMode = all.where((i) => i.mode == item.mode).toList();
     final idx      = sameMode.indexOf(item);
-    Navigator.push(context, PageRouteBuilder(
-      opaque: true,
-      barrierColor: Colors.black,
-      pageBuilder: (_, __, ___) => _Lightbox(
-          items: sameMode, initialIndex: idx),
+    Navigator.push(context, MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => _Lightbox(items: sameMode, initialIndex: idx),
     ));
   }
 
@@ -689,6 +687,7 @@ class _LightboxState extends State<_Lightbox> {
                   maxScale: 4.0,
                   child: Image.network(
                     it.url,
+                    headers: const {'Cache-Control': 'no-cache'},
                     fit:         BoxFit.contain,
                     width:       size.width,
                     height:      size.height,
