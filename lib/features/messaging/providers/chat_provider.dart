@@ -31,7 +31,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     baseUrl:        AppConstants.serverUrl,
     connectTimeout: const Duration(seconds: 60), // Render cold start can take 50s
     receiveTimeout: const Duration(seconds: 60),
-    sendTimeout:    const Duration(minutes: 3),
+    sendTimeout:    const Duration(minutes: 10), // large video uploads need time
   ));
   final List<StreamSubscription> _subs = [];
 
@@ -161,6 +161,23 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     int?  fileSize;
     try { fileSize = await file.length(); } catch (_) {}
 
+    // 5.5MB safe limit — Render times out on slower uploads above this
+    const maxUploadBytes = 5 * 1024 * 1024 + 500 * 1024;
+    if ((fileSize ?? 0) > maxUploadBytes) {
+      final mb = ((fileSize ?? 0) / (1024 * 1024)).toStringAsFixed(1);
+      state = [...state, XameMessage(
+        id: _uuid.v4(),
+        senderId:    _ref.read(currentUserProvider)?.xameId ?? '',
+        recipientId: _contactId,
+        text:        'File too large (${mb}MB). Max 5.5MB — compress video first.',
+        type:        MessageType.text,
+        direction:   MessageDirection.sent,
+        ts:          DateTime.now().millisecondsSinceEpoch,
+        status:      'failed',
+      )];
+      return;
+    }
+
     // Resolve correct MessageType immediately from mime — not text
     final msgType  = _typeFromMime(mimeType);
 
@@ -178,7 +195,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     );
     state = [...state, pending];
 
-    // Hard 2-minute wall clock timeout — prevents infinite spinner
+    // Scale timeout with file size: 2min base + 1min per 5MB, max 10min
+    final sizeMb       = (fileSize ?? 0) / (1024 * 1024);
+    final timeoutMins  = (2 + (sizeMb / 5)).ceil().clamp(2, 10);
     final uploadFuture = _doUpload(
       msgId: msgId, file: file, mimeType: mimeType,
       caption: caption, viewOnce: viewOnce,
@@ -187,9 +206,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     );
     try {
       await uploadFuture.timeout(
-        const Duration(minutes: 2),
+        Duration(minutes: timeoutMins),
         onTimeout: () => _markFailed(msgId,
-            hint: 'Upload timed out — check your connection and try again'),
+            hint: 'Upload timed out after \${timeoutMins}min — try on a faster connection'),
       );
     } catch (e) {
       _markFailed(msgId, hint: e.toString());

@@ -11,6 +11,7 @@ import '../../../core/services/voice_service.dart';
 import '../../../core/services/translation_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_compress/video_compress.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -125,19 +126,66 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _pickVideo() async {
-    final file = await _picker.pickVideo(
+    final picked = await _picker.pickVideo(
       source: ImageSource.gallery,
       maxDuration: const Duration(minutes: 10),
     );
-    if (file == null) return;
+    if (picked == null) return;
     setState(() => _showAttach = false);
-    final ext  = file.path.split('.').last.toLowerCase();
-    final mime = ext == 'mov' ? 'video/quicktime'
-               : ext == 'mkv' ? 'video/x-matroska'
-               : ext == '3gp' ? 'video/3gpp'
-               : 'video/mp4';
+
+    dart_io.File videoFile = dart_io.File(picked.path);
+    final originalSize = await videoFile.length();
+    const maxBytes = 5 * 1024 * 1024 + 500 * 1024; // 5.5MB safe limit
+
+    if (originalSize > maxBytes) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Row(children: [
+          SizedBox(width: 16, height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+          SizedBox(width: 12),
+          Text('Compressing video...'),
+        ]),
+        duration: Duration(seconds: 60),
+        backgroundColor: XameColors.darkCard,
+      ));
+      try {
+        final info = await VideoCompress.compressVideo(
+          picked.path,
+          quality: VideoQuality.MediumQuality,
+          deleteOrigin: false,
+          includeAudio: true,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).clearSnackBars();
+        if (info?.file == null) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Compression failed — try a shorter clip'),
+            backgroundColor: Colors.redAccent));
+          return;
+        }
+        final compressedSize = await info!.file!.length();
+        if (compressedSize > maxBytes) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Video still too large after compression '
+                '(${(compressedSize / 1024 / 1024).toStringAsFixed(1)}MB). '
+                'Try a shorter clip.'),
+            backgroundColor: Colors.redAccent));
+          return;
+        }
+        videoFile = info.file!;
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Compression error: $e'),
+          backgroundColor: Colors.redAccent));
+        return;
+      }
+    }
+
     await ref.read(chatProvider(widget.userId).notifier)
-        .sendFile(dart_io.File(file.path), mime);
+        .sendFile(videoFile, 'video/mp4');
     _scrollToBottom();
   }
 
