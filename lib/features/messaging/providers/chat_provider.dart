@@ -185,24 +185,26 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           : 'application/octet-stream';
 
       final formData = FormData.fromMap({
-        'file':        await MultipartFile.fromFile(file.path,
-                           contentType: DioMediaType.parse(effectiveMime)),
-        'senderId':    self.xameId,
-        'recipientId': _contactId,
-        'messageId':   msgId,
+        'file':    await MultipartFile.fromFile(file.path,
+                       contentType: DioMediaType.parse(effectiveMime)),
+        'userId':  self.xameId,
+        'caption': caption ?? '',
       });
 
-      final res  = await _dio.post('/api/upload-file', data: formData);
-      final data = res.data as Map<String, dynamic>?;
+      // Server: POST /api/gallery/upload
+      // Response: { success: true, item: { url: 'https://res.cloudinary.com/...' } }
+      final res        = await _dio.post('/api/gallery/upload', data: formData);
+      final data       = res.data as Map<String, dynamic>?;
+      final fileUrl    = (data?['item'] as Map?)?['url'] as String?;
 
-      if (data != null && data['success'] == true && data['url'] != null) {
+      if (data != null && data['success'] == true && fileUrl != null) {
         // SUCCESS — replace pending with final message
         final finalMsg = XameMessage(
           id: msgId,         senderId:    self.xameId,
           recipientId: _contactId,        text:        caption ?? '',
           type: msgType,     direction:   MessageDirection.sent,
           ts: ts,            status:      'sending',
-          fileUrl: resolvedUrl, fileName:    fileName,
+          fileUrl: fileUrl,  fileName:    fileName,
           fileMime: mimeType, fileSize:   fileSize,   viewOnce: viewOnce,
         );
         state = state.map((m) => m.id == msgId ? finalMsg : m).toList();
@@ -213,7 +215,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           'message': {
             'id': msgId, 'text': caption ?? '', 'ts': ts,
             'file': {
-              'url':  resolvedUrl,
+              'url':  fileUrl,
               'name': fileName,
               'type': effectiveMime,
               'size': fileSize,
