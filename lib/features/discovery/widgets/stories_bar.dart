@@ -27,6 +27,7 @@ class DiscoveryStoriesBar extends StatelessWidget {
           hasSeen:  list[i]['hasSeen']  as bool? ?? false,
           isOnline: list[i]['isOnline'] as bool? ?? false,
           isFirst:  i == 0,
+          onTap:    list[i]['onTap']    as VoidCallback?,
         ),
       ),
     );
@@ -36,10 +37,11 @@ class DiscoveryStoriesBar extends StatelessWidget {
 class _StoryRing extends StatefulWidget {
   final String name, avatar;
   final bool   hasSeen, isOnline, isFirst;
+  final VoidCallback? onTap;
   const _StoryRing({Key? key,
     required this.name, required this.avatar,
     required this.hasSeen, required this.isOnline,
-    required this.isFirst}) : super(key: key);
+    required this.isFirst, this.onTap}) : super(key: key);
   @override
   State<_StoryRing> createState() => _StoryRingState();
 }
@@ -59,7 +61,7 @@ class _StoryRingState extends State<_StoryRing>
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () {},
+    onTap: widget.onTap ?? () {},
     child: Container(
       width: 72,
       margin: const EdgeInsets.only(right: 12),
