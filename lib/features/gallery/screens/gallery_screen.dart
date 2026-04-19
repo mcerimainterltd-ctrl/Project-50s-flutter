@@ -127,7 +127,6 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     final list = all.where((i) => i.mode == item.mode).toList();
     final idx  = list.indexOf(item);
     Navigator.of(context).push(MaterialPageRoute(
-      fullscreenDialog: true,
       builder: (_) => _Lightbox(items: list, initialIndex: idx),
     ));
   }
