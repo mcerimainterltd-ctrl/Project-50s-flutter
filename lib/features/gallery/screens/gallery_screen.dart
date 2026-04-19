@@ -19,6 +19,13 @@ const _kGold    = Color(0xFFFFB800);
 const _kRed     = Color(0xFFEF4444);
 
 // ── Model ─────────────────────────────────────────────────────────────────────
+String _resolveUrl(String url) {
+  if (url.isEmpty) return url;
+  if (url.startsWith('http')) return url;
+  final base = AppConstants.serverUrl.replaceAll(RegExp(r'/\$'), '');
+  return '\$base\$url';
+}
+
 class GalleryItem {
   final String  id, userId, url, type, caption, description,
                 price, phone, email, visibility, mode;
@@ -43,7 +50,7 @@ class GalleryItem {
   factory GalleryItem.fromJson(Map<String, dynamic> j) => GalleryItem(
     id:          j['_id']         ?? '',
     userId:      j['userId']      ?? '',
-    url:         j['url']         ?? '',
+    url:         _resolveUrl(j['url'] ?? ''),
     type:        j['type']        ?? 'image',
     caption:     j['caption']     ?? '',
     description: j['description'] ?? '',
