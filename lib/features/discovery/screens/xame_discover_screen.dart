@@ -947,7 +947,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
       ),
       Expanded(
         child: _results.isEmpty && widget.ctrl.text.isEmpty
-          ? _SearchSuggestions()
+          ? _SearchSuggestions(ctrl: widget.ctrl, onSearch: widget.onSearch)
           : _results.isEmpty
             ? const Center(child: Text('No results found',
                 style: TextStyle(color: Colors.white38)))
@@ -981,6 +981,9 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 }
 
 class _SearchSuggestions extends StatelessWidget {
+  final TextEditingController ctrl;
+  final Function(String) onSearch;
+  const _SearchSuggestions({required this.ctrl, required this.onSearch});
   final _trending = const [
     '🔥 Afrobeats','⚡ Tech Africa','🌍 Global Culture',
     '🎬 Nollywood','🏆 Sport','🎨 Street Art',
