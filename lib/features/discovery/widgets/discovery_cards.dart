@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../../core/config/constants.dart';
 import 'live_pulse.dart';
 
 // ── Media Discover Card ───────────────────────────────────────────────────────
@@ -15,6 +17,8 @@ class MediaDiscoverCard extends StatefulWidget {
   final String? authorAvatar;
   final int     viewCount;
   final int     likeCount;
+  final String  postId;
+  final String  userId;
   final VoidCallback? onTap;
 
   const MediaDiscoverCard({
@@ -27,6 +31,8 @@ class MediaDiscoverCard extends StatefulWidget {
     this.authorAvatar,
     this.viewCount   = 0,
     this.likeCount   = 0,
+    this.postId      = '',
+    this.userId      = '',
     this.onTap,
   }) : super(key: key);
 
@@ -72,10 +78,19 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     final next = !_liked;
     setState(() => _liked = next);
     _likeCtrl.forward(from: 0);
+    // Persist locally
     try {
       final box = await Hive.openBox<bool>(_boxName);
       await box.put(widget.title, next);
     } catch (_) {}
+    // Sync to server if postId available
+    if (widget.postId.isNotEmpty && widget.userId.isNotEmpty) {
+      try {
+        final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+        await dio.post('/api/discover/like',
+          data: {'userId': widget.userId, 'postId': widget.postId});
+      } catch (_) {}
+    }
   }
 
   @override
