@@ -1,140 +1,164 @@
 // lib/screens/phone_screen.dart
-// XamePage Phone — embedded in ContactsScreen tab 3  (Build 239+)
-//
-// Tabs: Recents | Contacts | Keypad
-// Contacts: reads native device address book via contacts_service plugin.
-// READ_CONTACTS permission already declared in AndroidManifest.xml.
+// XamePage Phone — Tabs: Recents | Contacts | Keypad
+// Real country flags, live credits from API, native device contacts
 
 import 'dart:convert';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-// —— COLOURS ———————————————————————————————————————————————————————————————————
-const _kTeal  = Color(0xFF00B0A0);
-const _kBg    = Color(0xFF0D1520);
-const _kCard  = Color(0xFF1A2332);
-const _kMuted = Color(0xFFAAAAAA);
+// ── Colours ───────────────────────────────────────────────────────────────────
+const _kGreen = Color(0xFF00FF88);
+const _kBg    = Color(0xFF0A0A0F);
+const _kCard  = Color(0xFF161B22);
+const _kMuted = Color(0xFF8B949E);
+const _kDanger= Color(0xFFE53935);
 
-// —— MODELS ————————————————————————————————————————————————————————————————————
-
+// ── Models ────────────────────────────────────────────────────────────────────
 class _DevContact {
   final String name;
   final List<String> phones;
-  final String? photo; // base64 avatar from contacts_service
   bool isOnXame;
-  _DevContact({required this.name, required this.phones,
-      this.photo, this.isOnXame = false});
+  _DevContact({required this.name, required this.phones, this.isOnXame = false});
   String get primary => phones.isNotEmpty ? phones.first : '';
   String get initials {
-    final p = name.trim().split(' ');
-    return p.length >= 2
-        ? '${p[0][0]}${p[1][0]}'.toUpperCase()
-        : name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final p = name.trim().split(' ').where((s) => s.isNotEmpty).toList();
+    if (p.length >= 2) return '${p[0][0]}${p[1][0]}'.toUpperCase();
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 }
 
 class _CallRecord {
   final String callerId, recipientId, status;
-  final String? startTime, type, callType;
+  final String? startTime, callType;
   final int? duration;
   _CallRecord.fromJson(Map<String, dynamic> j)
       : callerId    = j['callerId']    ?? '',
         recipientId = j['recipientId'] ?? '',
         status      = j['status']      ?? '',
         startTime   = j['startTime'],
-        type        = j['type'],
         callType    = j['callType'],
         duration    = (j['duration'] as num?)?.toInt();
 }
 
 class _Country {
   final String code, dial, flag, name;
-  const _Country(this.code, this.dial, this.flag, this.name);
+  const _Country({
+    required this.code,
+    required this.dial,
+    required this.flag,
+    required this.name,
+  });
 }
 
-// —— COUNTRY LIST ——————————————————————————————————————————————————————————————
+// ── Real country flags using Unicode Regional Indicator pairs ─────────────────
+String _flag(String code) {
+  if (code.length != 2) return '🌐';
+  final base = 0x1F1E6 - 0x41;
+  return String.fromCharCode(base + code.codeUnitAt(0)) +
+         String.fromCharCode(base + code.codeUnitAt(1));
+}
 
-const _kCountries = [
-  _Country('NG', '+234', '🔳🔬', 'Nigeria'),
-  _Country('US', '+1',   '🔺🔸', 'United States'),
-  _Country('GB', '+44',  '🔬🔧', 'United Kingdom'),
-  _Country('GH', '+233', '🔬🔭', 'Ghana'),
-  _Country('KE', '+254', '🔰🔪', 'Kenya'),
-  _Country('ZA', '+27',  '🔿🔦', 'South Africa'),
-  _Country('CM', '+237', '🔨🔲', 'Cameroon'),
-  _Country('SN', '+221', '🔸🔳', 'Senegal'),
-  _Country('CI', '+225', '🔨🔮', 'CÃ´te d\'Ivoire'),
-  _Country('FR', '+33',  '🔫🔷', 'France'),
-  _Country('DE', '+49',  '🔩🔪', 'Germany'),
-  _Country('CA', '+1',   '🔨🔦', 'Canada'),
-  _Country('AU', '+61',  '🔦🔺', 'Australia'),
-  _Country('IN', '+91',  '🔮🔳', 'India'),
-  _Country('AE', '+971', '🔦🔪', 'UAE'),
-  _Country('BR', '+55',  '🔧🔷', 'Brazil'),
-  _Country('PH', '+63',  '🔵🔭', 'Philippines'),
-  _Country('ZM', '+260', '🔿🔲', 'Zambia'),
-  _Country('UG', '+256', '🔺🔬', 'Uganda'),
-  _Country('TZ', '+255', '🔹🔿', 'Tanzania'),
-  _Country('RW', '+250', '🔷🔼', 'Rwanda'),
-  _Country('EG', '+20',  '🔪🔬', 'Egypt'),
-  _Country('SA', '+966', '🔸🔦', 'Saudi Arabia'),
-  _Country('JP', '+81',  '🔯🔵', 'Japan'),
-  _Country('SG', '+65',  '🔸🔬', 'Singapore'),
-  _Country('MY', '+60',  '🔲🔾', 'Malaysia'),
-  _Country('ZW', '+263', '🔿🔼', 'Zimbabwe'),
+// ── Country data ──────────────────────────────────────────────────────────────
+final _kCountries = [
+  _Country(code:'NG', dial:'+234', flag:_flag('NG'), name:'Nigeria'),
+  _Country(code:'US', dial:'+1',   flag:_flag('US'), name:'United States'),
+  _Country(code:'GB', dial:'+44',  flag:_flag('GB'), name:'United Kingdom'),
+  _Country(code:'GH', dial:'+233', flag:_flag('GH'), name:'Ghana'),
+  _Country(code:'KE', dial:'+254', flag:_flag('KE'), name:'Kenya'),
+  _Country(code:'ZA', dial:'+27',  flag:_flag('ZA'), name:'South Africa'),
+  _Country(code:'CM', dial:'+237', flag:_flag('CM'), name:'Cameroon'),
+  _Country(code:'SN', dial:'+221', flag:_flag('SN'), name:'Senegal'),
+  _Country(code:'CI', dial:'+225', flag:_flag('CI'), name:'Côte d\'Ivoire'),
+  _Country(code:'FR', dial:'+33',  flag:_flag('FR'), name:'France'),
+  _Country(code:'DE', dial:'+49',  flag:_flag('DE'), name:'Germany'),
+  _Country(code:'CA', dial:'+1',   flag:_flag('CA'), name:'Canada'),
+  _Country(code:'AU', dial:'+61',  flag:_flag('AU'), name:'Australia'),
+  _Country(code:'IN', dial:'+91',  flag:_flag('IN'), name:'India'),
+  _Country(code:'AE', dial:'+971', flag:_flag('AE'), name:'UAE'),
+  _Country(code:'BR', dial:'+55',  flag:_flag('BR'), name:'Brazil'),
+  _Country(code:'PH', dial:'+63',  flag:_flag('PH'), name:'Philippines'),
+  _Country(code:'ZM', dial:'+260', flag:_flag('ZM'), name:'Zambia'),
+  _Country(code:'UG', dial:'+256', flag:_flag('UG'), name:'Uganda'),
+  _Country(code:'TZ', dial:'+255', flag:_flag('TZ'), name:'Tanzania'),
+  _Country(code:'RW', dial:'+250', flag:_flag('RW'), name:'Rwanda'),
+  _Country(code:'EG', dial:'+20',  flag:_flag('EG'), name:'Egypt'),
+  _Country(code:'SA', dial:'+966', flag:_flag('SA'), name:'Saudi Arabia'),
+  _Country(code:'JP', dial:'+81',  flag:_flag('JP'), name:'Japan'),
+  _Country(code:'SG', dial:'+65',  flag:_flag('SG'), name:'Singapore'),
+  _Country(code:'MY', dial:'+60',  flag:_flag('MY'), name:'Malaysia'),
+  _Country(code:'ZW', dial:'+263', flag:_flag('ZW'), name:'Zimbabwe'),
+  _Country(code:'ET', dial:'+251', flag:_flag('ET'), name:'Ethiopia'),
+  _Country(code:'MX', dial:'+52',  flag:_flag('MX'), name:'Mexico'),
+  _Country(code:'TR', dial:'+90',  flag:_flag('TR'), name:'Turkey'),
+  _Country(code:'PK', dial:'+92',  flag:_flag('PK'), name:'Pakistan'),
+  _Country(code:'ID', dial:'+62',  flag:_flag('ID'), name:'Indonesia'),
+  _Country(code:'QA', dial:'+974', flag:_flag('QA'), name:'Qatar'),
+  _Country(code:'KW', dial:'+965', flag:_flag('KW'), name:'Kuwait'),
+  _Country(code:'IT', dial:'+39',  flag:_flag('IT'), name:'Italy'),
+  _Country(code:'ES', dial:'+34',  flag:_flag('ES'), name:'Spain'),
+  _Country(code:'NL', dial:'+31',  flag:_flag('NL'), name:'Netherlands'),
+  _Country(code:'SE', dial:'+46',  flag:_flag('SE'), name:'Sweden'),
+  _Country(code:'NO', dial:'+47',  flag:_flag('NO'), name:'Norway'),
+  _Country(code:'CH', dial:'+41',  flag:_flag('CH'), name:'Switzerland'),
 ];
 
-// —— SCREEN ————————————————————————————————————————————————————————————————————
-
+// ── Screen ────────────────────────────────────────────────────────────────────
 class PhoneScreen extends StatefulWidget {
   final String userId, serverUrl;
-  const PhoneScreen({
-    super.key,
-    required this.userId,
-    required this.serverUrl,
-  });
+  const PhoneScreen({super.key, required this.userId, required this.serverUrl});
   @override State<PhoneScreen> createState() => _PhoneScreenState();
 }
 
 class _PhoneScreenState extends State<PhoneScreen>
     with SingleTickerProviderStateMixin {
-
   late TabController _tab;
 
   // Credits
-  double _credits = 0;
+  double _credits     = 0;
   String _creditsCurr = 'NGN';
   Map<String, dynamic> _rates = {};
 
+  // Recents
+  List<_CallRecord> _recents = [];
+  bool _recentsLoading = false;
+
   // Contacts
-  List<_DevContact> _contacts = [];
-  bool _contactsLoaded = false, _contactsLoading = false;
+  List<_DevContact> _contacts      = [];
+  bool _contactsLoaded   = false;
+  bool _contactsLoading  = false;
   String _q = '';
 
   // Keypad
-  String _dial = '';
+  String   _dial    = '';
   _Country _country = _kCountries.first;
 
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 3, vsync: this)
+      ..addListener(() {
+        if (_tab.index == 0 && _recents.isEmpty) _loadRecents();
+        if (_tab.index == 1 && !_contactsLoaded) _loadContacts();
+      });
     _loadCredits();
     _loadRates();
+    _loadRecents();
   }
 
-  @override void dispose() { _tab.dispose(); super.dispose(); }
+  @override
+  void dispose() { _tab.dispose(); super.dispose(); }
 
-  // —— API ———————————————————————————————————————————————————————————————————
+  // ── API ─────────────────────────────────────────────────────────────────────
 
   Future<void> _loadCredits() async {
     try {
-      final r = await http
-          .get(Uri.parse(
-              '${widget.serverUrl}/api/call-credits/${widget.userId}'))
-          .timeout(const Duration(seconds: 6));
+      final r = await http.get(Uri.parse(
+          '${widget.serverUrl}/api/call-credits/${widget.userId}'))
+          .timeout(const Duration(seconds: 8));
       final d = jsonDecode(r.body);
       if (d['success'] == true && mounted) setState(() {
         _credits     = (d['balance']  as num?)?.toDouble() ?? 0;
@@ -145,22 +169,38 @@ class _PhoneScreenState extends State<PhoneScreen>
 
   Future<void> _loadRates() async {
     try {
-      final r = await http
-          .get(Uri.parse('${widget.serverUrl}/api/call-credits/rates'))
-          .timeout(const Duration(seconds: 6));
+      final r = await http.get(Uri.parse(
+          '${widget.serverUrl}/api/call-credits/rates'))
+          .timeout(const Duration(seconds: 8));
       final d = jsonDecode(r.body);
       if (d['success'] == true && mounted)
         setState(() => _rates = d['rates'] ?? {});
     } catch (_) {}
   }
 
-  // —— DEVICE CONTACTS via contacts_service ——————————————————————————————————
+  Future<void> _loadRecents() async {
+    if (_recentsLoading) return;
+    setState(() => _recentsLoading = true);
+    try {
+      final r = await http.get(Uri.parse(
+          '${widget.serverUrl}/api/call-history/${widget.userId}'))
+          .timeout(const Duration(seconds: 8));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true && mounted) {
+        setState(() {
+          _recents = (d['calls'] as List? ?? [])
+            .map((c) => _CallRecord.fromJson(
+                Map<String, dynamic>.from(c)))
+            .toList();
+        });
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _recentsLoading = false);
+  }
 
   Future<void> _loadContacts() async {
     if (_contactsLoading) return;
     setState(() => _contactsLoading = true);
-
-    // Runtime permission — READ_CONTACTS is already in AndroidManifest.xml
     final status = await Permission.contacts.request();
     if (status.isDenied || status.isPermanentlyDenied) {
       if (mounted) {
@@ -170,15 +210,11 @@ class _PhoneScreenState extends State<PhoneScreen>
       }
       return;
     }
-
     try {
-      // contacts_service fetches full contact list with phones
       final raw = await FlutterContacts.getContacts(withProperties: true);
-
-      // Flatten: one _DevContact per person, all numbers collected
       final Map<String, _DevContact> byName = {};
       for (final c in raw) {
-        final name = c.displayName?.trim() ?? 'Unknown';
+        final name = c.displayName.trim();
         if (name.isEmpty) continue;
         final phones = c.phones
             .map((p) => p.number.replaceAll(RegExp(r'\s'), ''))
@@ -190,817 +226,468 @@ class _PhoneScreenState extends State<PhoneScreen>
         }
         byName[name]!.phones.addAll(phones);
       }
-
       final sorted = byName.values.toList()
         ..sort((a, b) => a.name.compareTo(b.name));
-
-      // Cross-check which numbers are on XamePage
-      final allPhones = sorted.expand((c) => c.phones).toList();
-      if (allPhones.isNotEmpty) {
-        try {
-          final r = await http.post(
-            Uri.parse('${widget.serverUrl}/api/phone/check-xamepage'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'phones': allPhones}),
-          ).timeout(const Duration(seconds: 8));
-          final d = jsonDecode(r.body);
-          if (d['success'] == true) {
-            final reg = (d['registered'] as Map?) ?? {};
-            for (final c in sorted) {
-              c.isOnXame = c.phones.any((p) => reg.containsKey(p));
-            }
-          }
-        } catch (_) {}
-      }
-
       if (mounted) setState(() {
         _contacts       = sorted;
         _contactsLoaded = true;
         _contactsLoading = false;
       });
     } catch (e) {
-      if (mounted) {
-        setState(() => _contactsLoading = false);
-        _snack('Could not load contacts: $e');
-      }
+      if (mounted) setState(() => _contactsLoading = false);
+      _snack('Failed to load contacts');
     }
   }
 
-  // —— CALL HELPERS ——————————————————————————————————————————————————————————
-
-  void _initiateCall(String number, String type, String callType) {
-    if (type == 'xame') {
-      // Delegate to the existing WebRTC call flow in the app
-      // ContactsScreen already handles /call/:userId via context.go
-      _snack('Opening XamePage call…');
+  // ── Native call via tel: URI ─────────────────────────────────────────────────
+  Future<void> _callNumber(String number) async {
+    if (number.isEmpty) { _snack('No number entered'); return; }
+    final full = number.startsWith('+')
+        ? number : '${_country.dial}$number';
+    final uri = Uri.parse('tel:$full');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     } else {
-      _showPSTNConfirm(number);
+      _snack('Cannot make call');
     }
   }
 
-  void _showPSTNConfirm(String number) {
-    final rate = (_rates[_country.code] as Map?)?['rate'] ??
-        (_rates['default'] as Map?)?['rate'] ?? 20;
-    showModalBottomSheet(
-      context: context, backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('🔾 PSTN Call',
-              style: TextStyle(color: Colors.white,
-                  fontSize: 17, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Text('Calling $number',
-              style: const TextStyle(color: _kMuted, fontSize: 14)),
-          const SizedBox(height: 8),
-          Text(
-            'Rate: $_creditsCurr $rate/min  •  '
-            'Balance: $_creditsCurr ${_credits.toStringAsFixed(2)}',
-            style: const TextStyle(color: _kMuted, fontSize: 13)),
-          const SizedBox(height: 20),
-          Row(children: [
-            Expanded(child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white24),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12))),
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel',
-                  style: TextStyle(color: Colors.white)))),
-            const SizedBox(width: 12),
-            Expanded(flex: 2, child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _kTeal,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12))),
-              onPressed: () async {
-                Navigator.pop(context);
-                try {
-                  _snack('🔾 Connecting…');
-                  final r = await http.post(
-                    Uri.parse('${widget.serverUrl}/api/pstn/call'),
-                    headers: {'Content-Type': 'application/json'},
-                    body: jsonEncode({'userId': widget.userId,
-                        'to': number, 'countryCode': _country.code}),
-                  ).timeout(const Duration(seconds: 20));
-                  final d = jsonDecode(r.body);
-                  if (d['success'] == true) {
-                    setState(() => _credits = (_credits -
-                        ((d['deducted'] as num?)?.toDouble() ?? 0))
-                        .clamp(0, 999999));
-                    _snack('🔾 Call connected');
-                  } else { _snack(d['message'] ?? 'Call failed'); }
-                } catch (_) { _snack('Call failed. Check connection.'); }
-              },
-              child: const Text('Call Now',
-                  style: TextStyle(color: Colors.black,
-                      fontWeight: FontWeight.w700, fontSize: 15)))),
-          ]),
-        ]),
-      ),
-    );
+  Future<void> _smsNumber(String number) async {
+    if (number.isEmpty) { _snack('No number entered'); return; }
+    final full = number.startsWith('+')
+        ? number : '${_country.dial}$number';
+    final uri = Uri.parse('sms:$full');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      _snack('Cannot open SMS');
+    }
   }
 
-  // —— CONTACT OPTIONS ———————————————————————————————————————————————————————
-
-  void _showContactOpts(_DevContact c) {
-    showModalBottomSheet(
-      context: context, backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(c.name, style: const TextStyle(color: Colors.white,
-              fontSize: 17, fontWeight: FontWeight.w700)),
-          Text(c.primary,
-              style: const TextStyle(color: _kMuted, fontSize: 13)),
-          const SizedBox(height: 20),
-          if (c.isOnXame) ...[
-            _optTile('🔬', 'Voice Call via XamePage (Free)', _kTeal, () {
-              Navigator.pop(context);
-              _initiateCall(c.primary, 'xame', 'voice');
-            }),
-            const SizedBox(height: 10),
-            _optTile('🔹', 'Video Call via XamePage (Free)', _kTeal, () {
-              Navigator.pop(context);
-              _initiateCall(c.primary, 'xame', 'video');
-            }),
-            const SizedBox(height: 10),
-          ],
-          _optTile('🔾', 'Call via Phone (Credits)', Colors.white, () {
-            Navigator.pop(context); _showPSTNConfirm(c.primary);
-          }),
-          const SizedBox(height: 10),
-          _optTile('âœ‰️', 'Send SMS (Credits)', Colors.white, () {
-            Navigator.pop(context); _showSms(c.primary);
-          }),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Center(child: Text('Cancel',
-                style: TextStyle(color: _kMuted, fontSize: 14)))),
-        ]),
-      ),
-    );
+  void _snack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: _kCard,
+      duration: const Duration(seconds: 2)));
   }
-
-  Widget _optTile(String ico, String label, Color col, VoidCallback fn) =>
-      GestureDetector(onTap: fn,
-        child: Container(width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          decoration: BoxDecoration(
-            color: col == _kTeal
-                ? const Color(0x1A00B0A0)
-                : const Color(0x12FFFFFF),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: col.withOpacity(0.2))),
-          child: Text('$ico  $label',
-              style: TextStyle(color: col,
-                  fontSize: 14, fontWeight: FontWeight.w500))));
-
-  // —— SMS ———————————————————————————————————————————————————————————————————
-
-  void _showSms(String to) {
-    final ctrl = TextEditingController();
-    showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Padding(padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('âœ‰️ Send SMS',
-                style: TextStyle(color: Colors.white,
-                    fontSize: 17, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            RichText(text: TextSpan(
-                style: const TextStyle(color: _kMuted, fontSize: 13),
-                children: [
-              const TextSpan(text: 'To: '),
-              TextSpan(text: to, style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w600)),
-              const TextSpan(text: '  •  Cost: '),
-              const TextSpan(text: '5 credits',
-                  style: TextStyle(color: _kTeal)),
-            ])),
-            const SizedBox(height: 16),
-            TextField(controller: ctrl, maxLines: 4,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Type your message…',
-                hintStyle: const TextStyle(color: _kMuted),
-                filled: true, fillColor: _kBg,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white12)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white12)),
-                contentPadding: const EdgeInsets.all(12))),
-            const SizedBox(height: 16),
-            Row(children: [
-              Expanded(child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.white24),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12))),
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel',
-                    style: TextStyle(color: Colors.white)))),
-              const SizedBox(width: 12),
-              Expanded(flex: 2, child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: _kTeal,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12))),
-                onPressed: () async {
-                  final msg = ctrl.text.trim();
-                  if (msg.isEmpty) { _snack('Enter a message'); return; }
-                  Navigator.pop(context);
-                  try {
-                    final r = await http.post(
-                        Uri.parse('${widget.serverUrl}/api/pstn/sms'),
-                        headers: {'Content-Type': 'application/json'},
-                        body: jsonEncode({'userId': widget.userId,
-                            'to': to, 'message': msg}))
-                        .timeout(const Duration(seconds: 15));
-                    final d = jsonDecode(r.body);
-                    _snack(d['success'] == true
-                        ? '… SMS sent!'
-                        : (d['message'] ?? 'SMS failed'));
-                  } catch (_) { _snack('SMS failed'); }
-                },
-                child: const Text('Send SMS',
-                    style: TextStyle(color: Colors.black,
-                        fontWeight: FontWeight.w700, fontSize: 15)))),
-            ]),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  // —— TOP UP ————————————————————————————————————————————————————————————————
-
-  void _showTopup() {
-    int? selAmt;
-    final custCtrl = TextEditingController();
-    showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => StatefulBuilder(builder: (ctx, ss) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('🔰 Top Up Call Credits',
-              style: TextStyle(color: Colors.white,
-                  fontSize: 17, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 3, shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 2.2, mainAxisSpacing: 10, crossAxisSpacing: 10,
-            children: [100, 200, 500, 1000, 2000, 5000].map((a) =>
-              GestureDetector(
-                onTap: () => ss(() { selAmt = a; custCtrl.clear(); }),
-                child: Container(alignment: Alignment.center,
-                  decoration: BoxDecoration(color: _kBg,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color: selAmt == a ? _kTeal : Colors.white12)),
-                  child: Text('$_creditsCurr $a',
-                      style: const TextStyle(color: Colors.white,
-                          fontSize: 13, fontWeight: FontWeight.w600))))).toList()),
-          const SizedBox(height: 12),
-          TextField(controller: custCtrl, keyboardType: TextInputType.number,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: 'Custom amount…',
-              hintStyle: const TextStyle(color: _kMuted),
-              filled: true, fillColor: _kBg,
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.white12)),
-              enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.white12)),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 12)),
-            onChanged: (_) => ss(() => selAmt = null)),
-          const SizedBox(height: 16),
-          Row(children: [
-            Expanded(child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white24),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel',
-                  style: TextStyle(color: Colors.white)))),
-            const SizedBox(width: 12),
-            Expanded(flex: 2, child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: _kTeal,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
-              onPressed: () async {
-                final custom = int.tryParse(custCtrl.text);
-                final amount = custom ?? selAmt;
-                if (amount == null || amount <= 0) {
-                  _snack('Select or enter an amount'); return;
-                }
-                Navigator.pop(ctx);
-                try {
-                  final r = await http.post(
-                      Uri.parse(
-                          '${widget.serverUrl}/api/call-credits/topup'),
-                      headers: {'Content-Type': 'application/json'},
-                      body: jsonEncode(
-                          {'userId': widget.userId, 'amount': amount}))
-                      .timeout(const Duration(seconds: 15));
-                  final d = jsonDecode(r.body);
-                  if (d['success'] == true) {
-                    setState(() => _credits =
-                        (d['balance'] as num?)?.toDouble() ?? _credits);
-                    _snack('… $_creditsCurr $amount added');
-                  } else { _snack(d['message'] ?? 'Top up failed'); }
-                } catch (_) { _snack('Top up failed'); }
-              },
-              child: const Text('Top Up',
-                  style: TextStyle(color: Colors.black,
-                      fontWeight: FontWeight.w700, fontSize: 15)))),
-          ]),
-        ]),
-      )),
-    );
-  }
-
-  // —— RECHARGE TOKEN ————————————————————————————————————————————————————————
-
-  void _showRecharge() {
-    final ctrl = TextEditingController();
-    showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Padding(padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('🏽️ Recharge Token',
-                style: TextStyle(color: Colors.white,
-                    fontSize: 17, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            const Text('Format: XAME-XXXX-XXXX-XXXX',
-                style: TextStyle(color: _kMuted, fontSize: 13)),
-            const SizedBox(height: 16),
-            TextField(controller: ctrl,
-              textCapitalization: TextCapitalization.characters,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white,
-                  fontSize: 16, letterSpacing: 2),
-              decoration: InputDecoration(
-                hintText: 'XAME-XXXX-XXXX-XXXX',
-                hintStyle: const TextStyle(color: _kMuted,
-                    letterSpacing: 2, fontSize: 14),
-                filled: true, fillColor: _kBg,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.white12)),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.white12)),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 14))),
-            const SizedBox(height: 16),
-            Row(children: [
-              Expanded(child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.white24),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12))),
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel',
-                    style: TextStyle(color: Colors.white)))),
-              const SizedBox(width: 12),
-              Expanded(flex: 2, child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: _kTeal,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12))),
-                onPressed: () async {
-                  final tok = ctrl.text.trim().toUpperCase();
-                  if (tok.isEmpty) { _snack('Enter a token'); return; }
-                  Navigator.pop(context);
-                  try {
-                    final r = await http.post(
-                        Uri.parse(
-                            '${widget.serverUrl}/api/call-credits/recharge'),
-                        headers: {'Content-Type': 'application/json'},
-                        body: jsonEncode(
-                            {'userId': widget.userId, 'token': tok}))
-                        .timeout(const Duration(seconds: 15));
-                    final d = jsonDecode(r.body);
-                    if (d['success'] == true) {
-                      setState(() => _credits =
-                          (d['balance'] as num?)?.toDouble() ?? _credits);
-                      _snack('… Credits added! '
-                          'Balance: $_creditsCurr ${_credits.toStringAsFixed(2)}');
-                    } else { _snack(d['message'] ?? 'Invalid token'); }
-                  } catch (_) { _snack('Recharge failed'); }
-                },
-                child: const Text('Redeem',
-                    style: TextStyle(color: Colors.black,
-                        fontWeight: FontWeight.w700, fontSize: 15)))),
-            ]),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  // —— COUNTRY PICKER ————————————————————————————————————————————————————————
 
   void _pickCountry() {
     showModalBottomSheet(
-      context: context, backgroundColor: _kCard,
+      context:         context,
+      backgroundColor: _kCard,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => DraggableScrollableSheet(
-        expand: false, initialChildSize: 0.6,
-        builder: (_, sc) => ListView(
-          controller: sc,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              child: Text('🌀 Select Country',
-                  style: TextStyle(color: Colors.white,
-                      fontSize: 17, fontWeight: FontWeight.w700))),
-            ..._kCountries.map((c) => InkWell(
-              onTap: () { setState(() => _country = c); Navigator.pop(context); },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _country.code == c.code
-                      ? const Color(0x1A00B0A0)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10)),
-                child: Row(children: [
-                  Text(c.flag, style: const TextStyle(fontSize: 20)),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(c.name,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 14))),
-                  Text(c.dial,
-                      style: const TextStyle(
-                          color: _kMuted, fontSize: 13)),
-                ]),
-              ),
-            )),
-          ],
-        ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _CountryPicker(
+        countries: _kCountries,
+        selected:  _country,
+        onSelect:  (c) {
+          setState(() => _country = c);
+          Navigator.pop(context);
+        },
       ),
     );
   }
 
-  // —— BUILD —————————————————————————————————————————————————————————————————
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      body: Column(children: [
+        // ── Credits bar ──────────────────────────────────────────
+        _CreditsBar(
+          credits:  _credits,
+          currency: _creditsCurr,
+          onTopUp:  () => _snack('Top-up coming soon'),
+        ),
+        // ── Tab bar ──────────────────────────────────────────────
+        Container(
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: Color(0xFF21262D)))),
+          child: TabBar(
+            controller:           _tab,
+            indicatorColor:       _kGreen,
+            indicatorWeight:      2,
+            labelColor:           _kGreen,
+            unselectedLabelColor: _kMuted,
+            labelStyle: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600),
+            dividerColor: Colors.transparent,
+            tabs: const [
+              Tab(text: 'Recents'),
+              Tab(text: 'Contacts'),
+              Tab(text: 'Keypad'),
+            ],
+          ),
+        ),
+        // ── Tab views ────────────────────────────────────────────
+        Expanded(child: TabBarView(
+          controller: _tab,
+          children: [
+            // Recents
+            _RecentsTab(
+              records:  _recents,
+              loading:  _recentsLoading,
+              userId:   widget.userId,
+              onCall:   (n) => _callNumber(n),
+              onRefresh: _loadRecents,
+            ),
+            // Contacts
+            _ContactsTab(
+              contacts: _contacts,
+              loading:  _contactsLoading,
+              loaded:   _contactsLoaded,
+              q:        _q,
+              onQChange:(v) => setState(() => _q = v),
+              onLoad:   _loadContacts,
+              onCall:   (c) => _callNumber(c.primary),
+              onSms:    (c) => _smsNumber(c.primary),
+            ),
+            // Keypad
+            _KeypadTab(
+              dial:        _dial,
+              country:     _country,
+              creditsCurr: _creditsCurr,
+              credits:     _credits,
+              rates:       _rates,
+              onDigit:     (d) => setState(() => _dial += d),
+              onBackspace: () => setState(() {
+                if (_dial.isNotEmpty)
+                  _dial = _dial.substring(0, _dial.length - 1);
+              }),
+              onPickCountry: _pickCountry,
+              onCall: () => _callNumber(_dial),
+              onSms:  () => _smsNumber(_dial),
+            ),
+          ],
+        )),
+      ]),
+    );
+  }
+}
+
+// ── Credits bar ───────────────────────────────────────────────────────────────
+class _CreditsBar extends StatelessWidget {
+  final double credits;
+  final String currency;
+  final VoidCallback onTopUp;
+  const _CreditsBar({required this.credits, required this.currency,
+      required this.onTopUp});
 
   @override
-  Widget build(BuildContext context) => Column(children: [
-    // Credits bar
-    Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: _kCard,
-      child: Row(children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-          const Text('Call Credits',
-              style: TextStyle(color: _kMuted, fontSize: 11)),
-          Text('$_creditsCurr ${_credits.toStringAsFixed(2)}',
-              style: const TextStyle(color: _kTeal,
-                  fontSize: 18, fontWeight: FontWeight.w700)),
-        ])),
-        _cBtn('Top Up',   _kTeal, const Color(0x2600B0A0), _showTopup),
-        const SizedBox(width: 8),
-        _cBtn('Recharge', Colors.white, Colors.white10, _showRecharge),
-      ]),
-    ),
-
-    // Sub-tabs
-    Container(
-      color: _kCard,
-      child: TabBar(
-        controller: _tab,
-        indicatorColor: _kTeal,
-        labelColor: _kTeal,
-        unselectedLabelColor: _kMuted,
-        labelStyle: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w600),
-        tabs: const [
-          Tab(text: '🕐 Recents'),
-          Tab(text: '👥 Contacts'),
-          Tab(text: '⌨️ Keypad'),
-        ],
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    decoration: const BoxDecoration(
+      color: Color(0xFF0D1117),
+      border: Border(bottom: BorderSide(color: Color(0xFF21262D)))),
+    child: Row(children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color:        _kGreen.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border:       Border.all(color: _kGreen.withOpacity(0.3))),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.phone_in_talk_rounded,
+              color: _kGreen, size: 14),
+          const SizedBox(width: 6),
+          Text('$currency ${credits.toStringAsFixed(2)}',
+            style: const TextStyle(color: _kGreen,
+                fontSize: 13, fontWeight: FontWeight.w700)),
+          const SizedBox(width: 4),
+          const Text('credits',
+            style: TextStyle(color: Colors.white38, fontSize: 11)),
+        ]),
       ),
-    ),
-
-    // Content
-    Expanded(child: TabBarView(controller: _tab, children: [
-
-      // —— RECENTS ———————————————————————————————————————————————————————
-      _RecentsTab(
-          userId: widget.userId,
-          serverUrl: widget.serverUrl,
-          onCall: _initiateCall),
-
-      // —— CONTACTS ——————————————————————————————————————————————————————
-      _contactsLoaded
-          ? _ContactsTab(
-              contacts: _contacts, q: _q,
-              onQChange: (v) => setState(() => _q = v),
-              onTap: _showContactOpts)
-          : Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              _contactsLoading
-                  ? const CircularProgressIndicator(color: _kTeal)
-                  : ElevatedButton.icon(
-                      icon: const Icon(Icons.contacts),
-                      label: const Text('Load Contacts'),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: _kTeal,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 14),
-                          shape: const StadiumBorder()),
-                      onPressed: _loadContacts),
-              const SizedBox(height: 12),
-              const Text('Requires contacts permission',
-                  style: TextStyle(color: _kMuted, fontSize: 12)),
-            ])),
-
-      // —— KEYPAD ————————————————————————————————————————————————————————
-      _KeypadTab(
-        dial: _dial, country: _country,
-        creditsCurr: _creditsCurr, credits: _credits, rates: _rates,
-        onDigit:       (k) => setState(() => _dial += k),
-        onBackspace:   ()  => setState(() {
-          if (_dial.isNotEmpty) _dial = _dial.substring(0, _dial.length - 1);
-        }),
-        onPickCountry: _pickCountry,
-        onCall: () {
-          if (_dial.isEmpty) { _snack('Enter a number first'); return; }
-          _showPSTNConfirm('${_country.dial}$_dial');
-        },
-        onSms: () {
-          if (_dial.isEmpty) { _snack('Enter a number first'); return; }
-          _showSms('${_country.dial}$_dial');
-        },
-      ),
-    ])),
-  ]);
-
-  Widget _cBtn(String l, Color col, Color bg, VoidCallback fn) =>
-      GestureDetector(onTap: fn,
+      const Spacer(),
+      GestureDetector(
+        onTap: onTopUp,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(color: bg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: col.withOpacity(0.3))),
-          child: Text(l, style: TextStyle(color: col,
-              fontSize: 12, fontWeight: FontWeight.w600))));
+          decoration: BoxDecoration(
+            color:        Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+            border:       Border.all(color: Colors.white12)),
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.add_rounded, color: Colors.white70, size: 14),
+            SizedBox(width: 4),
+            Text('Top Up', style: TextStyle(
+                color: Colors.white70, fontSize: 12,
+                fontWeight: FontWeight.w600)),
+          ]),
+        ),
+      ),
+    ]),
+  );
+}
 
-  void _snack(String m) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(m), behavior: SnackBarBehavior.floating));
+// ── Recents tab ───────────────────────────────────────────────────────────────
+class _RecentsTab extends StatelessWidget {
+  final List<_CallRecord> records;
+  final bool     loading;
+  final String   userId;
+  final void Function(String) onCall;
+  final VoidCallback onRefresh;
+
+  const _RecentsTab({
+    required this.records, required this.loading,
+    required this.userId,  required this.onCall,
+    required this.onRefresh});
+
+  String _fmt(String? iso) {
+    if (iso == null) return '';
+    final dt   = DateTime.tryParse(iso);
+    if (dt == null) return '';
+    final now  = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 60)  return '${diff.inMinutes}m ago';
+    if (diff.inHours   < 24)  return '${diff.inHours}h ago';
+    if (diff.inDays    < 7)   return '${diff.inDays}d ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
-}
 
-// —— RECENTS TAB ———————————————————————————————————————————————————————————————
-
-class _RecentsTab extends StatefulWidget {
-  final String userId, serverUrl;
-  final void Function(String, String, String) onCall;
-  const _RecentsTab({required this.userId, required this.serverUrl,
-      required this.onCall});
-  @override State<_RecentsTab> createState() => _RecentsTabState();
-}
-
-class _RecentsTabState extends State<_RecentsTab> {
-  List<_CallRecord> _calls = [];
-  bool _loading = true;
-
-  @override void initState() { super.initState(); _load(); }
-
-  Future<void> _load() async {
-    try {
-      final r = await http.get(Uri.parse(
-              '${widget.serverUrl}/api/call-history/${widget.userId}'))
-          .timeout(const Duration(seconds: 8));
-      final d = jsonDecode(r.body);
-      if (d['success'] == true && mounted) setState(() =>
-          _calls = (d['calls'] as List)
-              .map((c) => _CallRecord.fromJson(c)).toList());
-    } catch (_) {}
-    if (mounted) setState(() => _loading = false);
+  String _dur(int? s) {
+    if (s == null || s == 0) return '';
+    if (s < 60) return '${s}s';
+    return '${s ~/ 60}m ${s % 60}s';
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(
-        child: CircularProgressIndicator(color: _kTeal));
-    if (_calls.isEmpty) return const Center(
-        child: Text('No recent calls',
-            style: TextStyle(color: _kMuted)));
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _calls.length,
-      separatorBuilder: (_, __) =>
-          const Divider(color: Colors.white10, height: 1),
-      itemBuilder: (_, i) {
-        final c        = _calls[i];
-        final incoming = c.recipientId == widget.userId;
-        final contact  = incoming ? c.callerId : c.recipientId;
-        final pstn     = c.type == 'pstn';
-        final missed   = c.status == 'missed' ||
-            (incoming &&
-                (c.duration == null || c.duration == 0) &&
-                ['rejected', 'ended'].contains(c.status));
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: const Color(0xFF3E5163),
-            child: Text(
-              contact.substring(0, contact.length.clamp(0, 2))
-                  .toUpperCase(),
-              style: const TextStyle(color: Colors.white,
-                  fontSize: 14, fontWeight: FontWeight.w700))),
-          title: Text(contact,
-              style: TextStyle(
-                  color: missed ? const Color(0xFFFF6464) : Colors.white,
-                  fontSize: 14, fontWeight: FontWeight.w600)),
-          subtitle: Text(
-            '${missed ? '🔵' : incoming ? '🔲' : '🔤'} '
-            '${missed ? 'Missed' : incoming ? 'Incoming' : 'Outgoing'} '
-            '${pstn ? '🔾' : '🔬'}'
-            '${c.duration != null ? ' · ${c.duration! ~/ 60}m ${c.duration! % 60}s' : ''}'
-            ' · ${_ago(c.startTime)}',
-            style: const TextStyle(color: _kMuted, fontSize: 12)),
-          trailing: TextButton(
-            style: TextButton.styleFrom(
-                backgroundColor: const Color(0x2600B0A0),
-                foregroundColor: _kTeal,
-                shape: const StadiumBorder(),
-                side: const BorderSide(color: Color(0x4D00B0A0)),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 4)),
-            onPressed: () => widget.onCall(
-                contact, pstn ? 'pstn' : 'xame', c.callType ?? 'voice'),
-            child: const Text('Call',
-                style: TextStyle(fontSize: 12))),
-        );
-      },
+    if (loading) return const Center(child: CircularProgressIndicator(
+        color: _kGreen, strokeWidth: 1.5));
+    if (records.isEmpty) return Center(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 72, height: 72,
+          decoration: BoxDecoration(shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.04)),
+          child: const Icon(Icons.call_outlined,
+              color: Colors.white24, size: 32)),
+        const SizedBox(height: 16),
+        const Text('No recent calls',
+          style: TextStyle(color: Colors.white38, fontSize: 15)),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: onRefresh,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 20, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white12)),
+            child: const Text('Refresh',
+              style: TextStyle(color: Colors.white54, fontSize: 13)))),
+      ]),
+    );
+
+    return RefreshIndicator(
+      color: _kGreen,
+      backgroundColor: _kCard,
+      onRefresh: () async => onRefresh(),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: records.length,
+        itemBuilder: (_, i) {
+          final r        = records[i];
+          final isOut    = r.callerId == userId;
+          final isMissed = r.status == 'missed' && !isOut;
+          final peer     = isOut ? r.recipientId : r.callerId;
+          final isVideo  = r.callType == 'video';
+
+          return ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 4),
+            leading: Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isMissed
+                  ? _kDanger.withOpacity(0.1)
+                  : _kGreen.withOpacity(0.08)),
+              child: Icon(
+                isOut
+                  ? Icons.call_made_rounded
+                  : isMissed
+                    ? Icons.call_missed_rounded
+                    : Icons.call_received_rounded,
+                color: isMissed ? _kDanger : _kGreen,
+                size: 20)),
+            title: Text(peer, style: TextStyle(
+                color: isMissed ? _kDanger : Colors.white,
+                fontSize: 14, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis),
+            subtitle: Row(children: [
+              Icon(isVideo ? Icons.videocam_outlined : Icons.call_outlined,
+                  color: _kMuted, size: 12),
+              const SizedBox(width: 4),
+              Text(
+                [
+                  isOut ? 'Outgoing' : isMissed ? 'Missed' : 'Incoming',
+                  if (r.duration != null && r.duration! > 0)
+                    _dur(r.duration),
+                  _fmt(r.startTime),
+                ].where((s) => s.isNotEmpty).join(' · '),
+                style: const TextStyle(color: _kMuted, fontSize: 12)),
+            ]),
+            trailing: GestureDetector(
+              onTap: () => onCall(peer),
+              child: Container(
+                width: 38, height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _kGreen.withOpacity(0.1),
+                  border: Border.all(
+                      color: _kGreen.withOpacity(0.3))),
+                child: const Icon(Icons.call_rounded,
+                    color: _kGreen, size: 18)),
+            ),
+          );
+        },
+      ),
     );
   }
-
-  String _ago(String? iso) {
-    if (iso == null) return '';
-    final d = DateTime.tryParse(iso); if (d == null) return '';
-    final diff = DateTime.now().difference(d);
-    if (diff.inSeconds < 60)  return 'Just now';
-    if (diff.inMinutes < 60)  return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24)    return '${diff.inHours}h ago';
-    if (diff.inDays < 7)      return '${diff.inDays}d ago';
-    return '${d.day}/${d.month}/${d.year}';
-  }
 }
 
-// —— CONTACTS TAB ——————————————————————————————————————————————————————————————
-
+// ── Contacts tab ──────────────────────────────────────────────────────────────
 class _ContactsTab extends StatelessWidget {
   final List<_DevContact> contacts;
-  final String q;
-  final void Function(String) onQChange;
-  final void Function(_DevContact) onTap;
-  const _ContactsTab({required this.contacts, required this.q,
-      required this.onQChange, required this.onTap});
+  final bool      loading, loaded;
+  final String    q;
+  final void Function(String)    onQChange;
+  final VoidCallback             onLoad;
+  final void Function(_DevContact) onCall;
+  final void Function(_DevContact) onSms;
+
+  const _ContactsTab({
+    required this.contacts, required this.loading,
+    required this.loaded,   required this.q,
+    required this.onQChange, required this.onLoad,
+    required this.onCall,   required this.onSms,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final fil = q.isEmpty
-        ? contacts
-        : contacts.where((c) =>
-            c.name.toLowerCase().contains(q.toLowerCase()) ||
-            c.phones.any((p) => p.contains(q))).toList();
+    if (!loaded && !loading) return Center(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 72, height: 72,
+          decoration: BoxDecoration(shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.04)),
+          child: const Icon(Icons.contacts_outlined,
+              color: Colors.white24, size: 32)),
+        const SizedBox(height: 16),
+        const Text('Tap to load contacts',
+          style: TextStyle(color: Colors.white38, fontSize: 15)),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: onLoad,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 24, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [
+                Color(0xFF00FF88), Color(0xFF00CC6A)]),
+              borderRadius: BorderRadius.circular(20)),
+            child: const Text('Load Contacts',
+              style: TextStyle(color: Colors.black,
+                  fontSize: 14, fontWeight: FontWeight.w700)))),
+      ]),
+    );
 
+    if (loading) return const Center(child: CircularProgressIndicator(
+        color: _kGreen, strokeWidth: 1.5));
+
+    final fil = contacts.where((c) =>
+      q.isEmpty ||
+      c.name.toLowerCase().contains(q.toLowerCase()) ||
+      c.phones.any((p) => p.contains(q))
+    ).toList();
+
+    // Group by first letter
     final Map<String, List<_DevContact>> grp = {};
     for (final c in fil) {
-      grp.putIfAbsent(c.name[0].toUpperCase(), () => []).add(c);
+      final k = c.name.isNotEmpty
+        ? c.name[0].toUpperCase() : '#';
+      grp.putIfAbsent(k, () => []).add(c);
     }
     final keys = grp.keys.toList()..sort();
 
     return Column(children: [
-      Padding(padding: const EdgeInsets.all(12),
+      // Search bar
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         child: TextField(
-          style: const TextStyle(color: Colors.white),
+          onChanged: onQChange,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
           decoration: InputDecoration(
-            hintText: '🔝 Search contacts…',
-            hintStyle: const TextStyle(color: _kMuted, fontSize: 14),
-            filled: true, fillColor: const Color(0x12FFFFFF),
+            hintText:  'Search contacts...',
+            hintStyle: const TextStyle(color: Colors.white30),
+            prefixIcon: const Icon(Icons.search,
+                color: Colors.white30, size: 18),
+            filled:    true,
+            fillColor: _kCard,
             border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(color: Colors.white12)),
-            enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: const BorderSide(color: Colors.white12)),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                    color: _kGreen, width: 1)),
             contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 10)),
-          onChanged: onQChange)),
+        ),
+      ),
+
+      // Count
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(children: [
+          Text('${fil.length} contact${fil.length != 1 ? "s" : ""}',
+            style: const TextStyle(color: Colors.white38, fontSize: 12)),
+          const Spacer(),
+          if (fil.any((c) => c.isOnXame))
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color:        _kGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border:       Border.all(
+                    color: _kGreen.withOpacity(0.3))),
+              child: Text(
+                '${fil.where((c) => c.isOnXame).length} on XamePage',
+                style: const TextStyle(
+                    color: _kGreen, fontSize: 11,
+                    fontWeight: FontWeight.w600))),
+        ]),
+      ),
+      const SizedBox(height: 4),
+
+      // List
       Expanded(child: fil.isEmpty
         ? const Center(child: Text('No contacts found',
-              style: TextStyle(color: _kMuted)))
+            style: TextStyle(color: Colors.white38)))
         : ListView.builder(
-            itemCount: keys.fold<int>(0, (s, k) => s + 1 + (grp[k]?.length ?? 0)),
+            itemCount: keys.fold<int>(
+                0, (s, k) => s + 1 + (grp[k]?.length ?? 0)),
             itemBuilder: (_, idx) {
               int cur = 0;
               for (final k in keys) {
-                if (idx == cur) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 6),
-                    color: const Color(0x0D00B0A0),
-                    child: Text(k, style: const TextStyle(
-                        color: _kTeal, fontSize: 11,
-                        fontWeight: FontWeight.w700)));
-                }
+                if (idx == cur) return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 5),
+                  color: const Color(0x08FFFFFF),
+                  child: Text(k, style: const TextStyle(
+                      color: _kGreen, fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5)));
                 cur++;
                 for (final c in grp[k]!) {
-                  if (idx == cur) return InkWell(
-                    onTap: () => onTap(c),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      child: Row(children: [
-                        Stack(children: [
-                          CircleAvatar(
-                            radius: 21,
-                            backgroundColor: const Color(0xFF3E5163),
-                            child: Text(c.initials,
-                                style: const TextStyle(color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700))),
-                          if (c.isOnXame)
-                            Positioned(bottom: -1, right: -1,
-                              child: Container(
-                                width: 16, height: 16,
-                                decoration: BoxDecoration(
-                                    color: _kTeal,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: _kBg, width: 2)),
-                                child: const Center(child: Text('‘',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 8))))),
-                        ]),
-                        const SizedBox(width: 12),
-                        Expanded(child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          Text(c.name, style: const TextStyle(
-                              color: Colors.white, fontSize: 14,
-                              fontWeight: FontWeight.w600),
-                              overflow: TextOverflow.ellipsis),
-                          Row(children: [
-                            Text(c.primary, style: const TextStyle(
-                                color: _kMuted, fontSize: 12)),
-                            if (c.isOnXame) ...[
-                              const Text(' · ', style: TextStyle(
-                                  color: _kMuted, fontSize: 12)),
-                              const Text('On XamePage', style: TextStyle(
-                                  color: _kTeal, fontSize: 12)),
-                            ],
-                          ]),
-                        ])),
-                      ]),
-                    ));
+                  if (idx == cur) return _ContactTile(
+                    contact: c,
+                    onCall:  () => onCall(c),
+                    onSms:   () => onSms(c));
                   cur++;
                 }
               }
@@ -1010,118 +697,373 @@ class _ContactsTab extends StatelessWidget {
   }
 }
 
-// —— KEYPAD TAB ————————————————————————————————————————————————————————————————
+// ── Contact tile ──────────────────────────────────────────────────────────────
+class _ContactTile extends StatelessWidget {
+  final _DevContact contact;
+  final VoidCallback onCall, onSms;
+  const _ContactTile({
+    required this.contact,
+    required this.onCall,
+    required this.onSms});
 
+  @override
+  Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16, vertical: 4),
+    leading: Stack(clipBehavior: Clip.none, children: [
+      CircleAvatar(
+        radius:          21,
+        backgroundColor: const Color(0xFF1E3A2F),
+        child: Text(contact.initials,
+          style: const TextStyle(color: _kGreen,
+              fontSize: 14, fontWeight: FontWeight.w700))),
+      if (contact.isOnXame)
+        Positioned(bottom: -2, right: -2,
+          child: Container(
+            width: 16, height: 16,
+            decoration: BoxDecoration(
+              color:  _kGreen,
+              shape:  BoxShape.circle,
+              border: Border.all(color: _kBg, width: 2)),
+            child: const Icon(Icons.check,
+                color: Colors.black, size: 9))),
+    ]),
+    title: Text(contact.name,
+      style: const TextStyle(color: Colors.white,
+          fontSize: 14, fontWeight: FontWeight.w600),
+      overflow: TextOverflow.ellipsis),
+    subtitle: Row(children: [
+      Flexible(child: Text(contact.primary,
+        style: const TextStyle(color: _kMuted, fontSize: 12),
+        overflow: TextOverflow.ellipsis)),
+      if (contact.isOnXame) ...[
+        const Text(' · ', style: TextStyle(color: _kMuted)),
+        const Text('XamePage',
+          style: TextStyle(color: _kGreen, fontSize: 12,
+              fontWeight: FontWeight.w500)),
+      ],
+    ]),
+    trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+      // SMS
+      GestureDetector(
+        onTap: onSms,
+        child: Container(
+          width: 36, height: 36,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.05),
+            border: Border.all(color: Colors.white12)),
+          child: const Icon(Icons.message_outlined,
+              color: Colors.white54, size: 16))),
+      // Call
+      GestureDetector(
+        onTap: onCall,
+        child: Container(
+          width: 36, height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _kGreen.withOpacity(0.1),
+            border: Border.all(
+                color: _kGreen.withOpacity(0.3))),
+          child: const Icon(Icons.call_rounded,
+              color: _kGreen, size: 16))),
+    ]),
+  );
+}
+
+// ── Keypad tab ────────────────────────────────────────────────────────────────
 class _KeypadTab extends StatelessWidget {
-  final String dial, creditsCurr;
-  final double credits;
+  final String   dial, creditsCurr;
+  final double   credits;
   final _Country country;
   final Map<String, dynamic> rates;
   final void Function(String) onDigit;
   final VoidCallback onBackspace, onPickCountry, onCall, onSms;
 
   const _KeypadTab({
-    required this.dial, required this.country,
-    required this.creditsCurr, required this.credits, required this.rates,
-    required this.onDigit, required this.onBackspace,
-    required this.onPickCountry, required this.onCall, required this.onSms,
+    required this.dial,         required this.country,
+    required this.creditsCurr,  required this.credits,
+    required this.rates,        required this.onDigit,
+    required this.onBackspace,  required this.onPickCountry,
+    required this.onCall,       required this.onSms,
   });
 
   @override
   Widget build(BuildContext context) {
-    final rate = (rates[country.code] as Map?)?['rate'] ??
-        (rates['default'] as Map?)?['rate'] ?? 20;
+    final rateData = (rates[country.code] as Map?) ??
+        (rates['default'] as Map?);
+    final rate = rateData?['rate'] ?? '—';
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(children: [
         // Country selector
-        GestureDetector(onTap: onPickCountry,
+        GestureDetector(
+          onTap: onPickCountry,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-                color: const Color(0x12FFFFFF),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white12)),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min, children: [
-              Text(country.flag, style: const TextStyle(fontSize: 18)),
-              const SizedBox(width: 8),
-              Text(country.name,
-                  style: const TextStyle(color: Colors.white, fontSize: 14)),
-              const SizedBox(width: 6),
-              Text(country.dial,
-                  style: const TextStyle(color: _kMuted, fontSize: 13)),
-              const SizedBox(width: 4),
-              const Text('–¼',
-                  style: TextStyle(color: _kMuted, fontSize: 10)),
-            ]))),
-        const SizedBox(height: 8),
-        Text('Rate: $creditsCurr $rate/min',
-            style: const TextStyle(color: _kMuted, fontSize: 12)),
-        const SizedBox(height: 8),
+              color:        Colors.white.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(14),
+              border:       Border.all(color: Colors.white12)),
+            child: Row(children: [
+              Text(country.flag,
+                  style: const TextStyle(fontSize: 22)),
+              const SizedBox(width: 10),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(country.name,
+                    style: const TextStyle(color: Colors.white,
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text('${country.dial}  ·  $creditsCurr $rate/min',
+                    style: const TextStyle(
+                        color: Colors.white38, fontSize: 11)),
+                ],
+              )),
+              const Icon(Icons.keyboard_arrow_down_rounded,
+                  color: Colors.white38, size: 20),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 16),
 
-        // Display
-        SizedBox(height: 52, child: Center(child: dial.isEmpty
+        // Number display
+        SizedBox(height: 60, child: Center(
+          child: dial.isEmpty
             ? const Text('Enter number',
-                style: TextStyle(color: Color(0xFF444444),
-                    fontSize: 28, letterSpacing: 4))
+                style: TextStyle(color: Color(0xFF3D4450),
+                    fontSize: 26, letterSpacing: 6))
             : Text(dial, style: const TextStyle(
                 color: Colors.white, fontSize: 28,
-                fontWeight: FontWeight.w300, letterSpacing: 4)))),
-        const SizedBox(height: 8),
+                fontWeight: FontWeight.w300, letterSpacing: 5),
+                textAlign: TextAlign.center))),
 
-        // Grid
-        GridView.count(
-          crossAxisCount: 3, shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 1.6,
-          children: ['1','2','3','4','5','6','7','8','9','*','0','#']
-              .map((k) => GestureDetector(onTap: () => onDigit(k),
-                child: Container(alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                      color: Color(0x12FFFFFF), shape: BoxShape.circle),
-                  child: Text(k, style: const TextStyle(
-                      color: Colors.white, fontSize: 22,
-                      fontWeight: FontWeight.w500))))).toList()),
-        const SizedBox(height: 8),
+        // Keys grid
+        Expanded(
+          child: GridView.count(
+            crossAxisCount:  3,
+            physics:         const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1.5,
+            children: [
+              ...['1','2','3','4','5','6','7','8','9'].map(
+                (k) => _DialKey(label: k, sub: _kSub[k] ?? '', onTap: () => onDigit(k))),
+              _DialKey(label: '*',  sub: '', onTap: () => onDigit('*')),
+              _DialKey(label: '0',  sub: '+', onTap: () => onDigit('0')),
+              _DialKey(label: '#',  sub: '', onTap: () => onDigit('#')),
+            ],
+          ),
+        ),
 
         // Backspace
-        TextButton.icon(
-          style: TextButton.styleFrom(
-              backgroundColor: const Color(0x1AFF6464),
-              foregroundColor: const Color(0xFFFF6464),
-              shape: const StadiumBorder(),
-              side: const BorderSide(color: Color(0x33FF6464)),
+        Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            onTap: onBackspace,
+            child: Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 8)),
-          onPressed: onBackspace,
-          icon: const Icon(Icons.backspace_outlined, size: 16),
-          label: const Text('⌫', style: TextStyle(fontSize: 16))),
-        const SizedBox(height: 12),
+                  horizontal: 16, vertical: 8),
+              child: const Icon(Icons.backspace_outlined,
+                  color: Colors.white38, size: 22))),
+        ),
+        const SizedBox(height: 4),
 
-        // Call / SMS row
+        // Call + SMS row
         Row(children: [
-          Expanded(child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white12),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12))),
-            onPressed: onSms,
-            child: const Text('🔬 SMS', style: TextStyle(fontSize: 13)))),
-          const SizedBox(width: 12),
-          Expanded(flex: 2, child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: _kTeal,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12))),
-            onPressed: onCall,
-            child: const Text('🔾 Call',
-                style: TextStyle(color: Colors.black,
-                    fontSize: 15, fontWeight: FontWeight.w700)))),
+          // SMS
+          GestureDetector(
+            onTap: onSms,
+            child: Container(
+              width: 56, height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+                border: Border.all(color: Colors.white12)),
+              child: const Icon(Icons.message_outlined,
+                  color: Colors.white54, size: 22))),
+          const SizedBox(width: 16),
+          // Call
+          Expanded(child: GestureDetector(
+            onTap: onCall,
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: const LinearGradient(colors: [
+                  Color(0xFF00FF88), Color(0xFF00CC6A),
+                ])),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.call_rounded,
+                      color: Colors.black, size: 22),
+                  SizedBox(width: 8),
+                  Text('Call',
+                    style: TextStyle(color: Colors.black,
+                        fontSize: 16, fontWeight: FontWeight.w800)),
+                ]),
+            ),
+          )),
+          const SizedBox(width: 16),
+          // Video call placeholder
+          Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.05),
+              border: Border.all(color: Colors.white12)),
+            child: const Icon(Icons.videocam_outlined,
+                color: Colors.white38, size: 22)),
         ]),
+        const SizedBox(height: 8),
+      ]),
+    );
+  }
+
+  static const _kSub = {
+    '2':'ABC','3':'DEF','4':'GHI','5':'JKL',
+    '6':'MNO','7':'PQRS','8':'TUV','9':'WXYZ',
+  };
+}
+
+// ── Dial key ──────────────────────────────────────────────────────────────────
+class _DialKey extends StatefulWidget {
+  final String label, sub;
+  final VoidCallback onTap;
+  const _DialKey({required this.label, required this.sub,
+      required this.onTap});
+  @override
+  State<_DialKey> createState() => _DialKeyState();
+}
+
+class _DialKeyState extends State<_DialKey>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double>   _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl  = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 80));
+    _scale = Tween(begin: 1.0, end: 0.9).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTapDown:   (_) { HapticFeedback.lightImpact(); _ctrl.forward(); },
+    onTapUp:     (_) { _ctrl.reverse(); widget.onTap(); },
+    onTapCancel: ()  => _ctrl.reverse(),
+    child: ScaleTransition(
+      scale: _scale,
+      child: Container(
+        alignment:  Alignment.center,
+        decoration: BoxDecoration(
+          color:        Colors.white.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(14),
+          border:       Border.all(color: Colors.white.withOpacity(0.06))),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+          Text(widget.label, style: const TextStyle(
+              color: Colors.white, fontSize: 24,
+              fontWeight: FontWeight.w300)),
+          if (widget.sub.isNotEmpty)
+            Text(widget.sub, style: const TextStyle(
+                color: Colors.white38, fontSize: 8,
+                letterSpacing: 1.5, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+    ),
+  );
+}
+
+// ── Country picker ────────────────────────────────────────────────────────────
+class _CountryPicker extends StatefulWidget {
+  final List<_Country> countries;
+  final _Country       selected;
+  final void Function(_Country) onSelect;
+  const _CountryPicker({required this.countries, required this.selected,
+      required this.onSelect});
+  @override
+  State<_CountryPicker> createState() => _CountryPickerState();
+}
+
+class _CountryPickerState extends State<_CountryPicker> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final fil = widget.countries.where((c) =>
+      _q.isEmpty ||
+      c.name.toLowerCase().contains(_q.toLowerCase()) ||
+      c.dial.contains(_q)
+    ).toList();
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.75,
+      child: Column(children: [
+        const SizedBox(height: 12),
+        Container(width: 36, height: 4,
+          decoration: BoxDecoration(color: Colors.white24,
+              borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 16),
+        const Text('Select Country', style: TextStyle(
+            color: Colors.white, fontSize: 17,
+            fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TextField(
+            onChanged: (v) => setState(() => _q = v),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText:  'Search country or code...',
+              hintStyle: const TextStyle(color: Colors.white30),
+              prefixIcon: const Icon(Icons.search,
+                  color: Colors.white30, size: 18),
+              filled:    true,
+              fillColor: const Color(0xFF0A0A0F),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: _kGreen, width: 1)),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 10))),
+        ),
+        const SizedBox(height: 8),
+        Expanded(child: ListView.builder(
+          itemCount: fil.length,
+          itemBuilder: (_, i) {
+            final c          = fil[i];
+            final isSelected = c.code == widget.selected.code;
+            return ListTile(
+              onTap: () => widget.onSelect(c),
+              leading: Text(c.flag,
+                  style: const TextStyle(fontSize: 24)),
+              title: Text(c.name, style: TextStyle(
+                  color: isSelected ? _kGreen : Colors.white,
+                  fontSize: 14,
+                  fontWeight: isSelected
+                    ? FontWeight.w700 : FontWeight.normal)),
+              trailing: Text(c.dial, style: TextStyle(
+                  color: isSelected ? _kGreen : _kMuted,
+                  fontSize: 13)),
+              selected:      isSelected,
+              selectedTileColor: _kGreen.withOpacity(0.05),
+            );
+          },
+        )),
       ]),
     );
   }
