@@ -13,6 +13,7 @@ import '../widgets/people_carousel.dart';
 import '../widgets/stories_bar.dart';
 import '../widgets/region_filter_bar.dart';
 import '../widgets/live_pulse.dart';
+import '../widgets/story_viewer.dart';
 import '../models/discovery_item.dart';
 
 // ── API Service ───────────────────────────────────────────────────────────────
@@ -336,11 +337,16 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                         'onTap':    () => _showPostStoryDialog(context, user?.xameId ?? ''),
                       },
                       // Other users' stories
-                      ..._stories.map((s) => {
-                        'name':     s['authorName'] as String? ?? '',
-                        'avatar':   s['authorAvatar'] as String? ?? '',
-                        'hasSeen':  s['hasSeen']   as bool? ?? false,
-                        'isOnline': s['isOnline']  as bool? ?? false,
+                      ..._stories.asMap().entries.map((e) {
+                        final idx = e.key;
+                        final s   = e.value;
+                        return {
+                          'name':     s['authorName']   as String? ?? '',
+                          'avatar':   s['authorAvatar'] as String? ?? '',
+                          'hasSeen':  s['hasSeen']      as bool? ?? false,
+                          'isOnline': s['isOnline']     as bool? ?? false,
+                          'onTap':    () => _openStoryViewer(context, idx),
+                        };
                       }),
                     ],
                   ),
@@ -479,6 +485,26 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
         onPosted: () => _loadData(refresh: true),
       ),
     );
+  }
+
+  void _openStoryViewer(BuildContext context, int groupIndex) {
+    if (_stories.isEmpty) return;
+    final groups = _stories.map((s) =>
+      StoryGroup.fromMap(s)).toList();
+    if (groups.isEmpty) return;
+    final safeIndex = groupIndex.clamp(0, groups.length - 1);
+    Navigator.of(context).push(PageRouteBuilder(
+      pageBuilder: (_, anim, __) => FadeTransition(
+        opacity: anim,
+        child: StoryViewerScreen(
+          groups:            groups,
+          initialGroupIndex: safeIndex,
+          currentUserId:     ref.read(currentUserProvider)?.xameId ?? '',
+        ),
+      ),
+      transitionDuration:        const Duration(milliseconds: 200),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+    ));
   }
 
   void _showPostStoryDialog(BuildContext context, String userId) {
