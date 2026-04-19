@@ -995,15 +995,23 @@ class _SearchSuggestions extends StatelessWidget {
           fontWeight: FontWeight.w800, letterSpacing: 1.2)),
       const SizedBox(height: 14),
       Wrap(spacing: 8, runSpacing: 8,
-        children: _trending.map((t) => Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white10)),
-          child: Text(t, style: const TextStyle(
-              color: Colors.white60, fontSize: 13)),
+        children: _trending.map((t) => GestureDetector(
+          onTap: () {
+            // Strip emoji prefix — e.g. '🔥 Afrobeats' → 'Afrobeats'
+            final query = t.contains(' ') ? t.split(' ').skip(1).join(' ') : t;
+            widget.ctrl.text = query;
+            widget.onSearch(query);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white10)),
+            child: Text(t, style: const TextStyle(
+                color: Colors.white60, fontSize: 13)),
+          ),
         )).toList()),
     ]),
   );
