@@ -1002,8 +1002,8 @@ class _SearchSuggestions extends StatelessWidget {
           onTap: () {
             // Strip emoji prefix — e.g. '🔥 Afrobeats' → 'Afrobeats'
             final query = t.contains(' ') ? t.split(' ').skip(1).join(' ') : t;
-            widget.ctrl.text = query;
-            widget.onSearch(query);
+            ctrl.text = query;
+            onSearch(query);
           },
           child: Container(
             padding: const EdgeInsets.symmetric(
