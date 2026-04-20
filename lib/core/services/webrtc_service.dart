@@ -41,6 +41,7 @@ class WebRTCService {
   bool _callCancelled = false;
   Timer? _callTimeoutTimer;
   DateTime? _callStartTime;
+  String? _currentCallId;
   bool isRinging = false;
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
