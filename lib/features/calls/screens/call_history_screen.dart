@@ -343,9 +343,12 @@ class _CallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMissed  = call.status == 'missed' && !isOutgoing;
-    final isVideo   = call.callType == 'video';
-    final nameColor = isMissed ? const Color(0xFFE53935) : Colors.white;
+    final isMissed     = call.status == 'missed' && !isOutgoing;
+    final isNoAnswer   = call.status == 'missed' && isOutgoing;
+    final isDeclined   = call.status == 'rejected';
+    final isVideo      = call.callType == 'video';
+    final nameColor    = (isMissed || isNoAnswer || isDeclined)
+        ? const Color(0xFFE53935) : Colors.white;
     final initials  = name.trim().split(' ').take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
@@ -380,7 +383,7 @@ class _CallTile extends StatelessWidget {
                       fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Row(children: [
-                  _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed),
+                  _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed || isNoAnswer || isDeclined),
                   const SizedBox(width: 5),
                   Text(_statusLabel(),
                     style: TextStyle(
