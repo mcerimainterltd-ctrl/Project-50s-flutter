@@ -278,8 +278,9 @@ class WebRTCService {
   }
 
   void _recordMissedCall(String recipientId, String callType) {
+    final callId = _currentCallId ?? 'local_\${DateTime.now().millisecondsSinceEpoch}';
     final record = {
-      'callId':      'local_\${DateTime.now().millisecondsSinceEpoch}',
+      'callId':      callId,
       'callerId':    _socket.currentUserId ?? '',
       'recipientId': recipientId,
       'callType':    callType,
@@ -289,6 +290,11 @@ class WebRTCService {
       'seen':        false,
     };
     CacheService.addCallRecord(record);
+    // Notify server so recipient gets missed call recorded
+    _socket.emit('call-unanswered', {
+      'recipientId': recipientId,
+      'callId':      callId,
+    });
   }
 
 }

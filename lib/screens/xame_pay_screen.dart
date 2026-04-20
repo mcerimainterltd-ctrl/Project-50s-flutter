@@ -1912,10 +1912,10 @@ class _BillCat {
 
 const _kBillCats = [
   _BillCat('electricity', 'Electricity', '💡'),
-  _BillCat('cable',       'Cable TV',    '📺'),
+  _BillCat('tv',          'Cable TV',    '📺'),
   _BillCat('internet',    'Internet',    '🌐'),
-  _BillCat('water',       'Water',       '💧'),
-  _BillCat('gas',         'Gas',         '🔥'),
+  _BillCat('data',        'Data Bundle', '📶'),
+  _BillCat('airtime',     'Airtime',     '📱'),
 ];
 
 // currency → 2-letter country code for bills API
