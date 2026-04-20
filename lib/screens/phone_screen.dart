@@ -1100,13 +1100,51 @@ class _TopUpSheet extends StatefulWidget {
 }
 
 class _TopUpSheetState extends State<_TopUpSheet> {
-  final _tokenCtrl = TextEditingController();
+  final _tokenCtrl  = TextEditingController();
+  final _amountCtrl  = TextEditingController();
   bool   _loading  = false;
   String? _error;
   int    _tab      = 0; // 0 = token, 1 = wallet
 
   @override
-  void dispose() { _tokenCtrl.dispose(); super.dispose(); }
+  void dispose() { _tokenCtrl.dispose(); _amountCtrl.dispose(); super.dispose(); }
+
+  Future<double> _fetchWalletBalance() async {
+    try {
+      final r = await http.get(Uri.parse(
+          '${widget.serverUrl}/api/wallet/me?userId=${widget.userId}'))
+          .timeout(const Duration(seconds: 6));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        return (d['balance'] as num?)?.toDouble() ?? 0.0;
+      }
+    } catch (_) {}
+    return 0.0;
+  }
+
+  Future<void> _transferFromWallet() async {
+    final amt = double.tryParse(_amountCtrl.text.trim());
+    if (amt == null || amt <= 0) {
+      setState(() => _error = 'Enter a valid amount'); return;
+    }
+    setState(() { _loading = true; _error = null; });
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/call-credits/topup'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': widget.userId, 'amount': amt}),
+      ).timeout(const Duration(seconds: 10));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        widget.onSuccess((d['balance'] as num).toDouble());
+      } else {
+        setState(() => _error = d['message'] ?? 'Transfer failed');
+      }
+    } catch (_) {
+      setState(() => _error = 'Network error. Try again.');
+    }
+    if (mounted) setState(() => _loading = false);
+  }
 
   Future<void> _redeemToken() async {
     final token = _tokenCtrl.text.trim().toUpperCase();
@@ -1221,26 +1259,63 @@ class _TopUpSheetState extends State<_TopUpSheet> {
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white24, fontSize: 12, height: 1.5)),
       ] else ...[
-        // Wallet top-up info
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color:        _kGreen.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(14),
-            border:       Border.all(color: _kGreen.withOpacity(0.2))),
-          child: Column(children: [
-            const Icon(Icons.account_balance_wallet_outlined,
-                color: _kGreen, size: 32),
-            const SizedBox(height: 8),
-            const Text('Top up via XamePay Wallet',
-              style: TextStyle(color: Colors.white,
-                  fontSize: 14, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            const Text('Fund your wallet first, then transfer to call credits',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 12)),
-          ]),
+        // Wallet balance display
+        FutureBuilder<double>(
+          future: _fetchWalletBalance(),
+          builder: (_, snap) {
+            final bal = snap.data ?? 0.0;
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color:        _kGreen.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(14),
+                border:       Border.all(color: _kGreen.withOpacity(0.2))),
+              child: Row(children: [
+                const Icon(Icons.account_balance_wallet_outlined,
+                    color: _kGreen, size: 28),
+                const SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                  const Text('XamePay Wallet',
+                    style: TextStyle(color: Colors.white,
+                        fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text('${widget.currency} ${bal.toStringAsFixed(2)} available',
+                    style: const TextStyle(
+                        color: Colors.white38, fontSize: 12)),
+                ]),
+              ]),
+            );
+          },
         ),
+        const SizedBox(height: 12),
+        // Amount input
+        Container(
+          decoration: BoxDecoration(
+            color:        const Color(0xFF0A0A0F),
+            borderRadius: BorderRadius.circular(14),
+            border:       Border.all(color: Colors.white12)),
+          child: TextField(
+            controller:   _amountCtrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(color: Colors.white,
+                fontSize: 22, fontWeight: FontWeight.w700),
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              hintText:  '0.00',
+              hintStyle: const TextStyle(color: Color(0xFF3D4450),
+                  fontSize: 22),
+              prefixText: '${widget.currency} ',
+              prefixStyle: const TextStyle(color: _kGreen,
+                  fontSize: 16, fontWeight: FontWeight.w600),
+              border:    InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text('Amount will be deducted from your XamePay wallet',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white24, fontSize: 11)),
       ],
 
       if (_error != null) ...[
@@ -1268,7 +1343,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         child: ElevatedButton(
           onPressed: _loading ? null
             : _tab == 0 ? _redeemToken
-            : () => Navigator.pop(context),
+            : _transferFromWallet,
           style: ElevatedButton.styleFrom(
             backgroundColor: _kGreen,
             foregroundColor: Colors.black,
@@ -1281,7 +1356,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
                 child: CircularProgressIndicator(
                     color: Colors.black, strokeWidth: 2))
             : Text(
-                _tab == 0 ? 'Redeem Token' : 'Go to Wallet',
+                _tab == 0 ? 'Redeem Token' : 'Transfer to Credits',
                 style: const TextStyle(fontSize: 15,
                     fontWeight: FontWeight.w800)),
         ),
