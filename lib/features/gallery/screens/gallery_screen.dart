@@ -578,7 +578,7 @@ class _LightboxState extends State<_Lightbox> {
   Widget build(BuildContext context) {
     final item = widget.items[_idx];
     return Scaffold(
-      backgroundColor: Colors.red,
+      backgroundColor: Colors.black,
       body: GestureDetector(
         onTap: () => setState(() => _showUI = !_showUI),
         child: Stack(children: [
