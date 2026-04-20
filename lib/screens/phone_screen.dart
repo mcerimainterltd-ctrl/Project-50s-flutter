@@ -927,16 +927,7 @@ class _KeypadTab extends StatelessWidget {
                 ]),
             ),
           )),
-          const SizedBox(width: 16),
-          // Video call placeholder
-          Container(
-            width: 56, height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.05),
-              border: Border.all(color: Colors.white12)),
-            child: const Icon(Icons.videocam_outlined,
-                color: Colors.white38, size: 22)),
+
         ]),
         const SizedBox(height: 8),
       ]),
