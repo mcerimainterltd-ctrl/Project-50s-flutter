@@ -272,6 +272,26 @@ class _PhoneScreenState extends State<PhoneScreen>
       duration: const Duration(seconds: 2)));
   }
 
+  void _showTopUpSheet() {
+    showModalBottomSheet(
+      context:            context,
+      backgroundColor:    _kCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _TopUpSheet(
+        userId:      widget.userId,
+        serverUrl:   widget.serverUrl,
+        currency:    _creditsCurr,
+        onSuccess:   (newBalance) {
+          setState(() => _credits = newBalance);
+          Navigator.pop(context);
+          _snack('Recharge successful! Balance: $_creditsCurr ${newBalance.toStringAsFixed(2)}');
+        },
+      ),
+    );
+  }
+
   void _pickCountry() {
     showModalBottomSheet(
       context:         context,
@@ -299,7 +319,7 @@ class _PhoneScreenState extends State<PhoneScreen>
         _CreditsBar(
           credits:  _credits,
           currency: _creditsCurr,
-          onTopUp:  () => _snack('Top-up coming soon'),
+          onTopUp:  () => _showTopUpSheet(),
         ),
         // ── Tab bar ──────────────────────────────────────────────
         Container(
@@ -795,7 +815,7 @@ class _KeypadTab extends StatelessWidget {
         (rates['default'] as Map?);
     final rate = rateData?['rate'] ?? '—';
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(children: [
         // Country selector
@@ -841,22 +861,21 @@ class _KeypadTab extends StatelessWidget {
                 fontWeight: FontWeight.w300, letterSpacing: 5),
                 textAlign: TextAlign.center))),
 
-        // Keys grid
-        Expanded(
-          child: GridView.count(
-            crossAxisCount:  3,
-            physics:         const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 1.5,
-            children: [
-              ...['1','2','3','4','5','6','7','8','9'].map(
-                (k) => _DialKey(label: k, sub: _kSub[k] ?? '', onTap: () => onDigit(k))),
-              _DialKey(label: '*',  sub: '', onTap: () => onDigit('*')),
-              _DialKey(label: '0',  sub: '+', onTap: () => onDigit('0')),
-              _DialKey(label: '#',  sub: '', onTap: () => onDigit('#')),
-            ],
-          ),
+        // Keys grid — fixed height, works on all screen sizes
+        GridView.count(
+          crossAxisCount:  3,
+          shrinkWrap:      true,
+          physics:         const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 1.8,
+          children: [
+            ...['1','2','3','4','5','6','7','8','9'].map(
+              (k) => _DialKey(label: k, sub: _kSub[k] ?? '', onTap: () => onDigit(k))),
+            _DialKey(label: '*',  sub: '', onTap: () => onDigit('*')),
+            _DialKey(label: '0',  sub: '+', onTap: () => onDigit('0')),
+            _DialKey(label: '#',  sub: '', onTap: () => onDigit('#')),
+          ],
         ),
 
         // Backspace
@@ -1067,4 +1086,237 @@ class _CountryPickerState extends State<_CountryPicker> {
       ]),
     );
   }
+}
+
+// ── Top Up / Recharge Sheet ───────────────────────────────────────────────────
+class _TopUpSheet extends StatefulWidget {
+  final String   userId, serverUrl, currency;
+  final void Function(double) onSuccess;
+  const _TopUpSheet({
+    required this.userId,   required this.serverUrl,
+    required this.currency, required this.onSuccess});
+  @override
+  State<_TopUpSheet> createState() => _TopUpSheetState();
+}
+
+class _TopUpSheetState extends State<_TopUpSheet> {
+  final _tokenCtrl = TextEditingController();
+  bool   _loading  = false;
+  String? _error;
+  int    _tab      = 0; // 0 = token, 1 = wallet
+
+  @override
+  void dispose() { _tokenCtrl.dispose(); super.dispose(); }
+
+  Future<void> _redeemToken() async {
+    final token = _tokenCtrl.text.trim().toUpperCase();
+    if (token.isEmpty) {
+      setState(() => _error = 'Enter a recharge token'); return;
+    }
+    // Validate format: XAME-XXXX-XXXX-XXXX
+    final valid = RegExp(
+      r'^XAME-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$').hasMatch(token);
+    if (!valid) {
+      setState(() => _error = 'Invalid format. Use: XAME-XXXX-XXXX-XXXX');
+      return;
+    }
+    setState(() { _loading = true; _error = null; });
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/call-credits/recharge'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': widget.userId, 'token': token}),
+      ).timeout(const Duration(seconds: 10));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        widget.onSuccess((d['balance'] as num).toDouble());
+      } else {
+        setState(() => _error = d['message'] ?? 'Redemption failed');
+      }
+    } catch (_) {
+      setState(() => _error = 'Network error. Try again.');
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.fromLTRB(20, 20, 20,
+        MediaQuery.of(context).viewInsets.bottom + 24),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      // Handle
+      Container(width: 36, height: 4,
+        decoration: BoxDecoration(color: Colors.white24,
+            borderRadius: BorderRadius.circular(2))),
+      const SizedBox(height: 20),
+
+      // Title
+      const Text('Top Up Credits',
+        style: TextStyle(color: Colors.white, fontSize: 18,
+            fontWeight: FontWeight.w700)),
+      const SizedBox(height: 6),
+      Text('Add call credits to your account',
+        style: const TextStyle(color: Colors.white38, fontSize: 13)),
+      const SizedBox(height: 20),
+
+      // Tab selector
+      Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color:        Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12)),
+        child: Row(children: [
+          _TabBtn(label: '🎟 Recharge Token', selected: _tab == 0,
+              onTap: () => setState(() => _tab = 0)),
+          _TabBtn(label: '💳 From Wallet',    selected: _tab == 1,
+              onTap: () => setState(() => _tab = 1)),
+        ]),
+      ),
+      const SizedBox(height: 20),
+
+      if (_tab == 0) ...[
+        // Token input
+        Container(
+          decoration: BoxDecoration(
+            color:        const Color(0xFF0A0A0F),
+            borderRadius: BorderRadius.circular(14),
+            border:       Border.all(color: Colors.white12)),
+          child: TextField(
+            controller:    _tokenCtrl,
+            style: const TextStyle(
+              color:       Colors.white,
+              fontSize:    18,
+              fontWeight:  FontWeight.w700,
+              letterSpacing: 2),
+            textCapitalization: TextCapitalization.characters,
+            textAlign: TextAlign.center,
+            onChanged: (v) {
+              // Auto-format as XAME-XXXX-XXXX-XXXX
+              final raw = v.replaceAll('-', '').toUpperCase();
+              String fmt = '';
+              for (int i = 0; i < raw.length && i < 16; i++) {
+                if (i == 4 || i == 8 || i == 12) fmt += '-';
+                fmt += raw[i];
+              }
+              if (fmt != v) {
+                _tokenCtrl.value = TextEditingValue(
+                  text:      fmt,
+                  selection: TextSelection.collapsed(offset: fmt.length));
+              }
+            },
+            decoration: InputDecoration(
+              hintText:  'XAME-XXXX-XXXX-XXXX',
+              hintStyle: const TextStyle(
+                color:       Color(0xFF3D4450),
+                fontSize:    18,
+                letterSpacing: 2),
+              border:    InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 16)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Enter your XamePage recharge token\nAvailable from authorized resellers',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white24, fontSize: 12, height: 1.5)),
+      ] else ...[
+        // Wallet top-up info
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color:        _kGreen.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(14),
+            border:       Border.all(color: _kGreen.withOpacity(0.2))),
+          child: Column(children: [
+            const Icon(Icons.account_balance_wallet_outlined,
+                color: _kGreen, size: 32),
+            const SizedBox(height: 8),
+            const Text('Top up via XamePay Wallet',
+              style: TextStyle(color: Colors.white,
+                  fontSize: 14, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            const Text('Fund your wallet first, then transfer to call credits',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white38, fontSize: 12)),
+          ]),
+        ),
+      ],
+
+      if (_error != null) ...[
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color:        _kDanger.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border:       Border.all(color: _kDanger.withOpacity(0.3))),
+          child: Row(children: [
+            const Icon(Icons.error_outline, color: _kDanger, size: 16),
+            const SizedBox(width: 8),
+            Expanded(child: Text(_error!,
+              style: const TextStyle(color: _kDanger, fontSize: 13))),
+          ]),
+        ),
+      ],
+
+      const SizedBox(height: 20),
+
+      // Action button
+      SizedBox(
+        width: double.infinity, height: 52,
+        child: ElevatedButton(
+          onPressed: _loading ? null
+            : _tab == 0 ? _redeemToken
+            : () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _kGreen,
+            foregroundColor: Colors.black,
+            disabledBackgroundColor: _kGreen.withOpacity(0.3),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+            elevation: 0),
+          child: _loading
+            ? const SizedBox(width: 20, height: 20,
+                child: CircularProgressIndicator(
+                    color: Colors.black, strokeWidth: 2))
+            : Text(
+                _tab == 0 ? 'Redeem Token' : 'Go to Wallet',
+                style: const TextStyle(fontSize: 15,
+                    fontWeight: FontWeight.w800)),
+        ),
+      ),
+    ]),
+  );
+}
+
+class _TabBtn extends StatelessWidget {
+  final String label;
+  final bool   selected;
+  final VoidCallback onTap;
+  const _TabBtn({required this.label, required this.selected,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        decoration: BoxDecoration(
+          color:        selected ? _kGreen.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border:       selected
+            ? Border.all(color: _kGreen.withOpacity(0.4))
+            : Border.all(color: Colors.transparent)),
+        child: Text(label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color:      selected ? _kGreen : Colors.white38,
+            fontSize:   12,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
+      ),
+    ),
+  );
 }
