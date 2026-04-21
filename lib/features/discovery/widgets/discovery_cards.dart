@@ -320,16 +320,10 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     final text = widget.title.isNotEmpty
         ? '\${widget.title}\n\nShared via XamePage'
         : 'Check this out on XamePage';
+    final subject = widget.title.isNotEmpty ? widget.title : 'XamePage';
     try {
-      await SharePlus.instance.share(
-        ShareParams(
-          text: text,
-          uri: widget.mediaUrl.isNotEmpty ? Uri.parse(widget.mediaUrl) : null,
-        ),
-      );
-    } catch (_) {
-      await SharePlus.instance.share(ShareParams(text: text));
-    }
+      await Share.share(text, subject: subject);
+    } catch (_) {}
   }
 
   void _showPreview(BuildContext context) {
