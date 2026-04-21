@@ -30,7 +30,6 @@ dependencies:
   file_picker: ^8.1.2
   open_filex: ^4.4.0
   video_compress: ^3.1.2
-  video_compress: ^3.1.2
   video_thumbnail: ^0.5.3
   pdfx: ^2.6.0
   flutter_sound: ^9.16.3
