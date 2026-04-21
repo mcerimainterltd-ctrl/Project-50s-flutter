@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:video_compress/video_compress.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -133,7 +134,7 @@ class DiscoveryApiService {
       final res  = await _dio.post('/api/discover/post', data: formData);
       final data = res.data as Map<String, dynamic>;
       return data['success'] == true ? null : data['message'] as String?;
-    } catch (_) { return 'Upload failed'; }
+    } catch (e) { return 'Upload failed: \$e'; }
   }
 
   static Future<String?> createStory({
@@ -576,10 +577,45 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   }
 
   Future<void> _pickVideo() async {
-    final picked = await _picker.pickVideo(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() { _mediaFile = File(picked.path); _mediaType = 'video'; });
+    final picked = await _picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 10),
+    );
+    if (picked == null) return;
+
+    File videoFile = File(picked.path);
+    final size = await videoFile.length();
+    const maxBytes = 25 * 1024 * 1024; // 25MB safe limit for discover endpoint
+
+    if (size > maxBytes) {
+      setState(() => _error = 'Compressing video...');
+      try {
+        final info = await VideoCompress.compressVideo(
+          picked.path,
+          quality: VideoQuality.MediumQuality,
+          deleteOrigin: false,
+          includeAudio: true,
+        );
+        if (info?.file != null) {
+          final compressedSize = await info!.file!.length();
+          if (compressedSize <= maxBytes) {
+            videoFile = info.file!;
+          } else {
+            setState(() => _error =
+                'Video too large (${(compressedSize/1024/1024).toStringAsFixed(1)}MB). Try a shorter clip.');
+            return;
+          }
+        }
+      } catch (e) {
+        setState(() => _error = 'Compression failed: $e');
+        return;
+      }
     }
+    setState(() {
+      _mediaFile = videoFile;
+      _mediaType = 'video';
+      _error = null;
+    });
   }
 
   Future<void> _submit() async {
@@ -637,8 +673,41 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
           child: _mediaFile != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.file(_mediaFile!, fit: BoxFit.cover,
-                    width: double.infinity))
+                child: Stack(fit: StackFit.expand, children: [
+                  _mediaType == 'video'
+                    ? Container(
+                        color: const Color(0xFF0A0A1A),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.videocam_rounded,
+                                color: Color(0xFF2196F3), size: 48),
+                            const SizedBox(height: 8),
+                            Text(
+                              _mediaFile!.path.split('/').last,
+                              style: const TextStyle(
+                                  color: Colors.white60, fontSize: 12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            FutureBuilder<int>(
+                              future: _mediaFile!.length(),
+                              builder: (_, snap) => Text(
+                                snap.hasData
+                                    ? '${(snap.data! / 1024 / 1024).toStringAsFixed(1)}MB'
+                                    : '',
+                                style: const TextStyle(
+                                    color: Colors.white38, fontSize: 11)),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Image.file(_mediaFile!, fit: BoxFit.cover,
+                        width: double.infinity),
+                  if (_mediaType == 'video')
+                    const Center(child: Icon(Icons.play_circle_outline,
+                        color: Colors.white54, size: 40)),
+                ]))
             : Column(mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                 const Icon(Icons.add_photo_alternate_outlined,
