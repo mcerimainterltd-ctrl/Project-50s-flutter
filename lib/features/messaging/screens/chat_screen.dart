@@ -72,15 +72,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _scrollToBottom({bool animate = true}) {
+    // First pass — scroll to current maxScrollExtent
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollCtrl.hasClients) return;
-      final max = _scrollCtrl.position.maxScrollExtent;
+      _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+    });
+    // Second pass — after layout settles, catch any remaining overflow
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!mounted || !_scrollCtrl.hasClients) return;
       if (animate) {
-        _scrollCtrl.animateTo(max,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOut);
+        _scrollCtrl.animateTo(
+          _scrollCtrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
       } else {
-        _scrollCtrl.jumpTo(max);
+        _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
       }
     });
   }
