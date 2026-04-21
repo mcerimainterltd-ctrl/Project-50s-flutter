@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/config/constants.dart';
@@ -278,7 +279,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
 
                           // Share
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () => _sharePost(context),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 6),
@@ -312,6 +313,23 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
         ),
       ),
     );
+  }
+
+  Future<void> _sharePost(BuildContext context) async {
+    HapticFeedback.mediumImpact();
+    final text = widget.title.isNotEmpty
+        ? '\${widget.title}\n\nShared via XamePage'
+        : 'Check this out on XamePage';
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: text,
+          uri: widget.mediaUrl.isNotEmpty ? Uri.parse(widget.mediaUrl) : null,
+        ),
+      );
+    } catch (_) {
+      await SharePlus.instance.share(ShareParams(text: text));
+    }
   }
 
   void _showPreview(BuildContext context) {
