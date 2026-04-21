@@ -537,7 +537,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
       final dir  = await getTemporaryDirectory();
       final name = widget.url.split('/').last.split('?').first
           .replaceAll(RegExp(r'[^\w.\-]'), '_');
-      final path = '\${dir.path}/\$name';
+      final path = '${dir.path}/$name';
       final cached = File(path);
       if (!cached.existsSync() || cached.lengthSync() == 0) {
         if (cached.existsSync()) await cached.delete();
