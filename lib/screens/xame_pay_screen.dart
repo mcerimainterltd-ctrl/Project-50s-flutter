@@ -347,12 +347,14 @@ class _FxService {
 
 class XamePayScreen extends StatefulWidget {
   final String userId, serverUrl;
-  final VoidCallback? onBack; // router.dart passes: () => context.go('/contacts')
+  final VoidCallback? onBack;
+  final List<Map<String,String>> xameContacts;
   const XamePayScreen({
     super.key,
     required this.userId,
     required this.serverUrl,
     this.onBack,
+    this.xameContacts = const [],
   });
   @override State<XamePayScreen> createState() => _XamePayScreenState();
 }
@@ -506,7 +508,8 @@ class _XamePayScreenState extends State<XamePayScreen>
                         region: _ri, balance: _balance,
                         serverUrl: widget.serverUrl, userId: widget.userId,
                         currency: _currency, fmt: _fmt,
-                        onSuccess: _loadWallet, snack: _snack),
+                        onSuccess: _loadWallet, snack: _snack,
+                        contacts: widget.xameContacts),
                     _HistoryTab(txs: _txs, fmt: _fmt),
                   ],
                 )),
@@ -802,9 +805,11 @@ class _SendTab extends StatefulWidget {
   final String Function(double) fmt;
   final Future<void> Function() onSuccess;
   final void Function(String) snack;
+  final List<Map<String,String>> contacts;
   const _SendTab({required this.region, required this.balance,
       required this.serverUrl, required this.userId, required this.currency,
-      required this.fmt, required this.onSuccess, required this.snack});
+      required this.fmt, required this.onSuccess, required this.snack,
+      this.contacts = const []});
   @override State<_SendTab> createState() => _SendTabState();
 }
 
@@ -818,11 +823,49 @@ class _SendTabState extends State<_SendTab> {
   final _accCtrl = TextEditingController();
   final _amtCtrl = TextEditingController();
   final _srchCtrl = TextEditingController();
+  // Contact mode
+  String? _selContact;
+  String  _contactQuery = '';
+  final _contactSearchCtrl = TextEditingController();
+  List<Map<String,String>> get _filteredContacts => widget.contacts
+    .where((c) => _contactQuery.isEmpty ||
+      (c['name'] ?? '').toLowerCase().contains(_contactQuery.toLowerCase()) ||
+      (c['id']   ?? '').toLowerCase().contains(_contactQuery.toLowerCase()))
+    .toList();
 
   @override void initState() { super.initState(); _fetchBanks(); }
   @override void dispose() {
     _accCtrl.dispose(); _amtCtrl.dispose(); _srchCtrl.dispose();
+    _contactSearchCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _sendToContact() async {
+    if (_selContact == null) { widget.snack('Select a contact'); return; }
+    if (_amount < 1)         { widget.snack('Enter a valid amount'); return; }
+    if (_amount > widget.balance) { widget.snack('Insufficient balance'); return; }
+    widget.snack('Processing transfer…');
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/wallet/p2p'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'senderId':    widget.userId,
+          'recipientId': _selContact,
+          'amount':      _amount,
+          'currency':    widget.currency,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        await widget.onSuccess();
+        widget.snack('✅ ${widget.fmt(_amount)} sent to $_selContact!'
+          '${d['fee'] != null ? '  Fee: ${widget.fmt((d['fee'] as num).toDouble())}' : ''}');
+        setState(() { _selContact = null; _amtCtrl.clear(); _amount = 0; });
+      } else {
+        widget.snack('❌ ${d['message'] ?? 'Transfer failed'}');
+      }
+    } catch (_) { widget.snack('❌ Network error'); }
   }
 
   Future<void> _fetchBanks() async {
@@ -915,15 +958,103 @@ class _SendTabState extends State<_SendTab> {
       ]),
       const SizedBox(height: 20),
       if (!_bankMode) ...[
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: _kCard,
-              borderRadius: BorderRadius.circular(14),
+        // Contact search
+        _xf(_contactSearchCtrl, '🔍 Search XamePage contacts…',
+            TextInputType.text, (v) => setState(() => _contactQuery = v)),
+        const SizedBox(height: 8),
+        if (_selContact != null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0x1A00B0A0),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0x3300B0A0))),
+            child: Row(children: [
+              CircleAvatar(radius: 18,
+                backgroundColor: _kTeal.withOpacity(0.2),
+                child: Text(_selContact!.substring(0,1).toUpperCase(),
+                  style: const TextStyle(color: _kTeal,
+                      fontWeight: FontWeight.w700))),
+              const SizedBox(width: 10),
+              Expanded(child: Text(_selContact!,
+                style: const TextStyle(color: Colors.white,
+                    fontSize: 14, fontWeight: FontWeight.w600))),
+              GestureDetector(
+                onTap: () => setState(() => _selContact = null),
+                child: const Icon(Icons.close, color: _kMuted, size: 18)),
+            ]),
+          ),
+        ] else ...[
+          Container(
+            constraints: const BoxConstraints(maxHeight: 220),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white10)),
-          child: const Center(child: Text(
-              'Tap a contact from the Chats list to send money.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _kMuted, fontSize: 13))),
+            child: widget.contacts.isEmpty
+              ? const Padding(padding: EdgeInsets.all(20),
+                  child: Center(child: Text('No XamePage contacts found',
+                    style: TextStyle(color: _kMuted, fontSize: 13))))
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _filteredContacts.length,
+                  itemBuilder: (_, i) {
+                    final c = _filteredContacts[i];
+                    return InkWell(
+                      onTap: () => setState(() {
+                        _selContact = c['id'];
+                        _contactSearchCtrl.clear();
+                        _contactQuery = '';
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 11),
+                        decoration: BoxDecoration(border: Border(bottom:
+                          BorderSide(color: Colors.white.withOpacity(0.05)))),
+                        child: Row(children: [
+                          CircleAvatar(radius: 16,
+                            backgroundColor: _kTeal.withOpacity(0.15),
+                            child: Text((c['name'] as String).substring(0,1).toUpperCase(),
+                              style: const TextStyle(color: _kTeal,
+                                  fontSize: 12, fontWeight: FontWeight.w700))),
+                          const SizedBox(width: 10),
+                          Column(crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                            Text(c['name'] as String,
+                              style: const TextStyle(color: Colors.white,
+                                  fontSize: 14, fontWeight: FontWeight.w500)),
+                            Text(c['id'] as String,
+                              style: const TextStyle(
+                                  color: _kMuted, fontSize: 11)),
+                          ]),
+                        ]),
+                      ),
+                    );
+                  }),
+          ),
+        ],
+        const SizedBox(height: 16),
+        const Text('Amount',
+            style: TextStyle(color: _kMuted,
+                fontSize: 13, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        _xf(_amtCtrl, 'Enter amount',
+            const TextInputType.numberWithOptions(decimal: true),
+            (v) => _amount = double.tryParse(v) ?? 0),
+        const SizedBox(height: 6),
+        Text('Balance: ${widget.fmt(widget.balance)}',
+            style: const TextStyle(color: _kMuted, fontSize: 12)),
+        const SizedBox(height: 20),
+        SizedBox(width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14))),
+            onPressed: _sendToContact,
+            child: const Text('Send Money',
+                style: TextStyle(color: Colors.black,
+                    fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
         ),
       ] else ...[
         const Text('Select Bank',

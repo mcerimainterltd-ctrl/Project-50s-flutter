@@ -16,6 +16,7 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/gallery/screens/gallery_screen.dart';
 import '../../screens/xame_pay_screen.dart';
+import '../../features/contacts/providers/contacts_provider.dart';
 import '../../screens/phone_screen.dart';
 
 class _Placeholder extends StatelessWidget {
@@ -59,7 +60,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/conference',    builder: (c, s) => const _Placeholder('Conference')),
       GoRoute(path: '/call-history',  builder: (c, s) => const CallHistoryScreen()),
       GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl)),
-      GoRoute(path: '/wallet',        builder: (c, s) => XamePayScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl, onBack: () => c.go('/contacts'))),
+      GoRoute(path: '/wallet', builder: (c, s) {
+        final user     = ref.read(currentUserProvider);
+        final contacts = ref.read(contactsProvider).valueOrNull ?? [];
+        final xameContacts = contacts
+          .where((ct) => ct.id != user?.xameId)
+          .map((ct) => <String,String>{'id': ct.id, 'name': ct.name})
+          .toList();
+        return XamePayScreen(
+          userId:       user?.xameId ?? '',
+          serverUrl:    AppConstants.serverUrl,
+          onBack:       () => c.go('/contacts'),
+          xameContacts: xameContacts,
+        );
+      }),
       GoRoute(path: '/settings',      builder: (c, s) => const SettingsScreen()),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
       GoRoute(path: '/gallery', builder: (c, s) => GalleryScreen(userId: user?.xameId ?? '', isOwner: true)),
