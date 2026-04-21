@@ -36,6 +36,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool  _showAttach   = false;
   Timer? _typingTimer;
   final FocusNode _composerFocus = FocusNode();
+  int   _lastMsgCount = 0;
   XameMessage? _replyTo;
   final Set<String> _selected = {};
   bool _selectMode = false;
@@ -54,7 +55,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // Scroll to bottom when composer gains focus (keyboard opens)
     _composerFocus.addListener(() {
       if (_composerFocus.hasFocus) {
-        Future.delayed(const Duration(milliseconds: 300), _scrollToBottom);
+        // 450ms — keyboard animation on Android takes ~400ms
+        Future.delayed(const Duration(milliseconds: 450), _scrollToBottom);
       }
     });
   }
@@ -69,14 +71,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({bool animate = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-        );
+      if (!_scrollCtrl.hasClients) return;
+      final max = _scrollCtrl.position.maxScrollExtent;
+      if (animate) {
+        _scrollCtrl.animateTo(max,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut);
+      } else {
+        _scrollCtrl.jumpTo(max);
       }
     });
   }
@@ -308,14 +312,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final messages = ref.watch(chatProvider(widget.userId));
-    // Auto-scroll when new message arrives
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollCtrl.hasClients) {
-        final atBottom = _scrollCtrl.position.maxScrollExtent -
-            _scrollCtrl.position.pixels < 120;
-        if (atBottom) _scrollToBottom();
-      }
-    });
+    // Auto-scroll whenever message list grows
+    final msgCount = messages.length;
+    if (msgCount > _lastMsgCount) {
+      _lastMsgCount = msgCount;
+      _scrollToBottom();
+    }
     final contacts = ref.watch(contactsProvider).valueOrNull ?? [];
     final contact  = contacts.where((c) => c.id == widget.userId).firstOrNull;
     final isTyping = ref.watch(typingProvider).contains(widget.userId);
