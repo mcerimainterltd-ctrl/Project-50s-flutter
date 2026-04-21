@@ -1178,9 +1178,17 @@ class _FilterSheetState extends State<_FilterSheet> {
 }
 
 // ── Detail screen ─────────────────────────────────────────────────────────────
-class _DetailScreen extends StatelessWidget {
+class _DetailScreen extends ConsumerStatefulWidget {
   final DiscoveryItem item;
   const _DetailScreen({required this.item});
+
+  @override
+  ConsumerState<_DetailScreen> createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends ConsumerState<_DetailScreen> {
+  bool _following = false;
+  bool _followLoading = false;
 
   String _fmt(int n) {
     if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
@@ -1188,8 +1196,40 @@ class _DetailScreen extends StatelessWidget {
     return '$n';
   }
 
+  Future<void> _toggleFollow() async {
+    if (_followLoading || widget.item.authorId.isEmpty) return;
+    final self = ref.read(currentUserProvider);
+    if (self == null) return;
+    setState(() => _followLoading = true);
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      await dio.post('/api/add-contact', data: {
+        'userId':    self.xameId,
+        'contactId': widget.item.authorId,
+      });
+      if (mounted) setState(() => _following = true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Now following \${widget.item.authorName}'),
+          backgroundColor: const Color(0xFF1A4A3A),
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not follow — try again'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _followLoading = false);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    return Scaffold(
     backgroundColor: const Color(0xFF0A0A0F),
     body: CustomScrollView(slivers: [
       SliverAppBar(
@@ -1267,17 +1307,27 @@ class _DetailScreen extends StatelessWidget {
                     color: Colors.white38, fontSize: 12)),
               ]),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(colors: [
-                    Color(0xFF2196F3), Color(0xFF7B2FFF),
-                  ])),
-                child: const Text('Follow', style: TextStyle(
-                    color: Colors.white, fontSize: 13,
-                    fontWeight: FontWeight.w700))),
+              GestureDetector(
+                onTap: _toggleFollow,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(colors: _following
+                        ? [Colors.white24, Colors.white24]
+                        : [const Color(0xFF2196F3), const Color(0xFF7B2FFF)]),
+                  ),
+                  child: _followLoading
+                      ? const SizedBox(width: 14, height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 1.5, color: Colors.white))
+                      : Text(_following ? 'Following' : 'Follow',
+                          style: const TextStyle(color: Colors.white,
+                              fontSize: 13, fontWeight: FontWeight.w700)),
+                ),
+              ),
             ]),
             const SizedBox(height: 40),
           ]),
