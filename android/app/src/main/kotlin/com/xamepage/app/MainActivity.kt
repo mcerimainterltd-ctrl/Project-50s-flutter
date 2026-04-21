@@ -3,6 +3,7 @@ package com.xamepage.app
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -49,6 +50,15 @@ class MainActivity : FlutterActivity() {
                     }
                     "releaseScreen" -> {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        result.success(null)
+                    }
+                    "shareText" -> {
+                        val text = call.argument<String>("text") ?: ""
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                        }
+                        startActivity(Intent.createChooser(intent, "Share via"))
                         result.success(null)
                     }
                     else -> result.notImplemented()

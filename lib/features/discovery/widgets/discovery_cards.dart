@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/config/constants.dart';
@@ -317,13 +316,22 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
 
   Future<void> _sharePost(BuildContext context) async {
     HapticFeedback.mediumImpact();
-    final text = widget.title.isNotEmpty
-        ? '\${widget.title}\n\nShared via XamePage'
-        : 'Check this out on XamePage';
-    final subject = widget.title.isNotEmpty ? widget.title : 'XamePage';
+    final parts = <String>[];
+    if (widget.title.isNotEmpty) parts.add(widget.title);
+    if (widget.mediaUrl.isNotEmpty) parts.add(widget.mediaUrl);
+    parts.add('Shared via XamePage');
+    final text = parts.join('\n');
     try {
-      await Share.share(text, subject: subject);
-    } catch (_) {}
+      const ch = MethodChannel('com.xamepage.app/call');
+      await ch.invokeMethod('shareText', <String, dynamic>{'text': text});
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Link copied to clipboard'),
+          backgroundColor: Color(0xFF1A4A3A)));
+      }
+    }
   }
 
   void _showPreview(BuildContext context) {
