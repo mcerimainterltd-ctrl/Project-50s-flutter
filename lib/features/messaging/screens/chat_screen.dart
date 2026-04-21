@@ -35,12 +35,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _picker       = ImagePicker();
   bool  _showAttach   = false;
   Timer? _typingTimer;
+  final FocusNode _composerFocus = FocusNode();
   XameMessage? _replyTo;
   final Set<String> _selected = {};
   bool _selectMode = false;
 
-  // Track keyboard height to auto-scroll when keyboard opens
-  double _prevKeyboardHeight = 0;
 
   @override
   void initState() {
@@ -52,6 +51,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.read(socketServiceProvider).emitGetChatHistory(widget.userId);
       Future.delayed(const Duration(milliseconds: 800), _scrollToBottom);
     });
+    // Scroll to bottom when composer gains focus (keyboard opens)
+    _composerFocus.addListener(() {
+      if (_composerFocus.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 300), _scrollToBottom);
+      }
+    });
   }
 
   @override
@@ -59,17 +64,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.read(activeChatIdProvider.notifier).state = null;
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
+    _composerFocus.dispose();
     _typingTimer?.cancel();
     super.dispose();
-  }
-
-  // Called every build — detects keyboard appearing and scrolls down
-  void _handleKeyboardScroll(double keyboardHeight) {
-    if (keyboardHeight > _prevKeyboardHeight && keyboardHeight > 100) {
-      // Keyboard just opened — scroll to bottom after layout settles
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    }
-    _prevKeyboardHeight = keyboardHeight;
   }
 
   void _scrollToBottom() {
@@ -311,14 +308,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final messages = ref.watch(chatProvider(widget.userId));
+    // Auto-scroll when new message arrives
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollCtrl.hasClients) {
+        final atBottom = _scrollCtrl.position.maxScrollExtent -
+            _scrollCtrl.position.pixels < 120;
+        if (atBottom) _scrollToBottom();
+      }
+    });
     final contacts = ref.watch(contactsProvider).valueOrNull ?? [];
     final contact  = contacts.where((c) => c.id == widget.userId).firstOrNull;
     final isTyping = ref.watch(typingProvider).contains(widget.userId);
     final self     = ref.watch(currentUserProvider);
-
-    // BUG 2 FIX: detect keyboard height changes and scroll accordingly
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    _handleKeyboardScroll(keyboardHeight);
 
     return Scaffold(
       backgroundColor: XameColors.darkBg,
@@ -396,6 +397,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         }),
         _Composer(
           controller:   _msgCtrl,
+          focusNode:    _composerFocus,
           onChanged:    _onTextChanged,
           onSend:       _send,
           onAttach:     () => setState(() => _showAttach = !_showAttach),
@@ -826,13 +828,14 @@ class _AttachBtn extends StatelessWidget {
 // ── Composer ──────────────────────────────────────────────────────────────
 class _Composer extends StatefulWidget {
   final TextEditingController controller;
+  final FocusNode             focusNode;
   final Function(String) onChanged;
   final VoidCallback onSend, onAttach;
   final Function(String)? onVoiceNote;
   const _Composer({
-    required this.controller, required this.onChanged,
-    required this.onSend,     required this.onAttach,
-    this.onVoiceNote,
+    required this.controller, required this.focusNode,
+    required this.onChanged,  required this.onSend,
+    required this.onAttach,   this.onVoiceNote,
   });
 
   @override
@@ -865,6 +868,7 @@ class _ComposerState extends State<_Composer> {
       Expanded(
         child: TextField(
           controller:  widget.controller,
+          focusNode:   widget.focusNode,
           onChanged:   widget.onChanged,
           onSubmitted: (_) => widget.onSend(),
           maxLines:    5,
