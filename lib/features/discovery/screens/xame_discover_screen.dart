@@ -1203,21 +1203,39 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     setState(() => _followLoading = true);
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      await dio.post('/api/add-contact', data: {
-        'userId':    self.xameId,
-        'contactId': widget.item.authorId,
-      });
-      if (mounted) setState(() => _following = true);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Now following \${widget.item.authorName}'),
-          backgroundColor: const Color(0xFF1A4A3A),
-        ));
+      if (_following) {
+        // Unfollow
+        await dio.post('/api/remove-contact', data: {
+          'userId':    self.xameId,
+          'contactId': widget.item.authorId,
+        });
+        if (mounted) setState(() => _following = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Unfollowed \${widget.item.authorName}'),
+            backgroundColor: const Color(0xFF1A2332),
+          ));
+        }
+      } else {
+        // Follow
+        await dio.post('/api/add-contact', data: {
+          'userId':    self.xameId,
+          'contactId': widget.item.authorId,
+        });
+        if (mounted) setState(() => _following = true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Now following \${widget.item.authorName}'),
+            backgroundColor: const Color(0xFF1A4A3A),
+          ));
+        }
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Could not follow — try again'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_following
+              ? 'Could not unfollow — try again'
+              : 'Could not follow — try again'),
           backgroundColor: Colors.redAccent,
         ));
       }
