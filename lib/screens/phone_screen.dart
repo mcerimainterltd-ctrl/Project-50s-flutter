@@ -243,6 +243,9 @@ class _PhoneScreenState extends State<PhoneScreen>
   // ── PSTN call via Twilio ──────────────────────────────────────────────────
   // Shows a confirmation sheet with rate and balance before calling.
   // Server handles Twilio call creation, credit deduction, and call logging.
+  // ── PSTN call via Twilio ──────────────────────────────────────────────────
+  // Shows a confirmation sheet with rate and balance before calling.
+  // Server handles Twilio call creation, credit deduction, and call logging.
   Future<void> _callNumber(String number) async {
     if (number.isEmpty) { _snack('No number entered'); return; }
     final full = number.startsWith('+')
@@ -404,6 +407,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     }
   }
 
+  
   Future<void> _smsNumber(String number) async {
     if (number.isEmpty) { _snack('No number entered'); return; }
     final full = number.startsWith('+')
