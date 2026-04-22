@@ -36,7 +36,7 @@ class SoccerScoreOverlay extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
-                child: Text(score, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.black, fontSize: 12)),
+                child: Text(score, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 12)),
               ),
               const SizedBox(width: 6),
               Text(awayTeam, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
