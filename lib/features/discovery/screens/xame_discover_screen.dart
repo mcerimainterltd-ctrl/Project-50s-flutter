@@ -1,3 +1,4 @@
+import "../widgets/tv_entry_button.dart";
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
@@ -305,6 +306,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
               ]),
               actions: [
+          TVEntryButton(onTap: () => Navigator.pushNamed(context, "/tv")),
                 IconButton(
                   icon: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
