@@ -306,7 +306,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
               ]),
               actions: [
-          TVEntryButton(onTap: () => Navigator.pushNamed(context, "/tv")),
+          TVEntryButton(onTap: () => context.push("/tv")),
                 IconButton(
                   icon: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
