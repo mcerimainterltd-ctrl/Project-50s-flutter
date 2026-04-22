@@ -9,7 +9,7 @@ import '../../../core/services/socket_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/models/xame_user.dart';
-import '../sms_templates.dart';
+import '../../messaging/sms_templates.dart';
 
 class IncomingCallScreen extends ConsumerStatefulWidget {
   const IncomingCallScreen({super.key});

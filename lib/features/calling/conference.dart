@@ -238,7 +238,7 @@ class ConferenceService {
     final participant = ConferenceParticipant(
       peerId:      peerId,
       displayName: displayName,
-      stream:      MediaStream('remote-$peerId'),
+      stream:      null,
       pc:          pc,
     );
 

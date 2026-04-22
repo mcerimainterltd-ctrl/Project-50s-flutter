@@ -111,7 +111,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _openDisappearingTimer() {
-    final contactId = widget.contact?.id ?? widget.contactId;
+    final contactId = widget.userId;
     if (contactId == null) return;
     final socket = ref.read(socketServiceProvider);
     final user   = ref.read(currentUserProvider);
