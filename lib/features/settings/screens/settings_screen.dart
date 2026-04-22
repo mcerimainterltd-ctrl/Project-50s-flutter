@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import 'theme_picker_screen.dart';
+import '../../calling/call_settings.dart';
 
 // ── Settings state ────────────────────────────────────────────────────────────
 class _SettingsData {
@@ -280,6 +281,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle:  'Show call UI on lock screen',
               value:     settings.callFullscreen,
               onChanged: (v) => save(settings.copyWith(callFullscreen: v)),
+            ),
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.block_outlined,
+              title:    "Blocked Numbers",
+              subtitle: "Manage blocked contacts",
+              onTap:    () => BlockedNumbersDialog.show(context, contacts: const []),
             ),
           ]),
 

@@ -7,6 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/services/webrtc_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/socket_service.dart';
+import '../screen_share.dart';
+import '../call_schedule.dart';
+import '../conference.dart';
 
 class CallScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -29,6 +34,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _isCamMuted   = false;
   bool _isSpeakerOn  = false;
   bool _isLocalMain  = false;
+  bool _isScreenSharing = false;
+  late ScreenShareService  _screenShare;
+  CallScheduleService?     _callSchedule;
+  ConferenceService?       _conference;
   bool _showControls = true;
   String? _callEndReason;
   Offset _thumbnailOffset = const Offset(20, 100);
@@ -40,6 +49,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   void initState() {
     super.initState();
+    final socket = ref.read(socketServiceProvider);
+    final user   = ref.read(currentUserProvider);
+    _screenShare = ScreenShareService(socket);
+    if (user != null) {
+      _callSchedule = CallScheduleService(socket, user.xameId);
+      _conference   = ConferenceService(
+        socket:      socket,
+        screenShare: _screenShare,
+        userId:      user.xameId,
+        displayName: user.preferredName ?? user.firstName,
+      );
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final service = ref.read(webRTCServiceProvider);
       service.initRenderers();
@@ -258,6 +279,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         setState(() => _isSpeakerOn = !_isSpeakerOn);
                         Helper.setSpeakerphoneOn(_isSpeakerOn);
                       }),
+                      _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
+                      _vBtn(Icons.schedule_outlined, false, "Schedule", _openSchedule),
+                      _vBtn(Icons.group_outlined, false, "Conference", _openConference),
                       _endBtn(webrtc),
                     ],
                   ),
@@ -487,6 +511,35 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     ),
   );
 
+  Future<void> _toggleScreenShare() async {
+    try {
+      await _screenShare.toggle();
+      setState(() => _isScreenSharing = _screenShare.isSharing);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Screen share failed: $e")));
+    }
+  }
+
+  void _openSchedule() {
+    final user = ref.read(currentUserProvider);
+    if (user == null || _callSchedule == null) return;
+    ScheduleCallDialog.show(context,
+      recipientId:   widget.userId,
+      recipientName: widget.userId,
+      service:       _callSchedule!,
+    );
+  }
+
+  void _openConference() {
+    if (_conference == null) return;
+    _conference!.create();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ConferenceOverlay(service: _conference!),
+    );
+  }
   Widget _vBtn(IconData icon, bool active, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,

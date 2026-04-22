@@ -7,6 +7,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/services/webrtc_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../shared/models/xame_user.dart';
+import '../sms_templates.dart';
 
 class IncomingCallScreen extends ConsumerStatefulWidget {
   const IncomingCallScreen({super.key});
@@ -149,6 +152,21 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                           webrtc.rejectCall();
                           context.pop();
                         },
+                      ),
+                      _buildControl(
+                        icon: Icons.message_outlined,
+                        label: "Reply",
+                        color: Colors.blueAccent,
+                        onTap: () => QuickReplySheet.show(
+                          context,
+                          callerId:      userId,
+                          socket:        ref.read(socketServiceProvider),
+                          currentUserId: ref.read(currentUserProvider)?.xameId ?? "",
+                          onDecline: () {
+                            webrtc.rejectCall();
+                            context.pop();
+                          },
+                        ),
                       ),
                       _buildControl(
                         icon: isVideo ? Icons.videocam : Icons.call,

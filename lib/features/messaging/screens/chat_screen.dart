@@ -20,6 +20,7 @@ import '../../contacts/providers/contacts_provider.dart';
 import '../../contacts/screens/contacts_screen.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
+import '../disappearing.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -107,6 +108,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!await file.exists()) return;
     await ref.read(chatProvider(widget.userId).notifier)
         .sendFile(file, 'audio/aac');
+  }
+
+  void _openDisappearingTimer() {
+    final contactId = widget.contact?.id ?? widget.contactId;
+    if (contactId == null) return;
+    final socket = ref.read(socketServiceProvider);
+    final user   = ref.read(currentUserProvider);
+    DisappearingTimerDialog.show(
+      context,
+      contactId:     contactId,
+      socket:        socket,
+      currentUserId: user?.xameId ?? "",
+    );
   }
 
   Future<void> _send() async {
@@ -411,6 +425,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           onSend:       _send,
           onAttach:     () => setState(() => _showAttach = !_showAttach),
           onVoiceNote:  _sendVoiceNote,
+          onDisappearing: _openDisappearingTimer,
         ),
       ]),
     );
@@ -840,11 +855,12 @@ class _Composer extends StatefulWidget {
   final FocusNode             focusNode;
   final Function(String) onChanged;
   final VoidCallback onSend, onAttach;
+  final VoidCallback? onDisappearing;
   final Function(String)? onVoiceNote;
   const _Composer({
     required this.controller, required this.focusNode,
     required this.onChanged,  required this.onSend,
-    required this.onAttach,   this.onVoiceNote,
+    required this.onAttach,   this.onVoiceNote, this.onDisappearing,
   });
 
   @override
@@ -874,6 +890,9 @@ class _ComposerState extends State<_Composer> {
       IconButton(
           icon: const Icon(Icons.attach_file_rounded, color: Colors.white54),
           onPressed: widget.onAttach),
+      IconButton(
+          icon: const Icon(Icons.timer_outlined, color: Colors.white54),
+          onPressed: widget.onDisappearing),
       Expanded(
         child: TextField(
           controller:  widget.controller,

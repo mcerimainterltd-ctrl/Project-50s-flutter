@@ -13,6 +13,7 @@ import '../../../shared/models/xame_user.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../settings/screens/theme_picker_screen.dart';
 import '../../../core/theme/app_theme.dart';
+import '../avatar_builder.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 final _sessionsProvider = FutureProvider.autoDispose
@@ -104,6 +105,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             title: const Text('Gallery', style: TextStyle(color: Colors.white)),
             onTap: () => Navigator.pop(context, ImageSource.gallery)),
           ListTile(
+            leading: const Icon(Icons.face_outlined, color: Color(0xFF00B0A0)),
+            title: const Text('🎨 Build Avatar', style: TextStyle(color: Colors.white)),
+            onTap: () { Navigator.pop(context); _openAvatarBuilder(); }),
+          ListTile(
             leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
             title: const Text('Remove Photo',
                 style: TextStyle(color: Colors.redAccent)),
@@ -123,6 +128,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   // ── Save profile ────────────────────────────────────────────────────────────
+
+  void _openAvatarBuilder() {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    AvatarBuilderSheet.show(
+      context,
+      xameId: user.xameId,
+      onSaved: (dataUrl) {
+        final updated = XameUser(
+          xameId:               user.xameId,
+          firstName:            user.firstName,
+          lastName:             user.lastName,
+          email:                user.email,
+          phone:                user.phone,
+          preferredName:        user.preferredName,
+          profilePic:           dataUrl,
+          hidePreferredName:    user.hidePreferredName,
+          hideProfilePicture:   user.hideProfilePicture,
+          personalStatusEmoji:  user.personalStatusEmoji,
+          personalStatusMessage: user.personalStatusMessage,
+          sessionToken:         user.sessionToken,
+        );
+        ref.read(currentUserProvider.notifier).state = updated;
+        _snack("Avatar saved!", success: true);
+      },
+    );
+  }
   Future<void> _save() async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;

@@ -14,6 +14,8 @@ import '../../../core/services/socket_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/xame_user.dart';
 import '../providers/contacts_provider.dart';
+import '../../messaging/broadcast.dart';
+import '../../messaging/groups.dart';
 
 class ContactsScreen extends ConsumerStatefulWidget {
   const ContactsScreen({super.key});
@@ -366,6 +368,41 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           title: const Text('Wallet',
             style: TextStyle(color: Colors.white)),
           onTap: () { Navigator.pop(context); context.go('/wallet'); }),
+        ListTile(
+          leading: const Icon(Icons.campaign_outlined, color: Colors.white70),
+          title: const Text("Mass Messaging",
+            style: TextStyle(color: Colors.white)),
+          onTap: () {
+            Navigator.pop(context);
+            final user = ref.read(currentUserProvider);
+            final socket = ref.read(socketServiceProvider);
+            if (user == null) return;
+            final svc = BroadcastService(socket, user.xameId);
+            svc.load().then((_) => BroadcastScreen.show(context,
+              service: svc,
+              contacts: (ref.read(contactsProvider).value ?? []).map((c) => {"id": c.id, "name": c.name}).toList(),
+              currentUserId: user.xameId,
+            ));
+          }),
+        ListTile(
+          leading: const Icon(Icons.group_outlined, color: Colors.white70),
+          title: const Text("Groups",
+            style: TextStyle(color: Colors.white)),
+          onTap: () {
+            Navigator.pop(context);
+            final user = ref.read(currentUserProvider);
+            final socket = ref.read(socketServiceProvider);
+            if (user == null) return;
+            final svc = GroupsService(socket, user.xameId);
+            GroupsListScreen.show(context,
+              service: svc,
+              contacts: (ref.read(contactsProvider).value ?? []).map((c) => {"id": c.id, "name": c.name}).toList(),
+              currentUserId: user.xameId,
+              onOpenChat: (group) {
+                debugPrint("Open group chat: ${group.groupId}");
+              },
+            );
+          }),
         ListTile(
           leading: const Icon(Icons.settings_outlined, color: Colors.white70),
           title: const Text('Settings',
