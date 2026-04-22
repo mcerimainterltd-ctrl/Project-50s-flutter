@@ -240,15 +240,167 @@ class _PhoneScreenState extends State<PhoneScreen>
   }
 
   // ── Native call via tel: URI ─────────────────────────────────────────────────
+  // ── PSTN call via Twilio ──────────────────────────────────────────────────
+  // Shows a confirmation sheet with rate and balance before calling.
+  // Server handles Twilio call creation, credit deduction, and call logging.
   Future<void> _callNumber(String number) async {
     if (number.isEmpty) { _snack('No number entered'); return; }
     final full = number.startsWith('+')
         ? number : '${_country.dial}$number';
-    final uri = Uri.parse('tel:$full');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      _snack('Cannot make call');
+
+    // Get rate for this country from already-loaded _rates map
+    final rateData = _rates[_country.code] ?? _rates['default'];
+    final rate     = (rateData is Map ? rateData['rate'] : rateData) ?? 20;
+
+    // Show confirmation sheet before calling
+    if (!mounted) return;
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: _kCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('📞 Confirm Call',
+              style: TextStyle(color: Colors.white,
+                  fontSize: 17, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 16),
+          // Number row
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: _kBg,
+                borderRadius: BorderRadius.circular(12)),
+            child: Row(children: [
+              Text(_country.flag,
+                  style: const TextStyle(fontSize: 22)),
+              const SizedBox(width: 10),
+              Expanded(child: Text(full,
+                  style: const TextStyle(color: Colors.white,
+                      fontSize: 18, fontWeight: FontWeight.w700,
+                      letterSpacing: 1))),
+            ]),
+          ),
+          const SizedBox(height: 12),
+          // Rate and balance
+          Row(children: [
+            Expanded(child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(color: _kBg,
+                  borderRadius: BorderRadius.circular(10)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                const Text('Rate / min',
+                    style: TextStyle(color: _kMuted, fontSize: 11)),
+                const SizedBox(height: 4),
+                Text('$_creditsCurr $rate',
+                    style: const TextStyle(color: Colors.white,
+                        fontSize: 15, fontWeight: FontWeight.w700)),
+              ]),
+            )),
+            const SizedBox(width: 10),
+            Expanded(child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(color: _kBg,
+                  borderRadius: BorderRadius.circular(10)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                const Text('Your Balance',
+                    style: TextStyle(color: _kMuted, fontSize: 11)),
+                const SizedBox(height: 4),
+                Text('$_creditsCurr ${_credits.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        color: _credits >= rate
+                            ? const Color(0xFF00FF88)
+                            : const Color(0xFFE53935),
+                        fontSize: 15, fontWeight: FontWeight.w700)),
+              ]),
+            )),
+          ]),
+          if (_credits < rate) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                  color: const Color(0x1AE53935),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: const Color(0x33E53935))),
+              child: Row(children: [
+                const Icon(Icons.warning_amber_rounded,
+                    color: Color(0xFFE53935), size: 16),
+                const SizedBox(width: 8),
+                Expanded(child: Text(
+                  'Insufficient credits. Top up to continue.',
+                  style: const TextStyle(
+                      color: Color(0xFFE53935), fontSize: 12))),
+              ]),
+            ),
+          ],
+          const SizedBox(height: 20),
+          Row(children: [
+            Expanded(child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white24),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+              onPressed: () => Navigator.pop(_, false),
+              child: const Text('Cancel',
+                  style: TextStyle(color: Colors.white)))),
+            const SizedBox(width: 12),
+            Expanded(flex: 2, child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: _credits >= rate
+                      ? const Color(0xFF00FF88)
+                      : Colors.grey,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+              onPressed: _credits >= rate
+                  ? () => Navigator.pop(_, true)
+                  : null,
+              child: const Text('Call Now',
+                  style: TextStyle(fontWeight: FontWeight.w700,
+                      fontSize: 15)))),
+          ]),
+        ]),
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Initiate call via server → Twilio
+    _snack('📞 Connecting…');
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/pstn/call'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId':      widget.userId,
+          'to':          full,
+          'countryCode': _country.code,
+        }),
+      ).timeout(const Duration(seconds: 20));
+
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        // Deduct from local balance to reflect server deduction
+        setState(() {
+          _credits = (_credits -
+              ((d['deducted'] as num?)?.toDouble() ?? rate))
+              .clamp(0, double.infinity);
+        });
+        _snack('📞 Call connected');
+      } else {
+        _snack('❌ ${d['message'] ?? 'Call failed'}');
+      }
+    } catch (_) {
+      _snack('❌ Call failed — check connection');
     }
   }
 

@@ -575,109 +575,34 @@ class _LightboxState extends State<_Lightbox> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    final item = widget.items[_idx];
+    final it = widget.items[_idx];
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        onTap: () => setState(() => _showUI = !_showUI),
-        child: Stack(children: [
-          // Full screen swipeable images
-          PageView.builder(
-            controller: _page, itemCount: widget.items.length,
-            onPageChanged: (i) => setState(() => _idx = i),
-            itemBuilder: (_, i) {
-              final it = widget.items[i];
-              return Center(
-                child: Image.network(
-                  it.url,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (_, child, progress) =>
-                      progress == null ? child : const Center(
-                          child: CircularProgressIndicator(
-                              color: _kTeal, strokeWidth: 1.5)),
-                  errorBuilder: (_, __, ___) => const Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.white24, size: 64),
-                ),
-              );
-            },
-          ),
-
-          // Top bar
-          AnimatedOpacity(
-            opacity: _showUI ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
-            child: Positioned(top: 0, left: 0, right: 0,
-              child: Container(
-                decoration: const BoxDecoration(gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Colors.black87, Colors.transparent])),
-                padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 4,
-                    left: 4, right: 16, bottom: 20),
-                child: Row(children: [
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: Colors.white, size: 22),
-                    onPressed: () => Navigator.pop(context)),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Text('${_idx + 1} / ${widget.items.length}',
-                        style: const TextStyle(color: Colors.white70,
-                            fontSize: 12, fontWeight: FontWeight.w600))),
-                ]),
-              )),
-          ),
-
-          // Bottom info
-          if (item.caption.isNotEmpty || item.hasPrice ||
-              item.hasContact || item.description.isNotEmpty)
-            AnimatedOpacity(
-              opacity: _showUI ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: Positioned(bottom: 0, left: 0, right: 0,
-                child: Container(
-                  decoration: const BoxDecoration(gradient: LinearGradient(
-                    begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                    colors: [Colors.black, Colors.transparent])),
-                  padding: EdgeInsets.fromLTRB(20, 32, 20,
-                      MediaQuery.of(context).padding.bottom + 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (item.caption.isNotEmpty)
-                        Text(item.caption, style: const TextStyle(
-                            color: Colors.white, fontSize: 16,
-                            fontWeight: FontWeight.w700)),
-                      if (item.description.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(item.description, style: const TextStyle(
-                            color: Colors.white70, fontSize: 13)),
-                      ],
-                      const SizedBox(height: 10),
-                      Wrap(spacing: 8, runSpacing: 8, children: [
-                        if (item.hasPrice)
-                          _InfoChip('₦${item.price}', Icons.payments_outlined,
-                              const Color(0xFF4CAF50)),
-                        if (item.phone.isNotEmpty)
-                          _InfoChip(item.phone, Icons.phone_outlined, _kTeal),
-                        if (item.email.isNotEmpty)
-                          _InfoChip(item.email, Icons.email_outlined,
-                              const Color(0xFF8B5CF6)),
-                      ]),
-                    ],
-                  ),
-                )),
-            ),
-        ]),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop()),
+        title: Text('${_idx + 1} / ${widget.items.length}',
+            style: const TextStyle(color: Colors.white70, fontSize: 13)),
+      ),
+      body: PageView.builder(
+        controller: _page,
+        itemCount: widget.items.length,
+        onPageChanged: (i) => setState(() => _idx = i),
+        itemBuilder: (_, i) => Image.network(
+          widget.items[i].url,
+          fit: BoxFit.contain,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (_, __, ___) => const Center(
+            child: Icon(Icons.broken_image, color: Colors.white54, size: 64)),
+        ),
       ),
     );
+  }
   }
 }
 
