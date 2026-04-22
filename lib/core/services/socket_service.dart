@@ -69,6 +69,31 @@ class SocketService {
   Stream<ContactStatusData>         get contactStatus    => _contactStatusCtrl.stream;
   Stream<String>                    get forceLogout      => _forceLogoutCtrl.stream;
   Stream<String>                    get missedCallCount  => _missedCallCountCtrl.stream;
+  final _confPeerJoinedCtrl    = StreamController<ConferencePeerData>.broadcast();
+  final _confPeerLeftCtrl      = StreamController<ConferencePeerData>.broadcast();
+  final _confOfferCtrl         = StreamController<ConferenceSignalData>.broadcast();
+  final _confAnswerCtrl        = StreamController<ConferenceSignalData>.broadcast();
+  final _confIceCtrl           = StreamController<ConferenceSignalData>.broadcast();
+  final _confMicToggleCtrl     = StreamController<ConferenceMicData>.broadcast();
+  final _confHandCtrl          = StreamController<ConferenceHandData>.broadcast();
+  final _confMutedByHostCtrl   = StreamController<void>.broadcast();
+  final _confRemovedByHostCtrl = StreamController<void>.broadcast();
+  final _confScreenStartCtrl   = StreamController<ConferenceScreenShareData>.broadcast();
+  final _confScreenStopCtrl    = StreamController<void>.broadcast();
+  final _confRoomClosedCtrl    = StreamController<void>.broadcast();
+
+  Stream<ConferencePeerData>        get confPeerJoined    => _confPeerJoinedCtrl.stream;
+  Stream<ConferencePeerData>        get confPeerLeft      => _confPeerLeftCtrl.stream;
+  Stream<ConferenceSignalData>      get confOffer         => _confOfferCtrl.stream;
+  Stream<ConferenceSignalData>      get confAnswer        => _confAnswerCtrl.stream;
+  Stream<ConferenceSignalData>      get confIce           => _confIceCtrl.stream;
+  Stream<ConferenceMicData>         get confMicToggle     => _confMicToggleCtrl.stream;
+  Stream<ConferenceHandData>        get confHand          => _confHandCtrl.stream;
+  Stream<void>                      get confMutedByHost   => _confMutedByHostCtrl.stream;
+  Stream<void>                      get confRemovedByHost => _confRemovedByHostCtrl.stream;
+  Stream<ConferenceScreenShareData> get confScreenStart   => _confScreenStartCtrl.stream;
+  Stream<void>                      get confScreenStop    => _confScreenStopCtrl.stream;
+  Stream<void>                      get confRoomClosed    => _confRoomClosedCtrl.stream;
 
   bool get isConnected => _socket?.connected ?? false;
 
@@ -304,6 +329,42 @@ class SocketService {
     // ── Force logout ──────────────────────────────────────────────────────
     socket.on('force-logout', (d) =>
       _forceLogoutCtrl.add(d?['reason'] ?? 'Logged out remotely.'));
+
+    // ── Conference ────────────────────────────────────────────────────────
+    socket.on("conference:peer-joined", (d) {
+      if (d != null) _confPeerJoinedCtrl.add(ConferencePeerData(
+        peerId: d["peerId"] ?? "", displayName: d["displayName"] ?? ""));
+    });
+    socket.on("conference:peer-left", (d) {
+      if (d != null) _confPeerLeftCtrl.add(ConferencePeerData(
+        peerId: d["peerId"] ?? "", displayName: d["displayName"] ?? ""));
+    });
+    socket.on("conference:offer", (d) {
+      if (d != null) _confOfferCtrl.add(ConferenceSignalData(
+        from: d["from"] ?? "", payload: Map<String,dynamic>.from(d)));
+    });
+    socket.on("conference:answer", (d) {
+      if (d != null) _confAnswerCtrl.add(ConferenceSignalData(
+        from: d["from"] ?? "", payload: Map<String,dynamic>.from(d)));
+    });
+    socket.on("conference:ice", (d) {
+      if (d != null) _confIceCtrl.add(ConferenceSignalData(
+        from: d["from"] ?? "", payload: Map<String,dynamic>.from(d)));
+    });
+    socket.on("conference:mic-toggle", (d) {
+      if (d != null) _confMicToggleCtrl.add(ConferenceMicData(
+        userId: d["userId"] ?? "", muted: d["muted"] ?? false));
+    });
+    socket.on("conference:raise-hand", (d) {
+      if (d != null) _confHandCtrl.add(ConferenceHandData(
+        userId: d["userId"] ?? "", raised: d["raised"] ?? false));
+    });
+    socket.on("conference:muted-by-host",    (_) => _confMutedByHostCtrl.add(null));
+    socket.on("conference:removed-by-host",  (_) => _confRemovedByHostCtrl.add(null));
+    socket.on("conference:screen-share-started", (d) => _confScreenStartCtrl.add(
+      ConferenceScreenShareData(userId: d?["userId"])));
+    socket.on("conference:screen-share-stopped", (_) => _confScreenStopCtrl.add(null));
+    socket.on("conference:room-closed",      (_) => _confRoomClosedCtrl.add(null));
   }
 
   void emit(String event, dynamic data) {
@@ -328,6 +389,7 @@ class SocketService {
   void emitCallRejected(String r, String reason)   => emit('call-rejected',      {'recipientId': r, 'reason': reason});
   void emitCallEnded(String r)                     => emit('call-ended',         {'recipientId': r});
   void emitGroupTyping(String g, String u, String n)=> emit('group:typing',      {'groupId': g, 'userId': u, 'name': n});
+  void emitDisappearingTimer(String contactId, String userId, String value) => emit("disappearing:timer-set", {"contactId": contactId, "userId": userId, "value": value});
 
   void startHeartbeat(String xameId, {bool stealth = false}) {
     stopHeartbeat();
@@ -403,4 +465,26 @@ class WalletReceiveData {
 class ContactStatusData {
   final String userId, status;
   const ContactStatusData({required this.userId, required this.status});
+}
+
+// ── Conference data classes ───────────────────────────────────────────────────
+class ConferencePeerData {
+  final String peerId, displayName;
+  const ConferencePeerData({required this.peerId, required this.displayName});
+}
+class ConferenceSignalData {
+  final String from; final Map<String, dynamic> payload;
+  const ConferenceSignalData({required this.from, required this.payload});
+}
+class ConferenceMicData {
+  final String userId; final bool muted;
+  const ConferenceMicData({required this.userId, required this.muted});
+}
+class ConferenceHandData {
+  final String userId; final bool raised;
+  const ConferenceHandData({required this.userId, required this.raised});
+}
+class ConferenceScreenShareData {
+  final String? userId;
+  const ConferenceScreenShareData({this.userId});
 }
