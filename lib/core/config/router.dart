@@ -1,5 +1,6 @@
 import "../../features/discovery/screens/people_discovery_screen.dart";
 import "../../features/discovery/screens/discovery_aura_feed.dart";
+import "../../features/tv/screens/xame_tv_page.dart";
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,7 +43,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-    GoRoute(path: "/discovery", name: "discovery", builder: (context, state) => const DiscoveryAuraFeed()),
+      GoRoute(path: "/discovery", name: "discovery", builder: (context, state) => const DiscoveryAuraFeed()),
+      GoRoute(path: "/tv", name: "tv", builder: (context, state) => const XameTVPage()),
       GoRoute(path: "/people", name: "people", builder: (c, s) => const PeopleDiscoveryScreen()),
       GoRoute(path: '/login',    builder: (c, s) => const LoginScreen()),
       GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
