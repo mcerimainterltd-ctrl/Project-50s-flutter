@@ -5,70 +5,41 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:xamepage/core/config/constants.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
-// ── Color palettes ────────────────────────────────────────────────────────────
-const _skinColors  = ['#FDDBB4','#F5C89A','#E8A87C','#C68642','#8D5524','#4A2912'];
-const _hairColors  = ['#1a1a1a','#2c1b0e','#6B3A2A','#A0522D','#C19A6B','#F4C842','#E8E8E8','#FF6B6B','#7B68EE'];
-const _eyeColors   = ['#1a1a1a','#3B2314','#4E8098','#2D6A2D','#8B6914','#7B68EE'];
-const _lipColors   = ['#C46B6B','#E88080','#FF9999','#A0522D','#8B4513','#FF6B6B'];
-const _bgColors    = ['#1a3a4a','#2d1b4e','#1a4a2d','#4a1a1a','#1a2a4a','#3a3a1a','#4a2d1a','#1a4a4a'];
+// ── Palettes ──────────────────────────────────────────────────────────────────
+const _skinColors = ['#FDDBB4','#F5C89A','#E8A87C','#C68642','#8D5524','#4A2912'];
+const _hairColors = ['#1a1a1a','#2c1b0e','#6B3A2A','#A0522D','#C19A6B','#F4C842',
+                     '#E8E8E8','#FF6B6B','#7B68EE'];
+const _eyeColors  = ['#1a1a1a','#3B2314','#4E8098','#2D6A2D','#8B6914','#7B68EE'];
+const _lipColors  = ['#C46B6B','#E88080','#FF9999','#A0522D','#8B4513','#FF6B6B'];
+const _bgColors   = ['#1a3a4a','#2d1b4e','#1a4a2d','#4a1a1a','#1a2a4a',
+                     '#3a3a1a','#4a2d1a','#1a4a4a'];
 
-// ── Hair styles ───────────────────────────────────────────────────────────────
-class _HairStyle {
-  final String id;
-  final String label;
-  const _HairStyle(this.id, this.label);
-}
+class _HairStyle { final String id, label; const _HairStyle(this.id, this.label); }
+class _Accessory  { final String id, label; const _Accessory(this.id, this.label); }
 
 const _hairStyles = [
-  _HairStyle('short',  'Short'),
-  _HairStyle('medium', 'Medium'),
-  _HairStyle('long',   'Long'),
-  _HairStyle('curly',  'Curly'),
-  _HairStyle('bald',   'Bald'),
-  _HairStyle('bun',    'Bun'),
+  _HairStyle('short',  'Short'),  _HairStyle('medium', 'Medium'),
+  _HairStyle('long',   'Long'),   _HairStyle('curly',  'Curly'),
+  _HairStyle('bald',   'Bald'),   _HairStyle('bun',    'Bun'),
 ];
-
-// ── Accessories ───────────────────────────────────────────────────────────────
-class _Accessory {
-  final String id;
-  final String label;
-  const _Accessory(this.id, this.label);
-}
-
 const _accessories = [
-  _Accessory('none',       'None'),
-  _Accessory('glasses',    'Glasses'),
-  _Accessory('sunglasses', 'Sunnies'),
-  _Accessory('hat',        'Hat'),
-  _Accessory('earrings',   'Earrings'),
-  _Accessory('headband',   'Headband'),
+  _Accessory('none',       'None'),      _Accessory('glasses',    'Glasses'),
+  _Accessory('sunglasses', 'Sunnies'),   _Accessory('hat',        'Hat'),
+  _Accessory('earrings',   'Earrings'),  _Accessory('headband',   'Headband'),
 ];
 
-// ── Avatar state ──────────────────────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────────────────────────────
 class AvatarConfig {
-  final String skin;
-  final String hairColor;
-  final String hairStyle;
-  final String eyeColor;
-  final String lipColor;
-  final String accessory;
-  final String bgColor;
+  final String skin, hairColor, hairStyle, eyeColor, lipColor, accessory, bgColor;
+  const AvatarConfig({required this.skin, required this.hairColor,
+      required this.hairStyle, required this.eyeColor, required this.lipColor,
+      required this.accessory, required this.bgColor});
 
-  const AvatarConfig({
-    required this.skin,
-    required this.hairColor,
-    required this.hairStyle,
-    required this.eyeColor,
-    required this.lipColor,
-    required this.accessory,
-    required this.bgColor,
-  });
-
-  AvatarConfig copyWith({
-    String? skin, String? hairColor, String? hairStyle,
-    String? eyeColor, String? lipColor, String? accessory, String? bgColor,
-  }) => AvatarConfig(
+  AvatarConfig copyWith({String? skin, String? hairColor, String? hairStyle,
+      String? eyeColor, String? lipColor, String? accessory,
+      String? bgColor}) => AvatarConfig(
     skin:      skin      ?? this.skin,
     hairColor: hairColor ?? this.hairColor,
     hairStyle: hairStyle ?? this.hairStyle,
@@ -79,25 +50,20 @@ class AvatarConfig {
   );
 
   static AvatarConfig get defaults => const AvatarConfig(
-    skin:      '#FDDBB4',
-    hairColor: '#1a1a1a',
-    hairStyle: 'short',
-    eyeColor:  '#1a1a1a',
-    lipColor:  '#C46B6B',
-    accessory: 'none',
-    bgColor:   '#1a3a4a',
-  );
+    skin: '#FDDBB4', hairColor: '#1a1a1a', hairStyle: 'short',
+    eyeColor: '#1a1a1a', lipColor: '#C46B6B', accessory: 'none',
+    bgColor: '#1a3a4a');
 
   static AvatarConfig random() {
-    final rnd = Random();
+    final r = Random();
     return AvatarConfig(
-      skin:      _skinColors [rnd.nextInt(_skinColors.length)],
-      hairColor: _hairColors [rnd.nextInt(_hairColors.length)],
-      hairStyle: _hairStyles [rnd.nextInt(_hairStyles.length)].id,
-      eyeColor:  _eyeColors  [rnd.nextInt(_eyeColors.length)],
-      lipColor:  _lipColors  [rnd.nextInt(_lipColors.length)],
-      accessory: _accessories[rnd.nextInt(_accessories.length)].id,
-      bgColor:   _bgColors   [rnd.nextInt(_bgColors.length)],
+      skin:      _skinColors[r.nextInt(_skinColors.length)],
+      hairColor: _hairColors[r.nextInt(_hairColors.length)],
+      hairStyle: _hairStyles[r.nextInt(_hairStyles.length)].id,
+      eyeColor:  _eyeColors [r.nextInt(_eyeColors.length)],
+      lipColor:  _lipColors [r.nextInt(_lipColors.length)],
+      accessory: _accessories[r.nextInt(_accessories.length)].id,
+      bgColor:   _bgColors  [r.nextInt(_bgColors.length)],
     );
   }
 }
@@ -119,8 +85,6 @@ String buildAvatarSvg(AvatarConfig s) {
   <circle cx="66" cy="48" r="1.5" fill="white"/>
   <path d="M38,58 Q50,65 62,58 Q56,68 44,68Z" fill="${s.lipColor}"/>
   <path d="M38,58 Q50,62 62,58" fill="none" stroke="${s.lipColor}" stroke-width="1.5"/>
-  <ellipse cx="28" cy="60" rx="6" ry="4" fill="${s.skin}" opacity="0.6"/>
-  <ellipse cx="72" cy="60" rx="6" ry="4" fill="${s.skin}" opacity="0.6"/>
   <ellipse cx="28" cy="60" rx="4" ry="2.5" fill="#E88080" opacity="0.3"/>
   <ellipse cx="72" cy="60" rx="4" ry="2.5" fill="#E88080" opacity="0.3"/>
   <path d="M32,37 Q34,33 38,35" fill="none" stroke="${s.hairColor}" stroke-width="1.5" stroke-linecap="round"/>
@@ -147,15 +111,11 @@ String _accessorySvg(String id) {
     case 'glasses':
       return '<rect x="22" y="48" width="20" height="12" rx="4" fill="none" stroke="#333" stroke-width="2"/>'
              '<rect x="58" y="48" width="20" height="12" rx="4" fill="none" stroke="#333" stroke-width="2"/>'
-             '<line x1="42" y1="54" x2="58" y2="54" stroke="#333" stroke-width="2"/>'
-             '<line x1="10" y1="52" x2="22" y2="52" stroke="#333" stroke-width="2"/>'
-             '<line x1="78" y1="52" x2="90" y2="52" stroke="#333" stroke-width="2"/>';
+             '<line x1="42" y1="54" x2="58" y2="54" stroke="#333" stroke-width="2"/>';
     case 'sunglasses':
       return '<rect x="20" y="47" width="24" height="13" rx="4" fill="#222" opacity="0.85"/>'
              '<rect x="56" y="47" width="24" height="13" rx="4" fill="#222" opacity="0.85"/>'
-             '<line x1="44" y1="53" x2="56" y2="53" stroke="#555" stroke-width="2"/>'
-             '<line x1="8" y1="51" x2="20" y2="51" stroke="#555" stroke-width="2"/>'
-             '<line x1="80" y1="51" x2="92" y2="51" stroke="#555" stroke-width="2"/>';
+             '<line x1="44" y1="53" x2="56" y2="53" stroke="#555" stroke-width="2"/>';
     case 'hat':
       return '<rect x="15" y="18" width="70" height="8" rx="4" fill="#333"/>'
              '<rect x="28" y="4" width="44" height="18" rx="6" fill="#333"/>';
@@ -164,228 +124,182 @@ String _accessorySvg(String id) {
              '<circle cx="88" cy="65" r="4" fill="#FFD700"/>';
     case 'headband':
       return '<path d="M12,38 Q50,28 88,38" fill="none" stroke="#FF6B6B" stroke-width="6" stroke-linecap="round"/>';
-    default:
-      return '';
+    default: return '';
   }
 }
 
-// ── Avatar Painter ────────────────────────────────────────────────────────────
+// ── Canvas Painter ────────────────────────────────────────────────────────────
 class AvatarPainter extends StatelessWidget {
   final AvatarConfig config;
   final double size;
-
   const AvatarPainter({super.key, required this.config, this.size = 100});
 
   @override
-  Widget build(BuildContext context) {
-    // Render via SVG string displayed in a Container using a custom paint approach
-    // We use the SVG as a data URI in an Image widget via memory
-    return SizedBox(
-      width: size,
-      height: size,
-      child: ClipOval(
-        child: CustomPaint(
-          size: Size(size, size),
-          painter: _AvatarCustomPainter(config),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SizedBox(
+    width: size, height: size,
+    child: ClipOval(child: CustomPaint(
+      size: Size(size, size),
+      painter: _AvatarCanvasPainter(config))),
+  );
 }
 
-class _AvatarCustomPainter extends CustomPainter {
+class _AvatarCanvasPainter extends CustomPainter {
   final AvatarConfig config;
-  _AvatarCustomPainter(this.config);
+  _AvatarCanvasPainter(this.config);
 
   Color _c(String hex) {
     final h = hex.replaceAll('#', '');
-    final val = int.parse(h.length == 6 ? 'FF$h' : h, radix: 16);
-    return Color(val);
+    return Color(int.parse('FF$h', radix: 16));
   }
 
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.width / 100;
-    final paint = Paint()..isAntiAlias = true;
+    final p = Paint()..isAntiAlias = true;
 
     // Background
-    paint.color = _c(config.bgColor);
-    canvas.drawCircle(Offset(50*s, 50*s), 50*s, paint);
+    p.color = _c(config.bgColor);
+    canvas.drawCircle(Offset(50*s, 50*s), 50*s, p);
 
-    // Hair (back)
-    _drawHair(canvas, s, paint, back: true);
+    // Hair
+    _drawHair(canvas, s, p);
 
     // Face
-    paint.color = _c(config.skin);
-    canvas.drawOval(Rect.fromCenter(
-        center: Offset(50*s, 58*s), width: 56*s, height: 64*s), paint);
-    canvas.drawOval(Rect.fromCenter(
-        center: Offset(50*s, 45*s), width: 52*s, height: 56*s), paint);
+    p.color = _c(config.skin);
+    canvas.drawOval(Rect.fromCenter(center: Offset(50*s, 58*s),
+        width: 56*s, height: 64*s), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset(50*s, 45*s),
+        width: 52*s, height: 56*s), p);
 
-    // Eyes white
-    paint.color = Colors.white;
-    canvas.drawCircle(Offset(36*s, 48*s), 7*s, paint);
-    canvas.drawCircle(Offset(64*s, 48*s), 7*s, paint);
-
-    // Iris
-    paint.color = _c(config.eyeColor);
-    canvas.drawCircle(Offset(37*s, 49*s), 4*s, paint);
-    canvas.drawCircle(Offset(65*s, 49*s), 4*s, paint);
-
-    // Eye shine
-    paint.color = Colors.white;
-    canvas.drawCircle(Offset(38*s, 48*s), 1.5*s, paint);
-    canvas.drawCircle(Offset(66*s, 48*s), 1.5*s, paint);
+    // Eyes
+    p.color = Colors.white;
+    canvas.drawCircle(Offset(36*s, 48*s), 7*s, p);
+    canvas.drawCircle(Offset(64*s, 48*s), 7*s, p);
+    p.color = _c(config.eyeColor);
+    canvas.drawCircle(Offset(37*s, 49*s), 4*s, p);
+    canvas.drawCircle(Offset(65*s, 49*s), 4*s, p);
+    p.color = Colors.white;
+    canvas.drawCircle(Offset(38*s, 48*s), 1.5*s, p);
+    canvas.drawCircle(Offset(66*s, 48*s), 1.5*s, p);
 
     // Lips
-    paint.color = _c(config.lipColor);
-    final lipPath = Path()
+    p.color = _c(config.lipColor);
+    final lip = Path()
       ..moveTo(38*s, 58*s)
       ..quadraticBezierTo(50*s, 65*s, 62*s, 58*s)
       ..quadraticBezierTo(56*s, 68*s, 44*s, 68*s)
       ..close();
-    canvas.drawPath(lipPath, paint);
+    canvas.drawPath(lip, p);
 
     // Cheeks
-    paint.color = _c(config.skin).withOpacity(0.6);
-    canvas.drawOval(Rect.fromCenter(
-        center: Offset(28*s, 60*s), width: 12*s, height: 8*s), paint);
-    canvas.drawOval(Rect.fromCenter(
-        center: Offset(72*s, 60*s), width: 12*s, height: 8*s), paint);
-    paint.color = const Color(0xFFE88080).withOpacity(0.3);
-    canvas.drawOval(Rect.fromCenter(
-        center: Offset(28*s, 60*s), width: 8*s, height: 5*s), paint);
-    canvas.drawOval(Rect.fromCenter(
-        center: Offset(72*s, 60*s), width: 8*s, height: 5*s), paint);
+    p.color = const Color(0xFFE88080).withValues(alpha: 0.3);
+    canvas.drawOval(Rect.fromCenter(center: Offset(28*s, 60*s),
+        width: 8*s, height: 5*s), p);
+    canvas.drawOval(Rect.fromCenter(center: Offset(72*s, 60*s),
+        width: 8*s, height: 5*s), p);
 
     // Eyebrows
-    final browPaint = Paint()
+    final brow = Paint()
       ..color = _c(config.hairColor)
       ..strokeWidth = 1.5*s
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
-    final lb = Path()
+    canvas.drawPath(Path()
       ..moveTo(32*s, 37*s)
-      ..quadraticBezierTo(34*s, 33*s, 38*s, 35*s);
-    final rb = Path()
+      ..quadraticBezierTo(34*s, 33*s, 38*s, 35*s), brow);
+    canvas.drawPath(Path()
       ..moveTo(62*s, 35*s)
-      ..quadraticBezierTo(66*s, 33*s, 68*s, 37*s);
-    canvas.drawPath(lb, browPaint);
-    canvas.drawPath(rb, browPaint);
-
-    // Hair (front)
-    _drawHair(canvas, s, paint, back: false);
+      ..quadraticBezierTo(66*s, 33*s, 68*s, 37*s), brow);
 
     // Accessory
-    _drawAccessory(canvas, s, paint);
+    _drawAccessory(canvas, s, p);
   }
 
-  void _drawHair(Canvas canvas, double s, Paint paint, {required bool back}) {
+  void _drawHair(Canvas canvas, double s, Paint p) {
     if (config.hairStyle == 'bald') return;
-    if (back) return; // simplified — draw all hair in front pass
-    paint.color = _c(config.hairColor);
+    p.color = _c(config.hairColor);
     final path = Path();
     switch (config.hairStyle) {
-      case 'short':
-        path.moveTo(10*s, 35*s);
-        path.quadraticBezierTo(20*s, 5*s, 50*s, 5*s);
-        path.quadraticBezierTo(80*s, 5*s, 90*s, 35*s);
-        path.quadraticBezierTo(75*s, 15*s, 50*s, 15*s);
-        path.quadraticBezierTo(25*s, 15*s, 10*s, 35*s);
-        break;
       case 'curly':
-        path.moveTo(15*s, 40*s);
-        path.quadraticBezierTo(10*s, 10*s, 30*s, 8*s);
-        path.quadraticBezierTo(20*s, 20*s, 25*s, 30*s);
-        path.quadraticBezierTo(35*s, 5*s, 50*s, 5*s);
-        path.quadraticBezierTo(65*s, 5*s, 75*s, 30*s);
-        path.quadraticBezierTo(80*s, 20*s, 70*s, 8*s);
-        path.quadraticBezierTo(90*s, 10*s, 85*s, 40*s);
-        path.quadraticBezierTo(78*s, 12*s, 50*s, 12*s);
-        path.quadraticBezierTo(22*s, 12*s, 15*s, 40*s);
+        path..moveTo(15*s, 40*s)
+            ..quadraticBezierTo(10*s, 10*s, 30*s, 8*s)
+            ..quadraticBezierTo(20*s, 20*s, 25*s, 30*s)
+            ..quadraticBezierTo(35*s, 5*s, 50*s, 5*s)
+            ..quadraticBezierTo(65*s, 5*s, 75*s, 30*s)
+            ..quadraticBezierTo(80*s, 20*s, 70*s, 8*s)
+            ..quadraticBezierTo(90*s, 10*s, 85*s, 40*s)
+            ..quadraticBezierTo(78*s, 12*s, 50*s, 12*s)
+            ..quadraticBezierTo(22*s, 12*s, 15*s, 40*s);
         break;
       default:
-        path.moveTo(10*s, 35*s);
-        path.quadraticBezierTo(20*s, 5*s, 50*s, 5*s);
-        path.quadraticBezierTo(80*s, 5*s, 90*s, 35*s);
-        path.quadraticBezierTo(75*s, 15*s, 50*s, 15*s);
-        path.quadraticBezierTo(25*s, 15*s, 10*s, 35*s);
+        path..moveTo(10*s, 35*s)
+            ..quadraticBezierTo(20*s, 5*s, 50*s, 5*s)
+            ..quadraticBezierTo(80*s, 5*s, 90*s, 35*s)
+            ..quadraticBezierTo(75*s, 15*s, 50*s, 15*s)
+            ..quadraticBezierTo(25*s, 15*s, 10*s, 35*s);
     }
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, p);
   }
 
-  void _drawAccessory(Canvas canvas, double s, Paint paint) {
+  void _drawAccessory(Canvas canvas, double s, Paint p) {
     switch (config.accessory) {
       case 'glasses':
-        final p = Paint()
+        final gp = Paint()
           ..color = const Color(0xFF333333)
           ..strokeWidth = 2*s
           ..style = PaintingStyle.stroke;
         canvas.drawRRect(RRect.fromRectAndRadius(
-            Rect.fromLTWH(22*s, 48*s, 20*s, 12*s), Radius.circular(4*s)), p);
+            Rect.fromLTWH(22*s, 48*s, 20*s, 12*s), Radius.circular(4*s)), gp);
         canvas.drawRRect(RRect.fromRectAndRadius(
-            Rect.fromLTWH(58*s, 48*s, 20*s, 12*s), Radius.circular(4*s)), p);
-        canvas.drawLine(Offset(42*s, 54*s), Offset(58*s, 54*s), p);
+            Rect.fromLTWH(58*s, 48*s, 20*s, 12*s), Radius.circular(4*s)), gp);
+        canvas.drawLine(Offset(42*s, 54*s), Offset(58*s, 54*s), gp);
         break;
       case 'hat':
-        paint.color = const Color(0xFF333333);
+        p.color = const Color(0xFF333333);
         canvas.drawRRect(RRect.fromRectAndRadius(
-            Rect.fromLTWH(15*s, 18*s, 70*s, 8*s), Radius.circular(4*s)), paint);
+            Rect.fromLTWH(15*s, 18*s, 70*s, 8*s), Radius.circular(4*s)), p);
         canvas.drawRRect(RRect.fromRectAndRadius(
-            Rect.fromLTWH(28*s, 4*s, 44*s, 18*s), Radius.circular(6*s)), paint);
+            Rect.fromLTWH(28*s, 4*s, 44*s, 18*s), Radius.circular(6*s)), p);
         break;
       case 'earrings':
-        paint.color = const Color(0xFFFFD700);
-        canvas.drawCircle(Offset(12*s, 65*s), 4*s, paint);
-        canvas.drawCircle(Offset(88*s, 65*s), 4*s, paint);
+        p.color = const Color(0xFFFFD700);
+        canvas.drawCircle(Offset(12*s, 65*s), 4*s, p);
+        canvas.drawCircle(Offset(88*s, 65*s), 4*s, p);
         break;
       case 'headband':
-        final p = Paint()
+        final hp = Paint()
           ..color = const Color(0xFFFF6B6B)
           ..strokeWidth = 6*s
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round;
-        final path = Path()
+        canvas.drawPath(Path()
           ..moveTo(12*s, 38*s)
-          ..quadraticBezierTo(50*s, 28*s, 88*s, 38*s);
-        canvas.drawPath(path, p);
+          ..quadraticBezierTo(50*s, 28*s, 88*s, 38*s), hp);
         break;
     }
   }
 
   @override
-  bool shouldRepaint(_AvatarCustomPainter old) => old.config != config;
+  bool shouldRepaint(_AvatarCanvasPainter old) => old.config != config;
 }
 
 // ── Avatar Builder Sheet ──────────────────────────────────────────────────────
 class AvatarBuilderSheet extends StatefulWidget {
-  final String xameId;
-  final String serverUrl;
+  final String xameId, serverUrl;
   final void Function(String dataUrl)? onSaved;
 
-  const AvatarBuilderSheet({
-    super.key,
-    required this.xameId,
-    required this.serverUrl,
-    this.onSaved,
-  });
+  const AvatarBuilderSheet({super.key, required this.xameId,
+      required this.serverUrl, this.onSaved});
 
   static Future<void> show(BuildContext context, {
-    required String xameId,
-    String? serverUrl,
+    required String xameId, String? serverUrl,
     void Function(String dataUrl)? onSaved,
-  }) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AvatarBuilderSheet(
-        xameId:    xameId,
-        serverUrl: serverUrl ?? AppConstants.serverUrl,
-        onSaved:   onSaved,
-      ),
-    );
-  }
+  }) => showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => AvatarBuilderSheet(xameId: xameId,
+        serverUrl: serverUrl ?? AppConstants.serverUrl, onSaved: onSaved));
 
   @override
   State<AvatarBuilderSheet> createState() => _AvatarBuilderSheetState();
@@ -397,179 +311,207 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.92,
-      decoration: const BoxDecoration(
-        color: Color(0xFF111e2e),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Header
+    return DraggableScrollableSheet(
+      initialChildSize: 0.92,
+      maxChildSize: 0.95,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: XameColors.darkSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          // Handle + header
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 8, 0),
-            child: Row(
-              children: [
-                const Text('🎨 Avatar Builder',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700,
-                        color: Colors.white)),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white70),
-                  onPressed: () => Navigator.pop(context),
+            padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+            child: Column(children: [
+              Center(child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2)),
+              )),
+              Row(children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [XameColors.primary, XameColors.secondary],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.face_outlined,
+                      color: Colors.black, size: 20),
                 ),
-              ],
-            ),
+                const SizedBox(width: 12),
+                const Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('Avatar Builder', style: TextStyle(color: Colors.white,
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text('Design your unique avatar',
+                      style: TextStyle(color: Colors.white38, fontSize: 12)),
+                ]),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close, color: Colors.white38)),
+              ]),
+            ]),
           ),
           // Preview
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF00B0A0), width: 3),
-                ),
-                child: AvatarPainter(config: _config, size: 100),
-              ),
-            ),
-          ),
-          // Options
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _colorRow('Skin Tone',  _skinColors,  'skin'),
-                  _styleRow('Hair Style', _hairStyles.map((h) => h.id).toList(),
-                      _hairStyles.map((h) => h.label).toList(), 'hairStyle'),
-                  _colorRow('Hair Color', _hairColors,  'hairColor'),
-                  _colorRow('Eye Color',  _eyeColors,   'eyeColor'),
-                  _colorRow('Lip Color',  _lipColors,   'lipColor'),
-                  _styleRow('Accessory',
-                      _accessories.map((a) => a.id).toList(),
-                      _accessories.map((a) => a.label).toList(), 'accessory'),
-                  _colorRow('Background', _bgColors,    'bgColor'),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-          // Actions
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            child: Row(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: Stack(
+              alignment: Alignment.bottomRight,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () =>
-                        setState(() => _config = AvatarConfig.random()),
-                    style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white24)),
-                    child: const Text('🎲 Random'),
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: XameColors.primary, width: 3),
+                    boxShadow: [BoxShadow(
+                      color: XameColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 20)],
                   ),
+                  child: AvatarPainter(config: _config, size: 100),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton(
-                    onPressed: _saving ? null : _save,
-                    style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF00B0A0)),
-                    child: Text(_saving ? 'Saving...' : '✓ Use Avatar'),
+                GestureDetector(
+                  onTap: () => setState(() =>
+                      _config = AvatarConfig.random()),
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: XameColors.darkCard,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: XameColors.darkSurface, width: 2),
+                    ),
+                    child: const Icon(Icons.casino_outlined,
+                        color: Colors.white70, size: 14),
                   ),
                 ),
               ],
+            )),
+          ),
+          // Options
+          Expanded(
+            child: ListView(
+              controller: ctrl,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                _colorRow('Skin Tone',  _skinColors,  'skin'),
+                _styleRow('Hair Style',
+                    _hairStyles.map((h) => h.id).toList(),
+                    _hairStyles.map((h) => h.label).toList(), 'hairStyle'),
+                _colorRow('Hair Color', _hairColors,  'hairColor'),
+                _colorRow('Eye Color',  _eyeColors,   'eyeColor'),
+                _colorRow('Lip Color',  _lipColors,   'lipColor'),
+                _styleRow('Accessory',
+                    _accessories.map((a) => a.id).toList(),
+                    _accessories.map((a) => a.label).toList(), 'accessory'),
+                _colorRow('Background', _bgColors,    'bgColor'),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
-        ],
+          // Save button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+            child: GestureDetector(
+              onTap: _saving ? null : _save,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: double.infinity, height: 52,
+                decoration: BoxDecoration(
+                  gradient: _saving ? null : const LinearGradient(
+                    colors: [XameColors.primary, XameColors.secondary]),
+                  color: _saving ? XameColors.darkCard : null,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.center,
+                child: _saving
+                    ? const SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                            color: XameColors.primary, strokeWidth: 2))
+                    : const Text('✓ Use This Avatar',
+                        style: TextStyle(color: Colors.black, fontSize: 15,
+                            fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ),
+        ]),
       ),
     );
   }
 
-  Widget _colorRow(String label, List<String> colors, String key) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF7a9bb5),
-                  fontWeight: FontWeight.w600)),
+  Widget _colorRow(String label, List<String> colors, String key) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: const TextStyle(color: Colors.white54,
+              fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          Wrap(spacing: 8, runSpacing: 8,
             children: colors.map((c) {
-              final selected = _getVal(key) == c;
+              final sel = _getVal(key) == c;
               return GestureDetector(
                 onTap: () => setState(() => _setVal(key, c)),
-                child: Container(
-                  width: 28, height: 28,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 30, height: 30,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Color(int.parse(
                         'FF${c.replaceAll('#', '')}', radix: 16)),
                     border: Border.all(
-                      color: selected
-                          ? const Color(0xFF00B0A0) : Colors.transparent,
-                      width: 3,
-                    ),
+                      color: sel ? XameColors.primary : Colors.transparent,
+                      width: 3),
+                    boxShadow: sel ? [BoxShadow(
+                        color: XameColors.primary.withValues(alpha: 0.4),
+                        blurRadius: 8)] : null,
                   ),
                 ),
               );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
+            }).toList()),
+        ]),
+      );
 
   Widget _styleRow(String label, List<String> ids,
-      List<String> labels, String key) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF7a9bb5),
-                  fontWeight: FontWeight.w600)),
+      List<String> labels, String key) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: const TextStyle(color: Colors.white54,
+              fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          Wrap(spacing: 8, runSpacing: 8,
             children: List.generate(ids.length, (i) {
-              final selected = _getVal(key) == ids[i];
+              final sel = _getVal(key) == ids[i];
               return GestureDetector(
                 onTap: () => setState(() => _setVal(key, ids[i])),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                      horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
+                    color: sel
+                        ? XameColors.primary.withValues(alpha: 0.15)
+                        : XameColors.darkCard,
                     border: Border.all(
-                      color: selected
-                          ? const Color(0xFF00B0A0)
-                          : Colors.white12,
-                    ),
-                    color: selected
-                        ? const Color(0xFF00B0A0).withOpacity(0.15)
-                        : const Color(0xFF0d1520),
+                      color: sel
+                          ? XameColors.primary.withValues(alpha: 0.5)
+                          : Colors.white10),
                   ),
-                  child: Text(labels[i],
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 12)),
+                  child: Text(labels[i], style: TextStyle(
+                    color: sel ? XameColors.primary : Colors.white54,
+                    fontSize: 12,
+                    fontWeight: sel ? FontWeight.w600 : FontWeight.normal)),
                 ),
               );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
+            })),
+        ]),
+      );
 
   String _getVal(String key) {
     switch (key) {
@@ -599,17 +541,16 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      final svg      = buildAvatarSvg(_config);
-      final dataUrl  = 'data:image/svg+xml;base64,${base64Encode(utf8.encode(svg))}';
-      final bytes    = await _svgToPng(svg);
+      final svg     = buildAvatarSvg(_config);
+      final dataUrl = 'data:image/svg+xml;base64,'
+          '${base64Encode(utf8.encode(svg))}';
+      final bytes   = await _svgToPng();
       if (bytes != null) {
-        final req = http.MultipartRequest(
-          'POST',
-          Uri.parse('${widget.serverUrl}/api/update-profile'),
-        );
+        final req = http.MultipartRequest('POST',
+            Uri.parse('${widget.serverUrl}/api/update-profile'));
         req.fields['xameId'] = widget.xameId;
-        req.files.add(http.MultipartFile.fromBytes(
-            'profilePic', bytes, filename: 'avatar.png'));
+        req.files.add(http.MultipartFile.fromBytes('profilePic', bytes,
+            filename: 'avatar.png'));
         final res  = await req.send();
         final body = jsonDecode(await res.stream.bytesToString());
         if (body['success'] == true) {
@@ -618,33 +559,32 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
           return;
         }
       }
-      // Fallback — save data URL locally
       widget.onSaved?.call(dataUrl);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       debugPrint('[AvatarBuilder] Save error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to save avatar')));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Failed to save avatar'),
+        backgroundColor: XameColors.darkCard,
+        behavior: SnackBarBehavior.floating));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
-  Future<Uint8List?> _svgToPng(String svg) async {
+  Future<Uint8List?> _svgToPng() async {
     try {
       final recorder = ui.PictureRecorder();
       final canvas   = Canvas(recorder,
           const Rect.fromLTWH(0, 0, 200, 200));
-      final painter  = _AvatarCustomPainter(_config);
-      painter.paint(canvas, const Size(200, 200));
+      _AvatarCanvasPainter(_config).paint(canvas, const Size(200, 200));
       final picture = recorder.endRecording();
       final img     = await picture.toImage(200, 200);
-      final data    = await img.toByteData(format: ui.ImageByteFormat.png);
+      final data    = await img.toByteData(
+          format: ui.ImageByteFormat.png);
       return data?.buffer.asUint8List();
     } catch (e) {
-      debugPrint('[AvatarBuilder] PNG conversion error: $e');
+      debugPrint('[AvatarBuilder] PNG error: $e');
       return null;
     }
   }
