@@ -20,9 +20,9 @@ class SoccerScoreOverlay extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.black.withOpacity(0.4),
             borderRadius: BorderRadius.circular(12),
@@ -31,15 +31,15 @@ class SoccerScoreOverlay extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(homeTeam, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-              const SizedBox(width: 6),
+              Text(homeTeam, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4)),
-                child: Text(score, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 12)),
+                child: Text(score, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
-              const SizedBox(width: 6),
-              Text(awayTeam, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+              const SizedBox(width: 8),
+              Text(awayTeam, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               const SizedBox(width: 8),
               Text(matchTime, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
             ],
