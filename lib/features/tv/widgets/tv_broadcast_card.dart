@@ -6,22 +6,22 @@ class TVBroadcastCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String image;
+  final bool isLive;
   final String homeTeam;
   final String awayTeam;
   final String score;
   final String matchTime;
-  final bool isLive;
 
   const TVBroadcastCard({
-    Key? key, 
-    required this.title, 
-    required this.subtitle, 
+    Key? key,
+    required this.title,
+    required this.subtitle,
     required this.image,
-    this.isLive = false,
     required this.homeTeam,
     required this.awayTeam,
     required this.score,
     required this.matchTime,
+    this.isLive = false,
   }) : super(key: key);
 
   @override
@@ -56,7 +56,7 @@ class TVBroadcastCard extends StatelessWidget {
                 matchTime: matchTime,
               ),
             ),
-            Positioned(top: 16, right: 16, child: LivePulseIndicator()),
+            const Positioned(top: 16, right: 16, child: LivePulseIndicator()),
           ],
           Positioned(
             bottom: 20,
