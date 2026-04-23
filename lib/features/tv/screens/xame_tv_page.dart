@@ -13,18 +13,26 @@ class XameTVPage extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('broadcasts').snapshots(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: Colors.white)));
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final docs = snapshot.data!.docs;
           
+          final docs = snapshot.data!.docs;
+
           return PageView.builder(
+            key: const PageStorageKey('tv_page_view'),
             scrollDirection: Axis.vertical,
             itemCount: docs.length,
             itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
+              final doc = docs[index];
+              final data = doc.data() as Map<String, dynamic>;
+              
+              // Keying by doc.id prevents the "identical card" glitch
               return Stack(
+                key: ValueKey(doc.id),
                 fit: StackFit.expand,
                 children: [
                   DiscoveryVideoPlayer(
+                    key: ValueKey("${doc.id}_video"),
                     videoUrl: data['videoUrl'] ?? '',
                     posterUrl: data['posterUrl'] ?? '',
                   ),
@@ -33,7 +41,8 @@ class XameTVPage extends StatelessWidget {
                     left: 20,
                     right: 20,
                     child: TVBroadcastCard(
-                      title: "${data['homeTeam']} vs ${data['awayTeam']}",
+                      key: ValueKey("${doc.id}_card"),
+                      title: "${data['homeTeam'] ?? 'Team'} vs ${data['awayTeam'] ?? 'Team'}",
                       subtitle: "Live Match Coverage",
                       image: data['posterUrl'] ?? '',
                       isLive: true,
