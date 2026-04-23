@@ -11,14 +11,11 @@ class XameTVPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('broadcasts')
-            .where('isLive', isEqualTo: true)
-            .snapshots(),
+        stream: FirebaseFirestore.instance.collection('broadcasts').snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          
           final docs = snapshot.data!.docs;
+          
           return PageView.builder(
             scrollDirection: Axis.vertical,
             itemCount: docs.length,
@@ -40,10 +37,10 @@ class XameTVPage extends StatelessWidget {
                       subtitle: "Live Match Coverage",
                       image: data['posterUrl'] ?? '',
                       isLive: true,
-                      homeTeam: data['homeTeam'] ?? '',
-                      awayTeam: data['awayTeam'] ?? '',
-                      score: data['score'] ?? '',
-                      matchTime: data['matchTime'] ?? '',
+                      homeTeam: data['homeTeam'] ?? 'TBD',
+                      awayTeam: data['awayTeam'] ?? 'TBD',
+                      score: data['score'] ?? '0 - 0',
+                      matchTime: data['matchTime'] ?? '00:00',
                     ),
                   ),
                 ],
