@@ -5,19 +5,13 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:xamepage/core/config/constants.dart';
 import 'package:xamepage/core/services/socket_service.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 class GroupMember {
-  final String userId;
-  final String name;
-  final String role;
-
-  const GroupMember({
-    required this.userId,
-    required this.name,
-    required this.role,
-  });
-
+  final String userId, name, role;
+  const GroupMember({required this.userId, required this.name,
+      required this.role});
   factory GroupMember.fromJson(Map<String, dynamic> j) => GroupMember(
     userId: j['userId'] as String,
     name:   j['name']   as String? ?? '',
@@ -26,25 +20,15 @@ class GroupMember {
 }
 
 class XameGroup {
-  final String groupId;
-  final String name;
-  final String? description;
-  final String? avatar;
-  final String createdBy;
+  final String groupId, name, createdBy;
+  final String? description, avatar;
   List<GroupMember> members;
   String? lastMessagePreview;
   int? lastMessageTs;
 
-  XameGroup({
-    required this.groupId,
-    required this.name,
-    this.description,
-    this.avatar,
-    required this.createdBy,
-    required this.members,
-    this.lastMessagePreview,
-    this.lastMessageTs,
-  });
+  XameGroup({required this.groupId, required this.name,
+      required this.createdBy, this.description, this.avatar,
+      required this.members, this.lastMessagePreview, this.lastMessageTs});
 
   factory XameGroup.fromJson(Map<String, dynamic> j) => XameGroup(
     groupId:     j['groupId']     as String,
@@ -61,20 +45,11 @@ class XameGroup {
 }
 
 class GroupMessage {
-  final String id;
-  final String senderId;
-  final String senderName;
+  final String id, senderId, senderName;
   final String? text;
   final int ts;
-
-  const GroupMessage({
-    required this.id,
-    required this.senderId,
-    required this.senderName,
-    this.text,
-    required this.ts,
-  });
-
+  const GroupMessage({required this.id, required this.senderId,
+      required this.senderName, this.text, required this.ts});
   factory GroupMessage.fromJson(Map<String, dynamic> j) => GroupMessage(
     id:         j['id']         as String,
     senderId:   j['senderId']   as String,
@@ -88,36 +63,28 @@ class GroupMessage {
 class GroupsService {
   final SocketService _socket;
   final String _userId;
-
   List<XameGroup> _groups = [];
   List<GroupMessage> _activeMessages = [];
   XameGroup? activeGroup;
-
   void Function(GroupMessage msg, String groupId)? onMessage;
   void Function(String groupId, String name)? onTyping;
 
   GroupsService(this._socket, this._userId) {
-    _bindSocketEvents();
-  }
-
-  List<XameGroup> get groups => List.unmodifiable(_groups);
-  List<GroupMessage> get activeMessages => List.unmodifiable(_activeMessages);
-
-  void _bindSocketEvents() {
     _socket.emit('groups:subscribe', {'userId': _userId});
   }
 
-  // Call this from your socket listener when group events fire
+  List<XameGroup>    get groups         => List.unmodifiable(_groups);
+  List<GroupMessage> get activeMessages => List.unmodifiable(_activeMessages);
+
   void handleGroupMessage(Map<String, dynamic> data) {
     final groupId = data['groupId'] as String?;
     final msgData = data['message'] as Map<String, dynamic>?;
     if (groupId == null || msgData == null) return;
     final msg = GroupMessage.fromJson(msgData);
-    if (activeGroup?.groupId == groupId) {
-      _activeMessages.add(msg);
-    }
+    if (activeGroup?.groupId == groupId) _activeMessages.add(msg);
     final g = _groups.firstWhere((g) => g.groupId == groupId,
-        orElse: () => XameGroup(groupId: '', name: '', createdBy: '', members: []));
+        orElse: () => XameGroup(groupId: '', name: '', createdBy: '',
+            members: []));
     if (g.groupId.isNotEmpty) {
       g.lastMessagePreview = msg.text ?? 'Attachment';
       g.lastMessageTs      = msg.ts;
@@ -139,50 +106,37 @@ class GroupsService {
       _groups = (d['groups'] as List? ?? [])
           .map((g) => XameGroup.fromJson(Map<String, dynamic>.from(g)))
           .toList();
-    } catch (e) {
-      debugPrint('[Groups] Load error: $e');
-      _groups = [];
-    }
+    } catch (e) { debugPrint('[Groups] Load error: $e'); _groups = []; }
   }
 
   Future<XameGroup?> loadMessages(String groupId) async {
     try {
-      final res = await http.get(
-          Uri.parse('${AppConstants.serverUrl}/api/groups/$groupId/messages'));
+      final res = await http.get(Uri.parse(
+          '${AppConstants.serverUrl}/api/groups/$groupId/messages'));
       final d = jsonDecode(res.body);
       _activeMessages = (d['messages'] as List? ?? [])
           .map((m) => GroupMessage.fromJson(Map<String, dynamic>.from(m)))
           .toList();
       activeGroup = _groups.firstWhere((g) => g.groupId == groupId,
-          orElse: () => XameGroup(groupId: '', name: '', createdBy: '', members: []));
+          orElse: () => XameGroup(groupId: '', name: '', createdBy: '',
+              members: []));
       return activeGroup?.groupId.isNotEmpty == true ? activeGroup : null;
-    } catch (e) {
-      debugPrint('[Groups] Load messages error: $e');
-      return null;
-    }
+    } catch (e) { debugPrint('[Groups] Messages error: $e'); return null; }
   }
 
-  Future<XameGroup?> createGroup({
-    required String name,
-    required String description,
-    required List<String> memberIds,
-  }) async {
+  Future<XameGroup?> createGroup({required String name,
+      required String description, required List<String> memberIds}) async {
     try {
       final res = await http.post(
         Uri.parse('${AppConstants.serverUrl}/api/groups/create'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': _userId,
-          'name': name,
-          'description': description,
-          'memberIds': memberIds,
-        }),
+        body: jsonEncode({'userId': _userId, 'name': name,
+            'description': description, 'memberIds': memberIds}),
       );
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
         final group = XameGroup.fromJson(Map<String, dynamic>.from(d['group']));
-        _groups.insert(0, group);
-        return group;
+        _groups.insert(0, group); return group;
       }
     } catch (e) { debugPrint('[Groups] Create error: $e'); }
     return null;
@@ -190,28 +144,27 @@ class GroupsService {
 
   void sendMessage(String groupId, String text) {
     final msgId = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
-    _socket.emit('group:message', {
-      'groupId': groupId,
-      'userId':  _userId,
-      'message': {'id': msgId, 'text': text, 'ts': DateTime.now().millisecondsSinceEpoch},
-    });
+    _socket.emit('group:message', {'groupId': groupId, 'userId': _userId,
+        'message': {'id': msgId, 'text': text,
+            'ts': DateTime.now().millisecondsSinceEpoch}});
   }
 
-  void emitTyping(String groupId, String name) {
-    _socket.emitGroupTyping(groupId, _userId, name);
-  }
+  void emitTyping(String groupId, String name) =>
+      _socket.emitGroupTyping(groupId, _userId, name);
 
   Future<bool> addMember(String groupId, String userId) async {
     try {
       final res = await http.post(
         Uri.parse('${AppConstants.serverUrl}/api/groups/add-member'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'groupId': groupId, 'requesterId': _userId, 'userId': userId}),
+        body: jsonEncode({'groupId': groupId, 'requesterId': _userId,
+            'userId': userId}),
       );
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
         final g = _groups.firstWhere((g) => g.groupId == groupId,
-            orElse: () => XameGroup(groupId: '', name: '', createdBy: '', members: []));
+            orElse: () => XameGroup(groupId: '', name: '', createdBy: '',
+                members: []));
         if (g.groupId.isNotEmpty) {
           g.members = (d['group']['members'] as List)
               .map((m) => GroupMember.fromJson(Map<String, dynamic>.from(m)))
@@ -228,16 +181,14 @@ class GroupsService {
       final res = await http.post(
         Uri.parse('${AppConstants.serverUrl}/api/groups/remove-member'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'groupId': groupId,
-          'requesterId': _userId,
-          'userId': userId,
-        }),
+        body: jsonEncode({'groupId': groupId, 'requesterId': _userId,
+            'userId': userId}),
       );
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
         final g = _groups.firstWhere((g) => g.groupId == groupId,
-            orElse: () => XameGroup(groupId: '', name: '', createdBy: '', members: []));
+            orElse: () => XameGroup(groupId: '', name: '', createdBy: '',
+                members: []));
         if (g.groupId.isNotEmpty) {
           g.members.removeWhere((m) => m.userId == userId);
         }
@@ -249,17 +200,15 @@ class GroupsService {
 
   Future<String?> uploadAvatar(String groupId, File file) async {
     try {
-      final req = http.MultipartRequest(
-        'POST',
-        Uri.parse('${AppConstants.serverUrl}/api/groups/upload-avatar'),
-      );
+      final req = http.MultipartRequest('POST',
+          Uri.parse('${AppConstants.serverUrl}/api/groups/upload-avatar'));
       req.fields['groupId'] = groupId;
       req.fields['userId']  = _userId;
       req.files.add(await http.MultipartFile.fromPath('avatar', file.path));
-      final res = await req.send();
+      final res  = await req.send();
       final body = jsonDecode(await res.stream.bytesToString());
       if (body['success'] == true) return body['avatarUrl'] as String?;
-    } catch (e) { debugPrint('[Groups] Avatar upload error: $e'); }
+    } catch (e) { debugPrint('[Groups] Avatar error: $e'); }
     return null;
   }
 }
@@ -271,29 +220,18 @@ class GroupsListScreen extends StatefulWidget {
   final String currentUserId;
   final void Function(XameGroup group) onOpenChat;
 
-  const GroupsListScreen({
-    super.key,
-    required this.service,
-    required this.contacts,
-    required this.currentUserId,
-    required this.onOpenChat,
-  });
+  const GroupsListScreen({super.key, required this.service,
+      required this.contacts, required this.currentUserId,
+      required this.onOpenChat});
 
   static Future<void> show(BuildContext context, {
     required GroupsService service,
     required List<Map<String, dynamic>> contacts,
     required String currentUserId,
     required void Function(XameGroup) onOpenChat,
-  }) {
-    return Navigator.push(context, MaterialPageRoute(
-      builder: (_) => GroupsListScreen(
-        service: service,
-        contacts: contacts,
-        currentUserId: currentUserId,
-        onOpenChat: onOpenChat,
-      ),
-    ));
-  }
+  }) => Navigator.push(context, MaterialPageRoute(
+    builder: (_) => GroupsListScreen(service: service, contacts: contacts,
+        currentUserId: currentUserId, onOpenChat: onOpenChat)));
 
   @override
   State<GroupsListScreen> createState() => _GroupsListScreenState();
@@ -301,6 +239,7 @@ class GroupsListScreen extends StatefulWidget {
 
 class _GroupsListScreenState extends State<GroupsListScreen> {
   bool _loading = true;
+  String _search = '';
 
   @override
   void initState() {
@@ -312,53 +251,207 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final groups = widget.service.groups;
+    final groups = widget.service.groups
+        .where((g) => _search.isEmpty ||
+            g.name.toLowerCase().contains(_search.toLowerCase()))
+        .toList();
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Xame Groups'),
-        actions: [
-          TextButton(
-            onPressed: () => _showCreateDialog(context),
-            child: const Text('+ New'),
-          ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : groups.isEmpty
-              ? const Center(
-                  child: Text('No groups yet. Create one!',
-                      style: TextStyle(color: Colors.grey)))
-              : ListView.separated(
-                  itemCount: groups.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, i) {
-                    final g = groups[i];
-                    return ListTile(
-                      leading: g.avatar != null
-                          ? CircleAvatar(backgroundImage: NetworkImage(g.avatar!))
-                          : CircleAvatar(
-                              child: Text(g.name.substring(0, 2).toUpperCase(),
-                                  style: const TextStyle(fontWeight: FontWeight.w700))),
-                      title: Text(g.name,
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: Text(g.lastMessagePreview ?? 'No messages yet',
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      trailing: Text('${g.members.length} members',
-                          style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                      onTap: () => widget.onOpenChat(g),
-                    );
-                  },
+      backgroundColor: XameColors.darkBg,
+      body: SafeArea(child: Column(children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Row(children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: XameColors.darkCard,
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: const Icon(Icons.arrow_back_ios_new,
+                    color: Colors.white70, size: 16),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('Xame Groups',
+                  style: TextStyle(color: Colors.white, fontSize: 18,
+                      fontWeight: FontWeight.w700)),
+            ),
+            GestureDetector(
+              onTap: () => _showCreateDialog(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [XameColors.primary, XameColors.secondary]),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text('+ New',
+                    style: TextStyle(color: Colors.black, fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ]),
+        ),
+        // Search
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Container(
+            decoration: BoxDecoration(
+              color: XameColors.darkCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: TextField(
+              onChanged: (v) => setState(() => _search = v),
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: const InputDecoration(
+                hintText: 'Search groups...',
+                hintStyle: TextStyle(color: Colors.white30),
+                prefixIcon: Icon(Icons.search, color: Colors.white30, size: 18),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 11),
+              ),
+            ),
+          ),
+        ),
+        // List
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(
+                  color: XameColors.primary, strokeWidth: 2))
+              : groups.isEmpty
+                  ? Column(mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                      const Icon(Icons.group_outlined,
+                          color: Colors.white12, size: 56),
+                      const SizedBox(height: 12),
+                      const Text('No groups yet',
+                          style: TextStyle(color: Colors.white38,
+                              fontSize: 15)),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () => _showCreateDialog(context),
+                        child: const Text('Create your first group →',
+                            style: TextStyle(color: XameColors.primary,
+                                fontSize: 13)),
+                      ),
+                    ])
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      itemCount: groups.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: 8),
+                      itemBuilder: (_, i) {
+                        final g = groups[i];
+                        return GestureDetector(
+                          onTap: () => widget.onOpenChat(g),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: XameColors.darkCard,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: Row(children: [
+                              // Avatar
+                              g.avatar != null
+                                  ? ClipRRect(
+                                      borderRadius:
+                                          BorderRadius.circular(14),
+                                      child: Image.network(g.avatar!,
+                                          width: 50, height: 50,
+                                          fit: BoxFit.cover))
+                                  : Container(
+                                      width: 50, height: 50,
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [XameColors.primary,
+                                              XameColors.secondary],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight),
+                                        borderRadius:
+                                            BorderRadius.circular(14),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          g.name.substring(0, 2)
+                                              .toUpperCase(),
+                                          style: const TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 16,
+                                              fontWeight:
+                                                  FontWeight.w800)),
+                                      ),
+                                    ),
+                              const SizedBox(width: 12),
+                              Expanded(child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(g.name, style: const TextStyle(
+                                      color: Colors.white, fontSize: 15,
+                                      fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    g.lastMessagePreview ??
+                                        '${g.members.length} members',
+                                    style: const TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                                ],
+                              )),
+                              Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: XameColors.primary
+                                          .withValues(alpha: 0.1),
+                                      borderRadius:
+                                          BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${g.members.length}',
+                                      style: const TextStyle(
+                                          color: XameColors.primary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600)),
+                                  ),
+                                  const Icon(Icons.chevron_right,
+                                      color: Colors.white24, size: 16),
+                                ],
+                              ),
+                            ]),
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ])),
     );
   }
 
   void _showCreateDialog(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (_) => _CreateGroupDialog(
-        service:      widget.service,
-        contacts:     widget.contacts,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CreateGroupSheet(
+        service: widget.service,
+        contacts: widget.contacts,
         currentUserId: widget.currentUserId,
         onCreated: (g) {
           setState(() {});
@@ -369,122 +462,267 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   }
 }
 
-// ── Create Group Dialog ───────────────────────────────────────────────────────
-class _CreateGroupDialog extends StatefulWidget {
+// ── Create Group Sheet ────────────────────────────────────────────────────────
+class _CreateGroupSheet extends StatefulWidget {
   final GroupsService service;
   final List<Map<String, dynamic>> contacts;
   final String currentUserId;
   final void Function(XameGroup) onCreated;
 
-  const _CreateGroupDialog({
-    required this.service,
-    required this.contacts,
-    required this.currentUserId,
-    required this.onCreated,
-  });
+  const _CreateGroupSheet({required this.service, required this.contacts,
+      required this.currentUserId, required this.onCreated});
 
   @override
-  State<_CreateGroupDialog> createState() => _CreateGroupDialogState();
+  State<_CreateGroupSheet> createState() => _CreateGroupSheetState();
 }
 
-class _CreateGroupDialogState extends State<_CreateGroupDialog> {
+class _CreateGroupSheetState extends State<_CreateGroupSheet> {
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final Set<String> _selected = {};
   bool _loading = false;
+  String _search = '';
 
   @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _descCtrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _nameCtrl.dispose(); _descCtrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     final contacts = widget.contacts
         .where((c) => c['id'] != widget.currentUserId)
+        .where((c) => _search.isEmpty ||
+            (c['name'] as String? ?? '').toLowerCase()
+                .contains(_search.toLowerCase()))
         .toList();
 
-    return AlertDialog(
-      title: const Text('Create Group'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(hintText: 'Group name'),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      maxChildSize: 0.95,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: XameColors.darkSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Column(children: [
+              Center(child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2)),
+              )),
+              Row(children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [XameColors.primary, XameColors.secondary],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.group_add_outlined,
+                      color: Colors.black, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Text('Create Group', style: TextStyle(
+                    color: Colors.white, fontSize: 16,
+                    fontWeight: FontWeight.w700)),
+                const Spacer(),
+                if (_selected.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: XameColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('${_selected.length} selected',
+                        style: const TextStyle(color: XameColors.primary,
+                            fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+              ]),
+              const SizedBox(height: 14),
+              _inputField(_nameCtrl, 'Group name', Icons.group_outlined),
+              const SizedBox(height: 8),
+              _inputField(_descCtrl, 'Description (optional)',
+                  Icons.info_outline),
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: XameColors.darkCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: TextField(
+                  onChanged: (v) => setState(() => _search = v),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Search contacts...',
+                    hintStyle: TextStyle(color: Colors.white30),
+                    prefixIcon: Icon(Icons.search, color: Colors.white30,
+                        size: 18),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 11),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ]),
+          ),
+          Expanded(
+            child: ListView.builder(
+              controller: ctrl,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: contacts.length,
+              itemBuilder: (_, i) {
+                final c    = contacts[i];
+                final id   = c['id']   as String;
+                final name = c['name'] as String? ?? id;
+                final sel  = _selected.contains(id);
+                return GestureDetector(
+                  onTap: () => setState(() =>
+                      sel ? _selected.remove(id) : _selected.add(id)),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 11),
+                    decoration: BoxDecoration(
+                      color: sel
+                          ? XameColors.primary.withValues(alpha: 0.08)
+                          : XameColors.darkCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: sel
+                            ? XameColors.primary.withValues(alpha: 0.3)
+                            : Colors.white10),
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: XameColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                                color: XameColors.primary,
+                                fontWeight: FontWeight.w700))),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: const TextStyle(
+                              color: Colors.white, fontSize: 14,
+                              fontWeight: FontWeight.w500)),
+                          Text(id, style: const TextStyle(
+                              color: Colors.white38, fontSize: 12)),
+                        ],
+                      )),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 22, height: 22,
+                        decoration: BoxDecoration(
+                          color: sel ? XameColors.primary : Colors.transparent,
+                          border: Border.all(
+                            color: sel ? XameColors.primary : Colors.white24,
+                            width: 1.5),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: sel ? const Icon(Icons.check,
+                            color: Colors.black, size: 14) : null,
+                      ),
+                    ]),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _descCtrl,
-              decoration:
-                  const InputDecoration(hintText: 'Description (optional)'),
+          ),
+          Container(
+            padding: EdgeInsets.fromLTRB(20, 12, 20,
+                MediaQuery.of(context).viewInsets.bottom + 20),
+            decoration: const BoxDecoration(
+              color: XameColors.darkSurface,
+              border: Border(top: BorderSide(color: Colors.white10)),
             ),
-            const SizedBox(height: 12),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Select members:',
-                  style: TextStyle(fontSize: 13, color: Colors.grey)),
-            ),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView(
-                shrinkWrap: true,
-                children: contacts.map((c) {
-                  final id   = c['id']   as String;
-                  final name = c['name'] as String? ?? id;
-                  return CheckboxListTile(
-                    dense: true,
-                    title: Text(name),
-                    value: _selected.contains(id),
-                    onChanged: (v) => setState(() =>
-                        v! ? _selected.add(id) : _selected.remove(id)),
-                  );
-                }).toList(),
+            child: GestureDetector(
+              onTap: _loading ? null : () async {
+                if (_nameCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Enter a group name'),
+                    backgroundColor: XameColors.darkCard,
+                    behavior: SnackBarBehavior.floating));
+                  return;
+                }
+                setState(() => _loading = true);
+                final group = await widget.service.createGroup(
+                  name:        _nameCtrl.text.trim(),
+                  description: _descCtrl.text.trim(),
+                  memberIds:   _selected.toList(),
+                );
+                if (mounted) {
+                  Navigator.pop(context);
+                  if (group != null) widget.onCreated(group);
+                  else ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Failed to create group'),
+                        backgroundColor: XameColors.darkCard,
+                        behavior: SnackBarBehavior.floating));
+                }
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: double.infinity, height: 52,
+                decoration: BoxDecoration(
+                  gradient: _loading ? null : const LinearGradient(
+                    colors: [XameColors.primary, XameColors.secondary]),
+                  color: _loading ? XameColors.darkCard : null,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.center,
+                child: _loading
+                    ? const SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                            color: XameColors.primary, strokeWidth: 2))
+                    : const Text('Create Group',
+                        style: TextStyle(color: Colors.black, fontSize: 15,
+                            fontWeight: FontWeight.w700)),
               ),
             ),
-          ],
-        ),
+          ),
+        ]),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _loading ? null : () async {
-            if (_nameCtrl.text.trim().isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Enter a group name')));
-              return;
-            }
-            setState(() => _loading = true);
-            final group = await widget.service.createGroup(
-              name:        _nameCtrl.text.trim(),
-              description: _descCtrl.text.trim(),
-              memberIds:   _selected.toList(),
-            );
-            if (mounted) {
-              Navigator.pop(context);
-              if (group != null) {
-                widget.onCreated(group);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Failed to create group')));
-              }
-            }
-          },
-          child: const Text('Create Group'),
-        ),
-      ],
     );
   }
+
+  Widget _inputField(TextEditingController ctrl, String hint,
+      IconData icon) => Container(
+    margin: const EdgeInsets.only(bottom: 0),
+    decoration: BoxDecoration(
+      color: XameColors.darkCard,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.white10),
+    ),
+    child: TextField(
+      controller: ctrl,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.white30),
+        prefixIcon: Icon(icon, color: Colors.white30, size: 18),
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14, vertical: 12),
+      ),
+    ),
+  );
 }
 
-// ── Group Info Dialog ─────────────────────────────────────────────────────────
+// ── Group Info Sheet ──────────────────────────────────────────────────────────
 class GroupInfoDialog extends StatefulWidget {
   final XameGroup group;
   final bool isAdmin;
@@ -493,36 +731,22 @@ class GroupInfoDialog extends StatefulWidget {
   final String currentUserId;
   final VoidCallback onLeft;
 
-  const GroupInfoDialog({
-    super.key,
-    required this.group,
-    required this.isAdmin,
-    required this.service,
-    required this.contacts,
-    required this.currentUserId,
-    required this.onLeft,
-  });
+  const GroupInfoDialog({super.key, required this.group, required this.isAdmin,
+      required this.service, required this.contacts,
+      required this.currentUserId, required this.onLeft});
 
   static Future<void> show(BuildContext context, {
-    required XameGroup group,
-    required bool isAdmin,
+    required XameGroup group, required bool isAdmin,
     required GroupsService service,
     required List<Map<String, dynamic>> contacts,
-    required String currentUserId,
-    required VoidCallback onLeft,
-  }) {
-    return showDialog(
-      context: context,
-      builder: (_) => GroupInfoDialog(
-        group: group,
-        isAdmin: isAdmin,
-        service: service,
-        contacts: contacts,
-        currentUserId: currentUserId,
-        onLeft: onLeft,
-      ),
-    );
-  }
+    required String currentUserId, required VoidCallback onLeft,
+  }) => showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => GroupInfoDialog(group: group, isAdmin: isAdmin,
+        service: service, contacts: contacts,
+        currentUserId: currentUserId, onLeft: onLeft));
 
   @override
   State<GroupInfoDialog> createState() => _GroupInfoDialogState();
@@ -532,186 +756,337 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
   late XameGroup _group;
 
   @override
-  void initState() {
-    super.initState();
-    _group = widget.group;
-  }
+  void initState() { super.initState(); _group = widget.group; }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Column(
-        children: [
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      maxChildSize: 0.95,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: XameColors.darkSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          // Handle
+          Center(child: Container(
+            width: 36, height: 4,
+            margin: const EdgeInsets.only(top: 8, bottom: 16),
+            decoration: BoxDecoration(color: Colors.white24,
+                borderRadius: BorderRadius.circular(2)),
+          )),
+          // Group avatar + name
           GestureDetector(
             onTap: widget.isAdmin ? _changeAvatar : null,
-            child: Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                _group.avatar != null
-                    ? CircleAvatar(radius: 40,
-                        backgroundImage: NetworkImage(_group.avatar!))
-                    : CircleAvatar(radius: 40,
-                        child: Text(_group.name.substring(0, 2).toUpperCase(),
-                            style: const TextStyle(fontSize: 24,
-                                fontWeight: FontWeight.w700))),
-                if (widget.isAdmin)
-                  const CircleAvatar(radius: 12,
-                      child: Icon(Icons.camera_alt, size: 14)),
-              ],
+            child: Stack(alignment: Alignment.bottomRight, children: [
+              _group.avatar != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.network(_group.avatar!,
+                          width: 80, height: 80, fit: BoxFit.cover))
+                  : Container(
+                      width: 80, height: 80,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [XameColors.primary, XameColors.secondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Center(child: Text(
+                          _group.name.substring(0, 2).toUpperCase(),
+                          style: const TextStyle(color: Colors.black,
+                              fontSize: 24, fontWeight: FontWeight.w800))),
+                    ),
+              if (widget.isAdmin)
+                Container(
+                  width: 26, height: 26,
+                  decoration: BoxDecoration(
+                    color: XameColors.primary,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: XameColors.darkSurface,
+                        width: 2),
+                  ),
+                  child: const Icon(Icons.camera_alt,
+                      color: Colors.black, size: 13),
+                ),
+            ]),
+          ),
+          const SizedBox(height: 10),
+          Text(_group.name, style: const TextStyle(color: Colors.white,
+              fontSize: 18, fontWeight: FontWeight.w700)),
+          if (_group.description != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(_group.description!, style: const TextStyle(
+                  color: Colors.white38, fontSize: 13)),
             ),
+          const SizedBox(height: 16),
+          // Members section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(children: [
+              Text('Members (${_group.members.length})',
+                  style: const TextStyle(color: Colors.white54, fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+              const Spacer(),
+              if (widget.isAdmin)
+                GestureDetector(
+                  onTap: () => _showAddMember(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: XameColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('+ Add',
+                        style: TextStyle(color: XameColors.primary,
+                            fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+            ]),
           ),
           const SizedBox(height: 8),
-          Text(_group.name, textAlign: TextAlign.center),
-          if (_group.description != null)
-            Text(_group.description!,
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-                textAlign: TextAlign.center),
-        ],
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Members (${_group.members.length})',
-                style: const TextStyle(fontWeight: FontWeight.w700,
-                    fontSize: 13)),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 250),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _group.members.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (_, i) {
-                  final m = _group.members[i];
-                  return ListTile(
-                    dense: true,
-                    title: Text(m.name.isNotEmpty ? m.name : m.userId,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(m.role),
-                    trailing: widget.isAdmin && m.userId != widget.currentUserId
-                        ? TextButton(
-                            onPressed: () async {
-                              final ok = await widget.service
-                                  .removeMember(_group.groupId, m.userId);
-                              if (ok) setState(() {
-                                _group.members.removeAt(i);
-                              });
-                            },
-                            style: TextButton.styleFrom(
-                                foregroundColor: Colors.red),
-                            child: const Text('Remove'),
-                          )
-                        : null,
-                  );
-                },
+          Expanded(
+            child: ListView.separated(
+              controller: ctrl,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: _group.members.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              itemBuilder: (_, i) {
+                final m = _group.members[i];
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: XameColors.darkCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Row(children: [
+                    Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: XameColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(child: Text(
+                          (m.name.isNotEmpty ? m.name : m.userId)[0]
+                              .toUpperCase(),
+                          style: const TextStyle(color: XameColors.primary,
+                              fontWeight: FontWeight.w700))),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(m.name.isNotEmpty ? m.name : m.userId,
+                            style: const TextStyle(color: Colors.white,
+                                fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(m.role, style: const TextStyle(
+                            color: Colors.white38, fontSize: 11)),
+                      ],
+                    )),
+                    if (widget.isAdmin &&
+                        m.userId != widget.currentUserId)
+                      GestureDetector(
+                        onTap: () async {
+                          final ok = await widget.service
+                              .removeMember(_group.groupId, m.userId);
+                          if (ok) setState(() =>
+                              _group.members.removeAt(i));
+                        },
+                        child: Container(
+                          width: 30, height: 30,
+                          decoration: BoxDecoration(
+                            color: XameColors.danger.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.person_remove_outlined,
+                              color: XameColors.danger, size: 15),
+                        ),
+                      ),
+                  ]),
+                );
+              },
+            ),
+          ),
+          // Leave button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            child: GestureDetector(
+              onTap: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => Dialog(
+                    backgroundColor: XameColors.darkCard,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        const Text('Leave Group?',
+                            style: TextStyle(color: Colors.white,
+                                fontSize: 16, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
+                        const Text(
+                            'You will no longer receive messages from this group.',
+                            style: TextStyle(color: Colors.white38,
+                                fontSize: 13),
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        Row(children: [
+                          Expanded(child: GestureDetector(
+                            onTap: () => Navigator.pop(context, false),
+                            child: Container(height: 42,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(12)),
+                              alignment: Alignment.center,
+                              child: const Text('Cancel',
+                                  style: TextStyle(color: Colors.white54))),
+                          )),
+                          const SizedBox(width: 10),
+                          Expanded(child: GestureDetector(
+                            onTap: () => Navigator.pop(context, true),
+                            child: Container(height: 42,
+                              decoration: BoxDecoration(
+                                color: XameColors.danger,
+                                borderRadius: BorderRadius.circular(12)),
+                              alignment: Alignment.center,
+                              child: const Text('Leave',
+                                  style: TextStyle(color: Colors.white,
+                                      fontWeight: FontWeight.w700))),
+                          )),
+                        ]),
+                      ]),
+                    ),
+                  ),
+                );
+                if (confirm == true && mounted) {
+                  await widget.service.removeMember(
+                      _group.groupId, widget.currentUserId);
+                  Navigator.pop(context);
+                  widget.onLeft();
+                }
+              },
+              child: Container(
+                width: double.infinity, height: 48,
+                decoration: BoxDecoration(
+                  color: XameColors.danger.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: XameColors.danger.withValues(alpha: 0.3)),
+                ),
+                alignment: Alignment.center,
+                child: const Text('Leave Group',
+                    style: TextStyle(color: XameColors.danger, fontSize: 14,
+                        fontWeight: FontWeight.w600)),
               ),
             ),
-          ],
-        ),
-      ),
-      actions: [
-        if (widget.isAdmin)
-          TextButton(
-            onPressed: () => _showAddMember(context),
-            child: const Text('+ Add Member'),
           ),
-        TextButton(
-          onPressed: () async {
-            final confirm = await showDialog<bool>(
-              context: context,
-              builder: (_) => AlertDialog(
-                content: const Text('Leave this group?'),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel')),
-                  TextButton(onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Leave')),
-                ],
-              ),
-            );
-            if (confirm == true && mounted) {
-              await widget.service.removeMember(
-                  _group.groupId, widget.currentUserId);
-              Navigator.pop(context);
-              widget.onLeft();
-            }
-          },
-          child: const Text('Leave Group',
-              style: TextStyle(color: Colors.red)),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-      ],
+        ]),
+      ),
     );
   }
 
   Future<void> _changeAvatar() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
+    final file   = await picker.pickImage(source: ImageSource.gallery);
     if (file == null || !mounted) return;
     final url = await widget.service.uploadAvatar(
         _group.groupId, File(file.path));
-    if (url != null && mounted) {
-      setState(() => _group = XameGroup(
-        groupId:     _group.groupId,
-        name:        _group.name,
-        description: _group.description,
-        avatar:      url,
-        createdBy:   _group.createdBy,
-        members:     _group.members,
-      ));
-    }
+    if (url != null && mounted) setState(() => _group = XameGroup(
+      groupId: _group.groupId, name: _group.name,
+      description: _group.description, avatar: url,
+      createdBy: _group.createdBy, members: _group.members));
   }
 
   void _showAddMember(BuildContext context) {
     final existing  = _group.members.map((m) => m.userId).toSet();
     final available = widget.contacts
-        .where((c) =>
-            c['id'] != widget.currentUserId &&
+        .where((c) => c['id'] != widget.currentUserId &&
             !existing.contains(c['id']))
         .toList();
     if (available.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All contacts are already members')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('All contacts are already members'),
+        backgroundColor: XameColors.darkCard,
+        behavior: SnackBarBehavior.floating));
       return;
     }
     final Set<String> selected = {};
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (_) => StatefulBuilder(
-        builder: (ctx, setSt) => AlertDialog(
-          title: const Text('Add Member'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 250),
-              child: ListView(
-                shrinkWrap: true,
+        builder: (ctx, setSt) => Container(
+          decoration: const BoxDecoration(
+            color: XameColors.darkSurface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Center(child: Container(
+              width: 36, height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2)),
+            )),
+            const Text('Add Member', style: TextStyle(color: Colors.white,
+                fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: ListView(shrinkWrap: true,
                 children: available.map((c) {
                   final id   = c['id']   as String;
                   final name = c['name'] as String? ?? id;
-                  return CheckboxListTile(
-                    dense: true,
-                    title: Text(name),
-                    value: selected.contains(id),
-                    onChanged: (v) => setSt(() =>
-                        v! ? selected.add(id) : selected.remove(id)),
+                  final sel  = selected.contains(id);
+                  return GestureDetector(
+                    onTap: () => setSt(() =>
+                        sel ? selected.remove(id) : selected.add(id)),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 11),
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? XameColors.primary.withValues(alpha: 0.08)
+                            : XameColors.darkCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: sel
+                              ? XameColors.primary.withValues(alpha: 0.3)
+                              : Colors.white10),
+                      ),
+                      child: Row(children: [
+                        Expanded(child: Text(name, style: const TextStyle(
+                            color: Colors.white, fontSize: 14))),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 20, height: 20,
+                          decoration: BoxDecoration(
+                            color: sel ? XameColors.primary : Colors.transparent,
+                            border: Border.all(
+                              color: sel ? XameColors.primary : Colors.white24,
+                              width: 1.5),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: sel ? const Icon(Icons.check,
+                              color: Colors.black, size: 13) : null,
+                        ),
+                      ]),
+                    ),
                   );
-                }).toList(),
-              ),
+                }).toList()),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () async {
                 if (selected.isEmpty) return;
                 for (final uid in selected) {
                   await widget.service.addMember(_group.groupId, uid);
@@ -719,13 +1094,26 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                 if (mounted) {
                   Navigator.pop(ctx);
                   setState(() {});
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Member(s) added')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Member(s) added'),
+                    backgroundColor: XameColors.darkCard,
+                    behavior: SnackBarBehavior.floating));
                 }
               },
-              child: const Text('Add'),
+              child: Container(
+                width: double.infinity, height: 48,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [XameColors.primary, XameColors.secondary]),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: const Text('Add Selected',
+                    style: TextStyle(color: Colors.black, fontSize: 14,
+                        fontWeight: FontWeight.w700)),
+              ),
             ),
-          ],
+          ]),
         ),
       ),
     );
