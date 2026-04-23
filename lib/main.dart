@@ -17,30 +17,54 @@ import 'core/services/cache_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-  
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await Hive.initFlutter();
   await CacheService.init();
-
   await Firebase.initializeApp();
-  
-  // Seed Firestore in the background (Non-blocking)
-  FirebaseFirestore.instance.collection('broadcasts').doc('live_match_1').set({
-    'isLive': true,
-    'homeTeam': 'Arsenal',
-    'awayTeam': 'Man City',
-    'score': '2 - 1',
-    'matchTime': "74'",
-    'videoUrl': 'https://assets.mixkit.co/videos/preview/mixkit-playing-football-in-the-grass-4442-large.mp4',
-    'posterUrl': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
-  }, SetOptions(merge: true)).catchError((e) => print("Seed Error: $e"));
+
+  // Multi-Channel Seed Logic
+  final batch = FirebaseFirestore.instance.batch();
+  final channels = [
+    {
+      'id': 'match_1',
+      'isLive': true,
+      'homeTeam': 'Arsenal',
+      'awayTeam': 'Man City',
+      'score': '2 - 1',
+      'matchTime': "74'",
+      'videoUrl': 'https://assets.mixkit.co/videos/preview/mixkit-playing-football-in-the-grass-4442-large.mp4',
+      'posterUrl': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
+    },
+    {
+      'id': 'match_2',
+      'isLive': true,
+      'homeTeam': 'Real Madrid',
+      'awayTeam': 'Barcelona',
+      'score': '0 - 0',
+      'matchTime': "12'",
+      'videoUrl': 'https://assets.mixkit.co/videos/preview/mixkit-footballer-kicking-the-ball-in-the-field-at-night-41551-large.mp4',
+      'posterUrl': 'https://images.unsplash.com/photo-1517466787929-bc90951d0974',
+    },
+    {
+      'id': 'match_3',
+      'isLive': true,
+      'homeTeam': 'Liverpool',
+      'awayTeam': 'Chelsea',
+      'score': '1 - 3',
+      'matchTime': "88'",
+      'videoUrl': 'https://assets.mixkit.co/videos/preview/mixkit-soccer-player-kicking-the-ball-4322-large.mp4',
+      'posterUrl': 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2',
+    }
+  ];
+
+  for (var channel in channels) {
+    var ref = FirebaseFirestore.instance.collection('broadcasts').doc(channel['id'] as String);
+    batch.set(ref, channel, SetOptions(merge: true));
+  }
+  batch.commit().catchError((e) => print("Batch Seed Error: $e"));
 
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
-
+  
   XameUser? savedUser;
   try {
     const storage = FlutterSecureStorage();
@@ -57,10 +81,7 @@ void main() async {
   }
 
   runApp(ProviderScope(
-    overrides: [
-      if (savedUser != null)
-        currentUserProvider.overrideWith((ref) => savedUser),
-    ],
+    overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
     child: const XamePageApp(),
   ));
 }
