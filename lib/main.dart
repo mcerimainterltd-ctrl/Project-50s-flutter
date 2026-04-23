@@ -20,9 +20,6 @@ void main() async {
   
   // Write startup marker to Downloads for debugging
   try {
-    final file = File('/storage/emulated/0/Download/startup.txt');
-    await file.writeAsString('Started at ${DateTime.now()}\n');
-  } catch (e) {}
   
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -37,7 +34,7 @@ void main() async {
 
   // Step 89: Initialize Live Data (Seeding)
   try {
-    await FirebaseFirestore.instance.collection('broadcasts').doc('live_match_1').set({
+    FirebaseFirestore.instance.collection('broadcasts').doc('live_match_1').set({
       'isLive': true,
       'homeTeam': 'Arsenal',
       'awayTeam': 'Man City',
