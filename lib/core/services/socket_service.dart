@@ -386,8 +386,8 @@ class SocketService {
 
   // Listen for callId assigned by server after emitting call-user
   void onCallInitiated(void Function(String callId) cb) {
-    socket.off('call-initiated');
-    socket.on('call-initiated', (d) => cb(d['callId'] ?? ''));
+    _socket?.off('call-initiated');
+    _socket?.on('call-initiated', (d) => cb(d['callId'] ?? ''));
   }
   void emitMakeAnswer(String r, dynamic a)         => emit('make-answer',        {'recipientId': r, 'answer': a});
   void emitIceCandidate(String r, dynamic c)       => emit('ice-candidate',      {'recipientId': r, 'candidate': c});
