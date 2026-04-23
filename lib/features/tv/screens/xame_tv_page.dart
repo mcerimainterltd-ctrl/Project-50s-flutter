@@ -16,18 +16,9 @@ class XameTVPage extends StatelessWidget {
             .where('isLive', isEqualTo: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator(color: Colors.white));
-          }
-
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          
           final docs = snapshot.data!.docs;
-          if (docs.isEmpty) {
-            return const Center(
-              child: Text("No Live Broadcasts Found", 
-              style: TextStyle(color: Colors.white54))
-            );
-          }
-
           return PageView.builder(
             scrollDirection: Axis.vertical,
             itemCount: docs.length,
@@ -45,14 +36,14 @@ class XameTVPage extends StatelessWidget {
                     left: 20,
                     right: 20,
                     child: TVBroadcastCard(
-                      title: data['homeTeam'] + ' vs ' + data['awayTeam'],
-                      subtitle: 'Live Match Coverage',
+                      title: "${data['homeTeam']} vs ${data['awayTeam']}",
+                      subtitle: "Live Match Coverage",
                       image: data['posterUrl'] ?? '',
                       isLive: true,
-                      homeTeam: data['homeTeam']?.toString() ?? 'TBD',
-                      awayTeam: data['awayTeam'] ?? 'TBD',
-                      score: data['score']?.toString() ?? '0 - 0',
-                      matchTime: data['matchTime'] ?? '00:00',
+                      homeTeam: data['homeTeam'] ?? '',
+                      awayTeam: data['awayTeam'] ?? '',
+                      score: data['score'] ?? '',
+                      matchTime: data['matchTime'] ?? '',
                     ),
                   ),
                 ],
