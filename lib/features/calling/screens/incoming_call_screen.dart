@@ -10,6 +10,7 @@ import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/models/xame_user.dart';
 import '../../messaging/sms_templates.dart';
+import '../../../core/theme/app_theme.dart';
 
 class IncomingCallScreen extends ConsumerStatefulWidget {
   const IncomingCallScreen({super.key});
@@ -169,6 +170,29 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                         ),
                       ),
                       _buildControl(
+                        icon: Icons.person_add_outlined,
+                        label: "Add Call",
+                        color: XameColors.primary,
+                        onTap: () {
+                          final contacts = ref.read(contactsProvider).valueOrNull ?? [];
+                          final user = ref.read(currentUserProvider);
+                          if (user == null) return;
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            isScrollControlled: true,
+                            builder: (_) => _AddCallSheet(
+                              contacts: contacts,
+                              currentUserId: user.xameId,
+                              onSelect: (contactId) {
+                                Navigator.pop(context);
+                                ref.read(webRTCServiceProvider).addCall(contactId);
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      _buildControl(
                         icon: isVideo ? Icons.videocam : Icons.call,
                         label: "Accept",
                         color: const Color(0xFF00FF88), // XamePage Accent
@@ -232,6 +256,160 @@ class _PulsingCallTypeState extends State<_PulsingCallType> with SingleTickerPro
     return FadeTransition(
       opacity: Tween(begin: 0.2, end: 0.7).animate(_ctrl),
       child: Text(widget.text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 3)),
+    );
+  }
+}
+
+// ── Add Call Sheet ────────────────────────────────────────────────────────────
+class _AddCallSheet extends StatefulWidget {
+  final List<ContactModel> contacts;
+  final String currentUserId;
+  final void Function(String contactId) onSelect;
+
+  const _AddCallSheet({required this.contacts, required this.currentUserId,
+      required this.onSelect});
+
+  @override
+  State<_AddCallSheet> createState() => _AddCallSheetState();
+}
+
+class _AddCallSheetState extends State<_AddCallSheet> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.contacts
+        .where((c) => c.id != widget.currentUserId)
+        .where((c) => _search.isEmpty ||
+            c.name.toLowerCase().contains(_search.toLowerCase()) ||
+            c.id.toLowerCase().contains(_search.toLowerCase()))
+        .toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      maxChildSize: 0.92,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: XameColors.darkSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Column(children: [
+              Center(child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2)),
+              )),
+              Row(children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: XameColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.person_add_outlined,
+                      color: XameColors.primary, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('Add to Call', style: TextStyle(color: Colors.white,
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text('Select a contact to add',
+                      style: TextStyle(color: Colors.white38, fontSize: 12)),
+                ]),
+              ]),
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: XameColors.darkCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: TextField(
+                  onChanged: (v) => setState(() => _search = v),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Search contacts...',
+                    hintStyle: TextStyle(color: Colors.white30),
+                    prefixIcon: Icon(Icons.search,
+                        color: Colors.white30, size: 18),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 11),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ]),
+          ),
+          Expanded(
+            child: ListView.separated(
+              controller: ctrl,
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+              itemCount: filtered.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (_, i) {
+                final c = filtered[i];
+                return GestureDetector(
+                  onTap: () => widget.onSelect(c.id),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: XameColors.darkCard,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: XameColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(child: Text(
+                            c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                                color: XameColors.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16))),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c.name, style: const TextStyle(
+                              color: Colors.white, fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                          Text(c.id, style: const TextStyle(
+                              color: Colors.white38, fontSize: 12)),
+                        ],
+                      )),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: XameColors.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: XameColors.primary
+                              .withValues(alpha: 0.3)),
+                        ),
+                        child: const Text('Add',
+                            style: TextStyle(color: XameColors.primary,
+                                fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                    ]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }

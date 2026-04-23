@@ -16,6 +16,7 @@ import '../../../shared/models/xame_user.dart';
 import '../providers/contacts_provider.dart';
 import '../../messaging/broadcast.dart';
 import '../../messaging/groups.dart';
+import '../../calling/call_schedule.dart';
 
 class ContactsScreen extends ConsumerStatefulWidget {
   const ContactsScreen({super.key});
@@ -33,7 +34,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 4, vsync: this);
+    _tabCtrl = TabController(length: 5, vsync: this);
     _tabCtrl.addListener(() => setState(() => _tab = _tabCtrl.index));
     WidgetsBinding.instance.addPostFrameCallback((_) => _connectSocket());
   }
@@ -68,6 +69,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             return const DiscoveryAuraFeed();
           }),
           Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return PhoneScreen(userId: u?.xameId ?? '', serverUrl: 'https://project-50s.onrender.com'); }),
+          Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return XamePayScreen(userId: u?.xameId ?? ''); }),
         ])),
       ])),
       bottomNavigationBar: _buildBottomNav(),
@@ -116,7 +118,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 horizontal: 12, vertical: 10),
             ),
           )
-        : Text(['Chats','Calls','Discover','Phone'][_tab],
+        : Text(['Chats','Calls','Discover','Phone','Pay'][_tab],
             style: const TextStyle(color: Colors.white, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
@@ -156,6 +158,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           text: 'Calls'),
         const Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
         const Tab(icon: Icon(Icons.phone_outlined,              size: 22), text: 'Phone'),
+        const Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 22), text: "Pay"),
       ],
     ),
   );
@@ -353,21 +356,23 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           decoration: BoxDecoration(color: Colors.white24,
             borderRadius: BorderRadius.circular(2))),
         ListTile(
-          leading: const Icon(Icons.call_outlined, color: Colors.white70),
-          title: const Text('Call History',
+          leading: const Icon(Icons.schedule_outlined, color: Colors.white70),
+          title: const Text("Call Schedule",
             style: TextStyle(color: Colors.white)),
-          onTap: () { Navigator.pop(context); context.go('/call-history'); }),
+          onTap: () {
+            Navigator.pop(context);
+            final user   = ref.read(currentUserProvider);
+            final socket = ref.read(socketServiceProvider);
+            if (user == null) return;
+            final svc = CallScheduleService(socket, user.xameId);
+            svc.load().then((_) => ScheduledCallsListDialog.show(
+              context, service: svc));
+          }),
         ListTile(
           leading: const Icon(Icons.photo_library_outlined, color: Colors.white70),
           title: const Text('My Portfolio',
             style: TextStyle(color: Colors.white)),
           onTap: () => context.push("/gallery")),
-        ListTile(
-          leading: const Icon(
-            Icons.account_balance_wallet_outlined, color: Colors.white70),
-          title: const Text('Wallet',
-            style: TextStyle(color: Colors.white)),
-          onTap: () { Navigator.pop(context); context.go('/wallet'); }),
         ListTile(
           leading: const Icon(Icons.campaign_outlined, color: Colors.white70),
           title: const Text("Mass Messaging",
