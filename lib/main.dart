@@ -1,3 +1,4 @@
+import "package:cloud_firestore/cloud_firestore.dart";
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
@@ -33,6 +34,21 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+
+  // Step 89: Initialize Live Data (Seeding)
+  try {
+    await FirebaseFirestore.instance.collection('broadcasts').doc('live_match_1').set({
+      'isLive': true,
+      'homeTeam': 'Arsenal',
+      'awayTeam': 'Man City',
+      'score': '2 - 1',
+      'matchTime': "74'",
+      'videoUrl': 'https://assets.mixkit.co/videos/preview/mixkit-playing-football-in-the-grass-4442-large.mp4',
+      'posterUrl': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
+    }, SetOptions(merge: true));
+  } catch (e) {
+    print('Firestore Seed Error: $e');
+  }
 
   XameUser? savedUser;
   try {
