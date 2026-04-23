@@ -1,8 +1,8 @@
-import "package:cloud_firestore/cloud_firestore.dart";
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/services/push_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,35 +17,29 @@ import 'core/services/cache_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Write startup marker to Downloads for debugging
-  try {
-  
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  
   await Hive.initFlutter();
   await CacheService.init();
 
-  // Initialize Firebase
   await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+  
+  // Seed Firestore in the background (Non-blocking)
+  FirebaseFirestore.instance.collection('broadcasts').doc('live_match_1').set({
+    'isLive': true,
+    'homeTeam': 'Arsenal',
+    'awayTeam': 'Man City',
+    'score': '2 - 1',
+    'matchTime': "74'",
+    'videoUrl': 'https://assets.mixkit.co/videos/preview/mixkit-playing-football-in-the-grass-4442-large.mp4',
+    'posterUrl': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
+  }, SetOptions(merge: true)).catchError((e) => print("Seed Error: $e"));
 
-  // Step 89: Initialize Live Data (Seeding)
-  try {
-    FirebaseFirestore.instance.collection('broadcasts').doc('live_match_1').set({
-      'isLive': true,
-      'homeTeam': 'Arsenal',
-      'awayTeam': 'Man City',
-      'score': '2 - 1',
-      'matchTime': "74'",
-      'videoUrl': 'https://assets.mixkit.co/videos/preview/mixkit-playing-football-in-the-grass-4442-large.mp4',
-      'posterUrl': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
-    }, SetOptions(merge: true));
-  } catch (e) {
-    print('Firestore Seed Error: $e');
-  }
+  FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
 
   XameUser? savedUser;
   try {
@@ -57,10 +51,9 @@ void main() async {
     }
   } catch (_) {}
 
-  // Init push service if user is logged in
   if (savedUser != null) {
     final pushService = PushService();
-    pushService.init(savedUser!.xameId);
+    pushService.init(savedUser.xameId);
   }
 
   runApp(ProviderScope(
