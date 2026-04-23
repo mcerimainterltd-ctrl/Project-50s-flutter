@@ -186,7 +186,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                               currentUserId: user.xameId,
                               onSelect: (contactId) {
                                 Navigator.pop(context);
-                                ref.read(webRTCServiceProvider).addCall(contactId);
+                                ref.read(webRTCServiceProvider).startCall(contactId, false);
                               },
                             ),
                           );

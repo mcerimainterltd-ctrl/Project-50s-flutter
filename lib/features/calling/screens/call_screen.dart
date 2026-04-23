@@ -9,6 +9,8 @@ import '../../../core/services/webrtc_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/config/constants.dart';
 import '../screen_share.dart';
 import '../conference.dart';
 
@@ -542,7 +544,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         currentUserId: user.xameId,
         onSelect: (contactId) {
           Navigator.pop(context);
-          ref.read(webRTCServiceProvider).addCall(contactId);
+          ref.read(webRTCServiceProvider).startCall(contactId, false);
         },
       ),
     );
