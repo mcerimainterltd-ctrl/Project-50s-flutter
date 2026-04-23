@@ -45,6 +45,10 @@ class XameTVPage extends StatelessWidget {
                     left: 20,
                     right: 20,
                     child: TVBroadcastCard(
+                      title: data['homeTeam'] + ' vs ' + data['awayTeam'],
+                      subtitle: 'Live Match Coverage',
+                      image: data['posterUrl'] ?? '',
+                      isLive: true,
                       homeTeam: data['homeTeam'] ?? 'TBD',
                       awayTeam: data['awayTeam'] ?? 'TBD',
                       score: data['score'] ?? '0 - 0',

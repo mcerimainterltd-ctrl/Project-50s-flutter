@@ -6,6 +6,10 @@ class TVBroadcastCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String image;
+  final String homeTeam;
+  final String awayTeam;
+  final String score;
+  final String matchTime;
   final bool isLive;
 
   const TVBroadcastCard({
@@ -14,6 +18,10 @@ class TVBroadcastCard extends StatelessWidget {
     required this.subtitle, 
     required this.image,
     this.isLive = false,
+    required this.homeTeam,
+    required this.awayTeam,
+    required this.score,
+    required this.matchTime,
   }) : super(key: key);
 
   @override
@@ -42,10 +50,10 @@ class TVBroadcastCard extends StatelessWidget {
               top: 16,
               left: 16,
               child: SoccerScoreOverlay(
-                homeTeam: "ARS",
-                awayTeam: "CHE",
-                score: "2 - 0",
-                matchTime: "64'",
+                homeTeam: homeTeam,
+                awayTeam: awayTeam,
+                score: score,
+                matchTime: matchTime,
               ),
             ),
             const Positioned(top: 16, right: 16, child: LivePulseIndicator()),

@@ -7,6 +7,8 @@ environment:
   sdk: '>=3.4.0 <4.0.0'
 
 dependencies:
+  cloud_firestore: ^5.4.4
+  cloud_firestore: ^5.4.4
   video_player: ^2.5.0
   flutter:
     sdk: flutter
@@ -47,6 +49,8 @@ dependencies:
 
 
 dev_dependencies:
+  cloud_firestore: ^5.4.4
+  cloud_firestore: ^5.4.4
   video_player: ^2.5.0
   flutter_test:
     sdk: flutter
