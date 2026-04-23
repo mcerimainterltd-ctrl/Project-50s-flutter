@@ -40,8 +40,8 @@ class WebRTCService {
   static const _channel = MethodChannel('com.xamepage.app/call');
   bool _callCancelled = false;
   Timer? _callTimeoutTimer;
-  DateTime? _callStartTime;
   String? _currentCallId;
+  DateTime? _callStartTime;
   bool isRinging = false;
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
@@ -137,6 +137,8 @@ class WebRTCService {
       await Helper.setSpeakerphoneOn(false);
       _audio.playOutgoing();
     }
+    // Capture callId from server
+    _socket.onCallInitiated((id) => _currentCallId = id);
     // Start timeout — record missed if no answer within callTimeoutSeconds
     _callStartTime = DateTime.now();
     _callTimeoutTimer = Timer(
@@ -276,6 +278,7 @@ class WebRTCService {
     _callCancelled = false;
     _callTimeoutTimer?.cancel();
     _callTimeoutTimer = null;
+    _currentCallId = null;
   }
 
   void _recordMissedCall(String recipientId, String callType) {
