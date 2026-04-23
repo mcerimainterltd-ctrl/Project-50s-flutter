@@ -3,19 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:xamepage/core/config/constants.dart';
 import 'package:xamepage/core/services/socket_service.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Model ─────────────────────────────────────────────────────────────────────
 class BroadcastList {
-  final String listId;
-  final String name;
+  final String listId, name;
   final List<String> members;
-
-  const BroadcastList({
-    required this.listId,
-    required this.name,
-    required this.members,
-  });
-
+  const BroadcastList({required this.listId, required this.name,
+      required this.members});
   factory BroadcastList.fromJson(Map<String, dynamic> j) => BroadcastList(
     listId:  j['listId']  as String,
     name:    j['name']    as String,
@@ -30,7 +25,6 @@ class BroadcastService {
   List<BroadcastList> _lists = [];
 
   BroadcastService(this._socket, this._userId);
-
   List<BroadcastList> get lists => List.unmodifiable(_lists);
 
   Future<void> load() async {
@@ -56,14 +50,14 @@ class BroadcastService {
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
         final list = BroadcastList.fromJson(Map<String, dynamic>.from(d['list']));
-        _lists.insert(0, list);
-        return list;
+        _lists.insert(0, list); return list;
       }
     } catch (e) { debugPrint('[Broadcast] Create error: $e'); }
     return null;
   }
 
-  Future<void> updateList(String listId, String name, List<String> members) async {
+  Future<void> updateList(String listId, String name,
+      List<String> members) async {
     try {
       final res = await http.put(
         Uri.parse('${AppConstants.serverUrl}/api/broadcast/$listId'),
@@ -73,9 +67,8 @@ class BroadcastService {
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
         final i = _lists.indexWhere((l) => l.listId == listId);
-        if (i != -1) {
-          _lists[i] = BroadcastList.fromJson(Map<String, dynamic>.from(d['list']));
-        }
+        if (i != -1) _lists[i] = BroadcastList.fromJson(
+            Map<String, dynamic>.from(d['list']));
       }
     } catch (e) { debugPrint('[Broadcast] Update error: $e'); }
   }
@@ -91,20 +84,15 @@ class BroadcastService {
     } catch (e) { debugPrint('[Broadcast] Delete error: $e'); }
   }
 
-  Future<void> send({
-    required List<String> recipients,
-    required String text,
-  }) async {
+  Future<void> send({required List<String> recipients,
+      required String text}) async {
     for (final recipientId in recipients) {
       final msgId = DateTime.now().millisecondsSinceEpoch.toRadixString(36) +
           recipientId.hashCode.toRadixString(36);
       _socket.emit('send-message', {
         'recipientId': recipientId,
-        'message': {
-          'id': msgId,
-          'text': text,
-          'ts': DateTime.now().millisecondsSinceEpoch,
-        },
+        'message': {'id': msgId, 'text': text,
+            'ts': DateTime.now().millisecondsSinceEpoch},
       });
       await Future.delayed(const Duration(milliseconds: 100));
     }
@@ -117,29 +105,20 @@ class BroadcastScreen extends StatefulWidget {
   final List<Map<String, dynamic>> contacts;
   final String currentUserId;
 
-  const BroadcastScreen({
-    super.key,
-    required this.service,
-    required this.contacts,
-    required this.currentUserId,
-  });
+  const BroadcastScreen({super.key, required this.service,
+      required this.contacts, required this.currentUserId});
 
   static Future<void> show(BuildContext context, {
     required BroadcastService service,
     required List<Map<String, dynamic>> contacts,
     required String currentUserId,
-  }) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BroadcastScreen(
-        service: service,
-        contacts: contacts,
-        currentUserId: currentUserId,
-      ),
-    );
-  }
+  }) => showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => BroadcastScreen(service: service,
+        contacts: contacts, currentUserId: currentUserId),
+  );
 
   @override
   State<BroadcastScreen> createState() => _BroadcastScreenState();
@@ -149,84 +128,160 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
   @override
   Widget build(BuildContext context) {
     final lists = widget.service.lists;
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      maxChildSize: 0.92,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: XameColors.darkSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          // Handle + header
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('📢 Mass Messaging',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-                IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context)),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () => _openNewBroadcast(context),
-                    child: const Text('📨 New Broadcast'),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Column(children: [
+              Center(child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2)),
+              )),
+              Row(children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [XameColors.primary, XameColors.secondary],
+                      begin: Alignment.topLeft, end: Alignment.bottomRight),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: const Icon(Icons.campaign_outlined,
+                      color: Colors.black, size: 20),
                 ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => _openManageLists(context),
-                    child: const Text('📋 Manage Broadcast Lists'),
-                  ),
+                const SizedBox(width: 12),
+                const Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('Mass Messaging', style: TextStyle(color: Colors.white,
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text('Send to multiple contacts at once',
+                      style: TextStyle(color: Colors.white38, fontSize: 12)),
+                ]),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close, color: Colors.white38, size: 20),
                 ),
-              ],
-            ),
+              ]),
+              const SizedBox(height: 16),
+              // Action buttons
+              Row(children: [
+                Expanded(child: _ActionBtn(
+                  icon: Icons.send_outlined,
+                  label: 'New Broadcast',
+                  color: XameColors.primary,
+                  onTap: () => _openNewBroadcast(context),
+                )),
+                const SizedBox(width: 10),
+                Expanded(child: _ActionBtn(
+                  icon: Icons.list_outlined,
+                  label: 'Manage Lists',
+                  color: XameColors.secondary,
+                  onTap: () => _openManageLists(context),
+                )),
+              ]),
+              const SizedBox(height: 16),
+              if (lists.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Saved Lists (${lists.length})',
+                      style: const TextStyle(color: Colors.white38,
+                          fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+            ]),
           ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Saved Lists',
-                  style: TextStyle(fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            ),
-          ),
+          // Lists
           Expanded(
             child: lists.isEmpty
-                ? const Center(
-                    child: Text('No saved lists yet',
-                        style: TextStyle(color: Colors.grey)))
+                ? Column(mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                    const Icon(Icons.campaign_outlined,
+                        color: Colors.white12, size: 48),
+                    const SizedBox(height: 12),
+                    const Text('No saved lists yet',
+                        style: TextStyle(color: Colors.white38, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _openNewBroadcast(context),
+                      child: const Text('Create your first broadcast →',
+                          style: TextStyle(color: XameColors.primary,
+                              fontSize: 13)),
+                    ),
+                  ])
                 : ListView.separated(
-                    padding: const EdgeInsets.all(16),
+                    controller: ctrl,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                     itemCount: lists.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final l = lists[i];
-                      return ListTile(
-                        title: Text(l.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text('${l.members.length} recipients'),
-                        trailing: FilledButton(
-                          onPressed: () => _openNewBroadcast(context,
-                              preselected: l.members),
-                          child: const Text('Send'),
+                      return Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: XameColors.darkCard,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white10),
                         ),
+                        child: Row(children: [
+                          Container(
+                            width: 42, height: 42,
+                            decoration: BoxDecoration(
+                              color: XameColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text('${l.members.length}',
+                                  style: const TextStyle(
+                                      color: XameColors.primary, fontSize: 15,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(l.name, style: const TextStyle(
+                                  color: Colors.white, fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                              Text('${l.members.length} recipients',
+                                  style: const TextStyle(
+                                      color: Colors.white38, fontSize: 12)),
+                            ],
+                          )),
+                          GestureDetector(
+                            onTap: () => _openNewBroadcast(context,
+                                preselected: l.members),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [XameColors.primary,
+                                      XameColors.secondary]),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text('Send',
+                                  style: TextStyle(color: Colors.black,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                        ]),
                       );
                     },
                   ),
           ),
-        ],
+        ]),
       ),
     );
   }
@@ -235,26 +290,23 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
     Navigator.pop(context);
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (_) => _NewBroadcastSheet(
-        service:      widget.service,
-        contacts:     widget.contacts,
-        currentUserId: widget.currentUserId,
-        preselected:  preselected,
-      ),
+        service: widget.service, contacts: widget.contacts,
+        currentUserId: widget.currentUserId, preselected: preselected),
     );
   }
 
   void _openManageLists(BuildContext context) {
     Navigator.pop(context);
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (_) => _ManageListsDialog(
-        service:      widget.service,
-        contacts:     widget.contacts,
-        currentUserId: widget.currentUserId,
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ManageListsSheet(
+        service: widget.service, contacts: widget.contacts,
+        currentUserId: widget.currentUserId),
     );
   }
 }
@@ -266,12 +318,8 @@ class _NewBroadcastSheet extends StatefulWidget {
   final String currentUserId;
   final List<String>? preselected;
 
-  const _NewBroadcastSheet({
-    required this.service,
-    required this.contacts,
-    required this.currentUserId,
-    this.preselected,
-  });
+  const _NewBroadcastSheet({required this.service, required this.contacts,
+      required this.currentUserId, this.preselected});
 
   @override
   State<_NewBroadcastSheet> createState() => _NewBroadcastSheetState();
@@ -279,8 +327,9 @@ class _NewBroadcastSheet extends StatefulWidget {
 
 class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
   late Set<String> _selected;
-  final _textCtrl = TextEditingController();
-  bool _sending = false;
+  final _textCtrl  = TextEditingController();
+  bool _sending    = false;
+  String _search   = '';
 
   @override
   void initState() {
@@ -289,221 +338,499 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
   }
 
   @override
-  void dispose() {
-    _textCtrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _textCtrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     final contacts = widget.contacts
         .where((c) => c['id'] != widget.currentUserId)
+        .where((c) => _search.isEmpty ||
+            (c['name'] as String? ?? '').toLowerCase()
+                .contains(_search.toLowerCase()) ||
+            (c['id'] as String).toLowerCase().contains(_search.toLowerCase()))
         .toList();
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-          16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('📨 New Broadcast',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-              IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context)),
-            ],
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      maxChildSize: 0.95,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: XameColors.darkSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Column(children: [
+              Center(child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2)),
+              )),
+              Row(children: [
+                const Text('New Broadcast', style: TextStyle(color: Colors.white,
+                    fontSize: 16, fontWeight: FontWeight.w700)),
+                const Spacer(),
+                if (_selected.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: XameColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('${_selected.length} selected',
+                        style: const TextStyle(color: XameColors.primary,
+                            fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+              ]),
+              const SizedBox(height: 12),
+              // Search
+              Container(
+                decoration: BoxDecoration(
+                  color: XameColors.darkCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: TextField(
+                  onChanged: (v) => setState(() => _search = v),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Search contacts...',
+                    hintStyle: TextStyle(color: Colors.white30),
+                    prefixIcon: Icon(Icons.search, color: Colors.white30,
+                        size: 18),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 11),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ]),
           ),
-          const SizedBox(height: 8),
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Select Recipients',
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
-          ),
+          // Contacts list
           Expanded(
-            child: ListView(
-              children: contacts.map((c) {
-                final id = c['id'] as String;
+            child: ListView.builder(
+              controller: ctrl,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: contacts.length,
+              itemBuilder: (_, i) {
+                final c   = contacts[i];
+                final id  = c['id'] as String;
                 final name = c['name'] as String? ?? id;
-                return CheckboxListTile(
-                  dense: true,
-                  title: Text(name),
-                  value: _selected.contains(id),
-                  onChanged: (v) => setState(() =>
-                      v! ? _selected.add(id) : _selected.remove(id)),
+                final sel  = _selected.contains(id);
+                return GestureDetector(
+                  onTap: () => setState(() =>
+                      sel ? _selected.remove(id) : _selected.add(id)),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: sel
+                          ? XameColors.primary.withValues(alpha: 0.08)
+                          : XameColors.darkCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: sel
+                            ? XameColors.primary.withValues(alpha: 0.3)
+                            : Colors.white10,
+                      ),
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: XameColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(name.isNotEmpty
+                              ? name[0].toUpperCase() : '?',
+                              style: const TextStyle(
+                                  color: XameColors.primary,
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: const TextStyle(
+                              color: Colors.white, fontSize: 14,
+                              fontWeight: FontWeight.w500)),
+                          Text(id, style: const TextStyle(
+                              color: Colors.white38, fontSize: 12)),
+                        ],
+                      )),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 22, height: 22,
+                        decoration: BoxDecoration(
+                          color: sel ? XameColors.primary : Colors.transparent,
+                          border: Border.all(
+                            color: sel ? XameColors.primary : Colors.white24,
+                            width: 1.5),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: sel
+                            ? const Icon(Icons.check, color: Colors.black,
+                                size: 14)
+                            : null,
+                      ),
+                    ]),
+                  ),
                 );
-              }).toList(),
+              },
             ),
           ),
-          TextField(
-            controller: _textCtrl,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'Type your message...',
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceVariant,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
+          // Message + send
+          Container(
+            padding: EdgeInsets.fromLTRB(
+                20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+            decoration: const BoxDecoration(
+              color: XameColors.darkSurface,
+              border: Border(top: BorderSide(color: Colors.white10)),
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () async {
-                    if (_selected.isEmpty) {
-                      _snack('Select at least one contact');
-                      return;
-                    }
-                    final name = await _promptText(context, 'Enter list name:');
-                    if (name == null || name.isEmpty) return;
-                    await widget.service.createList(name, _selected.toList());
-                    _snack('List saved!');
-                  },
-                  child: const Text('💾 Save List'),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: XameColors.darkCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: TextField(
+                  controller: _textCtrl,
+                  maxLines: 3, minLines: 1,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Type your message...',
+                    hintStyle: TextStyle(color: Colors.white30),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _sending ? null : () async {
-                    if (_selected.isEmpty) { _snack('Select recipients'); return; }
-                    if (_textCtrl.text.trim().isEmpty) { _snack('Type a message'); return; }
-                    setState(() => _sending = true);
-                    await widget.service.send(
-                      recipients: _selected.toList(),
-                      text: _textCtrl.text.trim(),
-                    );
-                    if (mounted) {
-                      Navigator.pop(context);
-                      _snack('✅ Sent to ${_selected.length} contacts!');
-                    }
-                  },
-                  child: const Text('📤 Send'),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      if (_selected.isEmpty) { _snack('Select contacts'); return; }
+                      final name = await _promptName(context);
+                      if (name == null || name.isEmpty) return;
+                      await widget.service.createList(
+                          name, _selected.toList());
+                      _snack('List saved!');
+                    },
+                    child: Container(
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: XameColors.darkCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text('💾 Save List',
+                          style: TextStyle(color: Colors.white54,
+                              fontSize: 13, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: _sending ? null : () async {
+                      if (_selected.isEmpty) {
+                        _snack('Select recipients'); return;
+                      }
+                      if (_textCtrl.text.trim().isEmpty) {
+                        _snack('Type a message'); return;
+                      }
+                      setState(() => _sending = true);
+                      await widget.service.send(
+                        recipients: _selected.toList(),
+                        text: _textCtrl.text.trim(),
+                      );
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                              '✅ Sent to ${_selected.length} contacts!'),
+                          backgroundColor:
+                              XameColors.accent.withValues(alpha: 0.2),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ));
+                      }
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      height: 46,
+                      decoration: BoxDecoration(
+                        gradient: _sending ? null : const LinearGradient(
+                          colors: [XameColors.primary, XameColors.secondary]),
+                        color: _sending ? XameColors.darkCard : null,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: _sending
+                          ? const SizedBox(width: 18, height: 18,
+                              child: CircularProgressIndicator(
+                                  color: XameColors.primary, strokeWidth: 2))
+                          : const Text('📤 Send',
+                              style: TextStyle(color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ),
+              ]),
+            ]),
           ),
-        ],
+        ]),
       ),
     );
   }
 
-  void _snack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
-  }
+  void _snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(msg), backgroundColor: XameColors.darkCard,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12))));
 
-  Future<String?> _promptText(BuildContext context, String label) async {
+  Future<String?> _promptName(BuildContext context) async {
     final ctrl = TextEditingController();
     return showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(label),
-        content: TextField(controller: ctrl, autofocus: true),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, ctrl.text), child: const Text('OK')),
-        ],
+      builder: (_) => Dialog(
+        backgroundColor: XameColors.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('Name this list', style: TextStyle(color: Colors.white,
+                fontSize: 15, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 14),
+            Container(
+              decoration: BoxDecoration(
+                color: XameColors.darkSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: TextField(
+                controller: ctrl, autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: const InputDecoration(
+                  hintText: 'e.g. Family, Work, VIPs',
+                  hintStyle: TextStyle(color: Colors.white30),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(children: [
+              Expanded(child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(12)),
+                  alignment: Alignment.center,
+                  child: const Text('Cancel',
+                      style: TextStyle(color: Colors.white54))),
+              )),
+              const SizedBox(width: 10),
+              Expanded(child: GestureDetector(
+                onTap: () => Navigator.pop(context, ctrl.text),
+                child: Container(height: 42,
+                  decoration: BoxDecoration(
+                    color: XameColors.primary,
+                    borderRadius: BorderRadius.circular(12)),
+                  alignment: Alignment.center,
+                  child: const Text('Save',
+                      style: TextStyle(color: Colors.black,
+                          fontWeight: FontWeight.w700))),
+              )),
+            ]),
+          ]),
+        ),
       ),
     );
   }
 }
 
-// ── Manage Lists Dialog ───────────────────────────────────────────────────────
-class _ManageListsDialog extends StatefulWidget {
+// ── Manage Lists Sheet ────────────────────────────────────────────────────────
+class _ManageListsSheet extends StatefulWidget {
   final BroadcastService service;
   final List<Map<String, dynamic>> contacts;
   final String currentUserId;
 
-  const _ManageListsDialog({
-    required this.service,
-    required this.contacts,
-    required this.currentUserId,
-  });
+  const _ManageListsSheet({required this.service, required this.contacts,
+      required this.currentUserId});
 
   @override
-  State<_ManageListsDialog> createState() => _ManageListsDialogState();
+  State<_ManageListsSheet> createState() => _ManageListsSheetState();
 }
 
-class _ManageListsDialogState extends State<_ManageListsDialog> {
+class _ManageListsSheetState extends State<_ManageListsSheet> {
   List<BroadcastList> get _lists => widget.service.lists;
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('📋 Broadcast Lists'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context);
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => _NewBroadcastSheet(
-                    service: widget.service,
-                    contacts: widget.contacts,
-                    currentUserId: widget.currentUserId,
-                  ),
-                );
-              },
-              child: const Text('+ New List'),
-            ),
-            const SizedBox(height: 8),
-            if (_lists.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No lists yet', style: TextStyle(color: Colors.grey)),
-              )
-            else
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 300),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: _lists.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, i) {
-                    final l = _lists[i];
-                    return ListTile(
-                      dense: true,
-                      title: Text(l.name,
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${l.members.length} members'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline,
-                            color: Colors.red, size: 20),
-                        onPressed: () async {
-                          await widget.service.deleteList(l.listId);
-                          setState(() {});
-                        },
-                      ),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      maxChildSize: 0.92,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: XameColors.darkSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: Column(children: [
+              Center(child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2)),
+              )),
+              Row(children: [
+                const Text('Broadcast Lists',
+                    style: TextStyle(color: Colors.white, fontSize: 16,
+                        fontWeight: FontWeight.w700)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      isScrollControlled: true,
+                      builder: (_) => _NewBroadcastSheet(
+                        service: widget.service,
+                        contacts: widget.contacts,
+                        currentUserId: widget.currentUserId),
                     );
                   },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                          colors: [XameColors.primary, XameColors.secondary]),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text('+ New List',
+                        style: TextStyle(color: Colors.black, fontSize: 12,
+                            fontWeight: FontWeight.w700)),
+                  ),
                 ),
-              ),
-          ],
-        ),
+              ]),
+            ]),
+          ),
+          Expanded(
+            child: _lists.isEmpty
+                ? const Center(child: Text('No lists yet',
+                    style: TextStyle(color: Colors.white38)))
+                : ListView.separated(
+                    controller: ctrl,
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                    itemCount: _lists.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) {
+                      final l = _lists[i];
+                      return Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: XameColors.darkCard,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Row(children: [
+                          Container(
+                            width: 42, height: 42,
+                            decoration: BoxDecoration(
+                              color: XameColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(child: Text('${l.members.length}',
+                                style: const TextStyle(
+                                    color: XameColors.primary, fontSize: 15,
+                                    fontWeight: FontWeight.w700))),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(l.name, style: const TextStyle(
+                                  color: Colors.white, fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                              Text('${l.members.length} members',
+                                  style: const TextStyle(
+                                      color: Colors.white38, fontSize: 12)),
+                            ],
+                          )),
+                          GestureDetector(
+                            onTap: () async {
+                              await widget.service.deleteList(l.listId);
+                              setState(() {});
+                            },
+                            child: Container(
+                              width: 34, height: 34,
+                              decoration: BoxDecoration(
+                                color: XameColors.danger
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.delete_outline,
+                                  color: XameColors.danger, size: 16),
+                            ),
+                          ),
+                        ]),
+                      );
+                    },
+                  ),
+          ),
+        ]),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-      ],
     );
   }
+}
+
+// ── Action Button ─────────────────────────────────────────────────────────────
+class _ActionBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _ActionBtn({required this.icon, required this.label,
+      required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(color: color, fontSize: 13,
+            fontWeight: FontWeight.w600)),
+      ]),
+    ),
+  );
 }

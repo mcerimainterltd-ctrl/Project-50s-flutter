@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xamepage/core/services/socket_service.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Timer presets ─────────────────────────────────────────────────────────────
 class TimerOption {
@@ -40,8 +41,6 @@ final disappearingProvider = Provider<DisappearingService>((ref) {
 class DisappearingService {
   final SocketService _socket;
   final Map<String, _TimerEntry> _activeTimers = {};
-
-  // Callbacks registered by messaging layer
   void Function(String messageId, String? contactId)? onDelete;
 
   DisappearingService(this._socket) {
@@ -51,7 +50,6 @@ class DisappearingService {
     });
   }
 
-  // ── Stamp outgoing message with expiresAt ─────────────────────────────────
   Future<Map<String, dynamic>> stampMessage(
       Map<String, dynamic> msg, String contactId) async {
     final ms = await _getTimerMs(contactId);
@@ -62,23 +60,18 @@ class DisappearingService {
     return {...msg, 'expiresAt': expiresAt, 'timerLabel': label};
   }
 
-  // ── Schedule client-side deletion ─────────────────────────────────────────
   void scheduleDelete(String messageId, int expiresAt, String? contactId) {
     cancelTimer(messageId);
     final remaining = expiresAt - DateTime.now().millisecondsSinceEpoch;
-    if (remaining <= 0) {
-      onDelete?.call(messageId, contactId);
-      return;
-    }
+    if (remaining <= 0) { onDelete?.call(messageId, contactId); return; }
     final timer = Timer(Duration(milliseconds: remaining), () {
       _activeTimers.remove(messageId);
       onDelete?.call(messageId, contactId);
     });
     _activeTimers[messageId] = _TimerEntry(
-      timer: timer, expiresAt: expiresAt, contactId: contactId);
+        timer: timer, expiresAt: expiresAt, contactId: contactId);
   }
 
-  // ── Restore timers on login/reload ────────────────────────────────────────
   void restoreTimers(List<Map<String, dynamic>> messages) {
     int restored = 0;
     for (final msg in messages) {
@@ -105,7 +98,6 @@ class DisappearingService {
         .clamp(0, double.maxFinite.toInt());
   }
 
-  // ── Timer persistence ─────────────────────────────────────────────────────
   Future<String> getChatTimer(String contactId) async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('xame:disappear:$contactId') ?? 'off';
@@ -113,11 +105,8 @@ class DisappearingService {
 
   Future<void> setChatTimer(String contactId, String value) async {
     final prefs = await SharedPreferences.getInstance();
-    if (value == 'off') {
-      await prefs.remove('xame:disappear:$contactId');
-    } else {
-      await prefs.setString('xame:disappear:$contactId', value);
-    }
+    if (value == 'off') await prefs.remove('xame:disappear:$contactId');
+    else await prefs.setString('xame:disappear:$contactId', value);
   }
 
   Future<int> _getTimerMs(String contactId) async {
@@ -126,7 +115,6 @@ class DisappearingService {
         orElse: () => timerOptions.first).ms;
   }
 
-  // ── Format remaining time ─────────────────────────────────────────────────
   static String formatRemaining(int ms) {
     if (ms < 60000)    return '${(ms / 1000).ceil()}s';
     if (ms < 3600000)  return '${(ms / 60000).ceil()}m';
@@ -135,7 +123,7 @@ class DisappearingService {
   }
 }
 
-// ── Timer Dialog Widget ───────────────────────────────────────────────────────
+// ── Timer Dialog ──────────────────────────────────────────────────────────────
 class DisappearingTimerDialog extends ConsumerStatefulWidget {
   final String contactId;
   final SocketService socket;
@@ -156,6 +144,7 @@ class DisappearingTimerDialog extends ConsumerStatefulWidget {
     return showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (_) => DisappearingTimerDialog(
         contactId: contactId,
         socket: socket,
@@ -190,67 +179,96 @@ class _DisappearingTimerDialogState
     await svc.setChatTimer(widget.contactId, value);
     widget.socket.emit('disappearing:timer-set', {
       'contactId': widget.contactId,
-      'userId': widget.currentUserId,
-      'value': value,
+      'userId':    widget.currentUserId,
+      'value':     value,
     });
     setState(() => _current = value);
-    await Future.delayed(const Duration(milliseconds: 400));
+    await Future.delayed(const Duration(milliseconds: 300));
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = ref.watch(themeProvider);
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: theme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      padding: EdgeInsets.fromLTRB(
+          24, 8, 24, MediaQuery.of(context).viewInsets.bottom + 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('⏱️ Disappearing Messages',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Text('Messages will automatically disappear after the selected time.',
-              style: TextStyle(fontSize: 13,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 16),
+          // Handle
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          // Header
+          Row(children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: theme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.timer_outlined, color: theme.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Disappearing Messages',
+                  style: TextStyle(color: theme.text, fontSize: 16,
+                      fontWeight: FontWeight.w700)),
+              Text('Auto-delete after selected time',
+                  style: TextStyle(color: theme.textSecondary, fontSize: 12)),
+            ]),
+          ]),
+          const SizedBox(height: 20),
+          // Options
           ...timerOptions.map((opt) {
             final active = _current == opt.value;
             return GestureDetector(
               onTap: () => _select(opt.value),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
                 width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: active
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).dividerColor,
-                  ),
+                  borderRadius: BorderRadius.circular(14),
                   color: active
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                      : Colors.transparent,
+                      ? theme.primary.withValues(alpha: 0.12)
+                      : theme.card,
+                  border: Border.all(
+                    color: active ? theme.primary : Colors.transparent,
+                    width: 1.5,
+                  ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Icon(
+                      active ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                      color: active ? theme.primary : theme.textSecondary,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 12),
                     Text(opt.label,
                         style: TextStyle(
+                          color: active ? theme.primary : theme.text,
                           fontSize: 14,
                           fontWeight: active ? FontWeight.w600 : FontWeight.normal,
-                          color: active
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurface,
                         )),
-                    if (active)
-                      Icon(Icons.check_circle,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 18),
+                    if (opt.value == 'off') ...[
+                      const Spacer(),
+                      Text('Default', style: TextStyle(
+                          color: theme.textSecondary, fontSize: 11)),
+                    ],
                   ],
                 ),
               ),

@@ -10,7 +10,6 @@ import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../screen_share.dart';
-import '../call_schedule.dart';
 import '../conference.dart';
 
 class CallScreen extends ConsumerStatefulWidget {
@@ -36,7 +35,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _isLocalMain  = false;
   bool _isScreenSharing = false;
   late ScreenShareService  _screenShare;
-  CallScheduleService?     _callSchedule;
   ConferenceService?       _conference;
   bool _showControls = true;
   String? _callEndReason;
@@ -53,7 +51,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final user   = ref.read(currentUserProvider);
     _screenShare = ScreenShareService(socket);
     if (user != null) {
-      _callSchedule = CallScheduleService(socket, user.xameId);
       _conference   = ConferenceService(
         socket:      socket,
         screenShare: _screenShare,
@@ -280,7 +277,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         Helper.setSpeakerphoneOn(_isSpeakerOn);
                       }),
                       _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
-                      _vBtn(Icons.schedule_outlined, false, "Schedule", _openSchedule),
                       _vBtn(Icons.group_outlined, false, "Conference", _openConference),
                       _endBtn(webrtc),
                     ],
@@ -521,15 +517,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     }
   }
 
-  void _openSchedule() {
-    final user = ref.read(currentUserProvider);
-    if (user == null || _callSchedule == null) return;
-    ScheduleCallDialog.show(context,
-      recipientId:   widget.userId,
-      recipientName: widget.userId,
-      service:       _callSchedule!,
-    );
-  }
 
   void _openConference() {
     if (_conference == null) return;
