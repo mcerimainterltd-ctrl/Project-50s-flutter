@@ -790,6 +790,10 @@ class _ContactsTab extends StatelessWidget {
     final keys = grp.keys.toList()..sort();
 
     return Column(children: [
+      // XamePage contacts
+      if (xameContacts.isNotEmpty)
+        _XameContactsSection(xameContacts: xameContacts),
+
       // Search bar
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
