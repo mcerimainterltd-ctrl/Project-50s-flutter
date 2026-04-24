@@ -728,19 +728,21 @@ class _RecentsTab extends StatelessWidget {
 
 // ── Contacts tab ──────────────────────────────────────────────────────────────
 class _ContactsTab extends StatelessWidget {
-  final List<_DevContact> contacts;
+  final List<_DevContact>  contacts;
+  final List<XameContact>  xameContacts;
   final bool      loading, loaded;
   final String    q;
-  final void Function(String)    onQChange;
-  final VoidCallback             onLoad;
+  final void Function(String)      onQChange;
+  final VoidCallback               onLoad;
   final void Function(_DevContact) onCall;
   final void Function(_DevContact) onSms;
 
   const _ContactsTab({
-    required this.contacts, required this.loading,
-    required this.loaded,   required this.q,
+    required this.contacts,  required this.loading,
+    required this.loaded,    required this.q,
     required this.onQChange, required this.onLoad,
-    required this.onCall,   required this.onSms,
+    required this.onCall,    required this.onSms,
+    this.xameContacts = const [],
   });
 
   @override
