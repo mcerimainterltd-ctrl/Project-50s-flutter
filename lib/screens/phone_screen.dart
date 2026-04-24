@@ -107,6 +107,13 @@ final _kCountries = [
 ];
 
 // ── Screen ────────────────────────────────────────────────────────────────────
+// Lightweight XamePage contact model (avoids circular import from contacts_provider)
+class XameContact {
+  final String id, name;
+  final String? profilePic;
+  const XameContact({required this.id, required this.name, this.profilePic});
+}
+
 class PhoneScreen extends StatefulWidget {
   final String userId, serverUrl;
   const PhoneScreen({super.key, required this.userId, required this.serverUrl});
@@ -955,6 +962,104 @@ class _ContactTile extends StatelessWidget {
 }
 
 // ── Keypad tab ────────────────────────────────────────────────────────────────
+
+class _XameContactsSection extends StatelessWidget {
+  final List<XameContact> xameContacts;
+  const _XameContactsSection({required this.xameContacts});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0x1A00FF88),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0x3300FF88))),
+            child: const Text('XamePage',
+                style: TextStyle(color: Color(0xFF00FF88),
+                    fontSize: 11, fontWeight: FontWeight.w700))),
+          const SizedBox(width: 8),
+          Text(
+            '${xameContacts.length} contact${xameContacts.length == 1 ? "" : "s"}',
+            style: const TextStyle(color: Colors.white38, fontSize: 11)),
+        ]),
+      ),
+      SizedBox(
+        height: 104,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: xameContacts.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 14),
+          itemBuilder: (ctx, i) {
+            final c = xameContacts[i];
+            return SizedBox(width: 68,
+              child: Column(children: [
+                Stack(children: [
+                  CircleAvatar(radius: 26,
+                    backgroundColor: const Color(0xFF1A2332),
+                    backgroundImage: c.profilePic != null
+                        ? NetworkImage(c.profilePic!) : null,
+                    child: c.profilePic == null
+                        ? Text(
+                            c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                            style: const TextStyle(color: Colors.white,
+                                fontSize: 18, fontWeight: FontWeight.w700))
+                        : null),
+                  Positioned(bottom: 0, right: 0,
+                    child: Container(width: 13, height: 13,
+                      decoration: BoxDecoration(
+                          color: const Color(0xFF00FF88),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: const Color(0xFF0D1520), width: 2)))),
+                ]),
+                const SizedBox(height: 4),
+                Text(c.name,
+                    style: const TextStyle(color: Colors.white,
+                        fontSize: 10, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis, maxLines: 1,
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 4),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  GestureDetector(
+                    onTap: () => ctx.go(
+                        '/call/${c.id}?video=false&incoming=false'),
+                    child: Container(width: 28, height: 28,
+                      decoration: BoxDecoration(
+                          color: const Color(0x1A00FF88),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: const Color(0x3300FF88))),
+                      child: const Icon(Icons.call_rounded,
+                          color: Color(0xFF00FF88), size: 14))),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () => ctx.go(
+                        '/call/${c.id}?video=true&incoming=false'),
+                    child: Container(width: 28, height: 28,
+                      decoration: BoxDecoration(
+                          color: const Color(0x1A9C27B0),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: const Color(0x339C27B0))),
+                      child: const Icon(Icons.videocam_rounded,
+                          color: Color(0xFF9C27B0), size: 14))),
+                ]),
+              ]),
+            );
+          },
+        ),
+      ),
+      const Divider(color: Colors.white12, height: 1),
+    ]);
+  }
+}
+
 class _KeypadTab extends StatelessWidget {
   final String   dial, creditsCurr;
   final double   credits;
