@@ -130,7 +130,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     return widget.isVideo
         ? _videoUI(webrtc, hasRemote, name, topPad, botPad)
-        : _voiceUI(webrtc, name, photoUrl, initials, topPad, botPad);
+        : _voiceUI(webrtc, hasRemote, name, photoUrl, initials, topPad, botPad);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -142,17 +142,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      floatingActionButton: hasRemote
-          ? AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: FloatingActionButton.small(
-                onPressed: _openAddCall,
-                backgroundColor: Colors.white24,
-                child: const Icon(Icons.person_add_outlined,
-                    color: Colors.white, size: 20)))
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: GestureDetector(
         onTap: () => setState(() => _showControls = !_showControls),
         child: Stack(
@@ -305,7 +294,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   // ═══════════════════════════════════════════════════════════
   // VOICE CALL
   // ═══════════════════════════════════════════════════════════
-  Widget _voiceUI(WebRTCService webrtc, String name, String? photoUrl,
+  Widget _voiceUI(WebRTCService webrtc, bool hasRemote, String name, String? photoUrl,
       String initials, double topPad, double botPad) {
 
     final callState  = webrtc.callStateStreamValue;
@@ -412,7 +401,22 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
               const Spacer(flex: 3),
 
-              // ── Controls ──────────────────────────────────────────
+              // ── Add Call button above controls ─────────────────
+            if (hasRemote && _showControls)
+              Positioned(
+                bottom: botPad + 110,
+                right: 16,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: FloatingActionButton.small(
+                    onPressed: _openAddCall,
+                    backgroundColor: Colors.white24,
+                    child: const Icon(Icons.person_add_outlined,
+                        color: Colors.white, size: 20)),
+                )),
+
+            // ── Controls ──────────────────────────────────────────
               Padding(
                 padding: EdgeInsets.only(
                     left: 40, right: 40, bottom: botPad + 48),
