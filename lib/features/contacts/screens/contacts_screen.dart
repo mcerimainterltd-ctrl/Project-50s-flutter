@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../calls/screens/call_history_screen.dart';
+import '../../calls/screens/calls_hub_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../../screens/phone_screen.dart';
 import '../../../screens/xame_pay_screen.dart';
@@ -36,7 +37,18 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 5, vsync: this);
-    _tabCtrl.addListener(() => setState(() => _tab = _tabCtrl.index));
+    _tabCtrl.addListener(() {
+      if (_tabCtrl.index == 1 && _tabCtrl.indexIsChanging) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.of(context, rootNavigator: true).push(
+              MaterialPageRoute(builder: (_) => const CallsHubScreen()));
+          _tabCtrl.index = _tab;
+        });
+      } else {
+        setState(() => _tab = _tabCtrl.index);
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _connectSocket());
   }
 
@@ -64,7 +76,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         _buildHeader(user),
         Expanded(child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
-          const CallHistoryScreen(),
+          const SizedBox.shrink(), // Calls tab opens fullscreen
           Consumer(builder: (_, ref, __) {
             final self = ref.read(currentUserProvider);
             return const DiscoveryAuraFeed();
