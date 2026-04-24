@@ -152,7 +152,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 child: const Icon(Icons.person_add_outlined,
                     color: Colors.white, size: 20)))
           : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: GestureDetector(
         onTap: () => setState(() => _showControls = !_showControls),
         child: Stack(
