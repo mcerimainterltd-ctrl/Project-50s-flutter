@@ -9,15 +9,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // ── Model ─────────────────────────────────────────────────────────────────
 class TvChannel {
-  final String name, category, streamUrl, logo, country, language;
+  final String name, category, streamUrl, logo, country, language, description;
+  final bool isHD;
   const TvChannel({
     required this.name, required this.category, required this.streamUrl,
     required this.logo,  required this.country,  required this.language,
+    this.description = '', this.isHD = false,
   });
 
   Map<String, dynamic> toJson() => {
     'name': name, 'category': category, 'streamUrl': streamUrl,
     'logo': logo,  'country': country,  'language': language,
+    'description': description, 'isHD': isHD,
   };
 
   factory TvChannel.fromJson(Map<String, dynamic> j) => TvChannel(
@@ -27,6 +30,8 @@ class TvChannel {
     logo:      j['logo']      ?? '',
     country:   j['country']   ?? '',
     language:  j['language']  ?? '',
+    description: j['description'] ?? '',
+    isHD:      j['isHD']      ?? false,
   );
 }
 

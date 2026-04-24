@@ -10,6 +10,14 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import '../data/tv_channels.dart';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+final List<TvChannel> kTvChannels = [];
+
+List<TvChannel> channelsForCategory(String category) {
+  if (category == 'All') return kTvChannels;
+  return kTvChannels.where((c) => c.category == category).toList();
+}
+
 class XameTvScreen extends StatefulWidget {
   const XameTvScreen({Key? key}) : super(key: key);
   @override
