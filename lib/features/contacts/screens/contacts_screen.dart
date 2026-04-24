@@ -368,19 +368,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         Container(width: 36, height: 4,
           decoration: BoxDecoration(color: Colors.white24,
             borderRadius: BorderRadius.circular(2))),
-        ListTile(
-          leading: const Icon(Icons.schedule_outlined, color: Colors.white70),
-          title: const Text("Call Schedule",
-            style: TextStyle(color: Colors.white)),
-          onTap: () {
-            Navigator.pop(context);
-            final user   = ref.read(currentUserProvider);
-            final socket = ref.read(socketServiceProvider);
-            if (user == null) return;
-            final svc = CallScheduleService(socket, user.xameId);
-            svc.load().then((_) => ScheduledCallsListDialog.show(
-              context, service: svc));
-          }),
+
         ListTile(
           leading: const Icon(Icons.photo_library_outlined, color: Colors.white70),
           title: const Text('My Portfolio',

@@ -116,7 +116,13 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
                   color: Colors.white, size: 18),
-              onPressed: () => context.go('/contacts'),
+              onPressed: () {
+                if (Navigator.of(context, rootNavigator: true).canPop()) {
+                  Navigator.of(context, rootNavigator: true).pop();
+                } else {
+                  context.go('/contacts');
+                }
+              },
             ),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 60),
