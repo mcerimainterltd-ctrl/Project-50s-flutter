@@ -169,29 +169,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                           },
                         ),
                       ),
-                      _buildControl(
-                        icon: Icons.person_add_outlined,
-                        label: "Add Call",
-                        color: XameColors.primary,
-                        onTap: () {
-                          final contacts = ref.read(contactsProvider).valueOrNull ?? [];
-                          final user = ref.read(currentUserProvider);
-                          if (user == null) return;
-                          showModalBottomSheet(
-                            context: context,
-                            backgroundColor: Colors.transparent,
-                            isScrollControlled: true,
-                            builder: (_) => _AddCallSheet(
-                              contacts: contacts,
-                              currentUserId: user.xameId,
-                              onSelect: (contactId) {
-                                Navigator.pop(context);
-                                ref.read(webRTCServiceProvider).startCall(contactId, false);
-                              },
-                            ),
-                          );
-                        },
-                      ),
+
                       _buildControl(
                         icon: isVideo ? Icons.videocam : Icons.call,
                         label: "Accept",

@@ -142,6 +142,17 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
+      floatingActionButton: hasRemote
+          ? AnimatedOpacity(
+              opacity: _showControls ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: FloatingActionButton.small(
+                onPressed: _openAddCall,
+                backgroundColor: Colors.white24,
+                child: const Icon(Icons.person_add_outlined,
+                    color: Colors.white, size: 20)))
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       body: GestureDetector(
         onTap: () => setState(() => _showControls = !_showControls),
         child: Stack(
