@@ -16,7 +16,11 @@ class _CallsHubScreenState extends ConsumerState<CallsHubScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: XameColors.darkBg,
-      body: const CallHistoryScreen(),
+      body: IndexedStack(index: _tab, children: const [
+        CallHistoryScreen(),
+        _CallScheduleTab(),
+        _ConferenceTab(),
+      ]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: XameColors.darkSurface,
@@ -25,10 +29,20 @@ class _CallsHubScreenState extends ConsumerState<CallsHubScreen> {
         child: SafeArea(
           child: Row(children: [
             _NavItem(
-              icon: Icons.history_rounded,
-              label: 'Call History',
+              icon: Icons.call_outlined,
+              label: 'Calls',
               selected: _tab == 0,
               onTap: () => setState(() => _tab = 0)),
+            _NavItem(
+              icon: Icons.schedule_outlined,
+              label: 'Call Schedule',
+              selected: _tab == 1,
+              onTap: () => setState(() => _tab = 1)),
+            _NavItem(
+              icon: Icons.groups_rounded,
+              label: 'Conference',
+              selected: _tab == 2,
+              onTap: () => setState(() => _tab = 2)),
           ]),
         ),
       ),
@@ -65,5 +79,93 @@ class _NavItem extends StatelessWidget {
         ]),
       ),
     ),
+  );
+}
+
+// ── Call Schedule Tab ─────────────────────────────────────────────────────────
+class _CallScheduleTab extends StatelessWidget {
+  const _CallScheduleTab();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: XameColors.darkBg,
+    body: Center(child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: XameColors.darkCard, shape: BoxShape.circle,
+            border: Border.all(
+                color: XameColors.primary.withValues(alpha: 0.3))),
+          child: Icon(Icons.schedule_outlined,
+              color: XameColors.primary, size: 56)),
+        const SizedBox(height: 24),
+        const Text('Call Schedule',
+            style: TextStyle(color: Colors.white,
+                fontSize: 22, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        const Text('Schedule calls with your contacts',
+            style: TextStyle(color: Colors.white38, fontSize: 14),
+            textAlign: TextAlign.center),
+        const SizedBox(height: 32),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.add),
+          label: const Text('Schedule a Call',
+              style: TextStyle(fontWeight: FontWeight.w700)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: XameColors.primary,
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14))),
+        ),
+      ],
+    )),
+  );
+}
+
+// ── Conference Tab ────────────────────────────────────────────────────────────
+class _ConferenceTab extends StatelessWidget {
+  const _ConferenceTab();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: XameColors.darkBg,
+    body: Center(child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: XameColors.darkCard, shape: BoxShape.circle,
+            border: Border.all(
+                color: XameColors.primary.withValues(alpha: 0.3))),
+          child: Icon(Icons.groups_rounded,
+              color: XameColors.primary, size: 56)),
+        const SizedBox(height: 24),
+        const Text('Conference Call',
+            style: TextStyle(color: Colors.white,
+                fontSize: 22, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        const Text('Start a call with multiple contacts at once',
+            style: TextStyle(color: Colors.white38, fontSize: 14),
+            textAlign: TextAlign.center),
+        const SizedBox(height: 32),
+        ElevatedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.add_call),
+          label: const Text('Start Conference',
+              style: TextStyle(fontWeight: FontWeight.w700)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: XameColors.primary,
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14))),
+        ),
+      ],
+    )),
   );
 }
