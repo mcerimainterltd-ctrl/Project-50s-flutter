@@ -279,8 +279,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         Helper.setSpeakerphoneOn(_isSpeakerOn);
                       }),
                       _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
-                      _vBtn(Icons.group_outlined, false, "Conference", _openConference),
-                      _vBtn(Icons.person_add_outlined, false, "Add Call", _openAddCall),
                       _endBtn(webrtc),
                     ],
                   ),
