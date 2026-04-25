@@ -1246,11 +1246,11 @@ class _DialKeyState extends State<_DialKey>
         child: Column(mainAxisAlignment: MainAxisAlignment.center,
           children: [
           Text(widget.label, style: TextStyle(
-              color: XameColors.darkBg, fontSize: 24,
+              color: XameColors.primary, fontSize: 24,
               fontWeight: FontWeight.w300)),
           if (widget.sub.isNotEmpty)
             Text(widget.sub, style: TextStyle(
-                color: XameColors.darkSurface, fontSize: 8,
+                color: XameColors.accent, fontSize: 8,
                 letterSpacing: 1.5, fontWeight: FontWeight.w600)),
         ]),
       ),

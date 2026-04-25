@@ -110,20 +110,20 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         ? TextField(
             controller: _searchCtrl,
             onChanged:  (v) => setState(() => _filter = v),
-            style: TextStyle(color: XameColors.darkBg, fontSize: 14),
+            style: TextStyle(color: context.xText, fontSize: 14),
             decoration: InputDecoration(
               hintText:  'Search chats...',
-              hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3), fontSize: 14),
-              prefixIcon: Icon(Icons.search, color: XameColors.darkSurface.withValues(alpha: 0.3), size: 18),
+              hintStyle: TextStyle(color: context.xMuted, fontSize: 14),
+              prefixIcon: Icon(Icons.search, color: context.xMuted, size: 18),
               suffixIcon: _filter.isNotEmpty
                 ? IconButton(
-                    icon: Icon(Icons.close, color: XameColors.darkSurface.withValues(alpha: 0.3), size: 18),
+                    icon: Icon(Icons.close, color: context.xMuted, size: 18),
                     onPressed: () {
                       _searchCtrl.clear();
                       setState(() => _filter = '');
                     })
                 : null,
-              filled: true, fillColor: XameColors.darkCard,
+              filled: true, fillColor: context.xCard,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none),
@@ -132,27 +132,29 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             ),
           )
         : Text(['Chats','Calls','Discover','Phone','Pay'][_tab],
-            style: TextStyle(color: XameColors.darkBg, fontSize: 20,
+            style: TextStyle(color: context.xText, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
       _ConnectionDot(),
       IconButton(
-        icon: Icon(Icons.more_vert, color: XameColors.darkBg.withValues(alpha: 0.7)),
+        icon: Icon(Icons.more_vert, color: context.xText),
         onPressed: _showMainMenu),
     ]),
   );
 
-  Widget _buildBottomNav() => Container(
+  Widget _buildBottomNav() {
+    final ctx = context;
+    return Container(
     decoration: BoxDecoration(
-      color: XameColors.darkSurface,
+      color: ctx.xSurface,
       border: Border(top: BorderSide(
-        color: XameColors.darkBg.withValues(alpha: 0.06)))),
+        color: ctx.xMuted.withValues(alpha: 0.1)))),
     child: TabBar(
       controller: _tabCtrl,
-      indicatorColor: XameColors.primary,
+      indicatorColor: ctx.xPrimary,
       indicatorSize: TabBarIndicatorSize.label,
-      labelColor: XameColors.primary,
-      unselectedLabelColor: XameColors.darkSurface,
+      labelColor: ctx.xPrimary,
+      unselectedLabelColor: ctx.xMuted,
       labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
       tabs: [
         const Tab(icon: Icon(Icons.chat_bubble_outline_rounded, size: 22), text: 'Chats'),
@@ -175,6 +177,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       ],
     ),
   );
+  }
 
   void _showAddContactDialog() {
     final ctrl = TextEditingController();
