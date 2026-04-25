@@ -1297,7 +1297,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                   border: Border.all(
                       color: context.xPrimary.withOpacity(0.3))),
                 child: Text(item.category.toUpperCase(),
-                  style: const TextStyle(color: context.xPrimary,
+                  style: TextStyle(color: context.xPrimary,
                       fontSize: 10, fontWeight: FontWeight.w800,
                       letterSpacing: 1))),
               const Spacer(),

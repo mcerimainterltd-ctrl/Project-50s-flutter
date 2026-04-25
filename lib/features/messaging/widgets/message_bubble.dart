@@ -287,7 +287,7 @@ class _StatusTick extends StatelessWidget {
         message: 'Upload failed — long press to retry',
         child: Icon(Icons.error_outline, size: 14, color: context.xDanger));
     if (status == 'seen')
-      return const Icon(Icons.done_all, size: 14, color: context.xPrimary);
+      return Icon(Icons.done_all, size: 14, color: context.xPrimary);
     if (status == 'delivered')
       return const Icon(Icons.done_all, size: 14, color: Colors.white38);
     return const Icon(Icons.done, size: 14, color: Colors.white38);

@@ -349,7 +349,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       border: Border.all(color: Colors.white10),
                     ),
                     child: Row(children: [
-                      const Icon(Icons.tag, color: context.xPrimary, size: 18),
+                      Icon(Icons.tag, color: context.xPrimary, size: 18),
                       const SizedBox(width: 12),
                       Text(user.xameId,
                         style: const TextStyle(color: Colors.white,

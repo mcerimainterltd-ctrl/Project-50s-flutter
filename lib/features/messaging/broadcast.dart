@@ -381,7 +381,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text('${_selected.length} selected',
-                        style: const TextStyle(color: context.xPrimary,
+                        style: TextStyle(color: context.xPrimary,
                             fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
               ]),

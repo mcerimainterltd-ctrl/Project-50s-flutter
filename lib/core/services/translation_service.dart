@@ -279,7 +279,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                     const Text('🌍', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: 6),
                     Text(_resultLang ?? '',
-                      style: const TextStyle(color: context.xPrimary,
+                      style: TextStyle(color: context.xPrimary,
                           fontSize: 11, fontWeight: FontWeight.w700)),
                     const Spacer(),
                     GestureDetector(

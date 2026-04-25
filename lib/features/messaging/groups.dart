@@ -540,7 +540,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text('${_selected.length} selected',
-                        style: const TextStyle(color: context.xPrimary,
+                        style: TextStyle(color: context.xPrimary,
                             fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
               ]),
@@ -875,7 +875,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                       child: Center(child: Text(
                           (m.name.isNotEmpty ? m.name : m.userId)[0]
                               .toUpperCase(),
-                          style: const TextStyle(color: context.xPrimary,
+                          style: TextStyle(color: context.xPrimary,
                               fontWeight: FontWeight.w700))),
                     ),
                     const SizedBox(width: 10),
