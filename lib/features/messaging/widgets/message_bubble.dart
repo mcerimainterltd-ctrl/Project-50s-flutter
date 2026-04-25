@@ -88,9 +88,7 @@ class MessageBubble extends ConsumerWidget {
                       ? const EdgeInsets.fromLTRB(12, 8, 12, 6)
                       : EdgeInsets.zero,
                   decoration: BoxDecoration(
-                    color: isSelf
-                        ? context.xSurface
-                        : context.xCard,
+                    color: isSelf ? context.xBubbleSent : context.xBubbleRecv,
                     borderRadius: BorderRadius.only(
                       topLeft:     const Radius.circular(18),
                       topRight:    const Radius.circular(18),
@@ -167,7 +165,7 @@ class MessageBubble extends ConsumerWidget {
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(time, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        Text(time, style: const TextStyle(color: context.xMuted, fontSize: 10)),
         if (isSelf) ...[
           const SizedBox(width: 4),
           _StatusTick(status: message.status),
@@ -269,7 +267,7 @@ class _TextContent extends StatelessWidget {
       ? Text(text.trim(), style: TextStyle(fontSize: 36))
       : Text(text,
             style: TextStyle(
-                color: Colors.white, fontSize: 15, height: 1.4));
+                color: context.xBubbleSentText, fontSize: 15, height: 1.4));
 }
 
 // ─── Status ticks ─────────────────────────────────────────────────────────
@@ -303,12 +301,12 @@ class _ReplyQuote extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: 4),
     padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.07),
+      color: context.xText.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(10),
       border: const Border(left: BorderSide(color: XameColors.primary, width: 3)),
     ),
     child: Text(text.isNotEmpty ? text : '📎 Attachment',
-        style: const TextStyle(color: Colors.white54, fontSize: 12),
+        style: const TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12),
         maxLines: 2, overflow: TextOverflow.ellipsis),
   );
 }
@@ -407,7 +405,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Saved to $path'),
-            backgroundColor: XameColors.darkCard));
+            backgroundColor: context.xCard));
       }
     } catch (e) {
       if (mounted) {
@@ -749,7 +747,7 @@ class _FileBubbleState extends State<_FileBubble> {
         if (result.type != ResultType.done && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('No app found to open this file (${result.message})'),
-              backgroundColor: XameColors.darkCard));
+              backgroundColor: context.xCard));
         }
         return;
       }
@@ -787,7 +785,7 @@ class _FileBubbleState extends State<_FileBubble> {
       if (result.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('No app found to open this file type'),
-            backgroundColor: XameColors.darkCard));
+            backgroundColor: context.xCard));
       }
     } catch (e) {
       if (mounted) {

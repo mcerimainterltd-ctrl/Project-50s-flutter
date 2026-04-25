@@ -343,7 +343,9 @@ extension XameThemeContext on BuildContext {
   Color get xMuted      => xTheme.textSecondary;
   Color get xSecondary  => xTheme.secondary;
   Color get xBubbleSent => xTheme.bubbleSent;
-  Color get xBubbleRecv => xTheme.bubbleReceived;
+  Color get xBubbleRecv     => xTheme.bubbleReceived;
+  Color get xBubbleSentText => xTheme.bubbleSentText;
+  Color get xBubbleRecvText => xTheme.bubbleRecvText;
 }
 
 class AppTheme {
