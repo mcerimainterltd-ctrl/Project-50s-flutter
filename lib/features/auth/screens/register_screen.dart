@@ -156,7 +156,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Row(children: [
                 Expanded(child: _section('First Name',
                   _field(_firstNameCtrl, 'First name', Icons.person_outline))),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(child: _section('Last Name',
                   _field(_lastNameCtrl, 'Last name', Icons.person_outline))),
               ]),

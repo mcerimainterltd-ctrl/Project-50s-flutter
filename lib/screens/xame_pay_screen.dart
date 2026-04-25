@@ -40,7 +40,7 @@ class BankItem {
 // initials: 1–3 chars shown inside the circle
 class NetItem {
   final String id, label, color, initials;
-  const NetItem(this.id, this.label, this.color, this.initials);
+  NetItem(this.id, this.label, this.color, this.initials);
 }
 
 // ── NETWORK ICON WIDGET ───────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ class NetItem {
 class _NetIcon extends StatelessWidget {
   final NetItem net;
   final bool selected;
-  const _NetIcon(this.net, {this.selected = false});
+  _NetIcon(this.net, {this.selected = false});
 
   @override
   Widget build(BuildContext context) {
@@ -2458,7 +2458,7 @@ class _BillsTabState extends State<_BillsTab> {
 class _HistoryTab extends StatelessWidget {
   final List<WalletTx> txs;
   final String Function(double) fmt;
-  const _HistoryTab({required this.txs, required this.fmt});
+  _HistoryTab({required this.txs, required this.fmt});
 
   @override
   Widget build(BuildContext context) {

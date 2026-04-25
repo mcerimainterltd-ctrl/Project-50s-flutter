@@ -42,7 +42,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           Navigator.of(context, rootNavigator: true).push(
-              MaterialPageRoute(builder: (_) => const CallsHubScreen()));
+              MaterialPageRoute(builder: (_) => CallsHubScreen()));
           _tabCtrl.index = _tab;
         });
       } else {
@@ -79,7 +79,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           const SizedBox.shrink(), // Calls tab opens fullscreen
           Consumer(builder: (_, ref, __) {
             final self = ref.read(currentUserProvider);
-            return const DiscoveryAuraFeed();
+            return DiscoveryAuraFeed();
           }),
           Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return PhoneScreen(userId: u?.xameId ?? '', serverUrl: 'https://project-50s.onrender.com'); }),
           Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return XamePayScreen(userId: u?.xameId ?? '', serverUrl: AppConstants.serverUrl); }),
@@ -416,10 +416,10 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           onTap: () { Navigator.pop(context); context.go('/settings'); }),
         ListTile(
           leading: const Icon(Icons.logout_rounded, color: XameColors.danger),
-          title: const Text('Sign Out',
+          title: Text('Sign Out',
             style: TextStyle(color: XameColors.danger)),
           onTap: () { Navigator.pop(context); _signOut(); }),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
       ])),
     );
   }
@@ -453,7 +453,7 @@ class _ConnectionDot extends ConsumerWidget {
 // ── Chats Tab ──────────────────────────────────────────────────────────────
 class _ChatsTab extends ConsumerWidget {
   final String filter;
-  const _ChatsTab({required this.filter});
+  _ChatsTab({required this.filter});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -545,7 +545,7 @@ class _EmptyChats extends StatelessWidget {
 class _ContactTile extends ConsumerWidget {
   final ContactModel contact;
   final bool isSelf;
-  const _ContactTile({required this.contact, this.isSelf = false});
+  _ContactTile({required this.contact, this.isSelf = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -682,7 +682,7 @@ class XameAvatar extends StatelessWidget {
 
 class _Initials extends StatelessWidget {
   final String text; final double size;
-  const _Initials(this.text, this.size);
+  _Initials(this.text, this.size);
   @override
   Widget build(BuildContext context) => Container(
     width: size, height: size, color: context.xCard,

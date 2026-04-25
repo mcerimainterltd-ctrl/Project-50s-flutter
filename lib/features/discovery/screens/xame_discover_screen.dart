@@ -289,7 +289,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       body: Stack(children: [
         CustomScrollView(
           controller: _scrollCtrl,
-          physics:    const BouncingScrollPhysics(),
+          physics:    BouncingScrollPhysics(),
           slivers: [
             SliverAppBar(
               backgroundColor:  context.xBg,
@@ -311,7 +311,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
           TVEntryButton(onTap: () => context.push("/tv")),
                 IconButton(
                   icon: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
+                    duration: Duration(milliseconds: 200),
                     child: Icon(
                       _searchOpen ? Icons.close : Icons.search,
                       key: ValueKey(_searchOpen), color: context.xText.withValues(alpha: 0.7))),
@@ -373,7 +373,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text('Request sent to ${user.name}'),
                       backgroundColor: context.xSurface,
-                      duration: const Duration(seconds: 2)));
+                      duration: Duration(seconds: 2)));
                   },
                 ),
               ),
@@ -390,7 +390,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     style: TextStyle(color: context.xMuted,
                         fontSize: 11, fontWeight: FontWeight.w800,
                         letterSpacing: 1.2)),
-                  const Spacer(),
+                  Spacer(),
                   if (_loading)
                     SizedBox(width: 14, height: 14,
                       child: CircularProgressIndicator(
@@ -898,7 +898,7 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
                 borderRadius: BorderRadius.circular(14)),
             elevation: 0),
           child: _uploading
-            ? const SizedBox(width: 20, height: 20,
+            ? SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2))
             : Text('Share Story',
@@ -912,7 +912,7 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
 // ── Live count badge ──────────────────────────────────────────────────────────
 class _LiveCountBadge extends StatelessWidget {
   final int count;
-  const _LiveCountBadge({this.count = 0});
+  _LiveCountBadge({this.count = 0});
   @override
   Widget build(BuildContext context) {
     if (count == 0) return const SizedBox.shrink();
@@ -963,7 +963,7 @@ class _SearchOverlay extends StatefulWidget {
   final Function(String)      onSearch;
   final VoidCallback          onClose;
   final List<DiscoveryItem>   feed;
-  const _SearchOverlay({required this.ctrl, required this.onSearch,
+  _SearchOverlay({required this.ctrl, required this.onSearch,
       required this.onClose, required this.feed});
   @override
   State<_SearchOverlay> createState() => _SearchOverlayState();
@@ -1271,13 +1271,13 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
               fit: BoxFit.cover,
               errorWidget: (_, __, ___) =>
                 Container(color: context.xSurface)),
-            Container(decoration: const BoxDecoration(
+            Container(decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [Colors.transparent, Color(0xCC000000)]))),
             if (item.isLive)
-              const Positioned(top: 60, right: 20,
+              Positioned(top: 60, right: 20,
                 child: LivePulseIndicator()),
           ]),
         ),
@@ -1300,7 +1300,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                   style: TextStyle(color: context.xPrimary,
                       fontSize: 10, fontWeight: FontWeight.w800,
                       letterSpacing: 1))),
-              const Spacer(),
+              Spacer(),
               Text('${_fmt(item.viewCount)} views',
                 style: TextStyle(
                     color: context.xMuted, fontSize: 12)),
@@ -1328,11 +1328,11 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                 Text(item.region, style: TextStyle(
                     color: context.xMuted, fontSize: 12)),
               ]),
-              const Spacer(),
+              Spacer(),
               GestureDetector(
                 onTap: _toggleFollow,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(

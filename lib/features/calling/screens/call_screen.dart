@@ -636,7 +636,7 @@ class _AddCallSheet extends StatefulWidget {
   final String currentUserId;
   final void Function(String contactId) onSelect;
 
-  const _AddCallSheet({required this.contacts, required this.currentUserId,
+  _AddCallSheet({required this.contacts, required this.currentUserId,
       required this.onSelect});
 
   @override

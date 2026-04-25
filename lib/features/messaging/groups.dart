@@ -276,7 +276,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
               ),
             ),
             SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text('Xame Groups',
                   style: TextStyle(color: context.xText, fontSize: 18,
                       fontWeight: FontWeight.w700)),
@@ -530,7 +530,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                 Text('Create Group', style: TextStyle(
                     color: context.xText, fontSize: 16,
                     fontWeight: FontWeight.w700)),
-                const Spacer(),
+                Spacer(),
                 if (_selected.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -570,7 +570,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
             ]),
           ),
           Expanded(
@@ -625,7 +625,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                         ],
                       )),
                       AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                        duration: Duration(milliseconds: 150),
                         width: 22, height: 22,
                         decoration: BoxDecoration(
                           color: sel ? context.xPrimary : Colors.transparent,
@@ -675,7 +675,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                 }
               },
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
+                duration: Duration(milliseconds: 150),
                 width: double.infinity, height: 52,
                 decoration: BoxDecoration(
                   gradient: _loading ? null : LinearGradient(
@@ -830,7 +830,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
               Text('Members (${_group.members.length})',
                   style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12,
                       fontWeight: FontWeight.w600)),
-              const Spacer(),
+              Spacer(),
               if (widget.isAdmin)
                 GestureDetector(
                   onTap: () => _showAddMember(context),

@@ -92,12 +92,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               try {
                 await ref.read(authServiceProvider).setPassword(user.xameId, pwCtrl.text);
                 if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text('Password set! Please sign in.'),
                   backgroundColor: XameColors.accent));
               } catch (e) { setS(() => err = e.toString().replaceFirst('Exception:', '')); }
             },
-            child: const Text('Set Password'),
+            child: Text('Set Password'),
           ),
         ],
       )),

@@ -183,7 +183,7 @@ class _DisappearingTimerDialogState
       'value':     value,
     });
     setState(() => _current = value);
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(Duration(milliseconds: 300));
     if (mounted) Navigator.pop(context);
   }
 

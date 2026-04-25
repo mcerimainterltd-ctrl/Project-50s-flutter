@@ -314,7 +314,7 @@ class _BusinessTab extends StatelessWidget {
 // ── Business Stats ────────────────────────────────────────────────────────────
 class _BizStats extends StatelessWidget {
   final List<GalleryItem> items;
-  const _BizStats({required this.items});
+  _BizStats({required this.items});
   @override
   Widget build(BuildContext context) {
     final priced  = items.where((i) => i.hasPrice).length;
@@ -343,7 +343,7 @@ class _BizStats extends StatelessWidget {
 
 class _Stat extends StatelessWidget {
   final String label, value; final Color color;
-  const _Stat(this.label, this.value, this.color);
+  _Stat(this.label, this.value, this.color);
   @override
   Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min,
     children: [
@@ -607,7 +607,7 @@ class _LightboxState extends State<_Lightbox> {
           // Top bar
           AnimatedOpacity(
             opacity: _showUI ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
+            duration: Duration(milliseconds: 200),
             child: Positioned(top: 0, left: 0, right: 0,
               child: Container(
                 decoration: BoxDecoration(gradient: LinearGradient(
@@ -621,7 +621,7 @@ class _LightboxState extends State<_Lightbox> {
                     icon: Icon(Icons.close_rounded,
                         color: context.xText, size: 22),
                     onPressed: () => Navigator.pop(context)),
-                  const Spacer(),
+                  Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 4),
@@ -639,7 +639,7 @@ class _LightboxState extends State<_Lightbox> {
               item.hasContact || item.description.isNotEmpty)
             AnimatedOpacity(
               opacity: _showUI ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
+              duration: Duration(milliseconds: 200),
               child: Positioned(bottom: 0, left: 0, right: 0,
                 child: Container(
                   decoration: BoxDecoration(gradient: LinearGradient(
@@ -799,12 +799,12 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
               labelColor: _kTeal,
               unselectedLabelColor: context.xMuted,
               dividerColor: Colors.transparent,
-              labelStyle: const TextStyle(
+              labelStyle: TextStyle(
                   fontSize: 13, fontWeight: FontWeight.w700),
               tabs: const [Tab(text: 'Personal'), Tab(text: 'Business')],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           GestureDetector(
             onTap: _pickFile,
             child: Container(
@@ -829,7 +829,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
                       ]),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _buildField(_caption, 'Title / Caption', Icons.title),
           if (_mode == 'business') ...[
             SizedBox(height: 10),

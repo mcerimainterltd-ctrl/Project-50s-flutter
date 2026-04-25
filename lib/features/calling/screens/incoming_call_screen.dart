@@ -29,7 +29,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
     _endedSub = socket.callEnded.listen((_) {
       if (mounted) context.pop();
     });
-    _timeoutTimer = Timer(const Duration(seconds: 60), () {
+    _timeoutTimer = Timer(Duration(seconds: 60), () {
       if (mounted) {
         ref.read(webRTCServiceProvider).rejectCall();
         context.pop();
@@ -91,12 +91,12 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
           SafeArea(
             child: Column(
               children: [
-                const Spacer(flex: 2),
+                Spacer(flex: 2),
                 
                 // Centered Avatar with Entrance Animation
                 TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 900),
+                  duration: Duration(milliseconds: 900),
                   curve: Curves.easeOutCubic,
                   builder: (context, value, child) {
                     return Transform.scale(scale: value, child: Opacity(opacity: value, child: child));
@@ -206,8 +206,8 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
             child: Icon(icon, color: isAccept ? Colors.black : Colors.white, size: 32),
           ),
         ),
-        const SizedBox(height: 12),
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+        SizedBox(height: 12),
+        Text(label, style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -215,7 +215,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
 
 class _PulsingCallType extends StatefulWidget {
   final String text;
-  const _PulsingCallType({required this.text});
+  _PulsingCallType({required this.text});
   @override
   State<_PulsingCallType> createState() => _PulsingCallTypeState();
 }
@@ -225,7 +225,7 @@ class _PulsingCallTypeState extends State<_PulsingCallType> with SingleTickerPro
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
+    _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: 1500))..repeat(reverse: true);
   }
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
@@ -244,7 +244,7 @@ class _AddCallSheet extends StatefulWidget {
   final String currentUserId;
   final void Function(String contactId) onSelect;
 
-  const _AddCallSheet({required this.contacts, required this.currentUserId,
+  _AddCallSheet({required this.contacts, required this.currentUserId,
       required this.onSelect});
 
   @override

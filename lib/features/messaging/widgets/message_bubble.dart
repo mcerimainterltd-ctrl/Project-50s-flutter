@@ -50,7 +50,7 @@ class MessageBubble extends ConsumerWidget {
   final VoidCallback onLongPress;
   final VoidCallback onTap;
 
-  const MessageBubble({
+  MessageBubble({
     super.key,
     required this.message,
     required this.isSelf,
@@ -65,7 +65,7 @@ class MessageBubble extends ConsumerWidget {
       onLongPress: onLongPress,
       onTap:       onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: Duration(milliseconds: 150),
         color: isSelected
             ? context.xPrimary.withValues(alpha: 0.15)
             : Colors.transparent,
@@ -255,7 +255,7 @@ String _fmtSize(int? bytes) {
 // ─── Text content ─────────────────────────────────────────────────────────
 class _TextContent extends StatelessWidget {
   final String text; final bool isSelf;
-  const _TextContent({required this.text, required this.isSelf});
+  _TextContent({required this.text, required this.isSelf});
 
   bool get _isEmojiOnly {
     final c = text.trim();
@@ -275,7 +275,7 @@ class _TextContent extends StatelessWidget {
 // ─── Status ticks ─────────────────────────────────────────────────────────
 class _StatusTick extends StatelessWidget {
   final String status;
-  const _StatusTick({required this.status});
+  _StatusTick({required this.status});
   @override
   Widget build(BuildContext context) {
     if (status == 'uploading')
@@ -317,7 +317,7 @@ class _ReplyQuote extends StatelessWidget {
 class _ImageBubble extends StatelessWidget {
   final String url, caption;
   final bool   viewOnce;
-  const _ImageBubble(
+  _ImageBubble(
       {required this.url, required this.caption, required this.viewOnce});
 
   void _openFullScreen(BuildContext context) {
@@ -1040,7 +1040,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-      constraints: const BoxConstraints(minWidth: 200, maxWidth: 280),
+      constraints: BoxConstraints(minWidth: 200, maxWidth: 280),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           GestureDetector(
@@ -1073,8 +1073,8 @@ class _AudioBubbleState extends State<_AudioBubble> {
         SliderTheme(
           data: SliderThemeData(
             trackHeight:        2,
-            thumbShape:         const RoundSliderThumbShape(enabledThumbRadius: 5),
-            overlayShape:       const RoundSliderOverlayShape(overlayRadius: 10),
+            thumbShape:         RoundSliderThumbShape(enabledThumbRadius: 5),
+            overlayShape:       RoundSliderOverlayShape(overlayRadius: 10),
             activeTrackColor:   context.xPrimary,
             inactiveTrackColor: context.xMuted.withValues(alpha: 0.25),
             thumbColor:         context.xPrimary,

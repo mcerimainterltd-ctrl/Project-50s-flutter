@@ -163,7 +163,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
               Text('Translate Message',
                 style: TextStyle(color: context.xText, fontSize: 17,
                     fontWeight: FontWeight.w700)),
-              const Spacer(),
+              Spacer(),
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Icon(Icons.close, color: context.xMuted, size: 20)),
@@ -174,7 +174,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
             padding: const EdgeInsets.all(14),
-            constraints: const BoxConstraints(maxHeight: 80),
+            constraints: BoxConstraints(maxHeight: 80),
             decoration: BoxDecoration(
               color: context.xSurface,
               borderRadius: BorderRadius.circular(12),
@@ -236,7 +236,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                           fontSize:   14,
                           fontWeight: selected
                               ? FontWeight.w600 : FontWeight.normal)),
-                      const Spacer(),
+                      Spacer(),
                       Text(lang.code.toUpperCase(),
                         style: TextStyle(
                           color:    selected
@@ -281,7 +281,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                     Text(_resultLang ?? '',
                       style: TextStyle(color: context.xPrimary,
                           fontSize: 11, fontWeight: FontWeight.w700)),
-                    const Spacer(),
+                    Spacer(),
                     GestureDetector(
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: _result!));
@@ -292,7 +292,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
-                            duration: const Duration(seconds: 2),
+                            duration: Duration(seconds: 2),
                           ),
                         );
                       },

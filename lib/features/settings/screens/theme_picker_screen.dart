@@ -28,13 +28,13 @@ class ThemePickerScreen extends ConsumerWidget {
           Text('Theme',
             style: TextStyle(color: current.textSecondary, fontSize: 12,
                 fontWeight: FontWeight.w600, letterSpacing: 0.8)),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
 
           // Theme grid
           GridView.builder(
             shrinkWrap:  true,
-            physics:     const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            physics:     NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount:  2,
               childAspectRatio: 1.3,
               crossAxisSpacing: 12,
@@ -47,7 +47,7 @@ class ThemePickerScreen extends ConsumerWidget {
               return GestureDetector(
                 onTap: () => ref.read(themeProvider.notifier).setTheme(theme),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
+                  duration: Duration(milliseconds: 250),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
@@ -96,7 +96,7 @@ class ThemePickerScreen extends ConsumerWidget {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 5),
+                                SizedBox(height: 5),
                                 // Sent bubble
                                 Align(
                                   alignment: Alignment.centerRight,

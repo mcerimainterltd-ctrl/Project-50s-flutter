@@ -299,7 +299,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(widget.groups.length, (i) =>
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
+                      duration: Duration(milliseconds: 200),
                       width:  i == _groupIndex ? 16 : 6,
                       height: 6,
                       margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -338,12 +338,12 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
 // ── Story media widget ────────────────────────────────────────────────────────
 class _StoryMedia extends StatelessWidget {
   final StoryData story;
-  const _StoryMedia({required this.story});
+  _StoryMedia({required this.story});
 
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
+      duration: Duration(milliseconds: 200),
       child: story.mediaType == 'video'
         ? _VideoStory(key: ValueKey(story.storyId), url: story.mediaUrl)
         : CachedNetworkImage(

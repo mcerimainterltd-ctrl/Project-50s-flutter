@@ -77,7 +77,7 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
 
 class _CurrencyHint extends StatelessWidget {
   final DiscoveryRegion region;
-  const _CurrencyHint({required this.region});
+  _CurrencyHint({required this.region});
 
   @override
   Widget build(BuildContext context) {

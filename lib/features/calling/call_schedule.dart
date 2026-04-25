@@ -214,7 +214,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
             Text('To: ${widget.recipientName}',
                 style: TextStyle(color: context.xMuted, fontSize: 12)),
           ]),
-          const Spacer(),
+          Spacer(),
           GestureDetector(
             onTap: () {
               Navigator.pop(context);
@@ -265,7 +265,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
               Text(_formattedDT,
                   style: TextStyle(color: context.xText, fontSize: 14,
                       fontWeight: FontWeight.w500)),
-              const Spacer(),
+              Spacer(),
               Icon(Icons.edit_outlined,
                   color: context.xMuted.withValues(alpha: 0.3), size: 16),
             ]),
@@ -305,7 +305,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
             }
           },
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
+            duration: Duration(milliseconds: 150),
             width: double.infinity, height: 52,
             decoration: BoxDecoration(
               gradient: _loading ? null : LinearGradient(

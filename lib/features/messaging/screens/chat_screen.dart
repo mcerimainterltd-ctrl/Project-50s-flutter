@@ -317,15 +317,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ListTile(
             leading: const Icon(Icons.delete_outline, color: Colors.white70),
             title: Text('Delete for me (${_selected.length})',
-                style: const TextStyle(color: Colors.white)),
+                style: TextStyle(color: Colors.white)),
             onTap: () { Navigator.pop(context); _deleteSelected(); }),
         if (hasSent)
           ListTile(
-              leading: const Icon(Icons.delete_forever, color: XameColors.danger),
+              leading: Icon(Icons.delete_forever, color: XameColors.danger),
               title: Text('Delete for everyone (${_selected.length})',
-                  style: const TextStyle(color: XameColors.danger)),
+                  style: TextStyle(color: XameColors.danger)),
               onTap: () { Navigator.pop(context); _deleteSelected(forEveryone: true); }),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
       ])),
     );
   }
@@ -412,7 +412,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Text('Recording $m:$s',
                   style: TextStyle(color: Colors.red, fontSize: 13,
                       fontWeight: FontWeight.w500)),
-              const Spacer(),
+              Spacer(),
               Text('Release to send · Slide to cancel',
                   style: TextStyle(color: context.xMuted, fontSize: 11)),
             ]),
@@ -785,11 +785,11 @@ class _ReplyPreview extends StatelessWidget {
       border: Border(left: BorderSide(color: XameColors.primary, width: 3))),
     child: Row(children: [
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Replying to',
+        Text('Replying to',
             style: TextStyle(color: XameColors.primary, fontSize: 11)),
-        const SizedBox(height: 2),
+        SizedBox(height: 2),
         Text(message.text.isNotEmpty ? message.text : '📎 Attachment',
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
+            style: TextStyle(color: Colors.white54, fontSize: 13),
             maxLines: 1, overflow: TextOverflow.ellipsis),
       ])),
       IconButton(
@@ -802,7 +802,7 @@ class _ReplyPreview extends StatelessWidget {
 // ── Attachment panel ──────────────────────────────────────────────────────
 class _AttachPanel extends StatelessWidget {
   final VoidCallback onImage, onFile, onCamera, onDismiss, onVideo;
-  const _AttachPanel({
+  _AttachPanel({
     required this.onImage,  required this.onFile,
     required this.onCamera, required this.onDismiss,
     required this.onVideo,

@@ -462,7 +462,7 @@ class _PhoneScreenState extends State<PhoneScreen>
       context:         context,
       backgroundColor: _kCard,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _CountryPicker(
         countries: _kCountries,
@@ -746,7 +746,7 @@ class _ContactsTab extends StatelessWidget {
   final void Function(_DevContact) onCall;
   final void Function(_DevContact) onSms;
 
-  const _ContactsTab({
+  _ContactsTab({
     required this.contacts,  required this.loading,
     required this.loaded,    required this.q,
     required this.onQChange, required this.onLoad,
@@ -782,7 +782,7 @@ class _ContactsTab extends StatelessWidget {
       ]),
     );
 
-    if (loading) return const Center(child: CircularProgressIndicator(
+    if (loading) return Center(child: CircularProgressIndicator(
         color: _kGreen, strokeWidth: 1.5));
 
     final fil = contacts.where((c) =>
@@ -836,7 +836,7 @@ class _ContactsTab extends StatelessWidget {
         child: Row(children: [
           Text('${fil.length} contact${fil.length != 1 ? "s" : ""}',
             style: TextStyle(color: context.xMuted, fontSize: 12)),
-          const Spacer(),
+          Spacer(),
           if (fil.any((c) => c.isOnXame))
             Container(
               padding: const EdgeInsets.symmetric(
@@ -957,7 +957,7 @@ class _ContactTile extends StatelessWidget {
             color: _kGreen.withOpacity(0.1),
             border: Border.all(
                 color: _kGreen.withOpacity(0.3))),
-          child: const Icon(Icons.call_rounded,
+          child: Icon(Icons.call_rounded,
               color: _kGreen, size: 16))),
     ]),
   );
@@ -967,7 +967,7 @@ class _ContactTile extends StatelessWidget {
 
 class _XameContactsSection extends StatelessWidget {
   final List<XameContact> xameContacts;
-  const _XameContactsSection({required this.xameContacts});
+  _XameContactsSection({required this.xameContacts});
 
   @override
   Widget build(BuildContext context) {
@@ -1070,7 +1070,7 @@ class _KeypadTab extends StatelessWidget {
   final void Function(String) onDigit;
   final VoidCallback onBackspace, onPickCountry, onCall, onSms;
 
-  const _KeypadTab({
+  _KeypadTab({
     required this.dial,         required this.country,
     required this.creditsCurr,  required this.credits,
     required this.rates,        required this.onDigit,
@@ -1134,7 +1134,7 @@ class _KeypadTab extends StatelessWidget {
         GridView.count(
           crossAxisCount:  3,
           shrinkWrap:      true,
-          physics:         const NeverScrollableScrollPhysics(),
+          physics:         NeverScrollableScrollPhysics(),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
           childAspectRatio: 1.8,
@@ -1268,7 +1268,7 @@ class _CountryPicker extends StatefulWidget {
   final List<_Country> countries;
   final _Country       selected;
   final void Function(_Country) onSelect;
-  const _CountryPicker({required this.countries, required this.selected,
+  _CountryPicker({required this.countries, required this.selected,
       required this.onSelect});
   @override
   State<_CountryPicker> createState() => _CountryPickerState();

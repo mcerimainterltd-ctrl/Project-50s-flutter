@@ -105,7 +105,7 @@ class BroadcastScreen extends StatefulWidget {
   final List<Map<String, dynamic>> contacts;
   final String currentUserId;
 
-  const BroadcastScreen({super.key, required this.service,
+  BroadcastScreen({super.key, required this.service,
       required this.contacts, required this.currentUserId});
 
   static Future<void> show(BuildContext context, {
@@ -167,7 +167,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                   Text('Send to multiple contacts at once',
                       style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
-                const Spacer(),
+                Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Icon(Icons.close, color: context.xMuted, size: 20),
@@ -371,7 +371,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
               Row(children: [
                 Text('New Broadcast', style: TextStyle(color: context.xText,
                     fontSize: 16, fontWeight: FontWeight.w700)),
-                const Spacer(),
+                Spacer(),
                 if (_selected.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -407,7 +407,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
             ]),
           ),
           // Contacts list
@@ -466,7 +466,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                         ],
                       )),
                       AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                        duration: Duration(milliseconds: 150),
                         width: 22, height: 22,
                         decoration: BoxDecoration(
                           color: sel ? context.xPrimary : Colors.transparent,
@@ -540,7 +540,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   flex: 2,
                   child: GestureDetector(
@@ -570,7 +570,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       }
                     },
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: Duration(milliseconds: 150),
                       height: 46,
                       decoration: BoxDecoration(
                         gradient: _sending ? null : LinearGradient(
@@ -673,7 +673,7 @@ class _ManageListsSheet extends StatefulWidget {
   final List<Map<String, dynamic>> contacts;
   final String currentUserId;
 
-  const _ManageListsSheet({required this.service, required this.contacts,
+  _ManageListsSheet({required this.service, required this.contacts,
       required this.currentUserId});
 
   @override
@@ -707,7 +707,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                 Text('Broadcast Lists',
                     style: TextStyle(color: context.xText, fontSize: 16,
                         fontWeight: FontWeight.w700)),
-                const Spacer(),
+                Spacer(),
                 GestureDetector(
                   onTap: () {
                     Navigator.pop(context);

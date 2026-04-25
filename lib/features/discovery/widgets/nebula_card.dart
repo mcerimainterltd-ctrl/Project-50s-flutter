@@ -67,7 +67,7 @@ class NebulaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildChip(),
-                const Spacer(),
+                Spacer(),
                 Text(item.title, style: TextStyle(color: context.xText, fontSize: 28, fontWeight: FontWeight.bold)),
                 Text(item.subtitle, style: TextStyle(color: context.xText.withOpacity(0.7), fontSize: 16)),
                 const SizedBox(height: 20),

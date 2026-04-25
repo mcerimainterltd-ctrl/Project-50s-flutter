@@ -128,7 +128,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                 BoxShadow(
                   color:      Colors.black.withOpacity(0.45),
                   blurRadius: 24,
-                  offset:     const Offset(0, 10)),
+                  offset:     Offset(0, 10)),
               ],
             ),
             child: ClipRRect(
@@ -138,7 +138,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                 CachedNetworkImage(
                   imageUrl: widget.mediaUrl,
                   fit:      BoxFit.cover,
-                  placeholder: (_, __) => const ShimmerBox(
+                  placeholder: (_, __) => ShimmerBox(
                       width: double.infinity,
                       height: 420,
                       radius: 28),
@@ -150,7 +150,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
 
                 // Gradient
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin:  Alignment.topCenter,
                       end:    Alignment.bottomCenter,
@@ -166,7 +166,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
 
                 // Live badge
                 if (widget.isLive)
-                  const Positioned(
+                  Positioned(
                       top: 18, right: 18,
                       child: LivePulseIndicator()),
 
@@ -275,7 +275,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                             ),
                           ),
 
-                          const Spacer(),
+                          Spacer(),
 
                           // Share
                           GestureDetector(

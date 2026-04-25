@@ -8,7 +8,7 @@ class SoccerScoreOverlay extends StatelessWidget {
   final String score;
   final String matchTime;
 
-  const SoccerScoreOverlay({
+  SoccerScoreOverlay({
     Key? key,
     required this.homeTeam,
     required this.awayTeam,

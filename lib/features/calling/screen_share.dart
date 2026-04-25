@@ -120,7 +120,7 @@ enum ScreenShareState { idle, sharing, paused }
 // ── Presentation Banner ───────────────────────────────────────────────────────
 class ScreenShareBanner extends StatelessWidget {
   final ScreenShareService service;
-  const ScreenShareBanner({super.key, required this.service});
+  ScreenShareBanner({super.key, required this.service});
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +133,7 @@ class ScreenShareBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: context.xSurface,
-            border: const Border(
+            border: Border(
                 bottom: BorderSide(color: context.xMuted.withValues(alpha: 0.1))),
           ),
           child: SafeArea(

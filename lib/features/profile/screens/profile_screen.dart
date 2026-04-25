@@ -213,7 +213,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           ? XameColors.accent : XameColors.darkSurface,
       behavior:  SnackBarBehavior.floating,
       shape:     RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      duration:  const Duration(seconds: 3),
+      duration:  Duration(seconds: 3),
     ));
   }
 
@@ -324,7 +324,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
                 // ── Display Name ─────────────────────────────────────────────
                 _sectionTitle('Display Name'),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 _inputField(
                   controller: _nameCtrl,
                   hint:       'Your display name',
@@ -354,7 +354,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       Text(user.xameId,
                         style: TextStyle(color: context.xText,
                             fontSize: 15, fontWeight: FontWeight.w500)),
-                      const Spacer(),
+                      Spacer(),
                       Icon(Icons.copy_outlined,
                           color: context.xMuted, size: 16),
                     ]),
@@ -382,11 +382,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   onChanged: (v) => setState(() => _hidePic = v),
                 ),
 
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // ── Appearance ──────────────────────────────────────────
                 _sectionTitle('Appearance'),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Consumer(builder: (_, ref, __) {
                   final theme = ref.watch(themeProvider);
                   return _actionTile(
@@ -396,7 +396,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     color:   theme.primary,
                     onTap:   () => Navigator.push(context,
                         MaterialPageRoute(
-                            builder: (_) => const ThemePickerScreen())),
+                            builder: (_) => ThemePickerScreen())),
                   );
                 }),
                 SizedBox(height: 24),
@@ -741,7 +741,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
       });
       if (res.data['success'] == true) {
         if (mounted) Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Extra security settings saved ✓'),
           backgroundColor: XameColors.primary));
       }
@@ -797,7 +797,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
                 Text('Enable Extra Security',
                   style: TextStyle(color: context.xText, fontSize: 14,
                       fontWeight: FontWeight.w600)),
-                const Spacer(),
+                Spacer(),
                 Switch(
                   value:     _enabled,
                   onChanged: (v) => setState(() => _enabled = v),

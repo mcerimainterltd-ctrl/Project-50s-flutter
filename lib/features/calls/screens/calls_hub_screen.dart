@@ -4,7 +4,7 @@ import 'call_history_screen.dart';
 import '../../../core/theme/app_theme.dart';
 
 class CallsHubScreen extends ConsumerStatefulWidget {
-  const CallsHubScreen({super.key});
+  CallsHubScreen({super.key});
   @override
   ConsumerState<CallsHubScreen> createState() => _CallsHubScreenState();
 }
@@ -84,7 +84,7 @@ class _NavItem extends StatelessWidget {
 
 // ── Call Schedule Tab ─────────────────────────────────────────────────────────
 class _CallScheduleTab extends StatelessWidget {
-  const _CallScheduleTab();
+  _CallScheduleTab();
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -104,15 +104,15 @@ class _CallScheduleTab extends StatelessWidget {
         const Text('Call Schedule',
             style: TextStyle(color: Colors.white,
                 fontSize: 22, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        const Text('Schedule calls with your contacts',
+        SizedBox(height: 8),
+        Text('Schedule calls with your contacts',
             style: TextStyle(color: Colors.white38, fontSize: 14),
             textAlign: TextAlign.center),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         ElevatedButton.icon(
           onPressed: () {},
-          icon: const Icon(Icons.add),
-          label: const Text('Schedule a Call',
+          icon: Icon(Icons.add),
+          label: Text('Schedule a Call',
               style: TextStyle(fontWeight: FontWeight.w700)),
           style: ElevatedButton.styleFrom(
             backgroundColor: XameColors.primary,
@@ -128,7 +128,7 @@ class _CallScheduleTab extends StatelessWidget {
 
 // ── Conference Tab ────────────────────────────────────────────────────────────
 class _ConferenceTab extends StatelessWidget {
-  const _ConferenceTab();
+  _ConferenceTab();
 
   @override
   Widget build(BuildContext context) => Scaffold(

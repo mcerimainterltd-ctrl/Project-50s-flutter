@@ -5,12 +5,12 @@ class DiscoverySearchOverlay extends StatelessWidget {
   final bool isVisible;
   final VoidCallback onClose;
 
-  const DiscoverySearchOverlay({Key? key, required this.isVisible, required this.onClose}) : super(key: key);
+  DiscoverySearchOverlay({Key? key, required this.isVisible, required this.onClose}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
-      duration: const Duration(milliseconds: 300),
+      duration: Duration(milliseconds: 300),
       opacity: isVisible ? 1.0 : 0.0,
       child: IgnorePointer(
         ignoring: !isVisible,

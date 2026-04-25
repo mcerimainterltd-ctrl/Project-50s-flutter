@@ -88,7 +88,7 @@ class _PersonCardState extends State<_PersonCard>
   void initState() {
     super.initState();
     _ctrl  = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 300));
+        vsync: this, duration: Duration(milliseconds: 300));
     _scale = Tween(begin: 1.0, end: 0.92).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }

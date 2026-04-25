@@ -268,11 +268,11 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
           shape: BoxShape.circle,
           color: Colors.white.withOpacity(0.05),
         ),
-        child: const Icon(Icons.call_outlined,
+        child: Icon(Icons.call_outlined,
             color: Colors.white24, size: 36),
       ),
-      const SizedBox(height: 20),
-      const Text('No calls yet',
+      SizedBox(height: 20),
+      Text('No calls yet',
         style: TextStyle(color: Colors.white38, fontSize: 16,
             fontWeight: FontWeight.w500)),
       SizedBox(height: 8),
@@ -285,7 +285,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
 // ── Filter Tabs ───────────────────────────────────────────────────────────────
 class _FilterTabs extends StatelessWidget {
   final TabController controller;
-  const _FilterTabs({required this.controller});
+  _FilterTabs({required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +313,7 @@ class _FilterTabs extends StatelessWidget {
 // ── Date Divider ──────────────────────────────────────────────────────────────
 class _DateDivider extends StatelessWidget {
   final DateTime date;
-  const _DateDivider({required this.date});
+  _DateDivider({required this.date});
 
   @override
   Widget build(BuildContext context) {
@@ -343,7 +343,7 @@ class _CallTile extends StatelessWidget {
   final String? photoUrl;
   final VoidCallback onTap;
 
-  const _CallTile({
+  _CallTile({
     required this.call, required this.isOutgoing, required this.name,
     required this.peerId, this.photoUrl, required this.onTap,
   });
@@ -477,7 +477,7 @@ class _CallTile extends StatelessWidget {
 // ── Direction Icon ────────────────────────────────────────────────────────────
 class _DirectionIcon extends StatelessWidget {
   final bool isOutgoing, isMissed;
-  const _DirectionIcon({required this.isOutgoing, required this.isMissed});
+  _DirectionIcon({required this.isOutgoing, required this.isMissed});
 
   @override
   Widget build(BuildContext context) {

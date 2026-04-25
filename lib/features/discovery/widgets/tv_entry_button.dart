@@ -5,7 +5,7 @@ import 'package:xamepage/core/theme/app_theme.dart';
 class TVEntryButton extends StatelessWidget {
   final VoidCallback onTap;
 
-  const TVEntryButton({Key? key, required this.onTap}) : super(key: key);
+  TVEntryButton({Key? key, required this.onTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

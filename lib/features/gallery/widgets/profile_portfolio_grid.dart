@@ -5,7 +5,7 @@ class ProfilePortfolioGrid extends StatelessWidget {
   final List<dynamic> items;
   final Function(int) onShowLightbox;
 
-  const ProfilePortfolioGrid({
+  ProfilePortfolioGrid({
     super.key, 
     required this.items, 
     required this.onShowLightbox
@@ -32,9 +32,9 @@ class ProfilePortfolioGrid extends StatelessWidget {
 
     return GridView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,

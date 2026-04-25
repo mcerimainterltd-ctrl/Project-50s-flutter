@@ -23,7 +23,7 @@ import 'package:xamepage/core/theme/app_theme.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;
-  const _Placeholder(this.name);
+  _Placeholder(this.name);
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: context.xBg,

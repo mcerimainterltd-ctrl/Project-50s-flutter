@@ -56,7 +56,7 @@ class TVBroadcastCard extends StatelessWidget {
                 matchTime: matchTime,
               ),
             ),
-            const Positioned(top: 16, right: 16, child: LivePulseIndicator()),
+            Positioned(top: 16, right: 16, child: LivePulseIndicator()),
           ],
           Positioned(
             bottom: 20,

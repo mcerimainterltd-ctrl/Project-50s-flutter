@@ -288,7 +288,7 @@ class AvatarBuilderSheet extends StatefulWidget {
   final String xameId, serverUrl;
   final void Function(String dataUrl)? onSaved;
 
-  const AvatarBuilderSheet({super.key, required this.xameId,
+  AvatarBuilderSheet({super.key, required this.xameId,
       required this.serverUrl, this.onSaved});
 
   static Future<void> show(BuildContext context, {
@@ -351,7 +351,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                   Text('Design your unique avatar',
                       style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
-                const Spacer(),
+                Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Icon(Icons.close, color: context.xMuted)),
@@ -420,7 +420,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
             child: GestureDetector(
               onTap: _saving ? null : _save,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
+                duration: Duration(milliseconds: 150),
                 width: double.infinity, height: 52,
                 decoration: BoxDecoration(
                   gradient: _saving ? null : LinearGradient(

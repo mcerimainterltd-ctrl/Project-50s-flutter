@@ -148,7 +148,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
             Text('Quick Reply',
                 style: TextStyle(color: context.xText, fontSize: 16,
                     fontWeight: FontWeight.w700)),
-            const Spacer(),
+            Spacer(),
             GestureDetector(
               onTap: () => ManageTemplatesDialog.show(context),
               child: Container(
@@ -169,7 +169,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
             children: _templates.map((t) => GestureDetector(
               onTap: () => _send(t),
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 280),
+                constraints: BoxConstraints(maxWidth: 280),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
@@ -295,7 +295,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                 Text('SMS Templates',
                     style: TextStyle(color: context.xText, fontSize: 16,
                         fontWeight: FontWeight.w700)),
-                const Spacer(),
+                Spacer(),
                 GestureDetector(
                   onTap: () async {
                     await _svc.resetToDefaults();
@@ -429,7 +429,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
 
 class _EditDialog extends StatelessWidget {
   final TextEditingController ctrl;
-  const _EditDialog({required this.ctrl});
+  _EditDialog({required this.ctrl});
 
   @override
   Widget build(BuildContext context) => Dialog(
