@@ -5,6 +5,7 @@ import 'package:xamepage/core/services/socket_service.dart';
 import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
 import 'package:xamepage/shared/models/xame_user.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 class XamePageApp extends ConsumerStatefulWidget {
   const XamePageApp({super.key});
@@ -36,9 +37,13 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       ref.read(socketServiceProvider).connect(user.xameId);
     }
 
+    final theme = ref.watch(themeProvider);
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       routerConfig: ref.watch(routerProvider),
+      theme:      theme.toThemeData(),
+      darkTheme:  theme.toThemeData(),
+      themeMode:  theme.isDark ? ThemeMode.dark : ThemeMode.light,
     );
   }
 }
