@@ -1118,8 +1118,8 @@ class _KeypadTab extends StatelessWidget {
         SizedBox(height: 60, child: Center(
           child: dial.isEmpty
             ? Text('Enter number',
-                style: TextStyle(color: context.xCard,
-                    fontSize: 26, letterSpacing: 6))
+                style: TextStyle(color: context.xMuted,
+                    fontSize: 22, letterSpacing: 4, fontWeight: FontWeight.w300))
             : Text(dial, style: TextStyle(
                 color: context.xText, fontSize: 28,
                 fontWeight: FontWeight.w300, letterSpacing: 5),
@@ -1130,9 +1130,9 @@ class _KeypadTab extends StatelessWidget {
           crossAxisCount:  3,
           shrinkWrap:      true,
           physics:         NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 1.8,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.5,
           children: [
             ...['1','2','3','4','5','6','7','8','9'].map(
               (k) => _DialKey(label: k, sub: _kSub[k] ?? '', onTap: () => onDigit(k))),
@@ -1238,20 +1238,43 @@ class _DialKeyState extends State<_DialKey>
     child: ScaleTransition(
       scale: _scale,
       child: Container(
-        alignment:  Alignment.center,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color:        XameColors.darkBg.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(14),
-          border:       Border.all(color: XameColors.darkBg.withOpacity(0.06))),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end:   Alignment.bottomRight,
+            colors: [
+              context.xSurface.withValues(alpha: 0.9),
+              context.xCard.withValues(alpha: 0.6),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: context.xPrimary.withValues(alpha: 0.15),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: context.xPrimary.withValues(alpha: 0.08),
+              blurRadius: 12,
+              spreadRadius: 0,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center,
           children: [
           Text(widget.label, style: TextStyle(
-              color: XameColors.primary, fontSize: 24,
-              fontWeight: FontWeight.w300)),
+              color: context.xText,
+              fontSize: 28,
+              fontWeight: FontWeight.w200,
+              letterSpacing: 1)),
           if (widget.sub.isNotEmpty)
             Text(widget.sub, style: TextStyle(
-                color: XameColors.accent, fontSize: 8,
-                letterSpacing: 1.5, fontWeight: FontWeight.w600)),
+                color: context.xPrimary.withValues(alpha: 0.7),
+                fontSize: 9,
+                letterSpacing: 2,
+                fontWeight: FontWeight.w500)),
         ]),
       ),
     ),
