@@ -300,7 +300,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 Text('Rate / min',
-                    style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
+                    style: TextStyle(color: context.xMuted, fontSize: 11)),
                 SizedBox(height: 4),
                 Text('$_creditsCurr $rate',
                     style: TextStyle(color: XameColors.primary,
@@ -316,7 +316,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 const Text('Your Balance',
-                    style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
+                    style: TextStyle(color: context.xMuted, fontSize: 11)),
                 const SizedBox(height: 4),
                 Text('$_creditsCurr ${_credits.toStringAsFixed(2)}',
                     style: TextStyle(
@@ -559,8 +559,8 @@ class _CreditsBar extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     decoration: BoxDecoration(
-      color: XameColors.darkSurface,
-      border: Border(bottom: BorderSide(color: XameColors.darkCard))),
+      color: context.xSurface,
+      border: Border(bottom: BorderSide(color: context.xCard))),
     child: Row(children: [
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -577,7 +577,7 @@ class _CreditsBar extends StatelessWidget {
                 fontSize: 13, fontWeight: FontWeight.w700)),
           SizedBox(width: 4),
           Text('credits',
-            style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
+            style: TextStyle(color: context.xMuted, fontSize: 11)),
         ]),
       ),
       Spacer(),
@@ -586,14 +586,14 @@ class _CreditsBar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color:        XameColors.darkBg.withOpacity(0.05),
+            color:        context.xCard,
             borderRadius: BorderRadius.circular(20),
-            border:       Border.all(color: XameColors.darkSurface)),
+            border:       Border.all(color: context.xMuted.withValues(alpha: 0.3))),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.add_rounded, color: XameColors.darkBg.withValues(alpha: 0.7), size: 14),
+            Icon(Icons.add_rounded, color: context.xText, size: 14),
             SizedBox(width: 4),
             Text('Top Up', style: TextStyle(
-                color: XameColors.darkBg.withValues(alpha: 0.7), fontSize: 12,
+                color: context.xText, fontSize: 12,
                 fontWeight: FontWeight.w600)),
           ]),
         ),
