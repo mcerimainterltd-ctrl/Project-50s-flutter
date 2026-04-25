@@ -140,7 +140,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
       minChildSize:     0.5,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF111E2E),
+          color: context.xCard,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -245,7 +245,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                         const Padding(
                           padding: EdgeInsets.only(left: 8),
                           child: Icon(Icons.check_circle,
-                              color: Color(0xFF00B0A0), size: 16)),
+                              color: context.xPrimary, size: 16)),
                     ]),
                   ),
                 );
@@ -258,7 +258,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             const Padding(
               padding: EdgeInsets.all(20),
               child: CircularProgressIndicator(
-                  color: Color(0xFF00B0A0), strokeWidth: 2),
+                  color: context.xPrimary, strokeWidth: 2),
             ),
 
           if (_result != null)
@@ -278,7 +278,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                     const Text('🌍', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: 6),
                     Text(_resultLang ?? '',
-                      style: const TextStyle(color: Color(0xFF00B0A0),
+                      style: const TextStyle(color: context.xPrimary,
                           fontSize: 11, fontWeight: FontWeight.w700)),
                     const Spacer(),
                     GestureDetector(
@@ -297,10 +297,10 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                       },
                       child: const Row(children: [
                         Icon(Icons.copy_outlined,
-                            color: Color(0xFF00B0A0), size: 14),
+                            color: context.xPrimary, size: 14),
                         SizedBox(width: 4),
                         Text('Copy', style: TextStyle(
-                            color: Color(0xFF00B0A0), fontSize: 12,
+                            color: context.xPrimary, fontSize: 12,
                             fontWeight: FontWeight.w600)),
                       ]),
                     ),

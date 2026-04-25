@@ -105,13 +105,13 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     final history  = ref.watch(callHistoryProvider(user?.xameId ?? ''));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.xBg,
       body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverAppBar(
             pinned: true,
             expandedHeight: 120,
-            backgroundColor: const Color(0xFF0A0A0F),
+            backgroundColor: context.xBg,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
@@ -134,7 +134,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFF0D1117), Color(0xFF0A0A0F)],
+                    colors: [context.xSurface, context.xBg],
                   ),
                 ),
               ),
@@ -156,7 +156,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         body: history.when(
           loading: () => const Center(
             child: CircularProgressIndicator(
-                color: Color(0xFF00FF88), strokeWidth: 1.5)),
+                color: context.xAccent, strokeWidth: 1.5)),
           error: (e, _) => Center(
             child: Text('Failed to load calls',
               style: TextStyle(color: Colors.white38))),
@@ -245,7 +245,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
                   style: TextStyle(color: Colors.white38))),
           TextButton(onPressed: () => Navigator.pop(context, true),
               child: const Text('Clear',
-                  style: TextStyle(color: Color(0xFFE53935),
+                  style: TextStyle(color: context.xDanger,
                       fontWeight: FontWeight.w700))),
         ],
       ),

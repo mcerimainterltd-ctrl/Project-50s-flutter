@@ -257,7 +257,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         .toList();
 
     return Scaffold(
-      backgroundColor: XameColors.darkBg,
+      backgroundColor: context.xBg,
       body: SafeArea(child: Column(children: [
         // Header
         Padding(
@@ -268,7 +268,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
               child: Container(
                 width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: XameColors.darkCard,
+                  color: context.xCard,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.arrow_back_ios_new,
@@ -288,7 +288,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [XameColors.primary, XameColors.secondary]),
+                    colors: [context.xPrimary, context.xSurface]),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text('+ New',
@@ -303,7 +303,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Container(
             decoration: BoxDecoration(
-              color: XameColors.darkCard,
+              color: context.xCard,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white10),
             ),
@@ -325,7 +325,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator(
-                  color: XameColors.primary, strokeWidth: 2))
+                  color: context.xPrimary, strokeWidth: 2))
               : groups.isEmpty
                   ? Column(mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -339,7 +339,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       GestureDetector(
                         onTap: () => _showCreateDialog(context),
                         child: const Text('Create your first group →',
-                            style: TextStyle(color: XameColors.primary,
+                            style: TextStyle(color: context.xPrimary,
                                 fontSize: 13)),
                       ),
                     ])
@@ -356,7 +356,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: XameColors.darkCard,
+                              color: context.xCard,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(color: Colors.white10),
                             ),
@@ -373,8 +373,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                       width: 50, height: 50,
                                       decoration: BoxDecoration(
                                         gradient: const LinearGradient(
-                                          colors: [XameColors.primary,
-                                              XameColors.secondary],
+                                          colors: [context.xPrimary,
+                                              context.xSurface],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight),
                                         borderRadius:
@@ -418,7 +418,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: XameColors.primary
+                                      color: context.xPrimary
                                           .withValues(alpha: 0.1),
                                       borderRadius:
                                           BorderRadius.circular(8),
@@ -426,7 +426,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                     child: Text(
                                       '${g.members.length}',
                                       style: const TextStyle(
-                                          color: XameColors.primary,
+                                          color: context.xPrimary,
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600)),
                                   ),
@@ -500,7 +500,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
       maxChildSize: 0.95,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: XameColors.darkSurface,
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -518,7 +518,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                   width: 40, height: 40,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [XameColors.primary, XameColors.secondary],
+                      colors: [context.xPrimary, context.xSurface],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(12),
@@ -536,11 +536,11 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: XameColors.primary.withValues(alpha: 0.15),
+                      color: context.xPrimary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text('${_selected.length} selected',
-                        style: const TextStyle(color: XameColors.primary,
+                        style: const TextStyle(color: context.xPrimary,
                             fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
               ]),
@@ -552,7 +552,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
               const SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
-                  color: XameColors.darkCard,
+                  color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -592,25 +592,25 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                         horizontal: 14, vertical: 11),
                     decoration: BoxDecoration(
                       color: sel
-                          ? XameColors.primary.withValues(alpha: 0.08)
-                          : XameColors.darkCard,
+                          ? context.xPrimary.withValues(alpha: 0.08)
+                          : context.xCard,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: sel
-                            ? XameColors.primary.withValues(alpha: 0.3)
+                            ? context.xPrimary.withValues(alpha: 0.3)
                             : Colors.white10),
                     ),
                     child: Row(children: [
                       Container(
                         width: 36, height: 36,
                         decoration: BoxDecoration(
-                          color: XameColors.primary.withValues(alpha: 0.1),
+                          color: context.xPrimary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(child: Text(
                             name.isNotEmpty ? name[0].toUpperCase() : '?',
                             style: const TextStyle(
-                                color: XameColors.primary,
+                                color: context.xPrimary,
                                 fontWeight: FontWeight.w700))),
                       ),
                       const SizedBox(width: 12),
@@ -628,9 +628,9 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                         duration: const Duration(milliseconds: 150),
                         width: 22, height: 22,
                         decoration: BoxDecoration(
-                          color: sel ? XameColors.primary : Colors.transparent,
+                          color: sel ? context.xPrimary : Colors.transparent,
                           border: Border.all(
-                            color: sel ? XameColors.primary : Colors.white24,
+                            color: sel ? context.xPrimary : Colors.white24,
                             width: 1.5),
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -647,7 +647,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
             padding: EdgeInsets.fromLTRB(20, 12, 20,
                 MediaQuery.of(context).viewInsets.bottom + 20),
             decoration: const BoxDecoration(
-              color: XameColors.darkSurface,
+              color: context.xSurface,
               border: Border(top: BorderSide(color: Colors.white10)),
             ),
             child: GestureDetector(
@@ -655,7 +655,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                 if (_nameCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                     content: Text('Enter a group name'),
-                    backgroundColor: XameColors.darkCard,
+                    backgroundColor: context.xCard,
                     behavior: SnackBarBehavior.floating));
                   return;
                 }
@@ -670,7 +670,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                   if (group != null) widget.onCreated(group);
                   else ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Failed to create group'),
-                        backgroundColor: XameColors.darkCard,
+                        backgroundColor: context.xCard,
                         behavior: SnackBarBehavior.floating));
                 }
               },
@@ -679,15 +679,15 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                 width: double.infinity, height: 52,
                 decoration: BoxDecoration(
                   gradient: _loading ? null : const LinearGradient(
-                    colors: [XameColors.primary, XameColors.secondary]),
-                  color: _loading ? XameColors.darkCard : null,
+                    colors: [context.xPrimary, context.xSurface]),
+                  color: _loading ? context.xCard : null,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 alignment: Alignment.center,
                 child: _loading
                     ? const SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(
-                            color: XameColors.primary, strokeWidth: 2))
+                            color: context.xPrimary, strokeWidth: 2))
                     : const Text('Create Group',
                         style: TextStyle(color: Colors.black, fontSize: 15,
                             fontWeight: FontWeight.w700)),
@@ -703,7 +703,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
       IconData icon) => Container(
     margin: const EdgeInsets.only(bottom: 0),
     decoration: BoxDecoration(
-      color: XameColors.darkCard,
+      color: context.xCard,
       borderRadius: BorderRadius.circular(12),
       border: Border.all(color: Colors.white10),
     ),
@@ -765,7 +765,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
       maxChildSize: 0.95,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: XameColors.darkSurface,
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -789,7 +789,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                       width: 80, height: 80,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [XameColors.primary, XameColors.secondary],
+                          colors: [context.xPrimary, context.xSurface],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight),
                         borderRadius: BorderRadius.circular(24),
@@ -803,9 +803,9 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                 Container(
                   width: 26, height: 26,
                   decoration: BoxDecoration(
-                    color: XameColors.primary,
+                    color: context.xPrimary,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: XameColors.darkSurface,
+                    border: Border.all(color: context.xSurface,
                         width: 2),
                   ),
                   child: const Icon(Icons.camera_alt,
@@ -838,11 +838,11 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: XameColors.primary.withValues(alpha: 0.12),
+                      color: context.xPrimary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text('+ Add',
-                        style: TextStyle(color: XameColors.primary,
+                        style: TextStyle(color: context.xPrimary,
                             fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
                 ),
@@ -861,7 +861,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: XameColors.darkCard,
+                    color: context.xCard,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white10),
                   ),
@@ -869,13 +869,13 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                     Container(
                       width: 36, height: 36,
                       decoration: BoxDecoration(
-                        color: XameColors.primary.withValues(alpha: 0.1),
+                        color: context.xPrimary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(child: Text(
                           (m.name.isNotEmpty ? m.name : m.userId)[0]
                               .toUpperCase(),
-                          style: const TextStyle(color: XameColors.primary,
+                          style: const TextStyle(color: context.xPrimary,
                               fontWeight: FontWeight.w700))),
                     ),
                     const SizedBox(width: 10),
@@ -901,11 +901,11 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                         child: Container(
                           width: 30, height: 30,
                           decoration: BoxDecoration(
-                            color: XameColors.danger.withValues(alpha: 0.1),
+                            color: context.xDanger.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.person_remove_outlined,
-                              color: XameColors.danger, size: 15),
+                              color: context.xDanger, size: 15),
                         ),
                       ),
                   ]),
@@ -921,7 +921,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (_) => Dialog(
-                    backgroundColor: XameColors.darkCard,
+                    backgroundColor: context.xCard,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
                     child: Padding(
@@ -953,7 +953,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                             onTap: () => Navigator.pop(context, true),
                             child: Container(height: 42,
                               decoration: BoxDecoration(
-                                color: XameColors.danger,
+                                color: context.xDanger,
                                 borderRadius: BorderRadius.circular(12)),
                               alignment: Alignment.center,
                               child: const Text('Leave',
@@ -975,14 +975,14 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
               child: Container(
                 width: double.infinity, height: 48,
                 decoration: BoxDecoration(
-                  color: XameColors.danger.withValues(alpha: 0.1),
+                  color: context.xDanger.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                      color: XameColors.danger.withValues(alpha: 0.3)),
+                      color: context.xDanger.withValues(alpha: 0.3)),
                 ),
                 alignment: Alignment.center,
                 child: const Text('Leave Group',
-                    style: TextStyle(color: XameColors.danger, fontSize: 14,
+                    style: TextStyle(color: context.xDanger, fontSize: 14,
                         fontWeight: FontWeight.w600)),
               ),
             ),
@@ -1013,7 +1013,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
     if (available.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('All contacts are already members'),
-        backgroundColor: XameColors.darkCard,
+        backgroundColor: context.xCard,
         behavior: SnackBarBehavior.floating));
       return;
     }
@@ -1025,7 +1025,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSt) => Container(
           decoration: const BoxDecoration(
-            color: XameColors.darkSurface,
+            color: context.xSurface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -1055,12 +1055,12 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                           horizontal: 14, vertical: 11),
                       decoration: BoxDecoration(
                         color: sel
-                            ? XameColors.primary.withValues(alpha: 0.08)
-                            : XameColors.darkCard,
+                            ? context.xPrimary.withValues(alpha: 0.08)
+                            : context.xCard,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: sel
-                              ? XameColors.primary.withValues(alpha: 0.3)
+                              ? context.xPrimary.withValues(alpha: 0.3)
                               : Colors.white10),
                       ),
                       child: Row(children: [
@@ -1070,9 +1070,9 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                           duration: const Duration(milliseconds: 150),
                           width: 20, height: 20,
                           decoration: BoxDecoration(
-                            color: sel ? XameColors.primary : Colors.transparent,
+                            color: sel ? context.xPrimary : Colors.transparent,
                             border: Border.all(
-                              color: sel ? XameColors.primary : Colors.white24,
+                              color: sel ? context.xPrimary : Colors.white24,
                               width: 1.5),
                             borderRadius: BorderRadius.circular(5),
                           ),
@@ -1096,7 +1096,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                   setState(() {});
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                     content: Text('Member(s) added'),
-                    backgroundColor: XameColors.darkCard,
+                    backgroundColor: context.xCard,
                     behavior: SnackBarBehavior.floating));
                 }
               },
@@ -1104,7 +1104,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                 width: double.infinity, height: 48,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [XameColors.primary, XameColors.secondary]),
+                    colors: [context.xPrimary, context.xSurface]),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,

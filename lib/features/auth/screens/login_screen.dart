@@ -64,7 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     String? err;
     showDialog(context: context, barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setS) => AlertDialog(
-        backgroundColor: XameColors.darkCard,
+        backgroundColor: context.xCard,
         title: const Text('Set Your Password',
           style: TextStyle(color: Colors.white, fontSize: 18)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -76,7 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _dialogField(pw2Ctrl, 'Confirm password', true),
           if (err != null) ...[
             const SizedBox(height: 8),
-            Text(err!, style: const TextStyle(color: XameColors.danger, fontSize: 12)),
+            Text(err!, style: const TextStyle(color: context.xDanger, fontSize: 12)),
           ],
         ]),
         actions: [
@@ -84,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: XameColors.primary, foregroundColor: Colors.black),
+              backgroundColor: context.xPrimary, foregroundColor: Colors.black),
             onPressed: () async {
               if (pwCtrl.text != pw2Ctrl.text) { setS(() => err = 'Passwords do not match'); return; }
               final v = ref.read(authServiceProvider).validatePassword(pwCtrl.text);
@@ -94,7 +94,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content: Text('Password set! Please sign in.'),
-                  backgroundColor: Color(0xFF00FF88)));
+                  backgroundColor: context.xAccent));
               } catch (e) { setS(() => err = e.toString().replaceFirst('Exception:', '')); }
             },
             child: const Text('Set Password'),
@@ -110,10 +110,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint, hintStyle: const TextStyle(color: Colors.white24),
-        filled: true, fillColor: XameColors.darkBg,
+        filled: true, fillColor: context.xBg,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: XameColors.primary, width: 1.5)),
+          borderSide: const BorderSide(color: context.xPrimary, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
     );
@@ -121,7 +121,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: XameColors.darkBg,
+      backgroundColor: context.xBg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
@@ -133,11 +133,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Container(
                   width: 72, height: 72,
                   decoration: BoxDecoration(
-                    color: XameColors.primary.withValues(alpha: 0.15),
+                    color: context.xPrimary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: XameColors.primary, width: 1.5),
+                    border: Border.all(color: context.xPrimary, width: 1.5),
                   ),
-                  child: const Icon(Icons.chat_bubble_rounded, color: XameColors.primary, size: 36),
+                  child: const Icon(Icons.chat_bubble_rounded, color: context.xPrimary, size: 36),
                 ),
               ),
               const SizedBox(height: 24),
@@ -176,15 +176,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: XameColors.primary.withValues(alpha: 0.1),
+                      color: context.xPrimary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: XameColors.primary.withValues(alpha: 0.3)),
+                      border: Border.all(color: context.xPrimary.withValues(alpha: 0.3)),
                     ),
                     child: Row(children: [
-                      const Icon(Icons.info_outline, color: XameColors.primary, size: 16),
+                      const Icon(Icons.info_outline, color: context.xPrimary, size: 16),
                       const SizedBox(width: 8),
                       Expanded(child: Text(_otpMessage!,
-                        style: const TextStyle(color: XameColors.primary, fontSize: 13))),
+                        style: const TextStyle(color: context.xPrimary, fontSize: 13))),
                     ]),
                   ),
                 const SizedBox(height: 12),
@@ -199,15 +199,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: XameColors.danger.withValues(alpha: 0.1),
+                    color: context.xDanger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: XameColors.danger.withValues(alpha: 0.3)),
+                    border: Border.all(color: context.xDanger.withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.error_outline, color: XameColors.danger, size: 16),
+                    const Icon(Icons.error_outline, color: context.xDanger, size: 16),
                     const SizedBox(width: 8),
                     Expanded(child: Text(_error!,
-                      style: const TextStyle(color: XameColors.danger, fontSize: 13))),
+                      style: const TextStyle(color: context.xDanger, fontSize: 13))),
                   ]),
                 ),
               const SizedBox(height: 28),
@@ -216,7 +216,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: XameColors.primary,
+                    backgroundColor: context.xPrimary,
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
@@ -236,7 +236,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     text: "Don't have an account? ",
                     style: TextStyle(color: Colors.white38, fontSize: 14),
                     children: [TextSpan(text: 'Sign Up',
-                      style: TextStyle(color: XameColors.primary, fontWeight: FontWeight.w600))],
+                      style: TextStyle(color: context.xPrimary, fontWeight: FontWeight.w600))],
                   )),
                 ),
               ),
@@ -262,10 +262,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     decoration: InputDecoration(
       hintText: hint, hintStyle: const TextStyle(color: Colors.white24),
       prefixIcon: Icon(icon, color: Colors.white38, size: 20),
-      suffixIcon: suffix, filled: true, fillColor: XameColors.darkCard,
+      suffixIcon: suffix, filled: true, fillColor: context.xCard,
       border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: XameColors.primary, width: 1.5)),
+        borderSide: const BorderSide(color: context.xPrimary, width: 1.5)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
   );

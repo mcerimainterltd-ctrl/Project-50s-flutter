@@ -364,7 +364,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
     _svc.onNotification = (msg) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg),
-        backgroundColor: XameColors.darkCard,
+        backgroundColor: context.xCard,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ));
@@ -382,7 +382,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
       return const SizedBox.shrink();
     }
     return Scaffold(
-      backgroundColor: XameColors.darkBg,
+      backgroundColor: context.xBg,
       body: SafeArea(child: Column(children: [
         _buildHeader(),
         Expanded(child: _buildGrid()),
@@ -397,7 +397,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: XameColors.darkSurface,
+        color: context.xSurface,
         border: Border(bottom: BorderSide(color: Colors.white10)),
       ),
       child: Row(children: [
@@ -406,7 +406,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
           child: Container(
             width: 34, height: 34,
             decoration: BoxDecoration(
-              color: XameColors.darkCard,
+              color: context.xCard,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.arrow_back_ios_new,
@@ -434,7 +434,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
           child: Container(
             width: 34, height: 34,
             decoration: BoxDecoration(
-              color: XameColors.darkCard,
+              color: context.xCard,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.grid_view_rounded,
@@ -449,7 +449,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
             if (roomId != null) ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(
               content: Text('Room ID: $roomId'),
-              backgroundColor: XameColors.darkCard,
+              backgroundColor: context.xCard,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -458,7 +458,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
           child: Container(
             width: 34, height: 34,
             decoration: BoxDecoration(
-              color: XameColors.darkCard,
+              color: context.xCard,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.link_rounded,
@@ -480,7 +480,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
           ? _videoTile(stream: localStream, label: 'You',
               muted: false, handRaised: false, large: true)
           : const CircularProgressIndicator(
-              color: XameColors.primary, strokeWidth: 2));
+              color: context.xPrimary, strokeWidth: 2));
     }
 
     return GridView.count(
@@ -506,7 +506,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
       required bool muted, required bool handRaised, bool large = false}) {
     return Container(
       decoration: BoxDecoration(
-        color: XameColors.darkCard,
+        color: context.xCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),
@@ -519,12 +519,12 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
                   RTCVideoRenderer()..srcObject = stream,
                   objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover)
               : Container(
-                  color: XameColors.darkCard,
+                  color: context.xCard,
                   child: Center(child: Container(
                     width: 52, height: 52,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [XameColors.primary, XameColors.secondary],
+                        colors: [context.xPrimary, context.xSurface],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight),
                       borderRadius: BorderRadius.circular(16),
@@ -550,7 +550,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
                   Container(
                     width: 20, height: 20,
                     decoration: BoxDecoration(
-                      color: XameColors.danger.withValues(alpha: 0.8),
+                      color: context.xDanger.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Icon(Icons.mic_off,
@@ -583,7 +583,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: const BoxDecoration(
-        color: XameColors.darkSurface,
+        color: context.xSurface,
         border: Border(top: BorderSide(color: Colors.white10)),
       ),
       child: Row(
@@ -593,25 +593,25 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
             icon: micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
             label: micOn ? 'Mute' : 'Unmute',
             active: !micOn,
-            activeColor: XameColors.danger,
+            activeColor: context.xDanger,
             onTap: _svc.toggleMic),
           _ctrlBtn(
             icon: camOn ? Icons.videocam_rounded : Icons.videocam_off_rounded,
             label: camOn ? 'Cam' : 'Cam Off',
             active: !camOn,
-            activeColor: XameColors.danger,
+            activeColor: context.xDanger,
             onTap: _svc.toggleCamera),
           _ctrlBtn(
             icon: Icons.pan_tool_outlined,
             label: 'Hand',
             active: handRaised,
-            activeColor: XameColors.accent,
+            activeColor: context.xAccent,
             onTap: _svc.toggleHand),
           _ctrlBtn(
             icon: Icons.screen_share_outlined,
             label: 'Share',
             active: sharing,
-            activeColor: XameColors.primary,
+            activeColor: context.xPrimary,
             onTap: _svc.toggleScreenShare),
           // End button
           GestureDetector(
@@ -620,10 +620,10 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
               Container(
                 width: 52, height: 52,
                 decoration: BoxDecoration(
-                  color: XameColors.danger,
+                  color: context.xDanger,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [BoxShadow(
-                    color: XameColors.danger.withValues(alpha: 0.4),
+                    color: context.xDanger.withValues(alpha: 0.4),
                     blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: const Icon(Icons.call_end_rounded,
@@ -651,7 +651,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
           decoration: BoxDecoration(
             color: active
                 ? activeColor.withValues(alpha: 0.15)
-                : XameColors.darkCard,
+                : context.xCard,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: active

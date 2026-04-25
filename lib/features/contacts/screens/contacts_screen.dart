@@ -71,7 +71,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     return Scaffold(
-      backgroundColor: XameColors.darkBg,
+      backgroundColor: context.xBg,
       body: SafeArea(child: Column(children: [
         _buildHeader(user),
         Expanded(child: IndexedStack(index: _tab, children: [
@@ -88,7 +88,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       bottomNavigationBar: _buildBottomNav(),
       floatingActionButton: _tab == 0 ? FloatingActionButton(
         onPressed:       _showAddContactDialog,
-        backgroundColor: XameColors.primary,
+        backgroundColor: context.xPrimary,
         foregroundColor: Colors.black,
         child:           const Icon(Icons.add_rounded, size: 28),
       ) : null,
@@ -123,7 +123,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                       setState(() => _filter = '');
                     })
                 : null,
-              filled: true, fillColor: XameColors.darkCard,
+              filled: true, fillColor: context.xCard,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none),
@@ -144,14 +144,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
 
   Widget _buildBottomNav() => Container(
     decoration: BoxDecoration(
-      color: XameColors.darkSurface,
+      color: context.xSurface,
       border: Border(top: BorderSide(
         color: Colors.white.withValues(alpha: 0.06)))),
     child: TabBar(
       controller: _tabCtrl,
-      indicatorColor: XameColors.primary,
+      indicatorColor: context.xPrimary,
       indicatorSize: TabBarIndicatorSize.label,
-      labelColor: XameColors.primary,
+      labelColor: context.xPrimary,
       unselectedLabelColor: Colors.white38,
       labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
       tabs: [
@@ -184,7 +184,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: XameColors.darkCard,
+      backgroundColor: context.xCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -219,14 +219,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     hintStyle: const TextStyle(color: Colors.white30),
                     prefixIcon: const Icon(Icons.alternate_email,
                       color: Colors.white38, size: 20),
-                    filled: true, fillColor: XameColors.darkBg,
+                    filled: true, fillColor: context.xBg,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(
-                        color: XameColors.primary, width: 1.5)),
+                        color: context.xPrimary, width: 1.5)),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 14),
                   ),
@@ -241,7 +241,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     (u) => foundUser = u,
                     (s) => searching = s),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: XameColors.primary,
+                    backgroundColor: context.xPrimary,
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12))),
@@ -256,11 +256,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               const SizedBox(height: 10),
               Row(children: [
                 const Icon(Icons.info_outline,
-                  color: XameColors.danger, size: 16),
+                  color: context.xDanger, size: 16),
                 const SizedBox(width: 6),
                 Text(error!,
                   style: const TextStyle(
-                    color: XameColors.danger, fontSize: 13)),
+                    color: context.xDanger, fontSize: 13)),
               ]),
             ],
             if (foundUser != null) ...[
@@ -268,10 +268,10 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: XameColors.primary.withValues(alpha: 0.08),
+                  color: context.xPrimary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: XameColors.primary.withValues(alpha: 0.3))),
+                    color: context.xPrimary.withValues(alpha: 0.3))),
                 child: Row(children: [
                   XameAvatar(name: _contactName(foundUser!), size: 44),
                   const SizedBox(width: 12),
@@ -300,11 +300,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Contact added!'),
-                            backgroundColor: Color(0xFF00FF88)));
+                            backgroundColor: context.xAccent));
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: XameColors.primary,
+                      backgroundColor: context.xPrimary,
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 10),
@@ -359,7 +359,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   void _showMainMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: XameColors.darkCard,
+      backgroundColor: context.xCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(
@@ -415,9 +415,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             style: TextStyle(color: Colors.white)),
           onTap: () { Navigator.pop(context); context.go('/settings'); }),
         ListTile(
-          leading: const Icon(Icons.logout_rounded, color: XameColors.danger),
+          leading: const Icon(Icons.logout_rounded, color: context.xDanger),
           title: const Text('Sign Out',
-            style: TextStyle(color: XameColors.danger)),
+            style: TextStyle(color: context.xDanger)),
           onTap: () { Navigator.pop(context); _signOut(); }),
         const SizedBox(height: 16),
       ])),
@@ -445,7 +445,7 @@ class _ConnectionDot extends ConsumerWidget {
       width: 8, height: 8, margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: connected ? XameColors.accent : Colors.orange),
+        color: connected ? context.xAccent : Colors.orange),
     );
   }
 }
@@ -462,7 +462,7 @@ class _ChatsTab extends ConsumerWidget {
 
     return contacts.when(
       loading: () => const Center(
-        child: CircularProgressIndicator(color: XameColors.primary)),
+        child: CircularProgressIndicator(color: context.xPrimary)),
       error: (e, _) => Center(
         child: Text('Error: $e',
           style: const TextStyle(color: Colors.white38))),
@@ -522,13 +522,13 @@ class _EmptyChats extends StatelessWidget {
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Container(width: 80, height: 80,
         decoration: BoxDecoration(
-          color: XameColors.primary.withValues(alpha: 0.08),
+          color: context.xPrimary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(24)),
         child: const Icon(Icons.chat_bubble_outline_rounded,
-          color: XameColors.primary, size: 36)),
+          color: context.xPrimary, size: 36)),
       const SizedBox(height: 20),
       const Text('XamePage',
-        style: TextStyle(color: XameColors.primary, fontSize: 28,
+        style: TextStyle(color: context.xPrimary, fontSize: 28,
           fontWeight: FontWeight.w900, letterSpacing: 1)),
       const SizedBox(height: 4),
       const Text('created by Gibson Agbor',
@@ -569,7 +569,7 @@ class _ContactTile extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(
-                    color: XameColors.primary, shape: BoxShape.circle),
+                    color: context.xPrimary, shape: BoxShape.circle),
                   child: Text(
                     contact.unreadCount > 99
                       ? '99+' : '${contact.unreadCount}',
@@ -590,7 +590,7 @@ class _ContactTile extends ConsumerWidget {
                 Text(_fmtTime(contact.lastInteractionTs),
                   style: TextStyle(
                     color: contact.unreadCount > 0
-                      ? XameColors.primary : Colors.white30,
+                      ? context.xPrimary : Colors.white30,
                     fontSize: 11)),
             ]),
             const SizedBox(height: 3),
@@ -600,7 +600,7 @@ class _ContactTile extends ConsumerWidget {
                   ? contact.lastInteractionPreview
                   : "Hey there I'm on XamePage",
               style: TextStyle(
-                color: isTyping ? XameColors.accent : Colors.white38,
+                color: isTyping ? context.xAccent : Colors.white38,
                 fontSize: 13,
                 fontStyle: isTyping
                   ? FontStyle.italic : FontStyle.normal),
@@ -671,10 +671,10 @@ class XameAvatar extends StatelessWidget {
         child: Container(
           width: size * 0.26, height: size * 0.26,
           decoration: BoxDecoration(
-            color: hasNewGallery ? XameColors.accent : Colors.transparent,
+            color: hasNewGallery ? context.xAccent : Colors.transparent,
             shape: BoxShape.circle,
             border: hasNewGallery
-                ? Border.all(color: XameColors.darkBg, width: 1.5)
+                ? Border.all(color: context.xBg, width: 1.5)
                 : null),
         )),
   ]);
@@ -685,9 +685,9 @@ class _Initials extends StatelessWidget {
   const _Initials(this.text, this.size);
   @override
   Widget build(BuildContext context) => Container(
-    width: size, height: size, color: XameColors.darkCard,
+    width: size, height: size, color: context.xCard,
     child: Center(child: Text(text,
-      style: TextStyle(color: XameColors.primary,
+      style: TextStyle(color: context.xPrimary,
         fontSize: size * 0.35, fontWeight: FontWeight.bold))),
   );
 }

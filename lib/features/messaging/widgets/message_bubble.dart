@@ -67,7 +67,7 @@ class MessageBubble extends ConsumerWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         color: isSelected
-            ? XameColors.primary.withValues(alpha: 0.15)
+            ? context.xPrimary.withValues(alpha: 0.15)
             : Colors.transparent,
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Align(
@@ -90,7 +90,7 @@ class MessageBubble extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isSelf
                         ? const Color(0xFF1A4A3A)
-                        : XameColors.darkCard,
+                        : context.xCard,
                     borderRadius: BorderRadius.only(
                       topLeft:     const Radius.circular(18),
                       topRight:    const Radius.circular(18),
@@ -305,7 +305,7 @@ class _ReplyQuote extends StatelessWidget {
     decoration: BoxDecoration(
       color: Colors.white.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(10),
-      border: const Border(left: BorderSide(color: XameColors.primary, width: 3)),
+      border: const Border(left: BorderSide(color: context.xPrimary, width: 3)),
     ),
     child: Text(text.isNotEmpty ? text : '📎 Attachment',
         style: const TextStyle(color: Colors.white54, fontSize: 12),
@@ -407,7 +407,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Saved to $path'),
-            backgroundColor: XameColors.darkCard));
+            backgroundColor: context.xCard));
       }
     } catch (e) {
       if (mounted) {
@@ -447,7 +447,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
         child: Center(child: CachedNetworkImage(
           imageUrl: _resolveUrl(widget.url), fit: BoxFit.contain,
           placeholder: (_, __) =>
-              const CircularProgressIndicator(color: XameColors.primary),
+              const CircularProgressIndicator(color: context.xPrimary),
           errorWidget: (_, __, ___) =>
               const Icon(Icons.broken_image, color: Colors.white24, size: 60),
         )),
@@ -749,7 +749,7 @@ class _FileBubbleState extends State<_FileBubble> {
         if (result.type != ResultType.done && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('No app found to open this file (${result.message})'),
-              backgroundColor: XameColors.darkCard));
+              backgroundColor: context.xCard));
         }
         return;
       }
@@ -787,7 +787,7 @@ class _FileBubbleState extends State<_FileBubble> {
       if (result.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('No app found to open this file type'),
-            backgroundColor: XameColors.darkCard));
+            backgroundColor: context.xCard));
       }
     } catch (e) {
       if (mounted) {
@@ -831,7 +831,7 @@ class _FileBubbleState extends State<_FileBubble> {
       return _DocStyle(Icons.article_outlined,
           Colors.white70, const Color(0xFF23111111), 'TXT');
     return _DocStyle(Icons.insert_drive_file_outlined,
-        XameColors.accent, const Color(0xFF23000B1A), 'FILE');
+        context.xAccent, const Color(0xFF23000B1A), 'FILE');
   }
 
   @override
@@ -865,9 +865,9 @@ class _FileBubbleState extends State<_FileBubble> {
                         begin: Alignment.topLeft,
                         end:   Alignment.bottomRight,
                         colors: [
-                          XameColors.darkCard,
+                          context.xCard,
                           st.bgTint,
-                          XameColors.darkCard,
+                          context.xCard,
                         ],
                       ),
                     ),
@@ -934,7 +934,7 @@ class _FileBubbleState extends State<_FileBubble> {
             // ── Metadata footer bar ──────────────────────────────────
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              color: XameColors.darkCard,
+              color: context.xCard,
               child: Row(children: [
                 Icon(st.icon, color: st.color, size: 16),
                 const SizedBox(width: 8),
@@ -1048,14 +1048,14 @@ class _AudioBubbleState extends State<_AudioBubble> {
             child: Container(
               width: 42, height: 42,
               decoration: BoxDecoration(
-                color: XameColors.primary.withValues(alpha: 0.15),
+                color: context.xPrimary.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: XameColors.primary.withValues(alpha: 0.4)),
+                    color: context.xPrimary.withValues(alpha: 0.4)),
               ),
               child: Icon(
                 _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                color: XameColors.primary, size: 26),
+                color: context.xPrimary, size: 26),
             ),
           ),
           const SizedBox(width: 10),
@@ -1075,10 +1075,10 @@ class _AudioBubbleState extends State<_AudioBubble> {
             trackHeight:        2,
             thumbShape:         const RoundSliderThumbShape(enabledThumbRadius: 5),
             overlayShape:       const RoundSliderOverlayShape(overlayRadius: 10),
-            activeTrackColor:   XameColors.primary,
+            activeTrackColor:   context.xPrimary,
             inactiveTrackColor: Colors.white12,
-            thumbColor:         XameColors.primary,
-            overlayColor:       XameColors.primary.withValues(alpha: 0.2),
+            thumbColor:         context.xPrimary,
+            overlayColor:       context.xPrimary.withValues(alpha: 0.2),
           ),
           child: Slider(
             value: progress,
@@ -1145,7 +1145,7 @@ class _WaveformBarsState extends State<_WaveformBars>
           width: 3, height: animH,
           decoration: BoxDecoration(
             color: isPast
-                ? XameColors.primary
+                ? context.xPrimary
                 : Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(2),
           ),

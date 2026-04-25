@@ -132,7 +132,7 @@ class ScreenShareBanner extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: XameColors.darkSurface,
+            color: context.xSurface,
             border: const Border(
                 bottom: BorderSide(color: Colors.white10)),
           ),
@@ -144,10 +144,10 @@ class ScreenShareBanner extends StatelessWidget {
                 width: 8, height: 8,
                 decoration: BoxDecoration(
                   color: state == ScreenShareState.paused
-                      ? Colors.orange : XameColors.accent,
+                      ? Colors.orange : context.xAccent,
                   shape: BoxShape.circle,
                   boxShadow: state == ScreenShareState.sharing ? [
-                    BoxShadow(color: XameColors.accent.withValues(alpha: 0.5),
+                    BoxShadow(color: context.xAccent.withValues(alpha: 0.5),
                         blurRadius: 6),
                   ] : null,
                 ),
@@ -188,13 +188,13 @@ class ScreenShareBanner extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: XameColors.danger.withValues(alpha: 0.12),
+                    color: context.xDanger.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                        color: XameColors.danger.withValues(alpha: 0.3)),
+                        color: context.xDanger.withValues(alpha: 0.3)),
                   ),
                   child: const Text('Stop',
-                      style: TextStyle(color: XameColors.danger,
+                      style: TextStyle(color: context.xDanger,
                           fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),

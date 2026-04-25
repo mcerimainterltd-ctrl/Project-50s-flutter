@@ -300,9 +300,10 @@ class ThemeNotifier extends StateNotifier<XameTheme> {
   }
 }
 
-// ── Legacy XameColors (kept for backward compat) ──────────────────────────────
+// ── XameColors — dynamic, reads from active theme ────────────────────────────
+// Usage: XameColors.of(context).primary  OR  XameColors.primary (fallback)
 class XameColors {
-  // Static constants — used throughout the app
+  // ── Static fallbacks (used where context unavailable) ────────────────────
   static const primary     = Color(0xFF00D4FF);
   static const secondary   = Color(0xFF7B2FFF);
   static const accent      = Color(0xFF00FF88);
@@ -311,6 +312,35 @@ class XameColors {
   static const darkSurface = Color(0xFF141420);
   static const darkCard    = Color(0xFF1E1E2E);
   static const lightBg     = Color(0xFFF5F5FA);
+
+  // ── Dynamic accessors — reads active theme ────────────────────────────────
+  static XameTheme of(BuildContext context) {
+    // Walk up the widget tree to find ProviderScope
+    try {
+      return ProviderScope.containerOf(context).read(themeProvider);
+    } catch (_) {
+      return kXameThemes.first;
+    }
+  }
+}
+
+// ── Theme extension for convenient BuildContext access ────────────────────────
+extension XameThemeContext on BuildContext {
+  XameTheme get xTheme {
+    try {
+      return ProviderScope.containerOf(this).read(themeProvider);
+    } catch (_) {
+      return kXameThemes.first;
+    }
+  }
+  Color get xBg      => xTheme.bg;
+  Color get xCard    => xTheme.card;
+  Color get xSurface => xTheme.surface;
+  Color get xPrimary => xTheme.primary;
+  Color get xAccent  => xTheme.accent;
+  Color get xDanger  => xTheme.danger;
+  Color get xText    => xTheme.text;
+  Color get xMuted   => xTheme.textSecondary;
 }
 
 class AppTheme {

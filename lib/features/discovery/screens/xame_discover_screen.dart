@@ -281,7 +281,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.xBg,
       floatingActionButton: _PostFAB(
         onPost: () => _showPostDialog(context, user?.xameId ?? ''),
       ),
@@ -291,7 +291,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
           physics:    const BouncingScrollPhysics(),
           slivers: [
             SliverAppBar(
-              backgroundColor:  const Color(0xFF0A0A0F),
+              backgroundColor:  context.xBg,
               surfaceTintColor: Colors.transparent,
               floating: true, snap: true, elevation: 0,
               title: Row(children: [
@@ -741,7 +741,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         decoration: InputDecoration(
           hintText:  'Title',
           hintStyle: const TextStyle(color: Colors.white30),
-          filled: true, fillColor: const Color(0xFF0A0A0F),
+          filled: true, fillColor: context.xBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none),
@@ -760,7 +760,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         decoration: InputDecoration(
           hintText:  'Caption (optional)',
           hintStyle: const TextStyle(color: Colors.white30),
-          filled: true, fillColor: const Color(0xFF0A0A0F),
+          filled: true, fillColor: context.xBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none),
@@ -774,7 +774,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       if (_error != null)
         Padding(padding: const EdgeInsets.only(bottom: 8),
           child: Text(_error!, style: const TextStyle(
-              color: Color(0xFFE53935), fontSize: 13))),
+              color: context.xDanger, fontSize: 13))),
 
       SizedBox(width: double.infinity, height: 50,
         child: ElevatedButton(
@@ -886,7 +886,7 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
       if (_error != null)
         Padding(padding: const EdgeInsets.only(bottom: 8),
           child: Text(_error!, style: const TextStyle(
-              color: Color(0xFFE53935), fontSize: 13))),
+              color: context.xDanger, fontSize: 13))),
       SizedBox(width: double.infinity, height: 50,
         child: ElevatedButton(
           onPressed: _uploading ? null : _submit,
@@ -925,10 +925,10 @@ class _LiveCountBadge extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 5, height: 5,
           decoration: const BoxDecoration(
-            shape: BoxShape.circle, color: Color(0xFFFF4444))),
+            shape: BoxShape.circle, color: context.xDanger)),
         const SizedBox(width: 4),
         Text('$count LIVE', style: const TextStyle(
-            color: Color(0xFFFF4444), fontSize: 9,
+            color: context.xDanger, fontSize: 9,
             fontWeight: FontWeight.w800, letterSpacing: 0.5)),
       ]),
     );
@@ -1251,11 +1251,11 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
   Widget build(BuildContext context) {
     final item = widget.item;
     return Scaffold(
-    backgroundColor: const Color(0xFF0A0A0F),
+    backgroundColor: context.xBg,
     body: CustomScrollView(slivers: [
       SliverAppBar(
         expandedHeight: 360, pinned: true,
-        backgroundColor: const Color(0xFF0A0A0F),
+        backgroundColor: context.xBg,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),

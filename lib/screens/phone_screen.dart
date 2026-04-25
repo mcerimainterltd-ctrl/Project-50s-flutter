@@ -12,11 +12,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 
 // ── Colours ───────────────────────────────────────────────────────────────────
-const _kGreen = Color(0xFF00FF88);
-const _kBg    = Color(0xFF0A0A0F);
-const _kCard  = Color(0xFF161B22);
+const _kGreen = context.xAccent;
+const _kBg    = context.xBg;
+const _kCard  = context.xSurface;
 const _kMuted = Color(0xFF8B949E);
-const _kDanger= Color(0xFFE53935);
+const _kDanger= context.xDanger;
 
 // ── Models ────────────────────────────────────────────────────────────────────
 class _DevContact {
@@ -342,12 +342,12 @@ class _PhoneScreenState extends State<PhoneScreen>
                       color: const Color(0x33E53935))),
               child: Row(children: [
                 const Icon(Icons.warning_amber_rounded,
-                    color: Color(0xFFE53935), size: 16),
+                    color: context.xDanger, size: 16),
                 const SizedBox(width: 8),
                 Expanded(child: Text(
                   'Insufficient credits. Top up to continue.',
                   style: const TextStyle(
-                      color: Color(0xFFE53935), fontSize: 12))),
+                      color: context.xDanger, fontSize: 12))),
               ]),
             ),
           ],
@@ -563,7 +563,7 @@ class _CreditsBar extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     decoration: const BoxDecoration(
-      color: Color(0xFF0D1117),
+      color: context.xSurface,
       border: Border(bottom: BorderSide(color: Color(0xFF21262D)))),
     child: Row(children: [
       Container(
@@ -773,7 +773,7 @@ class _ContactsTab extends StatelessWidget {
                 horizontal: 24, vertical: 10),
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [
-                Color(0xFF00FF88), Color(0xFF00CC6A)]),
+                context.xAccent, context.xAccent]),
               borderRadius: BorderRadius.circular(20)),
             child: const Text('Load Contacts',
               style: TextStyle(color: Colors.black,
@@ -981,7 +981,7 @@ class _XameContactsSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: const Color(0x3300FF88))),
             child: const Text('XamePage',
-                style: TextStyle(color: Color(0xFF00FF88),
+                style: TextStyle(color: context.xAccent,
                     fontSize: 11, fontWeight: FontWeight.w700))),
           const SizedBox(width: 8),
           Text(
@@ -1037,7 +1037,7 @@ class _XameContactsSection extends StatelessWidget {
                           border: Border.all(
                               color: const Color(0x3300FF88))),
                       child: const Icon(Icons.call_rounded,
-                          color: Color(0xFF00FF88), size: 14))),
+                          color: context.xAccent, size: 14))),
                   const SizedBox(width: 6),
                   GestureDetector(
                     onTap: () => ctx.go(
@@ -1181,7 +1181,7 @@ class _KeypadTab extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
                 gradient: const LinearGradient(colors: [
-                  Color(0xFF00FF88), Color(0xFF00CC6A),
+                  context.xAccent, context.xAccent,
                 ])),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1308,7 +1308,7 @@ class _CountryPickerState extends State<_CountryPicker> {
               prefixIcon: const Icon(Icons.search,
                   color: Colors.white30, size: 18),
               filled:    true,
-              fillColor: const Color(0xFF0A0A0F),
+              fillColor: context.xBg,
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none),
@@ -1475,7 +1475,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         // Token input
         Container(
           decoration: BoxDecoration(
-            color:        const Color(0xFF0A0A0F),
+            color:        context.xBg,
             borderRadius: BorderRadius.circular(14),
             border:       Border.all(color: Colors.white12)),
           child: TextField(
@@ -1550,7 +1550,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         // Amount input
         Container(
           decoration: BoxDecoration(
-            color:        const Color(0xFF0A0A0F),
+            color:        context.xBg,
             borderRadius: BorderRadius.circular(14),
             border:       Border.all(color: Colors.white12)),
           child: TextField(

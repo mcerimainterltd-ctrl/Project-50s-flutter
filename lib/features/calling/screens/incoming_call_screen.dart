@@ -268,7 +268,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: XameColors.darkSurface,
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -285,11 +285,11 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: XameColors.primary.withValues(alpha: 0.12),
+                    color: context.xPrimary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.person_add_outlined,
-                      color: XameColors.primary, size: 20),
+                      color: context.xPrimary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 const Column(crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,7 +303,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: XameColors.darkCard,
+                  color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -338,7 +338,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: XameColors.darkCard,
+                      color: context.xCard,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: Colors.white10),
                     ),
@@ -346,13 +346,13 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                       Container(
                         width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: XameColors.primary.withValues(alpha: 0.1),
+                          color: context.xPrimary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(child: Text(
                             c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
                             style: const TextStyle(
-                                color: XameColors.primary,
+                                color: context.xPrimary,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16))),
                       ),
@@ -371,13 +371,13 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: XameColors.primary.withValues(alpha: 0.12),
+                          color: context.xPrimary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: XameColors.primary
+                          border: Border.all(color: context.xPrimary
                               .withValues(alpha: 0.3)),
                         ),
                         child: const Text('Add',
-                            style: TextStyle(color: XameColors.primary,
+                            style: TextStyle(color: context.xPrimary,
                                 fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                     ]),

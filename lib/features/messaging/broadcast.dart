@@ -133,7 +133,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: XameColors.darkSurface,
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -152,7 +152,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                   width: 40, height: 40,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [XameColors.primary, XameColors.secondary],
+                      colors: [context.xPrimary, context.xSurface],
                       begin: Alignment.topLeft, end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -179,14 +179,14 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                 Expanded(child: _ActionBtn(
                   icon: Icons.send_outlined,
                   label: 'New Broadcast',
-                  color: XameColors.primary,
+                  color: context.xPrimary,
                   onTap: () => _openNewBroadcast(context),
                 )),
                 const SizedBox(width: 10),
                 Expanded(child: _ActionBtn(
                   icon: Icons.list_outlined,
                   label: 'Manage Lists',
-                  color: XameColors.secondary,
+                  color: context.xSurface,
                   onTap: () => _openManageLists(context),
                 )),
               ]),
@@ -214,7 +214,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                     GestureDetector(
                       onTap: () => _openNewBroadcast(context),
                       child: const Text('Create your first broadcast →',
-                          style: TextStyle(color: XameColors.primary,
+                          style: TextStyle(color: context.xPrimary,
                               fontSize: 13)),
                     ),
                   ])
@@ -228,7 +228,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                       return Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: XameColors.darkCard,
+                          color: context.xCard,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: Colors.white10),
                         ),
@@ -236,13 +236,13 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                           Container(
                             width: 42, height: 42,
                             decoration: BoxDecoration(
-                              color: XameColors.primary.withValues(alpha: 0.1),
+                              color: context.xPrimary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
                               child: Text('${l.members.length}',
                                   style: const TextStyle(
-                                      color: XameColors.primary, fontSize: 15,
+                                      color: context.xPrimary, fontSize: 15,
                                       fontWeight: FontWeight.w700)),
                             ),
                           ),
@@ -266,8 +266,8 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                                   horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [XameColors.primary,
-                                      XameColors.secondary]),
+                                  colors: [context.xPrimary,
+                                      context.xSurface]),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Text('Send',
@@ -355,7 +355,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
       maxChildSize: 0.95,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: XameColors.darkSurface,
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -377,11 +377,11 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: XameColors.primary.withValues(alpha: 0.15),
+                      color: context.xPrimary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text('${_selected.length} selected',
-                        style: const TextStyle(color: XameColors.primary,
+                        style: const TextStyle(color: context.xPrimary,
                             fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
               ]),
@@ -389,7 +389,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
               // Search
               Container(
                 decoration: BoxDecoration(
-                  color: XameColors.darkCard,
+                  color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -430,12 +430,12 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                         horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
                       color: sel
-                          ? XameColors.primary.withValues(alpha: 0.08)
-                          : XameColors.darkCard,
+                          ? context.xPrimary.withValues(alpha: 0.08)
+                          : context.xCard,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: sel
-                            ? XameColors.primary.withValues(alpha: 0.3)
+                            ? context.xPrimary.withValues(alpha: 0.3)
                             : Colors.white10,
                       ),
                     ),
@@ -443,14 +443,14 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       Container(
                         width: 36, height: 36,
                         decoration: BoxDecoration(
-                          color: XameColors.primary.withValues(alpha: 0.1),
+                          color: context.xPrimary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
                           child: Text(name.isNotEmpty
                               ? name[0].toUpperCase() : '?',
                               style: const TextStyle(
-                                  color: XameColors.primary,
+                                  color: context.xPrimary,
                                   fontWeight: FontWeight.w700)),
                         ),
                       ),
@@ -469,9 +469,9 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                         duration: const Duration(milliseconds: 150),
                         width: 22, height: 22,
                         decoration: BoxDecoration(
-                          color: sel ? XameColors.primary : Colors.transparent,
+                          color: sel ? context.xPrimary : Colors.transparent,
                           border: Border.all(
-                            color: sel ? XameColors.primary : Colors.white24,
+                            color: sel ? context.xPrimary : Colors.white24,
                             width: 1.5),
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -491,13 +491,13 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
             padding: EdgeInsets.fromLTRB(
                 20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 20),
             decoration: const BoxDecoration(
-              color: XameColors.darkSurface,
+              color: context.xSurface,
               border: Border(top: BorderSide(color: Colors.white10)),
             ),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Container(
                 decoration: BoxDecoration(
-                  color: XameColors.darkCard,
+                  color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -529,7 +529,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                     child: Container(
                       height: 46,
                       decoration: BoxDecoration(
-                        color: XameColors.darkCard,
+                        color: context.xCard,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
@@ -562,7 +562,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                           content: Text(
                               '✅ Sent to ${_selected.length} contacts!'),
                           backgroundColor:
-                              XameColors.accent.withValues(alpha: 0.2),
+                              context.xAccent.withValues(alpha: 0.2),
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
@@ -574,15 +574,15 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       height: 46,
                       decoration: BoxDecoration(
                         gradient: _sending ? null : const LinearGradient(
-                          colors: [XameColors.primary, XameColors.secondary]),
-                        color: _sending ? XameColors.darkCard : null,
+                          colors: [context.xPrimary, context.xSurface]),
+                        color: _sending ? context.xCard : null,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       alignment: Alignment.center,
                       child: _sending
                           ? const SizedBox(width: 18, height: 18,
                               child: CircularProgressIndicator(
-                                  color: XameColors.primary, strokeWidth: 2))
+                                  color: context.xPrimary, strokeWidth: 2))
                           : const Text('📤 Send',
                               style: TextStyle(color: Colors.black,
                                   fontSize: 14,
@@ -599,7 +599,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
   }
 
   void _snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(msg), backgroundColor: XameColors.darkCard,
+    SnackBar(content: Text(msg), backgroundColor: context.xCard,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12))));
@@ -609,7 +609,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
     return showDialog<String>(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: XameColors.darkCard,
+        backgroundColor: context.xCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -619,7 +619,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
             const SizedBox(height: 14),
             Container(
               decoration: BoxDecoration(
-                color: XameColors.darkSurface,
+                color: context.xSurface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white10),
               ),
@@ -652,7 +652,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                 onTap: () => Navigator.pop(context, ctrl.text),
                 child: Container(height: 42,
                   decoration: BoxDecoration(
-                    color: XameColors.primary,
+                    color: context.xPrimary,
                     borderRadius: BorderRadius.circular(12)),
                   alignment: Alignment.center,
                   child: const Text('Save',
@@ -690,7 +690,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: XameColors.darkSurface,
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -726,7 +726,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                         horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                          colors: [XameColors.primary, XameColors.secondary]),
+                          colors: [context.xPrimary, context.xSurface]),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text('+ New List',
@@ -751,7 +751,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                       return Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: XameColors.darkCard,
+                          color: context.xCard,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: Colors.white10),
                         ),
@@ -759,12 +759,12 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                           Container(
                             width: 42, height: 42,
                             decoration: BoxDecoration(
-                              color: XameColors.primary.withValues(alpha: 0.1),
+                              color: context.xPrimary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(child: Text('${l.members.length}',
                                 style: const TextStyle(
-                                    color: XameColors.primary, fontSize: 15,
+                                    color: context.xPrimary, fontSize: 15,
                                     fontWeight: FontWeight.w700))),
                           ),
                           const SizedBox(width: 12),
@@ -787,12 +787,12 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                             child: Container(
                               width: 34, height: 34,
                               decoration: BoxDecoration(
-                                color: XameColors.danger
+                                color: context.xDanger
                                     .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(Icons.delete_outline,
-                                  color: XameColors.danger, size: 16),
+                                  color: context.xDanger, size: 16),
                             ),
                           ),
                         ]),
