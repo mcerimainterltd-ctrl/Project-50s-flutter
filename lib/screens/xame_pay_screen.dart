@@ -9,9 +9,9 @@ import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── COLOURS ───────────────────────────────────────────────────────────────────
 const _kTeal  = XameColors.accent;
-const _kBg    = XameColors.darkSurface;
-const _kCard  = XameColors.darkCard;
-const _kMuted = XameColors.darkSurface;
+const _kBg    = Color(0xFF141420);
+const _kCard  = Color(0xFF1E1E2E);
+const _kMuted = Color(0xFF8899A6);
 
 // ── MODELS ────────────────────────────────────────────────────────────────────
 
@@ -538,7 +538,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                 fontSize: 12, letterSpacing: 1)),
         SizedBox(height: 8),
         Text(_fmt(_balance),
-            style: TextStyle(color: XameColors.darkBg,
+            style: TextStyle(color: context.xText,
                 fontSize: 32, fontWeight: FontWeight.w800)),
         if (conv.isNotEmpty)
           Padding(padding: const EdgeInsets.only(top: 4),
@@ -569,7 +569,7 @@ class _XamePayScreenState extends State<XamePayScreen>
           border: Border.all(color: Color(0x4DFFFFFF)),
         ),
         child: Text(l, textAlign: TextAlign.center,
-            style: TextStyle(color: XameColors.darkBg,
+            style: TextStyle(color: context.xText,
                 fontSize: 11, fontWeight: FontWeight.w600)),
       ),
     ),
@@ -616,7 +616,7 @@ class _XamePayScreenState extends State<XamePayScreen>
           controller: sc, padding: const EdgeInsets.all(24),
           children: [
             Text('💳 Add Money',
-                style: TextStyle(color: XameColors.darkBg,
+                style: TextStyle(color: context.xText,
                     fontSize: 18, fontWeight: FontWeight.w700)),
             SizedBox(height: 20),
             ...methods.map((m) => Padding(
@@ -627,14 +627,14 @@ class _XamePayScreenState extends State<XamePayScreen>
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(color: _kCard,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: XameColors.darkSurface)),
+                      border: Border.all(color: context.xMuted)),
                   child: Row(children: [
                     Text(m[0], style: TextStyle(fontSize: 28)),
                     SizedBox(width: 16),
                     Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text(m[1], style: TextStyle(color: XameColors.darkBg,
+                      Text(m[1], style: TextStyle(color: context.xText,
                           fontSize: 15, fontWeight: FontWeight.w700)),
                       Text(m[2], style: TextStyle(
                           color: _kMuted, fontSize: 12)),
@@ -665,7 +665,7 @@ class _XamePayScreenState extends State<XamePayScreen>
             children: [
               Row(children: [
                 Expanded(child: Text('⚙️ Wallet Settings',
-                    style: TextStyle(color: XameColors.darkBg,
+                    style: TextStyle(color: context.xText,
                         fontSize: 17, fontWeight: FontWeight.w700))),
                 IconButton(icon: Icon(Icons.close, color: Colors.grey),
                     onPressed: () => Navigator.pop(ctx)),
@@ -676,7 +676,7 @@ class _XamePayScreenState extends State<XamePayScreen>
               // Region picker — shows flag + country + currency code
               DropdownButtonFormField<String>(
                 value: tc, isExpanded: true, dropdownColor: _kBg,
-                style: TextStyle(color: XameColors.darkBg, fontSize: 14),
+                style: TextStyle(color: context.xText, fontSize: 14),
                 decoration: _dropDeco(),
                 items: _kRegions.map((r) => DropdownMenuItem(
                   value: r.currency,
@@ -686,7 +686,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                     Expanded(child: Text('${r.country} (${r.currency})',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            color: XameColors.darkBg, fontSize: 14))),
+                            color: context.xText, fontSize: 14))),
                   ]),
                 )).toList(),
                 onChanged: (v) { if (v != null) ss(() => tc = v); },
@@ -701,7 +701,7 @@ class _XamePayScreenState extends State<XamePayScreen>
               SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: td, isExpanded: true, dropdownColor: _kBg,
-                style: TextStyle(color: XameColors.darkBg, fontSize: 14),
+                style: TextStyle(color: context.xText, fontSize: 14),
                 decoration: _dropDeco(),
                 items: _kRegions.map((r) => DropdownMenuItem(
                   value: r.currency,
@@ -712,7 +712,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                         '${r.symbol} ${r.currency} — ${r.country}',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            color: XameColors.darkBg, fontSize: 14))),
+                            color: context.xText, fontSize: 14))),
                   ]),
                 )).toList(),
                 onChanged: (v) { if (v != null) ss(() => td = v); },
@@ -779,9 +779,9 @@ class _XamePayScreenState extends State<XamePayScreen>
   static InputDecoration _dropDeco() => InputDecoration(
     filled: true, fillColor: _kCard,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: XameColors.darkSurface)),
+        borderSide: BorderSide(color: context.xMuted)),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: XameColors.darkSurface)),
+        borderSide: BorderSide(color: context.xMuted)),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
   );
 }
@@ -946,7 +946,7 @@ class _SendTabState extends State<_SendTab> {
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('💸 Send Money',
-          style: TextStyle(color: XameColors.darkBg,
+          style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 4),
       Text('Send to contacts or any bank in the world',
@@ -978,7 +978,7 @@ class _SendTabState extends State<_SendTab> {
                       fontWeight: FontWeight.w700))),
               SizedBox(width: 10),
               Expanded(child: Text(_selContact!,
-                style: TextStyle(color: XameColors.darkBg,
+                style: TextStyle(color: context.xText,
                     fontSize: 14, fontWeight: FontWeight.w600))),
               GestureDetector(
                 onTap: () => setState(() => _selContact = null),
@@ -990,7 +990,7 @@ class _SendTabState extends State<_SendTab> {
             constraints: BoxConstraints(maxHeight: 220),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: XameColors.darkSurface)),
+              border: Border.all(color: context.xMuted)),
             child: widget.contacts.isEmpty
               ? Padding(padding: EdgeInsets.all(20),
                   child: Center(child: Text('No XamePage contacts found',
@@ -1010,7 +1010,7 @@ class _SendTabState extends State<_SendTab> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 11),
                         decoration: BoxDecoration(border: Border(bottom:
-                          BorderSide(color: XameColors.darkBg.withOpacity(0.05)))),
+                          BorderSide(color: context.xSurface))),
                         child: Row(children: [
                           CircleAvatar(radius: 16,
                             backgroundColor: _kTeal.withOpacity(0.15),
@@ -1021,7 +1021,7 @@ class _SendTabState extends State<_SendTab> {
                           Column(crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                             Text(c['name'] as String,
-                              style: TextStyle(color: XameColors.darkBg,
+                              style: TextStyle(color: context.xText,
                                   fontSize: 14, fontWeight: FontWeight.w500)),
                             Text(c['id'] as String,
                               style: const TextStyle(
@@ -1067,7 +1067,7 @@ class _SendTabState extends State<_SendTab> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: XameColors.darkSurface)),
+                border: Border.all(color: context.xMuted)),
             child: Row(children: [
               Icon(Icons.wifi_off_rounded, color: _kMuted, size: 20),
               SizedBox(width: 12),
@@ -1098,7 +1098,7 @@ class _SendTabState extends State<_SendTab> {
             Container(
               constraints: BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: XameColors.darkSurface)),
+                  border: Border.all(color: context.xMuted)),
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: _filtered.isEmpty ? 1 : _filtered.length,
@@ -1117,9 +1117,9 @@ class _SendTabState extends State<_SendTab> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(border: Border(bottom:
-                          BorderSide(color: XameColors.darkBg.withOpacity(0.05)))),
+                          BorderSide(color: context.xSurface))),
                       child: Text(b.name, style: TextStyle(
-                          color: XameColors.darkBg, fontSize: 14))),
+                          color: context.xText, fontSize: 14))),
                   );
                 },
               ),
@@ -1144,7 +1144,7 @@ class _SendTabState extends State<_SendTab> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: XameColors.darkSurface)),
+                border: Border.all(color: context.xMuted)),
             child: Text(_resolved, style: TextStyle(
                 color: _resolved.startsWith('✅')
                     ? _kTeal : XameColors.accent,
@@ -1186,10 +1186,10 @@ class _SendTabState extends State<_SendTab> {
         decoration: BoxDecoration(
           color: on ? _kTeal : _kCard,
           borderRadius: BorderRadius.circular(10),
-          border: on ? null : Border.all(color: XameColors.darkSurface),
+          border: on ? null : Border.all(color: context.xMuted),
         ),
         child: Text(l, style: TextStyle(
-            color: on ? Colors.black : XameColors.darkBg,
+            color: on ? Colors.black : context.xText,
             fontSize: 13, fontWeight: FontWeight.w600)),
       ),
     ),
@@ -1252,7 +1252,7 @@ class _AirtimeTabState extends State<_AirtimeTab> {
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('📱 Buy Airtime',
-          style: TextStyle(color: XameColors.darkBg,
+          style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
       SizedBox(height: 20),
       Text('Select Network',
@@ -1283,9 +1283,9 @@ class _AirtimeTabState extends State<_AirtimeTab> {
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: _amt == '$a' ? _kTeal : XameColors.darkSurface)),
+                    color: _amt == '$a' ? _kTeal : context.xMuted)),
             child: Text(widget.fmt(a.toDouble()),
-                style: TextStyle(color: XameColors.darkBg,
+                style: TextStyle(color: context.xText,
                     fontSize: 13, fontWeight: FontWeight.w600))),
         )).toList(),
       ),
@@ -1876,7 +1876,7 @@ class _DataTabState extends State<_DataTab> {
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('📶 Buy Data',
-          style: TextStyle(color: XameColors.darkBg,
+          style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 20),
 
@@ -1932,7 +1932,7 @@ class _DataTabState extends State<_DataTab> {
                     border: Border.all(
                         color: selected
                             ? _kTeal
-                            : XameColors.darkSurface,
+                            : context.xMuted,
                         width: selected ? 2 : 1),
                   ),
                   child: Row(children: [
@@ -1948,7 +1948,7 @@ class _DataTabState extends State<_DataTab> {
                       ),
                       child: Text(p.size,
                           style: TextStyle(
-                              color: selected ? Colors.black : XameColors.darkBg,
+                              color: selected ? Colors.black : context.xText,
                               fontSize: 13,
                               fontWeight: FontWeight.w800)),
                     ),
@@ -1962,7 +1962,7 @@ class _DataTabState extends State<_DataTab> {
                     // Price
                     Text(widget.fmt(p.price),
                         style: TextStyle(
-                            color: selected ? _kTeal : XameColors.darkBg,
+                            color: selected ? _kTeal : context.xText,
                             fontSize: 15,
                             fontWeight: FontWeight.w700)),
                   ]),
@@ -1984,7 +1984,7 @@ class _DataTabState extends State<_DataTab> {
           Text('Balance',
               style: TextStyle(color: _kMuted, fontSize: 13)),
           Text(widget.fmt(widget.balance),
-              style: TextStyle(color: XameColors.darkBg,
+              style: TextStyle(color: context.xText,
                   fontSize: 13, fontWeight: FontWeight.w600)),
         ]),
       ),
@@ -2198,7 +2198,7 @@ class _BillsTabState extends State<_BillsTab> {
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('🧾 Pay Bills',
-          style: TextStyle(color: XameColors.darkBg,
+          style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
       SizedBox(height: 20),
       GridView.count(
@@ -2210,12 +2210,12 @@ class _BillsTabState extends State<_BillsTab> {
           child: Container(
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: XameColors.darkSurface)),
+                border: Border.all(color: context.xMuted)),
             child: Column(mainAxisAlignment: MainAxisAlignment.center,
                 children: [
               Text(c.icon, style: TextStyle(fontSize: 32)),
               SizedBox(height: 10),
-              Text(c.label, style: TextStyle(color: XameColors.darkBg,
+              Text(c.label, style: TextStyle(color: context.xText,
                   fontSize: 14, fontWeight: FontWeight.w700)),
             ]),
           ),
@@ -2236,7 +2236,7 @@ class _BillsTabState extends State<_BillsTab> {
             icon: Icon(Icons.chevron_left, color: _kTeal, size: 28),
             onPressed: () => setState(() { _cat = null; _billers = []; _billersError = false; })),
           Text('${_cat!.icon}  ${_cat!.label}',
-              style: TextStyle(color: XameColors.darkBg,
+              style: TextStyle(color: context.xText,
                   fontSize: 17, fontWeight: FontWeight.w700)),
         ]),
       ),
@@ -2269,10 +2269,10 @@ class _BillsTabState extends State<_BillsTab> {
                           horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(color: _kCard,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: XameColors.darkSurface)),
+                          border: Border.all(color: context.xMuted)),
                       child: Row(children: [
                         Expanded(child: Text(b.name,
-                            style: TextStyle(color: XameColors.darkBg,
+                            style: TextStyle(color: context.xText,
                                 fontSize: 14, fontWeight: FontWeight.w600))),
                         const Icon(Icons.chevron_right, color: _kMuted, size: 20),
                       ]),
@@ -2305,7 +2305,7 @@ class _BillsTabState extends State<_BillsTab> {
         SizedBox(height: 16),
 
         Text('${_cat!.icon}  ${_biller!.name}',
-            style: TextStyle(color: XameColors.darkBg,
+            style: TextStyle(color: context.xText,
                 fontSize: 18, fontWeight: FontWeight.w700)),
         SizedBox(height: 4),
         Text('Balance: ${widget.fmt(widget.balance)}',
@@ -2322,15 +2322,15 @@ class _BillsTabState extends State<_BillsTab> {
             value: _selItem?.itemCode,
             dropdownColor: _kBg,
             isExpanded: true,
-            style: TextStyle(color: XameColors.darkBg, fontSize: 14),
+            style: TextStyle(color: context.xText, fontSize: 14),
             decoration: InputDecoration(
               filled: true, fillColor: _kBg,
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: XameColors.darkSurface)),
+                  borderSide: BorderSide(color: context.xMuted)),
               enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: XameColors.darkSurface)),
+                  borderSide: BorderSide(color: context.xMuted)),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 12),
             ),
@@ -2340,7 +2340,7 @@ class _BillsTabState extends State<_BillsTab> {
                 item.amount > 0
                     ? '${item.label}  —  ${widget.fmt(item.amount)}'
                     : item.label,
-                style: TextStyle(color: XameColors.darkBg, fontSize: 14)),
+                style: TextStyle(color: context.xText, fontSize: 14)),
             )).toList(),
             onChanged: (v) => setState(() {
               _selItem = _biller!.items.firstWhere(
@@ -2359,16 +2359,16 @@ class _BillsTabState extends State<_BillsTab> {
         SizedBox(height: 8),
         TextField(
           controller: _custCtrl,
-          style: TextStyle(color: XameColors.darkBg, fontSize: 15),
+          style: TextStyle(color: context.xText, fontSize: 15),
           decoration: InputDecoration(
             hintText: 'Enter $labelName',
             hintStyle: TextStyle(color: _kMuted, fontSize: 14),
             filled: true, fillColor: _kCard,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: XameColors.darkSurface)),
+                borderSide: BorderSide(color: context.xMuted)),
             enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: XameColors.darkSurface)),
+                borderSide: BorderSide(color: context.xMuted)),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: _kTeal)),
@@ -2510,16 +2510,16 @@ Widget _xf(TextEditingController c, String hint, TextInputType kt,
     void Function(String) fn) =>
     TextField(
       controller: c, keyboardType: kt,
-      style: TextStyle(color: XameColors.darkBg, fontSize: 15),
+      style: TextStyle(color: context.xText, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: _kMuted, fontSize: 14),
         filled: true, fillColor: _kCard,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: XameColors.darkSurface)),
+            borderSide: BorderSide(color: context.xMuted)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: XameColors.darkSurface)),
+            borderSide: BorderSide(color: context.xMuted)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _kTeal)),
