@@ -421,7 +421,7 @@ class _XameTvScreenState extends State<XameTvScreen>
 
   Widget _swipeHint() => Align(alignment:Alignment.centerRight,
     child:Padding(padding:const EdgeInsets.only(right:10),
-      child:Column(mainAxisSize:MainAxisSize.min, children:const[
+      child:Column(mainAxisSize:MainAxisSize.min, children:[
         Icon(Icons.keyboard_arrow_up_rounded,color:XameColors.darkSurface.withValues(alpha: 0.3),size:16),
         SizedBox(height:2),
         Text('Swipe',style:TextStyle(color:XameColors.darkSurface.withValues(alpha: 0.5),fontSize:8)),

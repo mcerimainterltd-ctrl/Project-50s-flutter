@@ -377,7 +377,7 @@ class _GridCell extends StatelessWidget {
                   child: CircularProgressIndicator(color: _kTeal, strokeWidth: 1))),
           errorBuilder: (_, __, ___) => Container(color: _kCard,
               child: Icon(Icons.broken_image_outlined, color: XameColors.darkSurface.withValues(alpha: 0.5)))),
-      if (item.isVideo) const Positioned.fill(child: Center(
+      if (item.isVideo) Positioned.fill(child: Center(
           child: Icon(Icons.play_circle_fill, color: XameColors.darkBg.withValues(alpha: 0.7), size: 28))),
       if (item.hasPrice)
         Positioned(bottom: 0, left: 0, right: 0,
@@ -437,7 +437,7 @@ class _MasonryCell extends StatelessWidget {
                     child: CircularProgressIndicator(color: _kTeal, strokeWidth: 1))),
             errorBuilder: (_, __, ___) => Container(height: 120, color: _kCard,
                 child: Icon(Icons.broken_image_outlined, color: XameColors.darkSurface.withValues(alpha: 0.5)))),
-        if (item.isVideo) const Positioned.fill(child: Center(
+        if (item.isVideo) Positioned.fill(child: Center(
             child: Icon(Icons.play_circle_fill, color: XameColors.darkBg.withValues(alpha: 0.7), size: 32))),
         if (item.caption.isNotEmpty)
           Positioned(bottom: 0, left: 0, right: 0,
