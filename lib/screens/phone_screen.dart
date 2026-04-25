@@ -1057,7 +1057,7 @@ class _XameContactsSection extends StatelessWidget {
           },
         ),
       ),
-      const Divider(color: context.xMuted.withValues(alpha: 0.25), height: 1),
+      Divider(color: context.xMuted.withValues(alpha: 0.25), height: 1),
     ]);
   }
 }

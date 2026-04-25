@@ -2473,7 +2473,7 @@ class _HistoryTab extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16), itemCount: txs.length,
       separatorBuilder: (_, __) =>
-          const Divider(color: context.xMuted.withValues(alpha: 0.1), height: 1),
+          Divider(color: context.xMuted.withValues(alpha: 0.1), height: 1),
       itemBuilder: (_, i) {
         final tx = txs[i]; final cr = tx.type == 'credit';
         return Padding(
