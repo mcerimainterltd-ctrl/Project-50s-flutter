@@ -171,16 +171,16 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Xame Gallery',
+                  Text('Xame Gallery',
                       style: TextStyle(color: Colors.white, fontSize: 22,
                           fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                   if (!widget.isOwner)
-                    const Text('Viewing profile',
+                    Text('Viewing profile',
                         style: TextStyle(color: Colors.white38, fontSize: 10)),
                 ],
               ),
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft, end: Alignment.bottomRight,
                     colors: [_kBg, context.xBg])),
@@ -652,12 +652,12 @@ class _LightboxState extends State<_Lightbox> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (item.caption.isNotEmpty)
-                        Text(item.caption, style: const TextStyle(
+                        Text(item.caption, style: TextStyle(
                             color: Colors.white, fontSize: 16,
                             fontWeight: FontWeight.w700)),
                       if (item.description.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(item.description, style: const TextStyle(
+                        Text(item.description, style: TextStyle(
                             color: Colors.white70, fontSize: 13)),
                       ],
                       const SizedBox(height: 10),
@@ -774,7 +774,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: context.xBg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       padding: EdgeInsets.fromLTRB(20, 0, 20,

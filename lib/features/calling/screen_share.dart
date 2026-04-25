@@ -176,7 +176,7 @@ class ScreenShareBanner extends StatelessWidget {
                   ),
                   child: Text(
                     state == ScreenShareState.paused ? 'Resume' : 'Pause',
-                    style: const TextStyle(color: Colors.white70,
+                    style: TextStyle(color: Colors.white70,
                         fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),
@@ -193,7 +193,7 @@ class ScreenShareBanner extends StatelessWidget {
                     border: Border.all(
                         color: context.xDanger.withValues(alpha: 0.3)),
                   ),
-                  child: const Text('Stop',
+                  child: Text('Stop',
                       style: TextStyle(color: context.xDanger,
                           fontSize: 12, fontWeight: FontWeight.w600)),
                 ),

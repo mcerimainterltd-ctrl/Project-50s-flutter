@@ -297,7 +297,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               floating: true, snap: true, elevation: 0,
               title: Row(children: [
                 ShaderMask(
-                  shaderCallback: (b) => const LinearGradient(
+                  shaderCallback: (b) => LinearGradient(
                     colors: [context.xPrimary, context.xSecondary],
                   ).createShader(b),
                   child: const Text('DISCOVERY',
@@ -387,7 +387,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     _searchQuery.isNotEmpty
                       ? 'RESULTS FOR "${_searchQuery.toUpperCase()}"'
                       : 'TRENDING IN ${_regionName.toUpperCase()}',
-                    style: const TextStyle(color: Colors.white38,
+                    style: TextStyle(color: Colors.white38,
                         fontSize: 11, fontWeight: FontWeight.w800,
                         letterSpacing: 1.2)),
                   const Spacer(),
@@ -925,10 +925,10 @@ class _LiveCountBadge extends StatelessWidget {
             color: context.xDanger.withOpacity(0.3))),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 5, height: 5,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             shape: BoxShape.circle, color: context.xDanger)),
         const SizedBox(width: 4),
-        Text('$count LIVE', style: const TextStyle(
+        Text('$count LIVE', style: TextStyle(
             color: context.xDanger, fontSize: 9,
             fontWeight: FontWeight.w800, letterSpacing: 0.5)),
       ]),
@@ -1262,7 +1262,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(shape: BoxShape.circle,
                 color: Colors.black.withOpacity(0.5)),
-            child: const Icon(Icons.arrow_back_ios_new,
+            child: Icon(Icons.arrow_back_ios_new,
                 color: Colors.white, size: 16)),
           onPressed: () => Navigator.pop(context)),
         flexibleSpace: FlexibleSpaceBar(
@@ -1306,11 +1306,11 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                     color: Colors.white38, fontSize: 12)),
             ]),
             const SizedBox(height: 12),
-            Text(item.title, style: const TextStyle(color: Colors.white,
+            Text(item.title, style: TextStyle(color: Colors.white,
                 fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
             const SizedBox(height: 8),
             if (item.subtitle.isNotEmpty)
-              Text(item.subtitle, style: const TextStyle(
+              Text(item.subtitle, style: TextStyle(
                   color: Colors.white54, fontSize: 14, height: 1.5)),
             const SizedBox(height: 16),
             Row(children: [
@@ -1325,7 +1325,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                 children: [
                 Text(item.authorName, style: const TextStyle(
                     color: Colors.white, fontWeight: FontWeight.w600)),
-                Text(item.region, style: const TextStyle(
+                Text(item.region, style: TextStyle(
                     color: Colors.white38, fontSize: 12)),
               ]),
               const Spacer(),

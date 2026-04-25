@@ -140,7 +140,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
       maxChildSize:     0.95,
       minChildSize:     0.5,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xCard,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -166,7 +166,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
               const Spacer(),
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.close, color: Colors.white38, size: 20)),
+                child: Icon(Icons.close, color: Colors.white38, size: 20)),
             ]),
           ),
 
@@ -194,11 +194,11 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             child: TextField(
               controller: _searchCtrl,
               onChanged:  (v) => setState(() => _query = v),
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
                 hintText:  'Search language...',
-                hintStyle: const TextStyle(color: Colors.white30),
-                prefixIcon: const Icon(Icons.search, color: Colors.white30, size: 18),
+                hintStyle: TextStyle(color: Colors.white30),
+                prefixIcon: Icon(Icons.search, color: Colors.white30, size: 18),
                 filled:    true,
                 fillColor: context.xSurface,
                 border: OutlineInputBorder(
@@ -243,7 +243,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                               ? context.xAccent : Colors.white24,
                           fontSize: 11)),
                       if (selected)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(left: 8),
                           child: Icon(Icons.check_circle,
                               color: context.xPrimary, size: 16)),
@@ -256,7 +256,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
 
           // Result
           if (_loading)
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(20),
               child: CircularProgressIndicator(
                   color: context.xPrimary, strokeWidth: 2),
@@ -276,7 +276,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    const Text('🌍', style: TextStyle(fontSize: 12)),
+                    Text('🌍', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: 6),
                     Text(_resultLang ?? '',
                       style: TextStyle(color: context.xPrimary,
@@ -287,7 +287,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                         Clipboard.setData(ClipboardData(text: _result!));
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('Translation copied!'),
+                            content: Text('Translation copied!'),
                             backgroundColor: context.xAccent,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
@@ -296,7 +296,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                           ),
                         );
                       },
-                      child: const Row(children: [
+                      child: Row(children: [
                         Icon(Icons.copy_outlined,
                             color: context.xPrimary, size: 14),
                         SizedBox(width: 4),

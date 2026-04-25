@@ -287,11 +287,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     colors: [context.xPrimary, context.xSurface]),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text('+ New',
+                child: Text('+ New',
                     style: TextStyle(color: Colors.black, fontSize: 13,
                         fontWeight: FontWeight.w700)),
               ),
@@ -324,21 +324,21 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         // List
         Expanded(
           child: _loading
-              ? const Center(child: CircularProgressIndicator(
+              ? Center(child: CircularProgressIndicator(
                   color: context.xPrimary, strokeWidth: 2))
               : groups.isEmpty
                   ? Column(mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                      const Icon(Icons.group_outlined,
+                      Icon(Icons.group_outlined,
                           color: Colors.white12, size: 56),
                       const SizedBox(height: 12),
-                      const Text('No groups yet',
+                      Text('No groups yet',
                           style: TextStyle(color: Colors.white38,
                               fontSize: 15)),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: () => _showCreateDialog(context),
-                        child: const Text('Create your first group →',
+                        child: Text('Create your first group →',
                             style: TextStyle(color: context.xPrimary,
                                 fontSize: 13)),
                       ),
@@ -372,7 +372,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                   : Container(
                                       width: 50, height: 50,
                                       decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
+                                        gradient: LinearGradient(
                                           colors: [context.xPrimary,
                                               context.xSurface],
                                           begin: Alignment.topLeft,
@@ -425,7 +425,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                     ),
                                     child: Text(
                                       '${g.members.length}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           color: context.xPrimary,
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600)),
@@ -499,7 +499,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
       initialChildSize: 0.85,
       maxChildSize: 0.95,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -517,17 +517,17 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       colors: [context.xPrimary, context.xSurface],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.group_add_outlined,
+                  child: Icon(Icons.group_add_outlined,
                       color: Colors.black, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Text('Create Group', style: TextStyle(
+                Text('Create Group', style: TextStyle(
                     color: Colors.white, fontSize: 16,
                     fontWeight: FontWeight.w700)),
                 const Spacer(),
@@ -609,7 +609,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                         ),
                         child: Center(child: Text(
                             name.isNotEmpty ? name[0].toUpperCase() : '?',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: context.xPrimary,
                                 fontWeight: FontWeight.w700))),
                       ),
@@ -617,10 +617,10 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                       Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(name, style: const TextStyle(
+                          Text(name, style: TextStyle(
                               color: Colors.white, fontSize: 14,
                               fontWeight: FontWeight.w500)),
-                          Text(id, style: const TextStyle(
+                          Text(id, style: TextStyle(
                               color: Colors.white38, fontSize: 12)),
                         ],
                       )),
@@ -634,7 +634,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                             width: 1.5),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: sel ? const Icon(Icons.check,
+                        child: sel ? Icon(Icons.check,
                             color: Colors.black, size: 14) : null,
                       ),
                     ]),
@@ -646,14 +646,14 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
           Container(
             padding: EdgeInsets.fromLTRB(20, 12, 20,
                 MediaQuery.of(context).viewInsets.bottom + 20),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: context.xSurface,
               border: Border(top: BorderSide(color: Colors.white10)),
             ),
             child: GestureDetector(
               onTap: _loading ? null : () async {
                 if (_nameCtrl.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text('Enter a group name'),
                     backgroundColor: context.xCard,
                     behavior: SnackBarBehavior.floating));
@@ -669,7 +669,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                   Navigator.pop(context);
                   if (group != null) widget.onCreated(group);
                   else ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Failed to create group'),
+                    SnackBar(content: Text('Failed to create group'),
                         backgroundColor: context.xCard,
                         behavior: SnackBarBehavior.floating));
                 }
@@ -678,7 +678,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                 duration: const Duration(milliseconds: 150),
                 width: double.infinity, height: 52,
                 decoration: BoxDecoration(
-                  gradient: _loading ? null : const LinearGradient(
+                  gradient: _loading ? null : LinearGradient(
                     colors: [context.xPrimary, context.xSurface]),
                   color: _loading ? context.xCard : null,
                   borderRadius: BorderRadius.circular(16),
@@ -764,7 +764,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
       initialChildSize: 0.7,
       maxChildSize: 0.95,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -788,7 +788,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                   : Container(
                       width: 80, height: 80,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+                        gradient: LinearGradient(
                           colors: [context.xPrimary, context.xSurface],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight),
@@ -796,7 +796,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                       ),
                       child: Center(child: Text(
                           _group.name.substring(0, 2).toUpperCase(),
-                          style: const TextStyle(color: Colors.black,
+                          style: TextStyle(color: Colors.black,
                               fontSize: 24, fontWeight: FontWeight.w800))),
                     ),
               if (widget.isAdmin)
@@ -828,7 +828,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(children: [
               Text('Members (${_group.members.length})',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12,
+                  style: TextStyle(color: Colors.white54, fontSize: 12,
                       fontWeight: FontWeight.w600)),
               const Spacer(),
               if (widget.isAdmin)
@@ -841,7 +841,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                       color: context.xPrimary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('+ Add',
+                    child: Text('+ Add',
                         style: TextStyle(color: context.xPrimary,
                             fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
@@ -904,7 +904,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                             color: context.xDanger.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.person_remove_outlined,
+                          child: Icon(Icons.person_remove_outlined,
                               color: context.xDanger, size: 15),
                         ),
                       ),
@@ -945,7 +945,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                                 color: Colors.white.withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(12)),
                               alignment: Alignment.center,
-                              child: const Text('Cancel',
+                              child: Text('Cancel',
                                   style: TextStyle(color: Colors.white54))),
                           )),
                           const SizedBox(width: 10),
@@ -981,7 +981,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                       color: context.xDanger.withValues(alpha: 0.3)),
                 ),
                 alignment: Alignment.center,
-                child: const Text('Leave Group',
+                child: Text('Leave Group',
                     style: TextStyle(color: context.xDanger, fontSize: 14,
                         fontWeight: FontWeight.w600)),
               ),

@@ -181,7 +181,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Colors.white12)),
                     child: Text(widget.category.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color:       context.xPrimary,
                         fontSize:    10,
                         fontWeight:  FontWeight.w800,

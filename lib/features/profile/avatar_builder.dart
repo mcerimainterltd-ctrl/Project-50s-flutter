@@ -315,7 +315,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       initialChildSize: 0.92,
       maxChildSize: 0.95,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -334,7 +334,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       colors: [context.xPrimary, context.xSurface],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight),
@@ -354,7 +354,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close, color: Colors.white38)),
+                  child: Icon(Icons.close, color: Colors.white38)),
               ]),
             ]),
           ),
@@ -423,7 +423,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                 duration: const Duration(milliseconds: 150),
                 width: double.infinity, height: 52,
                 decoration: BoxDecoration(
-                  gradient: _saving ? null : const LinearGradient(
+                  gradient: _saving ? null : LinearGradient(
                     colors: [context.xPrimary, context.xSurface]),
                   color: _saving ? context.xCard : null,
                   borderRadius: BorderRadius.circular(16),

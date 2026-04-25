@@ -107,13 +107,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _dialogField(TextEditingController ctrl, String hint, bool obscure) =>
     TextField(
       controller: ctrl, obscureText: obscure,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        hintText: hint, hintStyle: const TextStyle(color: Colors.white24),
+        hintText: hint, hintStyle: TextStyle(color: Colors.white24),
         filled: true, fillColor: XameColors.darkBg,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: XameColors.primary, width: 1.5)),
+          borderSide: BorderSide(color: XameColors.primary, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
     );
@@ -225,7 +225,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ? const SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
                     : Text(_needsOTP ? 'Verify & Sign In' : 'Sign In',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 20),

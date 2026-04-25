@@ -2484,14 +2484,14 @@ class _HistoryTab extends StatelessWidget {
                 color: cr ? context.xAccent.withValues(alpha: 0.1) : context.xDanger.withValues(alpha: 0.1),
                 shape: BoxShape.circle),
               child: Center(child: Text(tx.icon,
-                  style: const TextStyle(fontSize: 18)))),
+                  style: TextStyle(fontSize: 18)))),
             const SizedBox(width: 14),
             Expanded(child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(tx.label, style: const TextStyle(color: Colors.white,
+              Text(tx.label, style: TextStyle(color: Colors.white,
                   fontSize: 14, fontWeight: FontWeight.w600)),
               Text('${tx.ts.substring(0, 10)} • ${tx.status}',
-                  style: const TextStyle(color: _kMuted, fontSize: 11)),
+                  style: TextStyle(color: _kMuted, fontSize: 11)),
             ])),
             Text('${cr ? '+' : '-'}${fmt(tx.amount)}',
                 style: TextStyle(

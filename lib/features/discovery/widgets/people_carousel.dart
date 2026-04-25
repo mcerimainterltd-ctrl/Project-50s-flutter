@@ -120,14 +120,14 @@ class _PersonCardState extends State<_PersonCard>
         children: [
           Stack(alignment: Alignment.center, children: [
             Container(width: 72, height: 72,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: SweepGradient(colors: [
                   context.xSecondary, context.xPrimary,
                   context.xAccent, context.xSecondary,
                 ]))),
             Container(width: 68, height: 68,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle, color: context.xBg),
               child: ClipOval(
                 child: CachedNetworkImage(
@@ -155,7 +155,7 @@ class _PersonCardState extends State<_PersonCard>
             user.mutualCount > 0
               ? '${user.mutualCount} mutual${user.mutualCount > 1 ? "s" : ""}'
               : user.tagline ?? 'New to XamePage',
-            style: const TextStyle(
+            style: TextStyle(
                 color: Colors.white38, fontSize: 11)),
           const SizedBox(height: 12),
           ScaleTransition(
@@ -169,7 +169,7 @@ class _PersonCardState extends State<_PersonCard>
                     color: context.xAccent.withOpacity(0.12),
                     border: Border.all(
                         color: context.xAccent.withOpacity(0.3))),
-                  child: const Row(mainAxisSize: MainAxisSize.min,
+                  child: Row(mainAxisSize: MainAxisSize.min,
                     children: [
                     Icon(Icons.check_rounded,
                         color: context.xAccent, size: 14),
@@ -185,7 +185,7 @@ class _PersonCardState extends State<_PersonCard>
                         horizontal: 24, vertical: 7),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      gradient: const LinearGradient(colors: [
+                      gradient: LinearGradient(colors: [
                         context.xPrimary, context.xSecondary,
                       ])),
                     child: const Text('Add',

@@ -488,7 +488,7 @@ class _PhoneScreenState extends State<PhoneScreen>
         ),
         // ── Tab bar ──────────────────────────────────────────────
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: context.xCard))),
           child: TabBar(
             controller:           _tab,
@@ -761,10 +761,10 @@ class _ContactsTab extends StatelessWidget {
         Container(width: 72, height: 72,
           decoration: BoxDecoration(shape: BoxShape.circle,
               color: Colors.white.withOpacity(0.04)),
-          child: const Icon(Icons.contacts_outlined,
+          child: Icon(Icons.contacts_outlined,
               color: Colors.white24, size: 32)),
         const SizedBox(height: 16),
-        const Text('Tap to load contacts',
+        Text('Tap to load contacts',
           style: TextStyle(color: Colors.white38, fontSize: 15)),
         const SizedBox(height: 12),
         GestureDetector(
@@ -773,7 +773,7 @@ class _ContactsTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: 24, vertical: 10),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [
+              gradient: LinearGradient(colors: [
                 context.xAccent, context.xAccent]),
               borderRadius: BorderRadius.circular(20)),
             child: const Text('Load Contacts',
@@ -981,7 +981,7 @@ class _XameContactsSection extends StatelessWidget {
               color: context.xAccent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: context.xAccent.withValues(alpha: 0.2))),
-            child: const Text('XamePage',
+            child: Text('XamePage',
                 style: TextStyle(color: context.xAccent,
                     fontSize: 11, fontWeight: FontWeight.w700))),
           const SizedBox(width: 8),
@@ -1009,7 +1009,7 @@ class _XameContactsSection extends StatelessWidget {
                     child: c.profilePic == null
                         ? Text(
                             c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
-                            style: const TextStyle(color: Colors.white,
+                            style: TextStyle(color: Colors.white,
                                 fontSize: 18, fontWeight: FontWeight.w700))
                         : null),
                   Positioned(bottom: 0, right: 0,
@@ -1022,7 +1022,7 @@ class _XameContactsSection extends StatelessWidget {
                 ]),
                 const SizedBox(height: 4),
                 Text(c.name,
-                    style: const TextStyle(color: Colors.white,
+                    style: TextStyle(color: Colors.white,
                         fontSize: 10, fontWeight: FontWeight.w600),
                     overflow: TextOverflow.ellipsis, maxLines: 1,
                     textAlign: TextAlign.center),
@@ -1037,7 +1037,7 @@ class _XameContactsSection extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(
                               color: context.xAccent.withValues(alpha: 0.2))),
-                      child: const Icon(Icons.call_rounded,
+                      child: Icon(Icons.call_rounded,
                           color: context.xAccent, size: 14))),
                   const SizedBox(width: 6),
                   GestureDetector(
@@ -1049,7 +1049,7 @@ class _XameContactsSection extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(
                               color: context.xSecondary.withValues(alpha: 0.2))),
-                      child: const Icon(Icons.videocam_rounded,
+                      child: Icon(Icons.videocam_rounded,
                           color: context.xSecondary, size: 14))),
                 ]),
               ]),
@@ -1112,7 +1112,7 @@ class _KeypadTab extends StatelessWidget {
                         color: Colors.white38, fontSize: 11)),
                 ],
               )),
-              const Icon(Icons.keyboard_arrow_down_rounded,
+              Icon(Icons.keyboard_arrow_down_rounded,
                   color: Colors.white38, size: 20),
             ]),
           ),
@@ -1122,7 +1122,7 @@ class _KeypadTab extends StatelessWidget {
         // Number display
         SizedBox(height: 60, child: Center(
           child: dial.isEmpty
-            ? const Text('Enter number',
+            ? Text('Enter number',
                 style: TextStyle(color: context.xCard,
                     fontSize: 26, letterSpacing: 6))
             : Text(dial, style: const TextStyle(
@@ -1171,7 +1171,7 @@ class _KeypadTab extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: Colors.white.withOpacity(0.05),
                 border: Border.all(color: Colors.white12)),
-              child: const Icon(Icons.message_outlined,
+              child: Icon(Icons.message_outlined,
                   color: Colors.white54, size: 22))),
           const SizedBox(width: 16),
           // Call
@@ -1181,7 +1181,7 @@ class _KeypadTab extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
-                gradient: const LinearGradient(colors: [
+                gradient: LinearGradient(colors: [
                   context.xAccent, context.xAccent,
                 ])),
               child: const Row(
@@ -1301,12 +1301,12 @@ class _CountryPickerState extends State<_CountryPicker> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: TextField(
             onChanged: (v) => setState(() => _q = v),
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            style: TextStyle(color: Colors.white, fontSize: 14),
             autofocus: true,
             decoration: InputDecoration(
               hintText:  'Search country or code...',
-              hintStyle: const TextStyle(color: Colors.white30),
-              prefixIcon: const Icon(Icons.search,
+              hintStyle: TextStyle(color: Colors.white30),
+              prefixIcon: Icon(Icons.search,
                   color: Colors.white30, size: 18),
               filled:    true,
               fillColor: context.xBg,

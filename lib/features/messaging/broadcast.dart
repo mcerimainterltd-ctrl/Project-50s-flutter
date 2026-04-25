@@ -132,7 +132,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
       initialChildSize: 0.6,
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -151,7 +151,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       colors: [context.xPrimary, context.xSurface],
                       begin: Alignment.topLeft, end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(12),
@@ -170,7 +170,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close, color: Colors.white38, size: 20),
+                  child: Icon(Icons.close, color: Colors.white38, size: 20),
                 ),
               ]),
               const SizedBox(height: 16),
@@ -205,15 +205,15 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
             child: lists.isEmpty
                 ? Column(mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                    const Icon(Icons.campaign_outlined,
+                    Icon(Icons.campaign_outlined,
                         color: Colors.white12, size: 48),
                     const SizedBox(height: 12),
-                    const Text('No saved lists yet',
+                    Text('No saved lists yet',
                         style: TextStyle(color: Colors.white38, fontSize: 14)),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () => _openNewBroadcast(context),
-                      child: const Text('Create your first broadcast →',
+                      child: Text('Create your first broadcast →',
                           style: TextStyle(color: context.xPrimary,
                               fontSize: 13)),
                     ),
@@ -241,7 +241,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                             ),
                             child: Center(
                               child: Text('${l.members.length}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: context.xPrimary, fontSize: 15,
                                       fontWeight: FontWeight.w700)),
                             ),
@@ -254,7 +254,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                                   color: Colors.white, fontSize: 14,
                                   fontWeight: FontWeight.w600)),
                               Text('${l.members.length} recipients',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: Colors.white38, fontSize: 12)),
                             ],
                           )),
@@ -265,7 +265,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
+                                gradient: LinearGradient(
                                   colors: [context.xPrimary,
                                       context.xSurface]),
                                 borderRadius: BorderRadius.circular(10),
@@ -354,7 +354,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
       initialChildSize: 0.85,
       maxChildSize: 0.95,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -369,7 +369,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                     borderRadius: BorderRadius.circular(2)),
               )),
               Row(children: [
-                const Text('New Broadcast', style: TextStyle(color: Colors.white,
+                Text('New Broadcast', style: TextStyle(color: Colors.white,
                     fontSize: 16, fontWeight: FontWeight.w700)),
                 const Spacer(),
                 if (_selected.isNotEmpty)
@@ -449,7 +449,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                         child: Center(
                           child: Text(name.isNotEmpty
                               ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color: context.xPrimary,
                                   fontWeight: FontWeight.w700)),
                         ),
@@ -458,10 +458,10 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(name, style: const TextStyle(
+                          Text(name, style: TextStyle(
                               color: Colors.white, fontSize: 14,
                               fontWeight: FontWeight.w500)),
-                          Text(id, style: const TextStyle(
+                          Text(id, style: TextStyle(
                               color: Colors.white38, fontSize: 12)),
                         ],
                       )),
@@ -490,7 +490,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
           Container(
             padding: EdgeInsets.fromLTRB(
                 20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: context.xSurface,
               border: Border(top: BorderSide(color: Colors.white10)),
             ),
@@ -573,7 +573,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       duration: const Duration(milliseconds: 150),
                       height: 46,
                       decoration: BoxDecoration(
-                        gradient: _sending ? null : const LinearGradient(
+                        gradient: _sending ? null : LinearGradient(
                           colors: [context.xPrimary, context.xSurface]),
                         color: _sending ? context.xCard : null,
                         borderRadius: BorderRadius.circular(12),
@@ -689,7 +689,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
       initialChildSize: 0.6,
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -725,7 +725,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                           colors: [context.xPrimary, context.xSurface]),
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -739,7 +739,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
           ),
           Expanded(
             child: _lists.isEmpty
-                ? const Center(child: Text('No lists yet',
+                ? Center(child: Text('No lists yet',
                     style: TextStyle(color: Colors.white38)))
                 : ListView.separated(
                     controller: ctrl,
@@ -763,7 +763,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(child: Text('${l.members.length}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                     color: context.xPrimary, fontSize: 15,
                                     fontWeight: FontWeight.w700))),
                           ),
@@ -775,7 +775,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                                   color: Colors.white, fontSize: 14,
                                   fontWeight: FontWeight.w600)),
                               Text('${l.members.length} members',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: Colors.white38, fontSize: 12)),
                             ],
                           )),
@@ -791,7 +791,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                                     .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.delete_outline,
+                              child: Icon(Icons.delete_outline,
                                   color: context.xDanger, size: 16),
                             ),
                           ),

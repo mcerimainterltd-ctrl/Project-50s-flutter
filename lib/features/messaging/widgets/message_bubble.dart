@@ -283,7 +283,7 @@ class _StatusTick extends StatelessWidget {
           width: 14, height: 14,
           child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white54));
     if (status == 'failed')
-      return const Tooltip(
+      return Tooltip(
         message: 'Upload failed — long press to retry',
         child: Icon(Icons.error_outline, size: 14, color: context.xDanger));
     if (status == 'seen')
@@ -584,7 +584,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
             else
               // Fallback gradient when no frame could be extracted
               Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end:   Alignment.bottomRight,
@@ -1067,7 +1067,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
                   isPlaying: _playing)),
             const SizedBox(height: 4),
             Text(_playing ? _fmt(_position) : _fmt(_duration),
-                style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                style: TextStyle(color: Colors.white38, fontSize: 10)),
           ])),
         ]),
         SliderTheme(

@@ -461,7 +461,7 @@ class _ChatsTab extends ConsumerWidget {
     final self     = ref.watch(currentUserProvider);
 
     return contacts.when(
-      loading: () => const Center(
+      loading: () => Center(
         child: CircularProgressIndicator(color: context.xPrimary)),
       error: (e, _) => Center(
         child: Text('Error: $e',
@@ -568,7 +568,7 @@ class _ContactTile extends ConsumerWidget {
               Positioned(right: 0, top: 0,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: context.xPrimary, shape: BoxShape.circle),
                   child: Text(
                     contact.unreadCount > 99

@@ -116,7 +116,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
   Widget build(BuildContext context) {
     final theme = context.xSurface;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: context.xSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -141,11 +141,11 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                 color: context.xPrimary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.message_outlined,
+              child: Icon(Icons.message_outlined,
                   color: context.xPrimary, size: 18),
             ),
             const SizedBox(width: 10),
-            const Text('Quick Reply',
+            Text('Quick Reply',
                 style: TextStyle(color: Colors.white, fontSize: 16,
                     fontWeight: FontWeight.w700)),
             const Spacer(),
@@ -177,7 +177,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                   border: Border.all(color: Colors.white10),
                 ),
                 child: Text(t,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
                     overflow: TextOverflow.ellipsis, maxLines: 1),
               ),
             )).toList(),
@@ -266,7 +266,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
       initialChildSize: 0.6,
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -288,7 +288,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                     color: context.xPrimary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.message_outlined,
+                  child: Icon(Icons.message_outlined,
                       color: context.xPrimary, size: 18),
                 ),
                 const SizedBox(width: 10),
@@ -301,7 +301,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                     await _svc.resetToDefaults();
                     _reload();
                   },
-                  child: const Text('Reset',
+                  child: Text('Reset',
                       style: TextStyle(color: Colors.white38, fontSize: 13)),
                 ),
               ]),
@@ -397,7 +397,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                               color: Colors.white.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.edit_outlined,
+                            child: Icon(Icons.edit_outlined,
                                 color: Colors.white54, size: 15),
                           ),
                         ),
@@ -413,7 +413,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                               color: context.xDanger.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.delete_outline,
+                            child: Icon(Icons.delete_outline,
                                 color: context.xDanger, size: 15),
                           ),
                         ),

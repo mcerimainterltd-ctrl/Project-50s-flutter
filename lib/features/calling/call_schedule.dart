@@ -182,7 +182,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: context.xSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -204,7 +204,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
               color: context.xPrimary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.schedule_outlined,
+            child: Icon(Icons.schedule_outlined,
                 color: context.xPrimary, size: 20),
           ),
           const SizedBox(width: 12),
@@ -212,7 +212,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
             const Text('Schedule Call', style: TextStyle(color: Colors.white,
                 fontSize: 16, fontWeight: FontWeight.w700)),
             Text('To: ${widget.recipientName}',
-                style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                style: TextStyle(color: Colors.white38, fontSize: 12)),
           ]),
           const Spacer(),
           GestureDetector(
@@ -228,7 +228,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: Colors.white10),
               ),
-              child: const Text('View All',
+              child: Text('View All',
                   style: TextStyle(color: Colors.white54, fontSize: 12)),
             ),
           ),
@@ -259,14 +259,14 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
               border: Border.all(color: Colors.white10),
             ),
             child: Row(children: [
-              const Icon(Icons.calendar_today_outlined,
+              Icon(Icons.calendar_today_outlined,
                   color: context.xPrimary, size: 18),
               const SizedBox(width: 12),
               Text(_formattedDT,
                   style: const TextStyle(color: Colors.white, fontSize: 14,
                       fontWeight: FontWeight.w500)),
               const Spacer(),
-              const Icon(Icons.edit_outlined,
+              Icon(Icons.edit_outlined,
                   color: Colors.white30, size: 16),
             ]),
           ),
@@ -276,7 +276,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
         GestureDetector(
           onTap: _loading ? null : () async {
             if (_selectedDT.isBefore(DateTime.now())) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text('Please select a future time'),
                 backgroundColor: context.xCard,
                 behavior: SnackBarBehavior.floating,
@@ -308,7 +308,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
             duration: const Duration(milliseconds: 150),
             width: double.infinity, height: 52,
             decoration: BoxDecoration(
-              gradient: _loading ? null : const LinearGradient(
+              gradient: _loading ? null : LinearGradient(
                 colors: [context.xPrimary, context.xSurface]),
               color: _loading ? context.xCard : null,
               borderRadius: BorderRadius.circular(16),
@@ -391,7 +391,7 @@ class _ScheduledCallsListDialogState
       initialChildSize: 0.5,
       maxChildSize: 0.9,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -412,7 +412,7 @@ class _ScheduledCallsListDialogState
                     color: context.xPrimary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.schedule_outlined,
+                  child: Icon(Icons.schedule_outlined,
                       color: context.xPrimary, size: 18),
                 ),
                 const SizedBox(width: 10),
@@ -428,7 +428,7 @@ class _ScheduledCallsListDialogState
                     const Icon(Icons.schedule_outlined,
                         color: Colors.white12, size: 48),
                     const SizedBox(height: 12),
-                    const Text('No scheduled calls',
+                    Text('No scheduled calls',
                         style: TextStyle(color: Colors.white38, fontSize: 14)),
                   ])
                 : ListView.separated(
@@ -472,7 +472,7 @@ class _ScheduledCallsListDialogState
                                     color: Colors.white38, size: 12),
                                 const SizedBox(width: 4),
                                 Text(_fmt(c.callAt),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         color: Colors.white38, fontSize: 12)),
                               ]),
                             ],
@@ -488,7 +488,7 @@ class _ScheduledCallsListDialogState
                                 color: context.xDanger.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.delete_outline,
+                              child: Icon(Icons.delete_outline,
                                   color: context.xDanger, size: 16),
                             ),
                           ),

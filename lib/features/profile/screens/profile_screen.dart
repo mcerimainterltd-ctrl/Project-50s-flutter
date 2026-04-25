@@ -208,7 +208,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _snack(String msg, {bool success = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      content: Text(msg, style: TextStyle(color: Colors.white)),
       backgroundColor: success
           ? XameColors.accent : XameColors.darkSurface,
       behavior:  SnackBarBehavior.floating,
@@ -220,7 +220,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     final user     = ref.watch(currentUserProvider);
-    if (user == null) return const Scaffold(
+    if (user == null) return Scaffold(
         backgroundColor: context.xBg);
 
     final photoUrl = _removeImage ? null
@@ -243,7 +243,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             backgroundColor: context.xBg,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new,
+              icon: Icon(Icons.arrow_back_ios_new,
                   color: Colors.white, size: 18),
               onPressed: () => context.go('/contacts')),
             actions: [
@@ -253,7 +253,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     ? const SizedBox(width: 18, height: 18,
                         child: CircularProgressIndicator(
                             color: context.xPrimary, strokeWidth: 2))
-                    : const Text('Save',
+                    : Text('Save',
                         style: TextStyle(color: context.xPrimary,
                             fontWeight: FontWeight.w700, fontSize: 15)),
               ),
@@ -261,7 +261,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -296,7 +296,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           bottom: 0, right: 0,
                           child: Container(
                             width: 28, height: 28,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: context.xPrimary,
                               shape: BoxShape.circle,
                             ),
@@ -759,7 +759,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
       initialChildSize: 0.7,
       maxChildSize:     0.9,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -794,7 +794,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(children: [
-                const Text('Enable Extra Security',
+                Text('Enable Extra Security',
                   style: TextStyle(color: Colors.white, fontSize: 14,
                       fontWeight: FontWeight.w600)),
                 const Spacer(),
@@ -818,7 +818,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
             const SizedBox(height: 16),
 
             // Phone
-            const Text('📱 Phone for OTP (with country code)',
+            Text('📱 Phone for OTP (with country code)',
               style: TextStyle(color: Colors.white54, fontSize: 12,
                   fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),

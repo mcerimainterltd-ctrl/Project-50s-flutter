@@ -241,7 +241,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           fit:      BoxFit.cover,
                           errorWidget: (_, __, ___) =>
                             Container(color: context.xSurface,
-                              child: const Icon(Icons.person,
+                              child: Icon(Icons.person,
                                   color: Colors.white38, size: 20)))
                       : Container(color: context.xSurface,
                           child: const Icon(Icons.person,
@@ -354,7 +354,7 @@ class _StoryMedia extends StatelessWidget {
             height:    double.infinity,
             placeholder: (_, __) => Container(
               color: context.xBg,
-              child: const Center(child: CircularProgressIndicator(
+              child: Center(child: CircularProgressIndicator(
                   color: Colors.white30, strokeWidth: 1.5))),
             errorWidget: (_, __, ___) => Container(
               color: context.xBg,

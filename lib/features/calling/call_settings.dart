@@ -102,7 +102,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
       initialChildSize: 0.6,
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -124,7 +124,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                     color: context.xDanger.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.block_outlined,
+                  child: Icon(Icons.block_outlined,
                       color: context.xDanger, size: 18),
                 ),
                 const SizedBox(width: 10),
@@ -202,7 +202,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                     Icon(Icons.check_circle_outline,
                         color: Colors.white12, size: 48),
                     const SizedBox(height: 12),
-                    const Text('No blocked numbers',
+                    Text('No blocked numbers',
                         style: TextStyle(color: Colors.white38, fontSize: 14)),
                   ])
                 : ListView.separated(
@@ -227,7 +227,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                               color: context.xDanger.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.person_off_outlined,
+                            child: Icon(Icons.person_off_outlined,
                                 color: context.xDanger, size: 18),
                           ),
                           const SizedBox(width: 12),

@@ -127,11 +127,11 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             ),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 60),
-              title: const Text('Calls',
+              title: Text('Calls',
                 style: TextStyle(color: Colors.white, fontSize: 28,
                     fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -155,7 +155,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
           ),
         ],
         body: history.when(
-          loading: () => const Center(
+          loading: () => Center(
             child: CircularProgressIndicator(
                 color: context.xAccent, strokeWidth: 1.5)),
           error: (e, _) => Center(
@@ -414,7 +414,7 @@ class _CallTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(DateFormat('h:mm a').format(call.startTime),
-                style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                style: TextStyle(color: Colors.white38, fontSize: 11)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: onTap,

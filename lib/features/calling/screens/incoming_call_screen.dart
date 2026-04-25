@@ -267,7 +267,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
       initialChildSize: 0.6,
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -288,11 +288,11 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                     color: context.xPrimary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.person_add_outlined,
+                  child: Icon(Icons.person_add_outlined,
                       color: context.xPrimary, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Column(crossAxisAlignment: CrossAxisAlignment.start,
+                Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   Text('Add to Call', style: TextStyle(color: Colors.white,
                       fontSize: 16, fontWeight: FontWeight.w700)),
@@ -351,7 +351,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                         ),
                         child: Center(child: Text(
                             c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: context.xPrimary,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16))),
@@ -360,10 +360,10 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                       Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(c.name, style: const TextStyle(
+                          Text(c.name, style: TextStyle(
                               color: Colors.white, fontSize: 14,
                               fontWeight: FontWeight.w600)),
-                          Text(c.id, style: const TextStyle(
+                          Text(c.id, style: TextStyle(
                               color: Colors.white38, fontSize: 12)),
                         ],
                       )),
@@ -376,7 +376,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                           border: Border.all(color: context.xPrimary
                               .withValues(alpha: 0.3)),
                         ),
-                        child: const Text('Add',
+                        child: Text('Add',
                             style: TextStyle(color: context.xPrimary,
                                 fontSize: 12, fontWeight: FontWeight.w600)),
                       ),

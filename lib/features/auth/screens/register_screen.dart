@@ -94,10 +94,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: Icon(Icons.check_rounded, color: context.xAccent, size: 40),
                 ),
                 const SizedBox(height: 28),
-                const Text('Account Created!',
+                Text('Account Created!',
                   style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                const Text('Your Xame-ID is:',
+                Text('Your Xame-ID is:',
                   style: TextStyle(color: Colors.white54, fontSize: 14)),
                 const SizedBox(height: 16),
                 Container(
@@ -112,7 +112,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       fontWeight: FontWeight.bold, letterSpacing: 2)),
                 ),
                 const SizedBox(height: 12),
-                const Text('Save this ID — you need it to log in.',
+                Text('Save this ID — you need it to log in.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white38, fontSize: 13)),
                 const SizedBox(height: 40),
@@ -125,7 +125,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: const Text('Sign In Now',
+                    child: Text('Sign In Now',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
@@ -190,7 +190,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: context.xCard, borderRadius: BorderRadius.circular(10)),
-                child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Password must contain:', style: TextStyle(color: Colors.white54, fontSize: 12)),
                   SizedBox(height: 4),
                   Text('· At least 8 characters  · One uppercase letter', style: TextStyle(color: Colors.white38, fontSize: 11)),
@@ -227,7 +227,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: _loading
                     ? const SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                    : const Text('Create Account',
+                    : Text('Create Account',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
