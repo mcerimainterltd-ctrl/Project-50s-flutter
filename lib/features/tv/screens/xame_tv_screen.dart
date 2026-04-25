@@ -439,7 +439,7 @@ class _XameTvScreenState extends State<XameTvScreen>
         child:GestureDetector(onTap:(){},
           child:Container(
             width:MediaQuery.of(context).size.width*0.78,
-            color:context.xText,
+            color:const Color(0xFF0A0A0F),
             child:Column(children:[
               SafeArea(bottom:false,child:Padding(
                 padding:const EdgeInsets.fromLTRB(14,14,14,8),
