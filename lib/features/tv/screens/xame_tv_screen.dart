@@ -347,7 +347,7 @@ class _XameTvScreenState extends State<XameTvScreen>
             decoration:BoxDecoration(
               color:active?color:Colors.black45,
               borderRadius:BorderRadius.circular(16),
-              border:Border.all(color:active?color:Colors.white18),
+              border:Border.all(color:active?color:Colors.white.withOpacity(0.18)),
             ),
             child:Row(mainAxisSize:MainAxisSize.min, children:[
               Text(cat,style:TextStyle(color:Colors.white,fontSize:11,
@@ -402,7 +402,7 @@ class _XameTvScreenState extends State<XameTvScreen>
         child:Container(
           padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),
           decoration:BoxDecoration(color:Colors.white12,borderRadius:BorderRadius.circular(18),
-              border:Border.all(color:Colors.white18)),
+              border:Border.all(color:Colors.white.withOpacity(0.18))),
           child:Row(mainAxisSize:MainAxisSize.min, children:[
             const Icon(Icons.list_rounded,color:Colors.white,size:14),
             const SizedBox(width:4),
@@ -526,7 +526,7 @@ class _XameTvScreenState extends State<XameTvScreen>
             height:42,
             decoration:BoxDecoration(color:Colors.white12,
                 borderRadius:BorderRadius.circular(22),
-                border:Border.all(color:Colors.white18)),
+                border:Border.all(color:Colors.white.withOpacity(0.18))),
             child:TextField(
               controller:_searchCtrl, autofocus:true,
               style:const TextStyle(color:Colors.white,fontSize:14),
@@ -612,7 +612,7 @@ class _XameTvScreenState extends State<XameTvScreen>
     child:Container(
       padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),
       decoration:BoxDecoration(color:color,borderRadius:BorderRadius.circular(20),
-          border:Border.all(color:Colors.white18)),
+          border:Border.all(color:Colors.white.withOpacity(0.18))),
       child:Text(label,style:const TextStyle(color:Colors.white,
           fontWeight:FontWeight.w600,fontSize:12)),
     ),
