@@ -208,14 +208,14 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                                 animation: _progressCtrl,
                                 builder: (_, __) => LinearProgressIndicator(
                                   value:            _progressCtrl.value,
-                                  backgroundColor:  context.xText30,
+                                  backgroundColor:  context.xMuted.withValues(alpha: 0.3),
                                   valueColor: const AlwaysStoppedAnimation(
                                       context.xText),
                                   minHeight: 2.5,
                                 ),
                               )
                             // Not yet watched
-                            : Container(color: context.xText30),
+                            : Container(color: context.xMuted.withValues(alpha: 0.3)),
                       ),
                     ),
                   );
@@ -244,22 +244,22 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                               child: Icon(Icons.person,
                                   color: context.xMuted, size: 20)))
                       : Container(color: context.xSurface,
-                          child: const Icon(Icons.person,
+                          child: Icon(Icons.person,
                               color: context.xMuted, size: 20)),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 // Name + time
                 Expanded(child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(_currentGroup.authorName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color:      context.xText,
                         fontSize:   14,
                         fontWeight: FontWeight.w700)),
                     Text(_timeAgo(_currentStory.ts),
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: context.xText.withValues(alpha: 0.6), fontSize: 11)),
                   ],
                 )),
@@ -271,11 +271,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                     decoration: BoxDecoration(
                       color:        Colors.black45,
                       borderRadius: BorderRadius.circular(8)),
-                    child: const Text('PAUSED',
+                    child: Text('PAUSED',
                       style: TextStyle(color: context.xText.withValues(alpha: 0.6),
                           fontSize: 9, letterSpacing: 1)),
                   ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 // Close
                 GestureDetector(
                   onTap: _dismiss,
@@ -284,7 +284,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.black38),
-                    child: const Icon(Icons.close,
+                    child: Icon(Icons.close,
                         color: context.xText, size: 18)),
                 ),
               ]),
@@ -306,7 +306,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(3),
                         color: i == _groupIndex
-                          ? context.xText : context.xText30),
+                          ? context.xText : context.xMuted.withValues(alpha: 0.3)),
                     )
                   ),
                 ),
@@ -355,10 +355,10 @@ class _StoryMedia extends StatelessWidget {
             placeholder: (_, __) => Container(
               color: context.xBg,
               child: Center(child: CircularProgressIndicator(
-                  color: context.xText30, strokeWidth: 1.5))),
+                  color: context.xMuted.withValues(alpha: 0.3), strokeWidth: 1.5))),
             errorWidget: (_, __, ___) => Container(
               color: context.xBg,
-              child: const Icon(Icons.broken_image,
+              child: Icon(Icons.broken_image,
                   color: context.xMuted.withValues(alpha: 0.5), size: 48)),
           ),
     );
