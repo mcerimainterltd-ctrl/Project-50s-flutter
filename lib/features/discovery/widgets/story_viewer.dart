@@ -209,7 +209,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                                 builder: (_, __) => LinearProgressIndicator(
                                   value:            _progressCtrl.value,
                                   backgroundColor:  context.xMuted.withValues(alpha: 0.3),
-                                  valueColor: const AlwaysStoppedAnimation(
+                                  valueColor: AlwaysStoppedAnimation(
                                       context.xText),
                                   minHeight: 2.5,
                                 ),
