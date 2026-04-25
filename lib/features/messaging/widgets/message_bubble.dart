@@ -165,7 +165,7 @@ class MessageBubble extends ConsumerWidget {
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(time, style: TextStyle(color: context.xMuted, fontSize: 10)),
+        Text(time, style: TextStyle(color: XameColors.darkSurface, fontSize: 10)),
         if (isSelf) ...[
           const SizedBox(width: 4),
           _StatusTick(status: message.status),
@@ -301,12 +301,12 @@ class _ReplyQuote extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: 4),
     padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
     decoration: BoxDecoration(
-      color: context.xText.withValues(alpha: 0.07),
+      color: XameColors.darkSurface,
       borderRadius: BorderRadius.circular(10),
       border: Border(left: BorderSide(color: XameColors.primary, width: 3)),
     ),
     child: Text(text.isNotEmpty ? text : '📎 Attachment',
-        style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12),
+        style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 12),
         maxLines: 2, overflow: TextOverflow.ellipsis),
   );
 }
@@ -423,7 +423,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
     appBar: AppBar(
       backgroundColor: Colors.black54,
       leading: IconButton(
-          icon: Icon(Icons.close, color: context.xText),
+          icon: Icon(Icons.close, color: XameColors.darkBg),
           onPressed: () => Navigator.pop(context)),
       actions: [
         if (_downloading)
@@ -431,10 +431,10 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
             child: SizedBox(width: 22, height: 22,
               child: CircularProgressIndicator(
                   value: _progress > 0 ? _progress : null,
-                  color: context.xText, strokeWidth: 2)))
+                  color: XameColors.darkBg, strokeWidth: 2)))
         else
           IconButton(
-              icon: Icon(Icons.download_outlined, color: context.xText),
+              icon: Icon(Icons.download_outlined, color: XameColors.darkBg),
               onPressed: _download),
       ],
     ),
@@ -447,7 +447,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
           placeholder: (_, __) =>
               CircularProgressIndicator(color: XameColors.primary),
           errorWidget: (_, __, ___) =>
-              Icon(Icons.broken_image, color: context.xMuted.withValues(alpha: 0.5), size: 60),
+              Icon(Icons.broken_image, color: XameColors.darkSurface.withValues(alpha: 0.5), size: 60),
         )),
       ),
     ),
@@ -827,7 +827,7 @@ class _FileBubbleState extends State<_FileBubble> {
           XameColors.accent, Color(0xFF23001111), 'VIDEO');
     if (m.contains('text')  || n.endsWith('.txt'))
       return _DocStyle(Icons.article_outlined,
-          context.xText.withValues(alpha: 0.7), Color(0xFF23111111), 'TXT');
+          XameColors.darkBg.withValues(alpha: 0.7), Color(0xFF23111111), 'TXT');
     return _DocStyle(Icons.insert_drive_file_outlined,
         XameColors.accent, const Color(0xFF23000B1A), 'FILE');
   }
@@ -1144,7 +1144,7 @@ class _WaveformBarsState extends State<_WaveformBars>
           decoration: BoxDecoration(
             color: isPast
                 ? XameColors.primary
-                : context.xText.withValues(alpha: 0.2),
+                : XameColors.darkBg.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(2),
           ),
         );

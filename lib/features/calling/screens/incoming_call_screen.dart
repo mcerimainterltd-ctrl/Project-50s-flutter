@@ -203,11 +203,11 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
               border: Border.all(color: color.withOpacity(0.4), width: 1.5),
               boxShadow: isAccept ? [BoxShadow(color: color.withOpacity(0.2), blurRadius: 15, spreadRadius: 5)] : [],
             ),
-            child: Icon(icon, color: isAccept ? Colors.black : context.xText, size: 32),
+            child: Icon(icon, color: isAccept ? Colors.black : XameColors.darkBg, size: 32),
           ),
         ),
         SizedBox(height: 12),
-        Text(label, style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 12, fontWeight: FontWeight.bold)),
       ],
     );
   }

@@ -110,14 +110,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         ? TextField(
             controller: _searchCtrl,
             onChanged:  (v) => setState(() => _filter = v),
-            style: TextStyle(color: context.xText, fontSize: 14),
+            style: TextStyle(color: XameColors.darkBg, fontSize: 14),
             decoration: InputDecoration(
               hintText:  'Search chats...',
-              hintStyle: TextStyle(color: context.xText30, fontSize: 14),
-              prefixIcon: Icon(Icons.search, color: context.xText30, size: 18),
+              hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3), fontSize: 14),
+              prefixIcon: Icon(Icons.search, color: XameColors.darkSurface.withValues(alpha: 0.3), size: 18),
               suffixIcon: _filter.isNotEmpty
                 ? IconButton(
-                    icon: Icon(Icons.close, color: context.xText30, size: 18),
+                    icon: Icon(Icons.close, color: XameColors.darkSurface.withValues(alpha: 0.3), size: 18),
                     onPressed: () {
                       _searchCtrl.clear();
                       setState(() => _filter = '');
@@ -132,12 +132,12 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             ),
           )
         : Text(['Chats','Calls','Discover','Phone','Pay'][_tab],
-            style: TextStyle(color: context.xText, fontSize: 20,
+            style: TextStyle(color: XameColors.darkBg, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
       _ConnectionDot(),
       IconButton(
-        icon: Icon(Icons.more_vert, color: context.xText.withValues(alpha: 0.7)),
+        icon: Icon(Icons.more_vert, color: XameColors.darkBg.withValues(alpha: 0.7)),
         onPressed: _showMainMenu),
     ]),
   );
@@ -146,13 +146,13 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
     decoration: BoxDecoration(
       color: XameColors.darkSurface,
       border: Border(top: BorderSide(
-        color: context.xText.withValues(alpha: 0.06)))),
+        color: XameColors.darkBg.withValues(alpha: 0.06)))),
     child: TabBar(
       controller: _tabCtrl,
       indicatorColor: XameColors.primary,
       indicatorSize: TabBarIndicatorSize.label,
       labelColor: XameColors.primary,
-      unselectedLabelColor: context.xMuted,
+      unselectedLabelColor: XameColors.darkSurface,
       labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
       tabs: [
         const Tab(icon: Icon(Icons.chat_bubble_outline_rounded, size: 22), text: 'Chats'),
@@ -196,11 +196,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Text('Add Contact',
-                style: TextStyle(color: context.xText, fontSize: 18,
+                style: TextStyle(color: XameColors.darkBg, fontSize: 18,
                   fontWeight: FontWeight.bold)),
               Spacer(),
               IconButton(
-                icon: Icon(Icons.close, color: context.xMuted),
+                icon: Icon(Icons.close, color: XameColors.darkSurface),
                 onPressed: () => Navigator.pop(ctx)),
             ]),
             SizedBox(height: 16),
@@ -208,7 +208,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               Expanded(
                 child: TextField(
                   controller: ctrl,
-                  style: TextStyle(color: context.xText),
+                  style: TextStyle(color: XameColors.darkBg),
                   onSubmitted: (_) => _doSearch(
                     ctrl, setS,
                     (e) => error = e,
@@ -216,9 +216,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     (s) => searching = s),
                   decoration: InputDecoration(
                     hintText:  'Enter Xame-ID',
-                    hintStyle: TextStyle(color: context.xText30),
+                    hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
                     prefixIcon: Icon(Icons.alternate_email,
-                      color: context.xMuted, size: 20),
+                      color: XameColors.darkSurface, size: 20),
                     filled: true, fillColor: XameColors.darkBg,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -279,12 +279,12 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(_contactName(foundUser!),
-                        style: TextStyle(color: context.xText,
+                        style: TextStyle(color: XameColors.darkBg,
                           fontWeight: FontWeight.w600, fontSize: 15)),
                       SizedBox(height: 2),
                       Text(foundUser!['xameId']?.toString() ?? '',
                         style: TextStyle(
-                          color: context.xMuted, fontSize: 12)),
+                          color: XameColors.darkSurface, fontSize: 12)),
                     ])),
                   ElevatedButton(
                     onPressed: () async {
@@ -366,18 +366,18 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         mainAxisSize: MainAxisSize.min, children: [
         SizedBox(height: 8),
         Container(width: 36, height: 4,
-          decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+          decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
 
         ListTile(
-          leading: Icon(Icons.photo_library_outlined, color: context.xText.withValues(alpha: 0.7)),
+          leading: Icon(Icons.photo_library_outlined, color: XameColors.darkBg.withValues(alpha: 0.7)),
           title: Text('My Portfolio',
-            style: TextStyle(color: context.xText)),
+            style: TextStyle(color: XameColors.darkBg)),
           onTap: () => context.push("/gallery")),
         ListTile(
-          leading: Icon(Icons.campaign_outlined, color: context.xText.withValues(alpha: 0.7)),
+          leading: Icon(Icons.campaign_outlined, color: XameColors.darkBg.withValues(alpha: 0.7)),
           title: Text("Mass Messaging",
-            style: TextStyle(color: context.xText)),
+            style: TextStyle(color: XameColors.darkBg)),
           onTap: () {
             Navigator.pop(context);
             final user = ref.read(currentUserProvider);
@@ -391,9 +391,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             ));
           }),
         ListTile(
-          leading: Icon(Icons.group_outlined, color: context.xText.withValues(alpha: 0.7)),
+          leading: Icon(Icons.group_outlined, color: XameColors.darkBg.withValues(alpha: 0.7)),
           title: Text("Groups",
-            style: TextStyle(color: context.xText)),
+            style: TextStyle(color: XameColors.darkBg)),
           onTap: () {
             Navigator.pop(context);
             final user = ref.read(currentUserProvider);
@@ -410,9 +410,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             );
           }),
         ListTile(
-          leading: Icon(Icons.settings_outlined, color: context.xText.withValues(alpha: 0.7)),
+          leading: Icon(Icons.settings_outlined, color: XameColors.darkBg.withValues(alpha: 0.7)),
           title: Text('Settings',
-            style: TextStyle(color: context.xText)),
+            style: TextStyle(color: XameColors.darkBg)),
           onTap: () { Navigator.pop(context); context.go('/settings'); }),
         ListTile(
           leading: const Icon(Icons.logout_rounded, color: XameColors.danger),
@@ -507,11 +507,11 @@ class _SectionHeader extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
     child: Row(children: [
       Text('All Contacts',
-        style: TextStyle(color: context.xMuted, fontSize: 12,
+        style: TextStyle(color: XameColors.darkSurface, fontSize: 12,
           fontWeight: FontWeight.w600, letterSpacing: 0.5)),
       SizedBox(width: 8),
       Text('$count',
-        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+        style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 12)),
     ]),
   );
 }
@@ -532,10 +532,10 @@ class _EmptyChats extends StatelessWidget {
           fontWeight: FontWeight.w900, letterSpacing: 1)),
       SizedBox(height: 4),
       Text('created by Gibson Agbor',
-        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+        style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 12)),
       SizedBox(height: 16),
       Text('Tap + to add a contact and start chatting',
-        style: TextStyle(color: context.xMuted, fontSize: 14),
+        style: TextStyle(color: XameColors.darkSurface, fontSize: 14),
         textAlign: TextAlign.center),
     ]),
   );
@@ -698,12 +698,12 @@ class _PlaceholderTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, color: context.xMuted.withValues(alpha: 0.5), size: 48),
+      Icon(icon, color: XameColors.darkSurface.withValues(alpha: 0.5), size: 48),
       SizedBox(height: 12),
-      Text(label, style: TextStyle(color: context.xMuted, fontSize: 16)),
+      Text(label, style: TextStyle(color: XameColors.darkSurface, fontSize: 16)),
       SizedBox(height: 4),
       Text('Coming soon',
-        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+        style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 12)),
     ]),
   );
 }

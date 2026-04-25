@@ -614,21 +614,21 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('Name this list', style: TextStyle(color: context.xText,
+            Text('Name this list', style: TextStyle(color: XameColors.darkBg,
                 fontSize: 15, fontWeight: FontWeight.w700)),
             SizedBox(height: 14),
             Container(
               decoration: BoxDecoration(
                 color: XameColors.darkSurface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.xText10),
+                border: Border.all(color: XameColors.darkSurface),
               ),
               child: TextField(
                 controller: ctrl, autofocus: true,
-                style: TextStyle(color: context.xText, fontSize: 14),
+                style: TextStyle(color: XameColors.darkBg, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'e.g. Family, Work, VIPs',
-                  hintStyle: TextStyle(color: context.xText30),
+                  hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
                       horizontal: 14, vertical: 12),
@@ -641,11 +641,11 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                 onTap: () => Navigator.pop(context),
                 child: Container(height: 42,
                   decoration: BoxDecoration(
-                    color: context.xText.withValues(alpha: 0.06),
+                    color: XameColors.darkBg.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(12)),
                   alignment: Alignment.center,
                   child: Text('Cancel',
-                      style: TextStyle(color: context.xText.withValues(alpha: 0.54)))),
+                      style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54)))),
               )),
               const SizedBox(width: 10),
               Expanded(child: GestureDetector(

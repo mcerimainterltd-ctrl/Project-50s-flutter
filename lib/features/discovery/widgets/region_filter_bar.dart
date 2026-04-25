@@ -44,7 +44,7 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
                 borderRadius: BorderRadius.circular(20),
                 color: isSelected
                   ? XameColors.primary.withOpacity(0.15)
-                  : context.xText.withOpacity(0.05),
+                  : XameColors.darkBg.withOpacity(0.05),
                 border: Border.all(
                   color: isSelected
                     ? XameColors.primary.withOpacity(0.6)
@@ -59,7 +59,7 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
                 Text('${r.flag} ${r.name}',
                   style: TextStyle(
                     color: isSelected
-                      ? XameColors.primary : context.xText.withValues(alpha: 0.54),
+                      ? XameColors.primary : XameColors.darkBg.withValues(alpha: 0.54),
                     fontSize:   12,
                     fontWeight: isSelected
                       ? FontWeight.w700 : FontWeight.normal)),

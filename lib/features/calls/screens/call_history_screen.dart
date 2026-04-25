@@ -237,13 +237,13 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         backgroundColor: XameColors.darkSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Clear Call History',
-            style: TextStyle(color: context.xText, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: XameColors.darkBg, fontWeight: FontWeight.w700)),
         content: Text('This will delete all your call records.',
-            style: TextStyle(color: context.xText.withValues(alpha: 0.54))),
+            style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false),
               child: Text('Cancel',
-                  style: TextStyle(color: context.xMuted))),
+                  style: TextStyle(color: XameColors.darkSurface))),
           TextButton(onPressed: () => Navigator.pop(context, true),
               child: Text('Clear',
                   style: TextStyle(color: XameColors.danger,
@@ -266,18 +266,18 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         width: 80, height: 80,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: context.xText.withOpacity(0.05),
+          color: XameColors.darkBg.withOpacity(0.05),
         ),
         child: Icon(Icons.call_outlined,
-            color: context.xMuted.withValues(alpha: 0.5), size: 36),
+            color: XameColors.darkSurface.withValues(alpha: 0.5), size: 36),
       ),
       SizedBox(height: 20),
       Text('No calls yet',
-        style: TextStyle(color: context.xMuted, fontSize: 16,
+        style: TextStyle(color: XameColors.darkSurface, fontSize: 16,
             fontWeight: FontWeight.w500)),
       SizedBox(height: 8),
       Text('Your call history will appear here',
-        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 13)),
+        style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 13)),
     ]),
   );
 }
@@ -441,7 +441,7 @@ class _CallTile extends StatelessWidget {
   Widget _initialsAvatar(String initials) => Container(
     color: XameColors.darkSurface,
     child: Center(child: Text(initials,
-      style: TextStyle(color: context.xText, fontSize: 18,
+      style: TextStyle(color: XameColors.darkBg, fontSize: 18,
           fontWeight: FontWeight.w600))),
   );
 

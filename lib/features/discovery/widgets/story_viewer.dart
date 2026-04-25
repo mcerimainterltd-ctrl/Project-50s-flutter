@@ -374,7 +374,7 @@ class _VideoStory extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     color: Colors.black,
     child: Center(child: Icon(Icons.play_circle_outline,
-        color: context.xMuted, size: 64)),
+        color: XameColors.darkSurface, size: 64)),
   );
 }
 

@@ -172,13 +172,13 @@ class _AvatarCanvasPainter extends CustomPainter {
         width: 52*s, height: 56*s), p);
 
     // Eyes
-    p.color = context.xText;
+    p.color = XameColors.darkBg;
     canvas.drawCircle(Offset(36*s, 48*s), 7*s, p);
     canvas.drawCircle(Offset(64*s, 48*s), 7*s, p);
     p.color = _c(config.eyeColor);
     canvas.drawCircle(Offset(37*s, 49*s), 4*s, p);
     canvas.drawCircle(Offset(65*s, 49*s), 4*s, p);
-    p.color = context.xText;
+    p.color = XameColors.darkBg;
     canvas.drawCircle(Offset(38*s, 48*s), 1.5*s, p);
     canvas.drawCircle(Offset(66*s, 48*s), 1.5*s, p);
 
@@ -448,7 +448,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: context.xText.withValues(alpha: 0.54),
+          Text(label, style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54),
               fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8,
@@ -481,7 +481,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: context.xText.withValues(alpha: 0.54),
+          Text(label, style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54),
               fontSize: 12, fontWeight: FontWeight.w600)),
           SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8,
@@ -501,10 +501,10 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                     border: Border.all(
                       color: sel
                           ? XameColors.primary.withValues(alpha: 0.5)
-                          : context.xText10),
+                          : XameColors.darkSurface),
                   ),
                   child: Text(labels[i], style: TextStyle(
-                    color: sel ? XameColors.primary : context.xText.withValues(alpha: 0.54),
+                    color: sel ? XameColors.primary : XameColors.darkBg.withValues(alpha: 0.54),
                     fontSize: 12,
                     fontWeight: sel ? FontWeight.w600 : FontWeight.normal)),
                 ),

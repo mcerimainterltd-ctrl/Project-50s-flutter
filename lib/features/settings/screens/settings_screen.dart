@@ -457,7 +457,7 @@ class _Section extends StatelessWidget {
         decoration: BoxDecoration(
           color:  theme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.xText.withValues(alpha: 0.06)),
+          border: Border.all(color: XameColors.darkBg.withValues(alpha: 0.06)),
         ),
         child: Column(children: _separated(children)),
       ),
@@ -469,7 +469,7 @@ class _Section extends StatelessWidget {
     for (int i = 0; i < items.length; i++) {
       result.add(items[i]);
       if (i < items.length - 1) {
-        result.add(Divider(height: 1, color: context.xText.withValues(alpha: 0.05),
+        result.add(Divider(height: 1, color: XameColors.darkSurface,
             indent: 52));
       }
     }
@@ -517,7 +517,7 @@ class _ToggleTile extends StatelessWidget {
         value:     value,
         onChanged: onChanged,
         activeColor: theme.primary,
-        inactiveTrackColor: context.xMuted.withValues(alpha: 0.25),
+        inactiveTrackColor: XameColors.darkSurface,
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     ]),
@@ -567,7 +567,7 @@ class _SelectTile extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(margin: const EdgeInsets.only(top: 12, bottom: 8),
             width: 40, height: 4,
-            decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+            decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2))),
           Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
             child: Text(title, style: TextStyle(color: theme.text,

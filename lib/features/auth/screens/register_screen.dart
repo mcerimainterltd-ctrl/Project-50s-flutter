@@ -256,16 +256,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     children: [_label(label), SizedBox(height: 8), child]);
 
   Widget _label(String text) => Text(text,
-    style: TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w500));
+    style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w500));
 
   Widget _field(TextEditingController ctrl, String hint, IconData icon,
       {bool obscure = false, Widget? suffix, TextInputType? type}) =>
     TextField(
       controller: ctrl, obscureText: obscure, keyboardType: type,
-      style: TextStyle(color: context.xText),
+      style: TextStyle(color: XameColors.darkBg),
       decoration: InputDecoration(
-        hintText: hint, hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.5)),
-        prefixIcon: Icon(icon, color: context.xMuted, size: 20),
+        hintText: hint, hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5)),
+        prefixIcon: Icon(icon, color: XameColors.darkSurface, size: 20),
         suffixIcon: suffix, filled: true, fillColor: XameColors.darkCard,
         border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
@@ -279,7 +279,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     TextField(
       controller: ctrl, focusNode: focus,
       keyboardType: TextInputType.number, maxLength: maxLen,
-      style: TextStyle(color: context.xText), textAlign: TextAlign.center,
+      style: TextStyle(color: XameColors.darkBg), textAlign: TextAlign.center,
       onChanged: (v) {
         final clean = v.replaceAll(RegExp(r'[^0-9]'), '');
         if (clean != v) ctrl.text = clean;
@@ -290,7 +290,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         }
       },
       decoration: InputDecoration(
-        hintText: hint, hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.5)),
+        hintText: hint, hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5)),
         counterText: '', filled: true, fillColor: XameColors.darkCard,
         border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),

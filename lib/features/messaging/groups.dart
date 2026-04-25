@@ -705,15 +705,15 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
     decoration: BoxDecoration(
       color: XameColors.darkCard,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: context.xText10),
+      border: Border.all(color: XameColors.darkSurface),
     ),
     child: TextField(
       controller: ctrl,
-      style: TextStyle(color: context.xText, fontSize: 14),
+      style: TextStyle(color: XameColors.darkBg, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: context.xText30),
-        prefixIcon: Icon(icon, color: context.xText30, size: 18),
+        hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
+        prefixIcon: Icon(icon, color: XameColors.darkSurface.withValues(alpha: 0.3), size: 18),
         border: InputBorder.none,
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 14, vertical: 12),
@@ -1033,10 +1033,10 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
             Center(child: Container(
               width: 36, height: 4,
               margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+              decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2)),
             )),
-            Text('Add Member', style: TextStyle(color: context.xText,
+            Text('Add Member', style: TextStyle(color: XameColors.darkBg,
                 fontSize: 16, fontWeight: FontWeight.w700)),
             SizedBox(height: 12),
             ConstrainedBox(
@@ -1061,18 +1061,18 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                         border: Border.all(
                           color: sel
                               ? XameColors.primary.withValues(alpha: 0.3)
-                              : context.xText10),
+                              : XameColors.darkSurface),
                       ),
                       child: Row(children: [
                         Expanded(child: Text(name, style: TextStyle(
-                            color: context.xText, fontSize: 14))),
+                            color: XameColors.darkBg, fontSize: 14))),
                         AnimatedContainer(
                           duration: Duration(milliseconds: 150),
                           width: 20, height: 20,
                           decoration: BoxDecoration(
                             color: sel ? XameColors.primary : Colors.transparent,
                             border: Border.all(
-                              color: sel ? XameColors.primary : context.xMuted.withValues(alpha: 0.5),
+                              color: sel ? XameColors.primary : XameColors.darkSurface.withValues(alpha: 0.5),
                               width: 1.5),
                             borderRadius: BorderRadius.circular(5),
                           ),

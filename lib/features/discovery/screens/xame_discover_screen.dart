@@ -536,7 +536,7 @@ class _PostFAB extends StatelessWidget {
   Widget build(BuildContext context) => FloatingActionButton.extended(
     onPressed: onPost,
     backgroundColor: XameColors.primary,
-    foregroundColor: context.xText,
+    foregroundColor: XameColors.darkBg,
     elevation: 4,
     icon: const Icon(Icons.add_photo_alternate_outlined),
     label: const Text('Post',
@@ -658,10 +658,10 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         MediaQuery.of(context).viewInsets.bottom + 20),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 36, height: 4,
-        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+        decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
       SizedBox(height: 16),
-      Text('Create Post', style: TextStyle(color: context.xText,
+      Text('Create Post', style: TextStyle(color: XameColors.darkBg,
           fontSize: 18, fontWeight: FontWeight.w700)),
       SizedBox(height: 16),
 
@@ -671,9 +671,9 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         child: Container(
           height: 160,
           decoration: BoxDecoration(
-            color: context.xText.withOpacity(0.05),
+            color: XameColors.darkBg.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
+            border: Border.all(color: XameColors.darkSurface)),
           child: _mediaFile != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -690,7 +690,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                             Text(
                               _mediaFile!.path.split('/').last,
                               style: TextStyle(
-                                  color: context.xText.withValues(alpha: 0.6), fontSize: 12),
+                                  color: XameColors.darkBg.withValues(alpha: 0.6), fontSize: 12),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -701,7 +701,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                                     ? '${(snap.data! / 1024 / 1024).toStringAsFixed(1)}MB'
                                     : '',
                                 style: TextStyle(
-                                    color: context.xMuted, fontSize: 11)),
+                                    color: XameColors.darkSurface, fontSize: 11)),
                             ),
                           ],
                         ),
@@ -710,12 +710,12 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                         width: double.infinity),
                   if (_mediaType == 'video')
                     Center(child: Icon(Icons.play_circle_outline,
-                        color: context.xText.withValues(alpha: 0.54), size: 40)),
+                        color: XameColors.darkBg.withValues(alpha: 0.54), size: 40)),
                 ]))
             : Column(mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                 Icon(Icons.add_photo_alternate_outlined,
-                    color: context.xMuted, size: 40),
+                    color: XameColors.darkSurface, size: 40),
                 SizedBox(height: 8),
                 Row(mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -724,7 +724,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                       style: TextStyle(color: XameColors.primary,
                           fontWeight: FontWeight.w600))),
                   Text('  or  ',
-                      style: TextStyle(color: context.xMuted)),
+                      style: TextStyle(color: XameColors.darkSurface)),
                   GestureDetector(onTap: _pickVideo,
                     child: Text('Video',
                       style: TextStyle(color: XameColors.primary,
@@ -738,10 +738,10 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       // Title
       TextField(
         controller: _titleCtrl,
-        style: TextStyle(color: context.xText),
+        style: TextStyle(color: XameColors.darkBg),
         decoration: InputDecoration(
           hintText:  'Title',
-          hintStyle: TextStyle(color: context.xText30),
+          hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
           filled: true, fillColor: XameColors.darkBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -756,11 +756,11 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       // Caption
       TextField(
         controller: _captionCtrl,
-        style: TextStyle(color: context.xText),
+        style: TextStyle(color: XameColors.darkBg),
         maxLines: 2,
         decoration: InputDecoration(
           hintText:  'Caption (optional)',
-          hintStyle: TextStyle(color: context.xText30),
+          hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
           filled: true, fillColor: XameColors.darkBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -782,14 +782,14 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
           onPressed: _uploading ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: XameColors.primary,
-            foregroundColor: context.xText,
+            foregroundColor: XameColors.darkBg,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
             elevation: 0),
           child: _uploading
             ? SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(
-                    color: context.xText, strokeWidth: 2))
+                    color: XameColors.darkBg, strokeWidth: 2))
             : const Text('Publish',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
@@ -850,24 +850,24 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
         MediaQuery.of(context).viewInsets.bottom + 20),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 36, height: 4,
-        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+        decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
       SizedBox(height: 16),
       Text('Add to Your Story',
-        style: TextStyle(color: context.xText, fontSize: 18,
+        style: TextStyle(color: XameColors.darkBg, fontSize: 18,
             fontWeight: FontWeight.w700)),
       SizedBox(height: 8),
       Text('Stories disappear after 24 hours',
-        style: TextStyle(color: context.xMuted, fontSize: 13)),
+        style: TextStyle(color: XameColors.darkSurface, fontSize: 13)),
       SizedBox(height: 16),
       GestureDetector(
         onTap: _pickMedia,
         child: Container(
           height: 200,
           decoration: BoxDecoration(
-            color: context.xText.withOpacity(0.05),
+            color: XameColors.darkBg.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
+            border: Border.all(color: XameColors.darkSurface)),
           child: _mediaFile != null
             ? ClipRRect(borderRadius: BorderRadius.circular(16),
                 child: Image.file(_mediaFile!, fit: BoxFit.cover,
@@ -876,10 +876,10 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                 Icon(Icons.camera_alt_outlined,
-                    color: context.xMuted, size: 48),
+                    color: XameColors.darkSurface, size: 48),
                 SizedBox(height: 8),
                 Text('Tap to select photo',
-                  style: TextStyle(color: context.xMuted)),
+                  style: TextStyle(color: XameColors.darkSurface)),
               ]),
         ),
       ),
@@ -893,14 +893,14 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
           onPressed: _uploading ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: XameColors.secondary,
-            foregroundColor: context.xText,
+            foregroundColor: XameColors.darkBg,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
             elevation: 0),
           child: _uploading
             ? SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(
-                    color: context.xText, strokeWidth: 2))
+                    color: XameColors.darkBg, strokeWidth: 2))
             : Text('Share Story',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
@@ -994,12 +994,12 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               controller: widget.ctrl,
               autofocus:  true,
               onChanged:  _search,
-              style: TextStyle(color: context.xText),
+              style: TextStyle(color: XameColors.darkBg),
               decoration: InputDecoration(
                 hintText:  'Search people, topics, moments...',
-                hintStyle: TextStyle(color: context.xText30, fontSize: 14),
+                hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3), fontSize: 14),
                 prefixIcon: Icon(Icons.search,
-                    color: context.xMuted, size: 20),
+                    color: XameColors.darkSurface, size: 20),
                 filled: true, fillColor: XameColors.darkSurface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -1023,7 +1023,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
           ? _SearchSuggestions(ctrl: widget.ctrl, onSearch: widget.onSearch)
           : _results.isEmpty
             ? Center(child: Text('No results found',
-                style: TextStyle(color: context.xMuted)))
+                style: TextStyle(color: XameColors.darkSurface)))
             : ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _results.length,
@@ -1040,10 +1040,10 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                           width: 52, height: 52,
                           color: XameColors.darkSurface))),
                     title: Text(item.title, style: TextStyle(
-                        color: context.xText, fontSize: 14,
+                        color: XameColors.darkBg, fontSize: 14,
                         fontWeight: FontWeight.w600)),
                     subtitle: Text(item.category, style: TextStyle(
-                        color: context.xMuted, fontSize: 12)),
+                        color: XameColors.darkSurface, fontSize: 12)),
                     trailing: item.isLive
                       ? LivePulseIndicator(compact: true) : null,
                   );
@@ -1067,7 +1067,7 @@ class _SearchSuggestions extends StatelessWidget {
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('TRENDING SEARCHES', style: TextStyle(
-          color: context.xMuted, fontSize: 11,
+          color: XameColors.darkSurface, fontSize: 11,
           fontWeight: FontWeight.w800, letterSpacing: 1.2)),
       SizedBox(height: 14),
       Wrap(spacing: 8, runSpacing: 8,
@@ -1082,11 +1082,11 @@ class _SearchSuggestions extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: context.xText.withOpacity(0.05),
+              color: XameColors.darkBg.withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: context.xText10)),
+              border: Border.all(color: XameColors.darkSurface)),
             child: Text(t, style: TextStyle(
-                color: context.xText.withValues(alpha: 0.6), fontSize: 13)),
+                color: XameColors.darkBg.withValues(alpha: 0.6), fontSize: 13)),
           ),
         )).toList()),
     ]),
@@ -1113,11 +1113,11 @@ class _FilterSheetState extends State<_FilterSheet> {
       padding: const EdgeInsets.all(20),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 36, height: 4,
-          decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+          decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 20),
         Text('Filter by Region', style: TextStyle(
-            color: context.xText, fontSize: 18,
+            color: XameColors.darkBg, fontSize: 18,
             fontWeight: FontWeight.w700)),
         SizedBox(height: 16),
         SizedBox(height: 320,
@@ -1138,15 +1138,15 @@ class _FilterSheetState extends State<_FilterSheet> {
                     borderRadius: BorderRadius.circular(12),
                     color: isSelected
                       ? XameColors.primary.withOpacity(0.15)
-                      : context.xText.withOpacity(0.04),
+                      : XameColors.darkBg.withOpacity(0.04),
                     border: Border.all(
                       color: isSelected
                         ? XameColors.primary.withOpacity(0.5)
-                        : context.xText10)),
+                        : XameColors.darkSurface)),
                   child: Center(child: Text('${r.flag} ${r.name}',
                     style: TextStyle(
                       color: isSelected
-                        ? XameColors.primary : context.xText.withValues(alpha: 0.54),
+                        ? XameColors.primary : XameColors.darkBg.withValues(alpha: 0.54),
                       fontSize: 12,
                       fontWeight: isSelected
                         ? FontWeight.w700 : FontWeight.normal),
@@ -1168,7 +1168,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: XameColors.primary,
-              foregroundColor: context.xText,
+              foregroundColor: XameColors.darkBg,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
               elevation: 0),
@@ -1372,16 +1372,16 @@ class _EmptyState extends StatelessWidget {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 80, height: 80,
           decoration: BoxDecoration(shape: BoxShape.circle,
-              color: context.xText.withOpacity(0.04)),
+              color: XameColors.darkBg.withOpacity(0.04)),
           child: Icon(Icons.explore_outlined,
-              color: context.xMuted.withValues(alpha: 0.5), size: 36)),
+              color: XameColors.darkSurface.withValues(alpha: 0.5), size: 36)),
         SizedBox(height: 20),
         Text('Nothing in $region yet', style: TextStyle(
-            color: context.xMuted, fontSize: 16,
+            color: XameColors.darkSurface, fontSize: 16,
             fontWeight: FontWeight.w600)),
         SizedBox(height: 8),
         Text('Be the first to share a moment\nfrom this region',
-          style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 13,
+          style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 13,
               height: 1.5), textAlign: TextAlign.center),
         SizedBox(height: 20),
         GestureDetector(
@@ -1395,7 +1395,7 @@ class _EmptyState extends StatelessWidget {
                 XameColors.primary, XameColors.secondary,
               ])),
             child: Text('Post First',
-              style: TextStyle(color: context.xText, fontSize: 14,
+              style: TextStyle(color: XameColors.darkBg, fontSize: 14,
                   fontWeight: FontWeight.w700))),
         ),
       ]),

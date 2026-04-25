@@ -398,7 +398,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: XameColors.darkSurface,
-        border: Border(bottom: BorderSide(color: context.xText10)),
+        border: Border(bottom: BorderSide(color: XameColors.darkSurface)),
       ),
       child: Row(children: [
         GestureDetector(
@@ -410,7 +410,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(Icons.arrow_back_ios_new,
-                color: context.xText.withValues(alpha: 0.7), size: 14),
+                color: XameColors.darkBg.withValues(alpha: 0.7), size: 14),
           ),
         ),
         SizedBox(width: 10),
@@ -418,9 +418,9 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Room: ${_svc.roomId ?? ''}',
-                style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 11)),
+                style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 11)),
             Text('$count participant${count != 1 ? 's' : ''}',
-                style: TextStyle(color: context.xText, fontSize: 13,
+                style: TextStyle(color: XameColors.darkBg, fontSize: 13,
                     fontWeight: FontWeight.w600)),
           ],
         )),
@@ -438,7 +438,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(Icons.grid_view_rounded,
-                color: context.xText.withValues(alpha: 0.7), size: 16),
+                color: XameColors.darkBg.withValues(alpha: 0.7), size: 16),
           ),
         ),
         SizedBox(width: 8),
@@ -462,7 +462,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(Icons.link_rounded,
-                color: context.xText.withValues(alpha: 0.7), size: 16),
+                color: XameColors.darkBg.withValues(alpha: 0.7), size: 16),
           ),
         ),
       ]),
@@ -508,7 +508,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
       decoration: BoxDecoration(
         color: XameColors.darkCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.xText10),
+        border: Border.all(color: XameColors.darkSurface),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -554,11 +554,11 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(Icons.mic_off,
-                        color: context.xText, size: 12),
+                        color: XameColors.darkBg, size: 12),
                   ),
                 if (muted) SizedBox(width: 4),
                 Expanded(child: Text(label,
-                    style: TextStyle(color: context.xText,
+                    style: TextStyle(color: XameColors.darkBg,
                         fontSize: 12, fontWeight: FontWeight.w600),
                     overflow: TextOverflow.ellipsis)),
                 if (handRaised)
@@ -584,7 +584,7 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: XameColors.darkSurface,
-        border: Border(top: BorderSide(color: context.xText10)),
+        border: Border(top: BorderSide(color: XameColors.darkSurface)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -627,11 +627,11 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
                     blurRadius: 12, offset: Offset(0, 4))],
                 ),
                 child: Icon(Icons.call_end_rounded,
-                    color: context.xText, size: 22),
+                    color: XameColors.darkBg, size: 22),
               ),
               SizedBox(height: 4),
               Text('Leave',
-                  style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 10)),
+                  style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 10)),
             ]),
           ),
         ],
@@ -656,14 +656,14 @@ class _ConferenceOverlayState extends State<ConferenceOverlay> {
             border: Border.all(
               color: active
                   ? activeColor.withValues(alpha: 0.4)
-                  : context.xText10),
+                  : XameColors.darkSurface),
           ),
           child: Icon(icon,
-              color: active ? activeColor : context.xText.withValues(alpha: 0.7), size: 20),
+              color: active ? activeColor : XameColors.darkBg.withValues(alpha: 0.7), size: 20),
         ),
         SizedBox(height: 4),
         Text(label, style: TextStyle(
-            color: active ? activeColor : context.xMuted,
+            color: active ? activeColor : XameColors.darkSurface,
             fontSize: 10, fontWeight: FontWeight.w500)),
       ]),
     );

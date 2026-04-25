@@ -67,12 +67,12 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon,
-              color: selected ? XameColors.primary : context.xMuted,
+              color: selected ? XameColors.primary : XameColors.darkSurface,
               size: 24),
           SizedBox(height: 4),
           Text(label,
               style: TextStyle(
-                  color: selected ? XameColors.primary : context.xMuted,
+                  color: selected ? XameColors.primary : XameColors.darkSurface,
                   fontSize: 11,
                   fontWeight: selected
                       ? FontWeight.w700 : FontWeight.w400)),
@@ -102,11 +102,11 @@ class _CallScheduleTab extends StatelessWidget {
               color: XameColors.primary, size: 56)),
         SizedBox(height: 24),
         Text('Call Schedule',
-            style: TextStyle(color: context.xText,
+            style: TextStyle(color: XameColors.darkBg,
                 fontSize: 22, fontWeight: FontWeight.w700)),
         SizedBox(height: 8),
         Text('Schedule calls with your contacts',
-            style: TextStyle(color: context.xMuted, fontSize: 14),
+            style: TextStyle(color: XameColors.darkSurface, fontSize: 14),
             textAlign: TextAlign.center),
         SizedBox(height: 32),
         ElevatedButton.icon(
@@ -146,11 +146,11 @@ class _ConferenceTab extends StatelessWidget {
               color: XameColors.primary, size: 56)),
         SizedBox(height: 24),
         Text('Conference Call',
-            style: TextStyle(color: context.xText,
+            style: TextStyle(color: XameColors.darkBg,
                 fontSize: 22, fontWeight: FontWeight.w700)),
         SizedBox(height: 8),
         Text('Start a call with multiple contacts at once',
-            style: TextStyle(color: context.xMuted, fontSize: 14),
+            style: TextStyle(color: XameColors.darkSurface, fontSize: 14),
             textAlign: TextAlign.center),
         const SizedBox(height: 32),
         ElevatedButton.icon(

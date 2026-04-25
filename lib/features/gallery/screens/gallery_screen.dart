@@ -349,7 +349,7 @@ class _Stat extends StatelessWidget {
     children: [
       Text(value, style: TextStyle(color: color, fontSize: 20,
           fontWeight: FontWeight.w800)),
-      Text(label, style: TextStyle(color: context.xMuted,
+      Text(label, style: TextStyle(color: XameColors.darkSurface,
           fontSize: 10, fontWeight: FontWeight.w500)),
     ]);
 }
@@ -376,9 +376,9 @@ class _GridCell extends StatelessWidget {
               : Container(color: _kCard, child: Center(
                   child: CircularProgressIndicator(color: _kTeal, strokeWidth: 1))),
           errorBuilder: (_, __, ___) => Container(color: _kCard,
-              child: Icon(Icons.broken_image_outlined, color: context.xMuted.withValues(alpha: 0.5)))),
+              child: Icon(Icons.broken_image_outlined, color: XameColors.darkSurface.withValues(alpha: 0.5)))),
       if (item.isVideo) const Positioned.fill(child: Center(
-          child: Icon(Icons.play_circle_fill, color: context.xText.withValues(alpha: 0.7), size: 28))),
+          child: Icon(Icons.play_circle_fill, color: XameColors.darkBg.withValues(alpha: 0.7), size: 28))),
       if (item.hasPrice)
         Positioned(bottom: 0, left: 0, right: 0,
           child: Container(
@@ -436,9 +436,9 @@ class _MasonryCell extends StatelessWidget {
                 : Container(height: 120, color: _kCard, child: Center(
                     child: CircularProgressIndicator(color: _kTeal, strokeWidth: 1))),
             errorBuilder: (_, __, ___) => Container(height: 120, color: _kCard,
-                child: Icon(Icons.broken_image_outlined, color: context.xMuted.withValues(alpha: 0.5)))),
+                child: Icon(Icons.broken_image_outlined, color: XameColors.darkSurface.withValues(alpha: 0.5)))),
         if (item.isVideo) const Positioned.fill(child: Center(
-            child: Icon(Icons.play_circle_fill, color: context.xText.withValues(alpha: 0.7), size: 32))),
+            child: Icon(Icons.play_circle_fill, color: XameColors.darkBg.withValues(alpha: 0.7), size: 32))),
         if (item.caption.isNotEmpty)
           Positioned(bottom: 0, left: 0, right: 0,
             child: Container(
@@ -448,7 +448,7 @@ class _MasonryCell extends StatelessWidget {
                 colors: [Colors.black87, Colors.transparent])),
               child: Text(item.caption, maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: context.xText, fontSize: 11)))),
+                  style: TextStyle(color: XameColors.darkBg, fontSize: 11)))),
       ])),
   );
 }
@@ -480,18 +480,18 @@ class _BizCard extends StatelessWidget {
                         child: CircularProgressIndicator(color: _kTeal, strokeWidth: 1))),
                 errorBuilder: (_, __, ___) => Container(color: _kBg,
                     child: Icon(Icons.store_outlined,
-                        color: context.xMuted.withValues(alpha: 0.5), size: 32))),
+                        color: XameColors.darkSurface.withValues(alpha: 0.5), size: 32))),
             if (item.isVideo) Center(child: Icon(
-                Icons.play_circle_fill, color: context.xText.withValues(alpha: 0.7), size: 36)),
+                Icons.play_circle_fill, color: XameColors.darkBg.withValues(alpha: 0.7), size: 36)),
             Positioned(top: 8, right: 8, child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(color: Colors.black54,
                   borderRadius: BorderRadius.circular(20)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(_visIcon(item.visibility), color: context.xText.withValues(alpha: 0.7), size: 10),
+                Icon(_visIcon(item.visibility), color: XameColors.darkBg.withValues(alpha: 0.7), size: 10),
                 SizedBox(width: 4),
                 Text(_visLabel(item.visibility), style: TextStyle(
-                    color: context.xText.withValues(alpha: 0.7), fontSize: 9,
+                    color: XameColors.darkBg.withValues(alpha: 0.7), fontSize: 9,
                     fontWeight: FontWeight.w600)),
               ]))),
             if (isOwner) Positioned(top: 8, left: 8,
@@ -501,19 +501,19 @@ class _BizCard extends StatelessWidget {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(color: Colors.black54,
                       borderRadius: BorderRadius.circular(20)),
-                  child: Icon(Icons.close, color: context.xText.withValues(alpha: 0.7), size: 12)))),
+                  child: Icon(Icons.close, color: XameColors.darkBg.withValues(alpha: 0.7), size: 12)))),
           ]))),
         Expanded(flex: 3, child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (item.caption.isNotEmpty)
               Text(item.caption, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: context.xText, fontSize: 12,
+                  style: TextStyle(color: XameColors.darkBg, fontSize: 12,
                       fontWeight: FontWeight.w700)),
             if (item.description.isNotEmpty) ...[
               SizedBox(height: 2),
               Text(item.description, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 10)),
+                  style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 10)),
             ],
             Spacer(),
             Row(children: [
@@ -530,7 +530,7 @@ class _BizCard extends StatelessWidget {
                       fontWeight: FontWeight.w800)))
               else
                 Text('Free', style: TextStyle(
-                    color: context.xMuted, fontSize: 10)),
+                    color: XameColors.darkSurface, fontSize: 10)),
               const Spacer(),
               if (item.hasContact) const Icon(Icons.contact_phone_outlined,
                   color: _kTeal, size: 14),
@@ -896,11 +896,11 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
       {TextInputType type = TextInputType.text, int maxLines = 1}) =>
     TextField(
       controller: ctrl, keyboardType: type, maxLines: maxLines,
-      style: TextStyle(color: context.xText, fontSize: 14),
+      style: TextStyle(color: XameColors.darkBg, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: context.xText30, fontSize: 13),
-        prefixIcon: Icon(icon, color: context.xText30, size: 18),
+        hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3), fontSize: 13),
+        prefixIcon: Icon(icon, color: XameColors.darkSurface.withValues(alpha: 0.3), size: 18),
         filled: true, fillColor: _kCard,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none),
@@ -923,10 +923,10 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: sel ? _kTeal : _kBorder)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, color: sel ? _kTeal : context.xMuted, size: 14),
+          Icon(icon, color: sel ? _kTeal : XameColors.darkSurface, size: 14),
           SizedBox(width: 6),
           Text(label, style: TextStyle(
-              color: sel ? _kTeal : context.xMuted,
+              color: sel ? _kTeal : XameColors.darkSurface,
               fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
       ),
@@ -945,13 +945,13 @@ class _Empty extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(color: _kCard, shape: BoxShape.circle,
             border: Border.all(color: _kBorder)),
-        child: Icon(icon, color: context.xMuted.withValues(alpha: 0.5), size: 48)),
+        child: Icon(icon, color: XameColors.darkSurface.withValues(alpha: 0.5), size: 48)),
       SizedBox(height: 16),
-      Text(label, style: TextStyle(color: context.xText.withValues(alpha: 0.54),
+      Text(label, style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54),
           fontSize: 16, fontWeight: FontWeight.w600)),
       if (sub != null) ...[
         SizedBox(height: 6),
-        Text(sub!, style: TextStyle(color: context.xText30, fontSize: 13)),
+        Text(sub!, style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3), fontSize: 13)),
       ],
     ]),
   );

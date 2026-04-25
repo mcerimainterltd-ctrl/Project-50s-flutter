@@ -380,7 +380,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                       SizedBox(height: 8),
                       Text(widget.title,
                         style: TextStyle(
-                          color:      context.xText,
+                          color:      XameColors.darkBg,
                           fontSize:   24,
                           fontWeight: FontWeight.w800)),
                     ],

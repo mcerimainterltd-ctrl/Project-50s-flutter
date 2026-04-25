@@ -345,7 +345,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
         alignment: Alignment.center,
         child: Text(label,
             style: TextStyle(
-              color: _callType == type ? XameColors.primary : context.xMuted,
+              color: _callType == type ? XameColors.primary : XameColors.darkSurface,
               fontSize: 13, fontWeight: FontWeight.w600)),
       ),
     ),

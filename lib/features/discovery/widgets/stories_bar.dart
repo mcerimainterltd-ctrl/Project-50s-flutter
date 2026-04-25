@@ -80,7 +80,7 @@ class _StoryRingState extends State<_StoryRing>
               Container(width: 66, height: 66,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: context.xMuted.withValues(alpha: 0.25), width: 2))),
+                  border: Border.all(color: XameColors.darkSurface, width: 2))),
             Container(
               width: 56, height: 56,
               decoration: BoxDecoration(
@@ -93,7 +93,7 @@ class _StoryRingState extends State<_StoryRing>
                   errorWidget: (_, __, ___) => Container(
                     color: XameColors.darkSurface,
                     child: Icon(Icons.person,
-                        color: context.xMuted.withValues(alpha: 0.5), size: 28)),
+                        color: XameColors.darkSurface.withValues(alpha: 0.5), size: 28)),
                 ),
               ),
             ),
@@ -111,13 +111,13 @@ class _StoryRingState extends State<_StoryRing>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle, color: XameColors.primary),
                   child: Icon(Icons.add,
-                      color: context.xText, size: 14))),
+                      color: XameColors.darkBg, size: 14))),
           ]),
         ),
         SizedBox(height: 6),
         Text(widget.name,
           style: TextStyle(
-              color: context.xText.withValues(alpha: 0.7), fontSize: 11,
+              color: XameColors.darkBg.withValues(alpha: 0.7), fontSize: 11,
               fontWeight: FontWeight.w500),
           maxLines: 1, overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center),

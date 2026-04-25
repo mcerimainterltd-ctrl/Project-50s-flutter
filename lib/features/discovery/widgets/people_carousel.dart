@@ -38,11 +38,11 @@ class _PeoplePerspectiveCarouselState
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       child: Row(children: [
         Text('PEOPLE YOU MAY KNOW',
-          style: TextStyle(color: context.xMuted, fontSize: 11,
+          style: TextStyle(color: XameColors.darkSurface, fontSize: 11,
               fontWeight: FontWeight.w800, letterSpacing: 1.2)),
         Spacer(),
         Text('${widget.users.length} suggested',
-          style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 11)),
+          style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 11)),
       ]),
     ),
     SizedBox(height: 210,
