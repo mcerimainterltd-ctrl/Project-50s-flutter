@@ -81,7 +81,17 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             final self = ref.read(currentUserProvider);
             return DiscoveryAuraFeed();
           }),
-          Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return PhoneScreen(userId: u?.xameId ?? '', serverUrl: 'https://project-50s.onrender.com'); }),
+          Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return PhoneScreen(
+                    userId:       u?.xameId ?? '',
+                    serverUrl:    'https://project-50s.onrender.com',
+                    xameContacts: (ref.watch(contactsProvider).valueOrNull ?? [])
+                        .map((c) => XameContact(
+                              id:         c.id,
+                              name:       c.name,
+                              profilePic: c.profilePic,
+                            ))
+                        .toList(),
+                  ); }),
           Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return XamePayScreen(userId: u?.xameId ?? '', serverUrl: AppConstants.serverUrl); }),
         ])),
       ])),
