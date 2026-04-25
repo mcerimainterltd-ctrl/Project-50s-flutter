@@ -315,7 +315,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
             ),
             alignment: Alignment.center,
             child: _loading
-                ? const SizedBox(width: 20, height: 20,
+                ? SizedBox(width: 20, height: 20,
                     child: CircularProgressIndicator(
                         color: context.xPrimary, strokeWidth: 2))
                 : const Text('Schedule Call',

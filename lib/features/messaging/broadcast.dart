@@ -580,7 +580,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       ),
                       alignment: Alignment.center,
                       child: _sending
-                          ? const SizedBox(width: 18, height: 18,
+                          ? SizedBox(width: 18, height: 18,
                               child: CircularProgressIndicator(
                                   color: context.xPrimary, strokeWidth: 2))
                           : const Text('📤 Send',

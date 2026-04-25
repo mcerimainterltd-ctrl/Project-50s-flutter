@@ -250,7 +250,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               TextButton(
                 onPressed: _saving ? null : _save,
                 child: _saving
-                    ? const SizedBox(width: 18, height: 18,
+                    ? SizedBox(width: 18, height: 18,
                         child: CircularProgressIndicator(
                             color: context.xPrimary, strokeWidth: 2))
                     : Text('Save',

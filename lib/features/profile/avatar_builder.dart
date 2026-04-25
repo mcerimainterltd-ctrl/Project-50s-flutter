@@ -430,7 +430,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                 ),
                 alignment: Alignment.center,
                 child: _saving
-                    ? const SizedBox(width: 20, height: 20,
+                    ? SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(
                             color: context.xPrimary, strokeWidth: 2))
                     : const Text('✓ Use This Avatar',

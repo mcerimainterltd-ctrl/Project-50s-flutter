@@ -232,7 +232,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Center(
                 child: GestureDetector(
                   onTap: () => context.go('/register'),
-                  child: RichText(text: const TextSpan(
+                  child: RichText(text: TextSpan(
                     text: "Don't have an account? ",
                     style: TextStyle(color: Colors.white38, fontSize: 14),
                     children: [TextSpan(text: 'Sign Up',

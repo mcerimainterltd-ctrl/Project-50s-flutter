@@ -235,7 +235,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Center(
                 child: GestureDetector(
                   onTap: () => context.go('/login'),
-                  child: RichText(text: const TextSpan(
+                  child: RichText(text: TextSpan(
                     text: 'Already have an account? ',
                     style: TextStyle(color: Colors.white38, fontSize: 14),
                     children: [TextSpan(text: 'Sign In',

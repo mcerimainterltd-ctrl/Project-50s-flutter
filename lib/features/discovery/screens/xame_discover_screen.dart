@@ -392,7 +392,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                         letterSpacing: 1.2)),
                   const Spacer(),
                   if (_loading)
-                    const SizedBox(width: 14, height: 14,
+                    SizedBox(width: 14, height: 14,
                       child: CircularProgressIndicator(
                           color: context.xPrimary, strokeWidth: 1.5)),
                 ]),
