@@ -105,7 +105,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             title: const Text('Gallery', style: TextStyle(color: Colors.white)),
             onTap: () => Navigator.pop(context, ImageSource.gallery)),
           ListTile(
-            leading: const Icon(Icons.face_outlined, color: context.xPrimary),
+            leading: const Icon(Icons.face_outlined, color: const Color(0xFF00D4FF)),
             title: const Text('🎨 Build Avatar', style: TextStyle(color: Colors.white)),
             onTap: () { Navigator.pop(context); _openAvatarBuilder(); }),
           ListTile(
@@ -221,7 +221,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget build(BuildContext context) {
     final user     = ref.watch(currentUserProvider);
     if (user == null) return const Scaffold(
-        backgroundColor: context.xBg);
+        backgroundColor: const Color(0xFF0A0A0F));
 
     final photoUrl = _removeImage ? null
         : _newImage != null ? null
@@ -231,7 +231,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
     return Scaffold(
-      backgroundColor: context.xBg,
+      backgroundColor: const Color(0xFF0A0A0F),
       body: FadeTransition(
         opacity: _fade,
         child: CustomScrollView(slivers: [
@@ -240,7 +240,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           SliverAppBar(
             pinned:          true,
             expandedHeight:  200,
-            backgroundColor: context.xBg,
+            backgroundColor: const Color(0xFF0A0A0F),
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
@@ -252,9 +252,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 child: _saving
                     ? const SizedBox(width: 18, height: 18,
                         child: CircularProgressIndicator(
-                            color: context.xPrimary, strokeWidth: 2))
+                            color: const Color(0xFF00D4FF), strokeWidth: 2))
                     : const Text('Save',
-                        style: TextStyle(color: context.xPrimary,
+                        style: TextStyle(color: const Color(0xFF00D4FF),
                             fontWeight: FontWeight.w700, fontSize: 15)),
               ),
               const SizedBox(width: 8),
@@ -265,7 +265,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [context.xSurface, context.xBg],
+                    colors: [const Color(0xFF141420), const Color(0xFF0A0A0F)],
                   ),
                 ),
                 child: Column(
@@ -297,7 +297,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           child: Container(
                             width: 28, height: 28,
                             decoration: const BoxDecoration(
-                              color: context.xPrimary,
+                              color: const Color(0xFF00D4FF),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.camera_alt,
@@ -349,7 +349,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       border: Border.all(color: Colors.white10),
                     ),
                     child: Row(children: [
-                      const Icon(Icons.tag, color: context.xPrimary, size: 18),
+                      const Icon(Icons.tag, color: const Color(0xFF00D4FF), size: 18),
                       const SizedBox(width: 12),
                       Text(user.xameId,
                         style: const TextStyle(color: Colors.white,
@@ -469,7 +469,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           maxChildSize:     0.9,
           builder: (_, ctrl) => Container(
             decoration: const BoxDecoration(
-              color: context.xCard,
+              color: const Color(0xFF1E1E2E),
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(children: [
@@ -498,7 +498,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               ),
               Expanded(child: sessions.when(
                 loading: () => const Center(child: CircularProgressIndicator(
-                    color: context.xPrimary, strokeWidth: 2)),
+                    color: const Color(0xFF00D4FF), strokeWidth: 2)),
                 error: (_, __) => const Center(
                     child: Text('Failed to load sessions',
                         style: TextStyle(color: Colors.white38))),
@@ -743,7 +743,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
         if (mounted) Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Extra security settings saved ✓'),
-          backgroundColor: context.xPrimary));
+          backgroundColor: const Color(0xFF00D4FF)));
       }
     } catch (_) {} finally {
       setState(() => _saving = false);

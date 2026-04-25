@@ -132,7 +132,7 @@ class ScreenShareBanner extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: context.xSurface,
+            color: const Color(0xFF141420),
             border: const Border(
                 bottom: BorderSide(color: Colors.white10)),
           ),
@@ -144,10 +144,10 @@ class ScreenShareBanner extends StatelessWidget {
                 width: 8, height: 8,
                 decoration: BoxDecoration(
                   color: state == ScreenShareState.paused
-                      ? Colors.orange : context.xAccent,
+                      ? Colors.orange : const Color(0xFF00FF88),
                   shape: BoxShape.circle,
                   boxShadow: state == ScreenShareState.sharing ? [
-                    BoxShadow(color: context.xAccent.withValues(alpha: 0.5),
+                    BoxShadow(color: const Color(0xFF00FF88).withValues(alpha: 0.5),
                         blurRadius: 6),
                   ] : null,
                 ),
@@ -188,13 +188,13 @@ class ScreenShareBanner extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: context.xDanger.withValues(alpha: 0.12),
+                    color: const Color(0xFFE53935).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                        color: context.xDanger.withValues(alpha: 0.3)),
+                        color: const Color(0xFFE53935).withValues(alpha: 0.3)),
                   ),
                   child: const Text('Stop',
-                      style: TextStyle(color: context.xDanger,
+                      style: TextStyle(color: const Color(0xFFE53935),
                           fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),

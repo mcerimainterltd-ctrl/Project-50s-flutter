@@ -150,7 +150,7 @@ class _ShimmerBoxState extends State<ShimmerBox>
           begin: Alignment(_anim.value - 1, 0),
           end:   Alignment(_anim.value,     0),
           colors: const [
-            context.xSurface, Color(0xFF2A2A3E), context.xSurface,
+            const Color(0xFF141420), Color(0xFF2A2A3E), const Color(0xFF141420),
           ]),
       ),
     ),

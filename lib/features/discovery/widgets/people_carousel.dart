@@ -123,11 +123,11 @@ class _PersonCardState extends State<_PersonCard>
                 shape: BoxShape.circle,
                 gradient: SweepGradient(colors: [
                   Color(0xFF7B2FFF), Color(0xFF2196F3),
-                  context.xAccent, Color(0xFF7B2FFF),
+                  const Color(0xFF00FF88), Color(0xFF7B2FFF),
                 ]))),
             Container(width: 68, height: 68,
               decoration: const BoxDecoration(
-                shape: BoxShape.circle, color: context.xBg),
+                shape: BoxShape.circle, color: const Color(0xFF0A0A0F)),
               child: ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: user.avatarUrl, fit: BoxFit.cover,
@@ -171,10 +171,10 @@ class _PersonCardState extends State<_PersonCard>
                   child: const Row(mainAxisSize: MainAxisSize.min,
                     children: [
                     Icon(Icons.check_rounded,
-                        color: context.xAccent, size: 14),
+                        color: const Color(0xFF00FF88), size: 14),
                     SizedBox(width: 5),
                     Text('Added', style: TextStyle(
-                        color: context.xAccent, fontSize: 12,
+                        color: const Color(0xFF00FF88), fontSize: 12,
                         fontWeight: FontWeight.w700)),
                   ]))
               : GestureDetector(

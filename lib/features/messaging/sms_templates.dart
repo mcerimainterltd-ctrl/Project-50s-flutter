@@ -114,10 +114,10 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.xSurface;
+    final theme = const Color(0xFF141420);
     return Container(
       decoration: const BoxDecoration(
-        color: context.xSurface,
+        color: const Color(0xFF141420),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -138,11 +138,11 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(
-                color: context.xPrimary.withValues(alpha: 0.12),
+                color: const Color(0xFF00D4FF).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.message_outlined,
-                  color: context.xPrimary, size: 18),
+                  color: const Color(0xFF00D4FF), size: 18),
             ),
             const SizedBox(width: 10),
             const Text('Quick Reply',
@@ -154,7 +154,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: context.xCard,
+                  color: const Color(0xFF1E1E2E),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text('Manage',
@@ -173,7 +173,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: context.xCard,
+                  color: const Color(0xFF1E1E2E),
                   border: Border.all(color: Colors.white10),
                 ),
                 child: Text(t,
@@ -188,7 +188,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: context.xCard,
+                  color: const Color(0xFF1E1E2E),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -213,8 +213,8 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                 width: 44, height: 44,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [context.xPrimary,
-                        context.xSurface],
+                    colors: [const Color(0xFF00D4FF),
+                        const Color(0xFF141420)],
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -267,7 +267,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: context.xSurface,
+          color: const Color(0xFF141420),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -285,11 +285,11 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                 Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: context.xPrimary.withValues(alpha: 0.12),
+                    color: const Color(0xFF00D4FF).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.message_outlined,
-                      color: context.xPrimary, size: 18),
+                      color: const Color(0xFF00D4FF), size: 18),
                 ),
                 const SizedBox(width: 10),
                 const Text('SMS Templates',
@@ -311,7 +311,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: context.xCard,
+                      color: const Color(0xFF1E1E2E),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.white10),
                     ),
@@ -343,7 +343,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                   child: Container(
                     width: 42, height: 42,
                     decoration: BoxDecoration(
-                      color: context.xPrimary,
+                      color: const Color(0xFF00D4FF),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.add, color: Colors.black, size: 20),
@@ -367,7 +367,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: context.xCard,
+                        color: const Color(0xFF1E1E2E),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
@@ -410,11 +410,11 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                           child: Container(
                             width: 32, height: 32,
                             decoration: BoxDecoration(
-                              color: context.xDanger.withValues(alpha: 0.12),
+                              color: const Color(0xFFE53935).withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(Icons.delete_outline,
-                                color: context.xDanger, size: 15),
+                                color: const Color(0xFFE53935), size: 15),
                           ),
                         ),
                       ]),
@@ -433,7 +433,7 @@ class _EditDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Dialog(
-    backgroundColor: context.xCard,
+    backgroundColor: const Color(0xFF1E1E2E),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     child: Padding(
       padding: const EdgeInsets.all(20),
@@ -444,7 +444,7 @@ class _EditDialog extends StatelessWidget {
         const SizedBox(height: 14),
         Container(
           decoration: BoxDecoration(
-            color: context.xSurface,
+            color: const Color(0xFF141420),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.white10),
           ),
@@ -482,7 +482,7 @@ class _EditDialog extends StatelessWidget {
               child: Container(
                 height: 42,
                 decoration: BoxDecoration(
-                  color: context.xPrimary,
+                  color: const Color(0xFF00D4FF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,

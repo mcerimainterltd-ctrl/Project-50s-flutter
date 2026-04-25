@@ -169,7 +169,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Text('Compressing video...'),
         ]),
         duration: Duration(seconds: 60),
-        backgroundColor: context.xCard,
+        backgroundColor: const Color(0xFF1E1E2E),
       ));
       try {
         final info = await VideoCompress.compressVideo(
@@ -235,7 +235,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Could not pick file: $e'),
-          backgroundColor: context.xCard,
+          backgroundColor: const Color(0xFF1E1E2E),
         ));
       }
     }
@@ -294,7 +294,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .join('\n\n');
     Clipboard.setData(ClipboardData(text: texts));
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Messages copied!'), backgroundColor: context.xCard));
+      content: Text('Messages copied!'), backgroundColor: const Color(0xFF1E1E2E)));
     _exitSelectMode();
   }
 
@@ -302,7 +302,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final hasSent = messages.any(
         (m) => _selected.contains(m.id) && m.direction == MessageDirection.sent);
     showModalBottomSheet(
-      context: context, backgroundColor: context.xCard,
+      context: context, backgroundColor: const Color(0xFF1E1E2E),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -321,9 +321,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onTap: () { Navigator.pop(context); _deleteSelected(); }),
         if (hasSent)
           ListTile(
-              leading: const Icon(Icons.delete_forever, color: context.xDanger),
+              leading: const Icon(Icons.delete_forever, color: const Color(0xFFE53935)),
               title: Text('Delete for everyone (${_selected.length})',
-                  style: const TextStyle(color: context.xDanger)),
+                  style: const TextStyle(color: const Color(0xFFE53935))),
               onTap: () { Navigator.pop(context); _deleteSelected(forEveryone: true); }),
         const SizedBox(height: 8),
       ])),
@@ -345,7 +345,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final self     = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: context.xBg,
+      backgroundColor: const Color(0xFF0A0A0F),
       // BUG 2 FIX: resizeToAvoidBottomInset ensures the scaffold body
       // shrinks when the keyboard appears, keeping composer always visible
       resizeToAvoidBottomInset: true,
@@ -435,7 +435,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ContactModel? contact, bool isTyping, List<XameMessage> messages) {
     if (_selectMode) {
       return AppBar(
-        backgroundColor: context.xSurface,
+        backgroundColor: const Color(0xFF141420),
         leading: IconButton(
             icon: const Icon(Icons.close, color: Colors.white),
             onPressed: _exitSelectMode),
@@ -453,7 +453,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     return AppBar(
-      backgroundColor: context.xBg,
+      backgroundColor: const Color(0xFF0A0A0F),
       elevation: 0,
       leadingWidth: 40,
       leading: IconButton(
@@ -497,8 +497,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               isTyping ? 'typing...'
                   : contact?.isOnline == true ? 'online' : 'offline',
               style: TextStyle(
-                  color: isTyping ? context.xAccent
-                      : (contact?.isOnline == true ? context.xAccent : Colors.white38),
+                  color: isTyping ? const Color(0xFF00FF88)
+                      : (contact?.isOnline == true ? const Color(0xFF00FF88) : Colors.white38),
                   fontSize: 12,
                   fontStyle: isTyping ? FontStyle.italic : FontStyle.normal),
             ),
@@ -521,7 +521,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _showChatMenu() {
     showModalBottomSheet(
-      context: context, backgroundColor: context.xCard,
+      context: context, backgroundColor: const Color(0xFF1E1E2E),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -541,8 +541,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ListTile(leading: const Icon(Icons.block, color: Colors.white70),
             title: const Text('Block Contact', style: TextStyle(color: Colors.white)),
             onTap: () => Navigator.pop(context)),
-        ListTile(leading: const Icon(Icons.delete_outline, color: context.xDanger),
-            title: const Text('Clear Chat', style: TextStyle(color: context.xDanger)),
+        ListTile(leading: const Icon(Icons.delete_outline, color: const Color(0xFFE53935)),
+            title: const Text('Clear Chat', style: TextStyle(color: const Color(0xFFE53935))),
             onTap: () {
               Navigator.pop(context);
               ref.read(chatProvider(widget.userId).notifier).deleteMessages(
@@ -591,7 +591,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 if (mounted) Navigator.pop(context);
               },
               child: const Text('Save',
-                  style: TextStyle(color: context.xPrimary, fontWeight: FontWeight.w700))),
+                  style: TextStyle(color: const Color(0xFF00D4FF), fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -631,7 +631,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _showBubbleMenu(XameMessage msg, List<XameMessage> messages) {
     showModalBottomSheet(
-      context: context, backgroundColor: context.xCard,
+      context: context, backgroundColor: const Color(0xFF1E1E2E),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -650,7 +650,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Navigator.pop(context);
                 Clipboard.setData(ClipboardData(text: msg.text));
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Copied!'), backgroundColor: context.xCard));
+                    content: Text('Copied!'), backgroundColor: const Color(0xFF1E1E2E)));
               }),
         if (msg.text.isNotEmpty)
           ListTile(
@@ -663,8 +663,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ListTile(leading: const Icon(Icons.select_all, color: Colors.white70),
             title: const Text('Select', style: TextStyle(color: Colors.white)),
             onTap: () { Navigator.pop(context); _enterSelectMode(msg.id); }),
-        ListTile(leading: const Icon(Icons.delete_outline, color: context.xDanger),
-            title: const Text('Delete', style: TextStyle(color: context.xDanger)),
+        ListTile(leading: const Icon(Icons.delete_outline, color: const Color(0xFFE53935)),
+            title: const Text('Delete', style: TextStyle(color: const Color(0xFFE53935))),
             onTap: () {
               Navigator.pop(context);
               setState(() { _selected.add(msg.id); _selectMode = true; });
@@ -742,7 +742,7 @@ class _DaySeparator extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-          color: context.xCard, borderRadius: BorderRadius.circular(12)),
+          color: const Color(0xFF1E1E2E), borderRadius: BorderRadius.circular(12)),
       child: Text(_label,
           style: const TextStyle(color: Colors.white38, fontSize: 11)),
     ),
@@ -759,10 +759,10 @@ class _EmptyChat extends StatelessWidget {
       Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-            color: context.xPrimary.withValues(alpha: 0.08),
+            color: const Color(0xFF00D4FF).withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20)),
         child: const Icon(Icons.chat_bubble_outline_rounded,
-            color: context.xPrimary, size: 40)),
+            color: const Color(0xFF00D4FF), size: 40)),
       const SizedBox(height: 16),
       Text('Start a conversation with $name',
           style: const TextStyle(color: Colors.white38, fontSize: 14),
@@ -781,12 +781,12 @@ class _ReplyPreview extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
     decoration: BoxDecoration(
-      color: context.xCard,
-      border: Border(left: BorderSide(color: context.xPrimary, width: 3))),
+      color: const Color(0xFF1E1E2E),
+      border: Border(left: BorderSide(color: const Color(0xFF00D4FF), width: 3))),
     child: Row(children: [
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Replying to',
-            style: TextStyle(color: context.xPrimary, fontSize: 11)),
+            style: TextStyle(color: const Color(0xFF00D4FF), fontSize: 11)),
         const SizedBox(height: 2),
         Text(message.text.isNotEmpty ? message.text : '📎 Attachment',
             style: const TextStyle(color: Colors.white54, fontSize: 13),
@@ -810,17 +810,17 @@ class _AttachPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    color: context.xSurface,
+    color: const Color(0xFF141420),
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
       _AttachBtn(icon: Icons.photo_library_outlined,     label: 'Gallery',
-          onTap: onImage,  color: context.xPrimary),
+          onTap: onImage,  color: const Color(0xFF00D4FF)),
       _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
           onTap: onVideo,  color: const Color(0xFF7C4DFF)),
       _AttachBtn(icon: Icons.camera_alt_outlined,         label: 'Camera',
-          onTap: onCamera, color: context.xSurface),
+          onTap: onCamera, color: const Color(0xFF141420)),
       _AttachBtn(icon: Icons.insert_drive_file_outlined,  label: 'File',
-          onTap: onFile,   color: context.xAccent),
+          onTap: onFile,   color: const Color(0xFF00FF88)),
     ]),
   );
 }
@@ -883,7 +883,7 @@ class _ComposerState extends State<_Composer> {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
     decoration: BoxDecoration(
-      color: context.xSurface,
+      color: const Color(0xFF141420),
       border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
     ),
     child: SafeArea(top: false, child: Row(children: [
@@ -906,7 +906,7 @@ class _ComposerState extends State<_Composer> {
             hintText:  'Message...',
             hintStyle: const TextStyle(color: Colors.white30),
             filled:    true,
-            fillColor: context.xCard,
+            fillColor: const Color(0xFF1E1E2E),
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(22),
                 borderSide: BorderSide.none),
@@ -963,7 +963,7 @@ class _ComposerState extends State<_Composer> {
               duration: const Duration(milliseconds: 200),
               width: 42, height: 42,
               decoration: const BoxDecoration(
-                  color: context.xPrimary, shape: BoxShape.circle),
+                  color: const Color(0xFF00D4FF), shape: BoxShape.circle),
               child: const Icon(Icons.send_rounded, color: Colors.black, size: 20),
             ),
           );
@@ -984,7 +984,7 @@ class _ComposerState extends State<_Composer> {
             width: 42, height: 42,
             decoration: BoxDecoration(
               color: voice.recordState == VoiceRecordState.recording
-                  ? Colors.red : context.xPrimary,
+                  ? Colors.red : const Color(0xFF00D4FF),
               shape: BoxShape.circle,
             ),
             child: Icon(

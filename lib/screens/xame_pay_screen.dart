@@ -7,9 +7,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ── COLOURS ───────────────────────────────────────────────────────────────────
-const _kTeal  = context.xPrimary;
-const _kBg    = context.xBg;
-const _kCard  = context.xCard;
+const _kTeal  = Color(0xFF00B0A0);
+const _kBg    = Color(0xFF0D1520);
+const _kCard  = Color(0xFF111E2E);
 const _kMuted = Color(0xFF7A9BB5);
 
 // ── MODELS ────────────────────────────────────────────────────────────────────
@@ -527,7 +527,7 @@ class _XamePayScreenState extends State<XamePayScreen>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-            colors: [context.xPrimary, Color(0xFF008A7D)],
+            colors: [const Color(0xFF00D4FF), Color(0xFF008A7D)],
             begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(20),
       ),

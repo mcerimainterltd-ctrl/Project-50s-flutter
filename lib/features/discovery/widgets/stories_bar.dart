@@ -83,7 +83,7 @@ class _StoryRingState extends State<_StoryRing>
             Container(
               width: 56, height: 56,
               decoration: const BoxDecoration(
-                shape: BoxShape.circle, color: context.xSurface),
+                shape: BoxShape.circle, color: const Color(0xFF141420)),
               child: ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: widget.avatar, fit: BoxFit.cover,
@@ -103,7 +103,7 @@ class _StoryRingState extends State<_StoryRing>
                     shape: BoxShape.circle,
                     color: const Color(0xFF00FF88),
                     border: Border.all(
-                        color: context.xBg, width: 2)))),
+                        color: const Color(0xFF0A0A0F), width: 2)))),
             if (widget.isFirst)
               Positioned(bottom: 0, right: 0,
                 child: Container(width: 20, height: 20,
@@ -139,7 +139,7 @@ class _GradientRingPainter extends CustomPainter {
         endAngle:   progress * 2 * pi + 2 * pi,
         colors: const [
           Color(0xFF7B2FFF), Color(0xFF2196F3),
-          context.xAccent, Color(0xFFFF6B6B),
+          const Color(0xFF00FF88), Color(0xFFFF6B6B),
           Color(0xFF7B2FFF),
         ],
       ).createShader(rect);

@@ -352,11 +352,11 @@ class _StoryMedia extends StatelessWidget {
             width:     double.infinity,
             height:    double.infinity,
             placeholder: (_, __) => Container(
-              color: context.xBg,
+              color: const Color(0xFF0A0A0F),
               child: const Center(child: CircularProgressIndicator(
                   color: Colors.white30, strokeWidth: 1.5))),
             errorWidget: (_, __, ___) => Container(
-              color: context.xBg,
+              color: const Color(0xFF0A0A0F),
               child: const Icon(Icons.broken_image,
                   color: Colors.white24, size: 48)),
           ),

@@ -514,7 +514,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     decoration: const BoxDecoration(
       gradient: RadialGradient(
         center: Alignment.topCenter, radius: 1.4,
-        colors: [Color(0xFF1A2340), context.xSurface, Color(0xFF000000)],
+        colors: [Color(0xFF1A2340), const Color(0xFF141420), Color(0xFF000000)],
       ),
     ),
   );
@@ -660,7 +660,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: context.xSurface,
+          color: const Color(0xFF141420),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -677,11 +677,11 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: context.xPrimary.withValues(alpha: 0.12),
+                    color: const Color(0xFF00D4FF).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.person_add_outlined,
-                      color: context.xPrimary, size: 20),
+                      color: const Color(0xFF00D4FF), size: 20),
                 ),
                 const SizedBox(width: 12),
                 const Column(crossAxisAlignment: CrossAxisAlignment.start,
@@ -695,7 +695,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: context.xCard,
+                  color: const Color(0xFF1E1E2E),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -730,7 +730,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: context.xCard,
+                      color: const Color(0xFF1E1E2E),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: Colors.white10),
                     ),
@@ -738,14 +738,14 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                       Container(
                         width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: context.xPrimary.withValues(alpha: 0.1),
+                          color: const Color(0xFF00D4FF).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(child: Text(
                             c.name.isNotEmpty
                                 ? c.name[0].toUpperCase() : '?',
                             style: const TextStyle(
-                                color: context.xPrimary,
+                                color: const Color(0xFF00D4FF),
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16))),
                       ),
@@ -764,14 +764,14 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: context.xPrimary.withValues(alpha: 0.12),
+                          color: const Color(0xFF00D4FF).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                              color: context.xPrimary
+                              color: const Color(0xFF00D4FF)
                                   .withValues(alpha: 0.3)),
                         ),
                         child: const Text('Add',
-                            style: TextStyle(color: context.xPrimary,
+                            style: TextStyle(color: const Color(0xFF00D4FF),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600)),
                       ),

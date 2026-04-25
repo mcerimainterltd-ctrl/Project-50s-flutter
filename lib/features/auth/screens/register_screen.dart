@@ -77,7 +77,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     if (_returnedXameId != null) {
       return Scaffold(
-        backgroundColor: context.xBg,
+        backgroundColor: const Color(0xFF0A0A0F),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -87,11 +87,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Container(
                   width: 80, height: 80,
                   decoration: BoxDecoration(
-                    color: context.xAccent.withValues(alpha: 0.15),
+                    color: const Color(0xFF00FF88).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: context.xAccent, width: 1.5),
+                    border: Border.all(color: const Color(0xFF00FF88), width: 1.5),
                   ),
-                  child: const Icon(Icons.check_rounded, color: context.xAccent, size: 40),
+                  child: const Icon(Icons.check_rounded, color: const Color(0xFF00FF88), size: 40),
                 ),
                 const SizedBox(height: 28),
                 const Text('Account Created!',
@@ -103,12 +103,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   decoration: BoxDecoration(
-                    color: context.xCard,
+                    color: const Color(0xFF1E1E2E),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: context.xPrimary, width: 1.5),
+                    border: Border.all(color: const Color(0xFF00D4FF), width: 1.5),
                   ),
                   child: Text(_returnedXameId!,
-                    style: const TextStyle(color: context.xPrimary, fontSize: 26,
+                    style: const TextStyle(color: const Color(0xFF00D4FF), fontSize: 26,
                       fontWeight: FontWeight.bold, letterSpacing: 2)),
                 ),
                 const SizedBox(height: 12),
@@ -121,7 +121,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: ElevatedButton(
                     onPressed: () => context.go('/login'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: context.xPrimary,
+                      backgroundColor: const Color(0xFF00D4FF),
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -137,9 +137,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     return Scaffold(
-      backgroundColor: context.xBg,
+      backgroundColor: const Color(0xFF0A0A0F),
       appBar: AppBar(
-        backgroundColor: context.xBg,
+        backgroundColor: const Color(0xFF0A0A0F),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => context.go('/login'),
@@ -189,7 +189,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: context.xCard, borderRadius: BorderRadius.circular(10)),
+                  color: const Color(0xFF1E1E2E), borderRadius: BorderRadius.circular(10)),
                 child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Password must contain:', style: TextStyle(color: Colors.white54, fontSize: 12)),
                   SizedBox(height: 4),
@@ -203,14 +203,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: context.xDanger.withValues(alpha: 0.1),
+                    color: const Color(0xFFE53935).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: context.xDanger.withValues(alpha: 0.3)),
+                    border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.error_outline, color: context.xDanger, size: 16),
+                    const Icon(Icons.error_outline, color: const Color(0xFFE53935), size: 16),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(_error!, style: const TextStyle(color: context.xDanger, fontSize: 13))),
+                    Expanded(child: Text(_error!, style: const TextStyle(color: const Color(0xFFE53935), fontSize: 13))),
                   ]),
                 ),
               const SizedBox(height: 24),
@@ -219,7 +219,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _register,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: context.xPrimary,
+                    backgroundColor: const Color(0xFF00D4FF),
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
@@ -239,7 +239,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     text: 'Already have an account? ',
                     style: TextStyle(color: Colors.white38, fontSize: 14),
                     children: [TextSpan(text: 'Sign In',
-                      style: TextStyle(color: context.xPrimary, fontWeight: FontWeight.w600))],
+                      style: TextStyle(color: const Color(0xFF00D4FF), fontWeight: FontWeight.w600))],
                   )),
                 ),
               ),
@@ -266,10 +266,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       decoration: InputDecoration(
         hintText: hint, hintStyle: const TextStyle(color: Colors.white24),
         prefixIcon: Icon(icon, color: Colors.white38, size: 20),
-        suffixIcon: suffix, filled: true, fillColor: context.xCard,
+        suffixIcon: suffix, filled: true, fillColor: const Color(0xFF1E1E2E),
         border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: context.xPrimary, width: 1.5)),
+          borderSide: const BorderSide(color: const Color(0xFF00D4FF), width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
@@ -291,10 +291,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       },
       decoration: InputDecoration(
         hintText: hint, hintStyle: const TextStyle(color: Colors.white24),
-        counterText: '', filled: true, fillColor: context.xCard,
+        counterText: '', filled: true, fillColor: const Color(0xFF1E1E2E),
         border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: context.xPrimary, width: 1.5)),
+          borderSide: const BorderSide(color: const Color(0xFF00D4FF), width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
       ),
     );
