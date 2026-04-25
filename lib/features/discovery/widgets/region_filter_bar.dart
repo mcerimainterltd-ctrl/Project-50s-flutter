@@ -43,23 +43,23 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 color: isSelected
-                  ? XameColors.primary.withOpacity(0.15)
-                  : XameColors.darkBg.withOpacity(0.05),
+                  ? context.xPrimary.withOpacity(0.15)
+                  : context.xSurface,
                 border: Border.all(
                   color: isSelected
-                    ? XameColors.primary.withOpacity(0.6)
-                    : Colors.transparent,
+                    ? context.xPrimary.withOpacity(0.6)
+                    : context.xMuted.withValues(alpha: 0.2),
                   width: 1.2)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 if (isSelected) ...[
                   Icon(Icons.check_rounded,
-                      color: XameColors.primary, size: 12),
+                      color: context.xPrimary, size: 12),
                   SizedBox(width: 4),
                 ],
                 Text('${r.flag} ${r.name}',
                   style: TextStyle(
                     color: isSelected
-                      ? XameColors.primary : XameColors.darkBg.withValues(alpha: 0.54),
+                      ? context.xPrimary : context.xMuted,
                     fontSize:   12,
                     fontWeight: isSelected
                       ? FontWeight.w700 : FontWeight.normal)),
