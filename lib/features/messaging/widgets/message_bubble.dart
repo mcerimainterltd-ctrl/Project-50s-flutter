@@ -104,7 +104,7 @@ class MessageBubble extends ConsumerWidget {
                       if (message.forwarded)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 4),
-                          child: Row(children: const [
+                          child: Row(children: [
                             Icon(Icons.forward, size: 12, color: context.xMuted),
                             SizedBox(width: 4),
                             Text('Forwarded',

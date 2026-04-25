@@ -16,7 +16,7 @@ class _CallsHubScreenState extends ConsumerState<CallsHubScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.xBg,
-      body: IndexedStack(index: _tab, children: const [
+      body: IndexedStack(index: _tab, children: [
         CallHistoryScreen(),
         _CallScheduleTab(),
         _ConferenceTab(),
