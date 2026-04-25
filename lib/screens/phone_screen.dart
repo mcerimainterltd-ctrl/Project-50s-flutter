@@ -113,7 +113,13 @@ class XameContact {
 
 class PhoneScreen extends StatefulWidget {
   final String userId, serverUrl;
-  const PhoneScreen({super.key, required this.userId, required this.serverUrl});
+  final List<XameContact> xameContacts;
+  const PhoneScreen({
+    super.key,
+    required this.userId,
+    required this.serverUrl,
+    this.xameContacts = const [],
+  });
   @override State<PhoneScreen> createState() => _PhoneScreenState();
 }
 
@@ -515,14 +521,15 @@ class _PhoneScreenState extends State<PhoneScreen>
             ),
             // Contacts
             _ContactsTab(
-              contacts: _contacts,
-              loading:  _contactsLoading,
-              loaded:   _contactsLoaded,
-              q:        _q,
-              onQChange:(v) => setState(() => _q = v),
-              onLoad:   _loadContacts,
-              onCall:   (c) => _callNumber(c.primary),
-              onSms:    (c) => _smsNumber(c.primary),
+              contacts:     _contacts,
+              loading:      _contactsLoading,
+              loaded:       _contactsLoaded,
+              q:            _q,
+              onQChange:    (v) => setState(() => _q = v),
+              onLoad:       _loadContacts,
+              xameContacts: widget.xameContacts,
+              onCall:       (c) => _callNumber(c.primary),
+              onSms:        (c) => _smsNumber(c.primary),
             ),
             // Keypad
             _KeypadTab(
