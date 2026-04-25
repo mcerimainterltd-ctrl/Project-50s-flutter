@@ -432,7 +432,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
             // Load more indicator
             if (_loadingMore)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(20),
                   child: Center(child: CircularProgressIndicator(
