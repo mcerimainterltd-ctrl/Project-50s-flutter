@@ -16,7 +16,7 @@ import 'package:xamepage/core/theme/app_theme.dart';
 const _kGreen = XameColors.accent;
 const _kBg    = XameColors.darkBg;
 const _kCard  = XameColors.darkSurface;
-const _kMuted = XameColors.darkSurface;
+const _kMuted = XameColors.secondary;
 const _kDanger= XameColors.danger;
 
 // ── Models ────────────────────────────────────────────────────────────────────
@@ -495,7 +495,7 @@ class _PhoneScreenState extends State<PhoneScreen>
             indicatorColor:       _kGreen,
             indicatorWeight:      2,
             labelColor:           _kGreen,
-            unselectedLabelColor: _kMuted,
+            unselectedLabelColor: context.xMuted,
             labelStyle: const TextStyle(
                 fontSize: 13, fontWeight: FontWeight.w600),
             dividerColor: Colors.transparent,
