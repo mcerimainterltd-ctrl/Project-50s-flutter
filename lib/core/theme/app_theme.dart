@@ -39,13 +39,13 @@ class XameTheme {
   ThemeData toThemeData() => ThemeData(
     useMaterial3:           true,
     brightness:             isDark ? Brightness.dark : Brightness.light,
-    scaffoldBackgroundColor: bg,
-    cardColor:              card,
+    scaffoldBackgroundColor: isDark ? const Color(0xFF0A0A0F) : const Color(0xFFFFFFFF),
+    cardColor:              isDark ? const Color(0xFF1E1E2E) : const Color(0xFFEFF3F4),
     colorScheme: isDark
         ? ColorScheme.dark(
             primary:   primary,
             secondary: secondary,
-            surface:   surface,
+            surface:   isDark ? const Color(0xFF141420) : const Color(0xFFF7F9FA),
             error:     danger,
             onPrimary: bubbleSentText,
             onSurface: text,
@@ -53,7 +53,7 @@ class XameTheme {
         : ColorScheme.light(
             primary:   primary,
             secondary: secondary,
-            surface:   surface,
+            surface:   isDark ? const Color(0xFF141420) : const Color(0xFFF7F9FA),
             error:     danger,
             onPrimary: bubbleSentText,
             onSurface: text,
@@ -333,9 +333,9 @@ extension XameThemeContext on BuildContext {
       return kXameThemes.first;
     }
   }
-  Color get xBg      => xTheme.bg;
-  Color get xCard    => xTheme.card;
-  Color get xSurface => xTheme.surface;
+  Color get xBg      => xTheme.isDark ? const Color(0xFF0A0A0F) : const Color(0xFFFFFFFF);
+  Color get xCard    => xTheme.isDark ? const Color(0xFF1E1E2E) : const Color(0xFFEFF3F4);
+  Color get xSurface => xTheme.isDark ? const Color(0xFF141420) : const Color(0xFFF7F9FA);
   Color get xPrimary => xTheme.primary;
   Color get xAccent  => xTheme.accent;
   Color get xDanger  => xTheme.danger;
