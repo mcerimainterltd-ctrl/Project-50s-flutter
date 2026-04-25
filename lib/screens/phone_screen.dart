@@ -13,11 +13,6 @@ import 'package:go_router/go_router.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Colours ───────────────────────────────────────────────────────────────────
-const _kGreen = XameColors.accent;
-const _kBg    = XameColors.darkBg;
-const _kCard  = XameColors.darkSurface;
-const _kMuted = XameColors.secondary;
-const _kDanger= XameColors.danger;
 
 // ── Models ────────────────────────────────────────────────────────────────────
 class _DevContact {
@@ -268,7 +263,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     if (!mounted) return;
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: _kCard,
+      backgroundColor: XameColors.darkSurface,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Padding(
@@ -276,20 +271,20 @@ class _PhoneScreenState extends State<PhoneScreen>
         child: Column(mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('📞 Confirm Call',
-              style: TextStyle(color: XameColors.darkBg,
+              style: TextStyle(color: XameColors.primary,
                   fontSize: 17, fontWeight: FontWeight.w700)),
           SizedBox(height: 16),
           // Number row
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: _kBg,
+            decoration: BoxDecoration(color: XameColors.darkBg,
                 borderRadius: BorderRadius.circular(12)),
             child: Row(children: [
               Text(_country.flag,
                   style: TextStyle(fontSize: 22)),
               SizedBox(width: 10),
               Expanded(child: Text(full,
-                  style: TextStyle(color: XameColors.darkBg,
+                  style: TextStyle(color: XameColors.primary,
                       fontSize: 18, fontWeight: FontWeight.w700,
                       letterSpacing: 1))),
             ]),
@@ -300,15 +295,15 @@ class _PhoneScreenState extends State<PhoneScreen>
             Expanded(child: Container(
               padding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(color: _kBg,
+              decoration: BoxDecoration(color: XameColors.darkBg,
                   borderRadius: BorderRadius.circular(10)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 Text('Rate / min',
-                    style: TextStyle(color: _kMuted, fontSize: 11)),
+                    style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
                 SizedBox(height: 4),
                 Text('$_creditsCurr $rate',
-                    style: TextStyle(color: XameColors.darkBg,
+                    style: TextStyle(color: XameColors.primary,
                         fontSize: 15, fontWeight: FontWeight.w700)),
               ]),
             )),
@@ -316,12 +311,12 @@ class _PhoneScreenState extends State<PhoneScreen>
             Expanded(child: Container(
               padding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(color: _kBg,
+              decoration: BoxDecoration(color: XameColors.darkBg,
                   borderRadius: BorderRadius.circular(10)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 const Text('Your Balance',
-                    style: TextStyle(color: _kMuted, fontSize: 11)),
+                    style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
                 const SizedBox(height: 4),
                 Text('$_creditsCurr ${_credits.toStringAsFixed(2)}',
                     style: TextStyle(
@@ -433,14 +428,14 @@ class _PhoneScreenState extends State<PhoneScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: _kCard,
+      backgroundColor: XameColors.darkSurface,
       duration: const Duration(seconds: 2)));
   }
 
   void _showTopUpSheet() {
     showModalBottomSheet(
       context:            context,
-      backgroundColor:    _kCard,
+      backgroundColor:    XameColors.darkSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -460,7 +455,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   void _pickCountry() {
     showModalBottomSheet(
       context:         context,
-      backgroundColor: _kCard,
+      backgroundColor: XameColors.darkSurface,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -478,7 +473,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _kBg,
+      backgroundColor: XameColors.darkBg,
       body: Column(children: [
         // ── Credits bar ──────────────────────────────────────────
         _CreditsBar(
@@ -492,9 +487,9 @@ class _PhoneScreenState extends State<PhoneScreen>
             border: Border(bottom: BorderSide(color: context.xCard))),
           child: TabBar(
             controller:           _tab,
-            indicatorColor:       _kGreen,
+            indicatorColor:       XameColors.accent,
             indicatorWeight:      2,
-            labelColor:           _kGreen,
+            labelColor:           XameColors.accent,
             unselectedLabelColor: context.xMuted,
             labelStyle: const TextStyle(
                 fontSize: 13, fontWeight: FontWeight.w600),
@@ -570,15 +565,15 @@ class _CreditsBar extends StatelessWidget {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color:        _kGreen.withOpacity(0.1),
+          color:        XameColors.accent.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
-          border:       Border.all(color: _kGreen.withOpacity(0.3))),
+          border:       Border.all(color: XameColors.accent.withOpacity(0.3))),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.phone_in_talk_rounded,
-              color: _kGreen, size: 14),
+              color: XameColors.accent, size: 14),
           SizedBox(width: 6),
           Text('$currency ${credits.toStringAsFixed(2)}',
-            style: TextStyle(color: _kGreen,
+            style: TextStyle(color: XameColors.accent,
                 fontSize: 13, fontWeight: FontWeight.w700)),
           SizedBox(width: 4),
           Text('credits',
@@ -641,7 +636,7 @@ class _RecentsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading) return Center(child: CircularProgressIndicator(
-        color: _kGreen, strokeWidth: 1.5));
+        color: XameColors.accent, strokeWidth: 1.5));
     if (records.isEmpty) return Center(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 72, height: 72,
@@ -668,8 +663,8 @@ class _RecentsTab extends StatelessWidget {
     );
 
     return RefreshIndicator(
-      color: _kGreen,
-      backgroundColor: _kCard,
+      color: XameColors.accent,
+      backgroundColor: XameColors.darkSurface,
       onRefresh: () async => onRefresh(),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -689,23 +684,23 @@ class _RecentsTab extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isMissed
-                  ? _kDanger.withOpacity(0.1)
-                  : _kGreen.withOpacity(0.08)),
+                  ? XameColors.danger.withOpacity(0.1)
+                  : XameColors.accent.withOpacity(0.08)),
               child: Icon(
                 isOut
                   ? Icons.call_made_rounded
                   : isMissed
                     ? Icons.call_missed_rounded
                     : Icons.call_received_rounded,
-                color: isMissed ? _kDanger : _kGreen,
+                color: isMissed ? XameColors.danger : XameColors.accent,
                 size: 20)),
             title: Text(peer, style: TextStyle(
-                color: isMissed ? _kDanger : context.xText,
+                color: isMissed ? XameColors.danger : context.xText,
                 fontSize: 14, fontWeight: FontWeight.w600),
                 overflow: TextOverflow.ellipsis),
             subtitle: Row(children: [
               Icon(isVideo ? Icons.videocam_outlined : Icons.call_outlined,
-                  color: _kMuted, size: 12),
+                  color: XameColors.darkSurface, size: 12),
               const SizedBox(width: 4),
               Text(
                 [
@@ -714,7 +709,7 @@ class _RecentsTab extends StatelessWidget {
                     _dur(r.duration),
                   _fmt(r.startTime),
                 ].where((s) => s.isNotEmpty).join(' · '),
-                style: const TextStyle(color: _kMuted, fontSize: 12)),
+                style: const TextStyle(color: XameColors.darkSurface, fontSize: 12)),
             ]),
             trailing: GestureDetector(
               onTap: () => onCall(peer),
@@ -722,11 +717,11 @@ class _RecentsTab extends StatelessWidget {
                 width: 38, height: 38,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _kGreen.withOpacity(0.1),
+                  color: XameColors.accent.withOpacity(0.1),
                   border: Border.all(
-                      color: _kGreen.withOpacity(0.3))),
+                      color: XameColors.accent.withOpacity(0.3))),
                 child: const Icon(Icons.call_rounded,
-                    color: _kGreen, size: 18)),
+                    color: XameColors.accent, size: 18)),
             ),
           );
         },
@@ -783,7 +778,7 @@ class _ContactsTab extends StatelessWidget {
     );
 
     if (loading) return Center(child: CircularProgressIndicator(
-        color: _kGreen, strokeWidth: 1.5));
+        color: XameColors.accent, strokeWidth: 1.5));
 
     final fil = contacts.where((c) =>
       q.isEmpty ||
@@ -817,14 +812,14 @@ class _ContactsTab extends StatelessWidget {
             prefixIcon: Icon(Icons.search,
                 color: context.xMuted.withValues(alpha: 0.3), size: 18),
             filled:    true,
-            fillColor: _kCard,
+            fillColor: XameColors.darkSurface,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                    color: _kGreen, width: 1)),
+                    color: XameColors.accent, width: 1)),
             contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 10)),
         ),
@@ -842,14 +837,14 @@ class _ContactsTab extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color:        _kGreen.withOpacity(0.1),
+                color:        XameColors.accent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
                 border:       Border.all(
-                    color: _kGreen.withOpacity(0.3))),
+                    color: XameColors.accent.withOpacity(0.3))),
               child: Text(
                 '${fil.where((c) => c.isOnXame).length} on XamePage',
                 style: TextStyle(
-                    color: _kGreen, fontSize: 11,
+                    color: XameColors.accent, fontSize: 11,
                     fontWeight: FontWeight.w600))),
         ]),
       ),
@@ -870,7 +865,7 @@ class _ContactsTab extends StatelessWidget {
                       horizontal: 16, vertical: 5),
                   color: const Color(0x08FFFFFF),
                   child: Text(k, style: const TextStyle(
-                      color: _kGreen, fontSize: 11,
+                      color: XameColors.accent, fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5)));
                 cur++;
@@ -906,31 +901,31 @@ class _ContactTile extends StatelessWidget {
         radius:          21,
         backgroundColor: XameColors.darkSurface,
         child: Text(contact.initials,
-          style: TextStyle(color: _kGreen,
+          style: TextStyle(color: XameColors.accent,
               fontSize: 14, fontWeight: FontWeight.w700))),
       if (contact.isOnXame)
         Positioned(bottom: -2, right: -2,
           child: Container(
             width: 16, height: 16,
             decoration: BoxDecoration(
-              color:  _kGreen,
+              color:  XameColors.accent,
               shape:  BoxShape.circle,
-              border: Border.all(color: _kBg, width: 2)),
+              border: Border.all(color: XameColors.darkBg, width: 2)),
             child: Icon(Icons.check,
                 color: Colors.black, size: 9))),
     ]),
     title: Text(contact.name,
-      style: TextStyle(color: XameColors.darkBg,
+      style: TextStyle(color: XameColors.primary,
           fontSize: 14, fontWeight: FontWeight.w600),
       overflow: TextOverflow.ellipsis),
     subtitle: Row(children: [
       Flexible(child: Text(contact.primary,
-        style: TextStyle(color: _kMuted, fontSize: 12),
+        style: TextStyle(color: XameColors.darkSurface, fontSize: 12),
         overflow: TextOverflow.ellipsis)),
       if (contact.isOnXame) ...[
-        Text(' · ', style: TextStyle(color: _kMuted)),
+        Text(' · ', style: TextStyle(color: XameColors.darkSurface)),
         Text('XamePage',
-          style: TextStyle(color: _kGreen, fontSize: 12,
+          style: TextStyle(color: XameColors.accent, fontSize: 12,
               fontWeight: FontWeight.w500)),
       ],
     ]),
@@ -954,11 +949,11 @@ class _ContactTile extends StatelessWidget {
           width: 36, height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _kGreen.withOpacity(0.1),
+            color: XameColors.accent.withOpacity(0.1),
             border: Border.all(
-                color: _kGreen.withOpacity(0.3))),
+                color: XameColors.accent.withOpacity(0.3))),
           child: Icon(Icons.call_rounded,
-              color: _kGreen, size: 16))),
+              color: XameColors.accent, size: 16))),
     ]),
   );
 }
@@ -1316,7 +1311,7 @@ class _CountryPickerState extends State<_CountryPicker> {
               focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                      color: _kGreen, width: 1)),
+                      color: XameColors.accent, width: 1)),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 10))),
         ),
@@ -1331,15 +1326,15 @@ class _CountryPickerState extends State<_CountryPicker> {
               leading: Text(c.flag,
                   style: TextStyle(fontSize: 24)),
               title: Text(c.name, style: TextStyle(
-                  color: isSelected ? _kGreen : context.xText,
+                  color: isSelected ? XameColors.accent : context.xText,
                   fontSize: 14,
                   fontWeight: isSelected
                     ? FontWeight.w700 : FontWeight.normal)),
               trailing: Text(c.dial, style: TextStyle(
-                  color: isSelected ? _kGreen : _kMuted,
+                  color: isSelected ? XameColors.accent : XameColors.darkSurface,
                   fontSize: 13)),
               selected:      isSelected,
-              selectedTileColor: _kGreen.withOpacity(0.05),
+              selectedTileColor: XameColors.accent.withOpacity(0.05),
             );
           },
         )),
@@ -1450,7 +1445,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
 
       // Title
       Text('Top Up Credits',
-        style: TextStyle(color: XameColors.darkBg, fontSize: 18,
+        style: TextStyle(color: XameColors.primary, fontSize: 18,
             fontWeight: FontWeight.w700)),
       SizedBox(height: 6),
       Text('Add call credits to your account',
@@ -1527,17 +1522,17 @@ class _TopUpSheetState extends State<_TopUpSheet> {
             return Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color:        _kGreen.withOpacity(0.05),
+                color:        XameColors.accent.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(14),
-                border:       Border.all(color: _kGreen.withOpacity(0.2))),
+                border:       Border.all(color: XameColors.accent.withOpacity(0.2))),
               child: Row(children: [
                 Icon(Icons.account_balance_wallet_outlined,
-                    color: _kGreen, size: 28),
+                    color: XameColors.accent, size: 28),
                 SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                   Text('XamePay Wallet',
-                    style: TextStyle(color: XameColors.darkBg,
+                    style: TextStyle(color: XameColors.primary,
                         fontSize: 13, fontWeight: FontWeight.w600)),
                   Text('${widget.currency} ${bal.toStringAsFixed(2)} available',
                     style: TextStyle(
@@ -1557,7 +1552,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
           child: TextField(
             controller:   _amountCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: TextStyle(color: XameColors.darkBg,
+            style: TextStyle(color: XameColors.primary,
                 fontSize: 22, fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
             decoration: InputDecoration(
@@ -1565,7 +1560,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
               hintStyle: TextStyle(color: XameColors.darkCard,
                   fontSize: 22),
               prefixText: '${widget.currency} ',
-              prefixStyle: TextStyle(color: _kGreen,
+              prefixStyle: TextStyle(color: XameColors.accent,
                   fontSize: 16, fontWeight: FontWeight.w600),
               border:    InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
@@ -1583,14 +1578,14 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color:        _kDanger.withOpacity(0.1),
+            color:        XameColors.danger.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
-            border:       Border.all(color: _kDanger.withOpacity(0.3))),
+            border:       Border.all(color: XameColors.danger.withOpacity(0.3))),
           child: Row(children: [
-            const Icon(Icons.error_outline, color: _kDanger, size: 16),
+            const Icon(Icons.error_outline, color: XameColors.danger, size: 16),
             const SizedBox(width: 8),
             Expanded(child: Text(_error!,
-              style: const TextStyle(color: _kDanger, fontSize: 13))),
+              style: const TextStyle(color: XameColors.danger, fontSize: 13))),
           ]),
         ),
       ],
@@ -1605,9 +1600,9 @@ class _TopUpSheetState extends State<_TopUpSheet> {
             : _tab == 0 ? _redeemToken
             : _transferFromWallet,
           style: ElevatedButton.styleFrom(
-            backgroundColor: _kGreen,
+            backgroundColor: XameColors.accent,
             foregroundColor: Colors.black,
-            disabledBackgroundColor: _kGreen.withOpacity(0.3),
+            disabledBackgroundColor: XameColors.accent.withOpacity(0.3),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
             elevation: 0),
@@ -1640,15 +1635,15 @@ class _TabBtn extends StatelessWidget {
         duration: Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
-          color:        selected ? _kGreen.withOpacity(0.15) : Colors.transparent,
+          color:        selected ? XameColors.accent.withOpacity(0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border:       selected
-            ? Border.all(color: _kGreen.withOpacity(0.4))
+            ? Border.all(color: XameColors.accent.withOpacity(0.4))
             : Border.all(color: Colors.transparent)),
         child: Text(label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color:      selected ? _kGreen : XameColors.darkSurface,
+            color:      selected ? XameColors.accent : XameColors.darkSurface,
             fontSize:   12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
       ),
