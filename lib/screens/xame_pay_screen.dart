@@ -98,7 +98,7 @@ class RegionInfo {
       this.symbol, this.flag, this.networks);
 }
 
-const _kRegions = <RegionInfo>[
+final _kRegions = <RegionInfo>[
   RegionInfo('NGN','Nigeria','NG','₦','🇳🇬', [
     NetItem('MTN-NG',      'MTN',      'FFCC00', 'MTN'),
     NetItem('AIRTEL-NG',   'Airtel',   'FF0000', 'AIR'),
