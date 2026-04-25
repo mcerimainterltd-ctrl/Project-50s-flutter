@@ -1462,7 +1462,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       // Handle
       Container(width: 36, height: 4,
-        decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
+        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
       SizedBox(height: 20),
 
@@ -1472,14 +1472,14 @@ class _TopUpSheetState extends State<_TopUpSheet> {
             fontWeight: FontWeight.w700)),
       SizedBox(height: 6),
       Text('Add call credits to your account',
-        style: TextStyle(color: XameColors.darkSurface, fontSize: 13)),
+        style: TextStyle(color: context.xMuted, fontSize: 13)),
       SizedBox(height: 20),
 
       // Tab selector
       Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color:        XameColors.darkBg.withOpacity(0.05),
+          color:        context.xCard,
           borderRadius: BorderRadius.circular(12)),
         child: Row(children: [
           _TabBtn(label: '🎟 Recharge Token', selected: _tab == 0,
@@ -1494,13 +1494,13 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         // Token input
         Container(
           decoration: BoxDecoration(
-            color:        XameColors.darkBg,
+            color:        context.xSurface,
             borderRadius: BorderRadius.circular(14),
-            border:       Border.all(color: XameColors.darkSurface)),
+            border:       Border.all(color: context.xMuted.withValues(alpha: 0.3))),
           child: TextField(
             controller:    _tokenCtrl,
             style: TextStyle(
-              color:       XameColors.darkBg,
+              color:       context.xText,
               fontSize:    18,
               fontWeight:  FontWeight.w700,
               letterSpacing: 2),
@@ -1523,7 +1523,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
             decoration: InputDecoration(
               hintText:  'XAME-XXXX-XXXX-XXXX',
               hintStyle: TextStyle(
-                color:       XameColors.darkCard,
+                color:       context.xMuted,
                 fontSize:    18,
                 letterSpacing: 2),
               border:    InputBorder.none,
@@ -1535,7 +1535,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         Text(
           'Enter your XamePage recharge token\nAvailable from authorized resellers',
           textAlign: TextAlign.center,
-          style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 12, height: 1.5)),
+          style: TextStyle(color: context.xMuted, fontSize: 12, height: 1.5)),
       ] else ...[
         // Wallet balance display
         FutureBuilder<double>(
@@ -1569,9 +1569,9 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         // Amount input
         Container(
           decoration: BoxDecoration(
-            color:        XameColors.darkBg,
+            color:        context.xSurface,
             borderRadius: BorderRadius.circular(14),
-            border:       Border.all(color: XameColors.darkSurface)),
+            border:       Border.all(color: context.xMuted.withValues(alpha: 0.3))),
           child: TextField(
             controller:   _amountCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -1666,7 +1666,7 @@ class _TabBtn extends StatelessWidget {
         child: Text(label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color:      selected ? XameColors.accent : XameColors.darkSurface,
+            color:      selected ? context.xAccent : context.xMuted,
             fontSize:   12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
       ),
