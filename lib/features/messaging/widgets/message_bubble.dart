@@ -405,7 +405,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Saved to $path'),
-            backgroundColor: context.xCard));
+            backgroundColor: XameColors.darkCard));
       }
     } catch (e) {
       if (mounted) {
@@ -747,7 +747,7 @@ class _FileBubbleState extends State<_FileBubble> {
         if (result.type != ResultType.done && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('No app found to open this file (${result.message})'),
-              backgroundColor: context.xCard));
+              backgroundColor: XameColors.darkCard));
         }
         return;
       }
@@ -785,7 +785,7 @@ class _FileBubbleState extends State<_FileBubble> {
       if (result.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('No app found to open this file type'),
-            backgroundColor: context.xCard));
+            backgroundColor: XameColors.darkCard));
       }
     } catch (e) {
       if (mounted) {
