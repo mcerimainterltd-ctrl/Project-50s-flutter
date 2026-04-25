@@ -422,11 +422,113 @@ class _PhoneScreenState extends State<PhoneScreen>
     if (number.isEmpty) { _snack('No number entered'); return; }
     final full = number.startsWith('+')
         ? number : '${_country.dial}$number';
-    final uri = Uri.parse('sms:$full');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      _snack('Cannot open SMS');
+
+    const smsCost = 5.0;
+    if (_credits < smsCost) {
+      _snack('Insufficient credits. SMS costs 5 credits.'); return;
+    }
+
+    final msgCtrl = TextEditingController();
+    if (!mounted) return;
+
+    final sent = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1A2332),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Padding(padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('✉️ Send SMS',
+                style: TextStyle(color: Colors.white,
+                    fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: Text('To: $full',
+                  style: const TextStyle(color: Colors.white54, fontSize: 13),
+                  overflow: TextOverflow.ellipsis)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                    color: const Color(0x1A00FF88),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0x3300FF88))),
+                child: const Text('5 credits',
+                    style: TextStyle(color: Color(0xFF00FF88), fontSize: 11))),
+            ]),
+            const SizedBox(height: 14),
+            TextField(controller: msgCtrl, maxLines: 4,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Type your message…',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true, fillColor: const Color(0xFF0D1520),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white12)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white12)),
+                contentPadding: const EdgeInsets.all(12))),
+            const SizedBox(height: 14),
+            Row(children: [
+              Expanded(child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel',
+                    style: TextStyle(color: Colors.white)))),
+              const SizedBox(width: 12),
+              Expanded(flex: 2, child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00FF88),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                onPressed: () {
+                  if (msgCtrl.text.trim().isEmpty) return;
+                  Navigator.pop(ctx, true);
+                },
+                child: const Text('Send SMS',
+                    style: TextStyle(fontWeight: FontWeight.w700,
+                        fontSize: 15)))),
+            ]),
+          ]),
+        ),
+      ),
+    );
+
+    if (sent != true || !mounted) return;
+    final msg = msgCtrl.text.trim();
+    if (msg.isEmpty) return;
+
+    _snack('Sending…');
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/pstn/sms'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId':  widget.userId,
+          'to':      full,
+          'message': msg,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        setState(() => _credits = (_credits - smsCost).clamp(0.0, double.infinity));
+        _snack('✅ SMS sent!');
+      } else {
+        _snack('❌ ${d['message'] ?? 'SMS failed'}');
+      }
+    } catch (_) {
+      _snack('❌ SMS failed — check connection');
     }
   }
 
