@@ -465,7 +465,7 @@ class _ChatsTab extends ConsumerWidget {
         child: CircularProgressIndicator(color: context.xPrimary)),
       error: (e, _) => Center(
         child: Text('Error: $e',
-          style: const TextStyle(color: context.xMuted))),
+          style: TextStyle(color: context.xMuted))),
       data: (list) {
         var filtered = list.where((c) =>
           filter.isEmpty ||
@@ -573,11 +573,11 @@ class _ContactTile extends ConsumerWidget {
                   child: Text(
                     contact.unreadCount > 99
                       ? '99+' : '${contact.unreadCount}',
-                    style: const TextStyle(color: Colors.black,
+                    style: TextStyle(color: Colors.black,
                       fontSize: 9, fontWeight: FontWeight.bold)),
                 )),
           ]),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
@@ -590,10 +590,10 @@ class _ContactTile extends ConsumerWidget {
                 Text(_fmtTime(contact.lastInteractionTs),
                   style: TextStyle(
                     color: contact.unreadCount > 0
-                      ? context.xPrimary : context.xText30,
+                      ? context.xPrimary : context.xMuted.withValues(alpha: 0.3),
                     fontSize: 11)),
             ]),
-            const SizedBox(height: 3),
+            SizedBox(height: 3),
             Text(
               isTyping ? 'typing...'
                 : contact.lastInteractionPreview.isNotEmpty

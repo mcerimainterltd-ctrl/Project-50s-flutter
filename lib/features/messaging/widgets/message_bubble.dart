@@ -266,9 +266,9 @@ class _TextContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _isEmojiOnly
-      ? Text(text.trim(), style: const TextStyle(fontSize: 36))
+      ? Text(text.trim(), style: TextStyle(fontSize: 36))
       : Text(text,
-            style: const TextStyle(
+            style: TextStyle(
                 color: Colors.white, fontSize: 15, height: 1.4));
 }
 
@@ -279,7 +279,7 @@ class _StatusTick extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (status == 'uploading')
-      return const SizedBox(
+      return SizedBox(
           width: 14, height: 14,
           child: CircularProgressIndicator(strokeWidth: 1.5, color: context.xText.withValues(alpha: 0.54)));
     if (status == 'failed')
@@ -289,8 +289,8 @@ class _StatusTick extends StatelessWidget {
     if (status == 'seen')
       return Icon(Icons.done_all, size: 14, color: context.xPrimary);
     if (status == 'delivered')
-      return const Icon(Icons.done_all, size: 14, color: context.xMuted);
-    return const Icon(Icons.done, size: 14, color: context.xMuted);
+      return Icon(Icons.done_all, size: 14, color: context.xMuted);
+    return Icon(Icons.done, size: 14, color: context.xMuted);
   }
 }
 
@@ -337,7 +337,7 @@ class _ImageBubble extends StatelessWidget {
         onTap: () => _openFullScreen(context),
         child: Container(
           padding: const EdgeInsets.all(16),
-          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.visibility_outlined, color: context.xText.withValues(alpha: 0.54), size: 18),
             SizedBox(width: 8),
             Text('Tap to view',
@@ -359,7 +359,7 @@ class _ImageBubble extends StatelessWidget {
               width: double.infinity,
               placeholder: (_, __) => _Shimmer(
                   width: double.infinity, height: 180),
-              errorWidget: (_, __, ___) => const SizedBox(height: 80,
+              errorWidget: (_, __, ___) => SizedBox(height: 80,
                   child: Center(
                       child: Icon(Icons.broken_image, color: context.xMuted.withValues(alpha: 0.5)))),
             ),
@@ -369,7 +369,7 @@ class _ImageBubble extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
             child: Text(caption,
-                style: const TextStyle(color: context.xText, fontSize: 13))),
+                style: TextStyle(color: context.xText, fontSize: 13))),
       ]),
     );
   }
@@ -591,7 +591,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
                     colors: [context.xBg, context.xSurface, context.xCard],
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Icon(Icons.movie_outlined,
                       color: context.xMuted.withValues(alpha: 0.5), size: 48)),
               ),
@@ -619,7 +619,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
                           _progress > 0
                               ? '${(_progress * 100).toInt()}%'
                               : '',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: context.xText, fontSize: 10)),
                       ]))
                   : Container(
@@ -631,7 +631,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
                             color: context.xText.withValues(alpha: 0.8),
                             width: 2),
                       ),
-                      child: const Icon(Icons.play_arrow_rounded,
+                      child: Icon(Icons.play_arrow_rounded,
                           color: context.xText, size: 32),
                     ),
             ),
@@ -642,19 +642,19 @@ class _VideoBubbleState extends State<_VideoBubble> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
                 child: Row(children: [
-                  const Icon(Icons.videocam_outlined,
+                  Icon(Icons.videocam_outlined,
                       color: context.xText.withValues(alpha: 0.7), size: 14),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Expanded(
                     child: Text(widget.fileName,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: context.xText.withValues(alpha: 0.7), fontSize: 11),
                         maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                   if (widget.fileSize != null) ...[
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(_fmtSize(widget.fileSize),
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: context.xText.withValues(alpha: 0.54), fontSize: 10)),
                   ],
                 ]),
@@ -937,19 +937,19 @@ class _FileBubbleState extends State<_FileBubble> {
               color: context.xCard,
               child: Row(children: [
                 Icon(st.icon, color: st.color, size: 16),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                     Text(widget.fileName,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: context.xText, fontSize: 12,
                             fontWeight: FontWeight.w500),
                         maxLines: 1, overflow: TextOverflow.ellipsis),
                     if (widget.fileSize != null)
                       Text(_fmtSize(widget.fileSize),
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: context.xMuted, fontSize: 10)),
                   ]),
                 ),
@@ -1058,14 +1058,14 @@ class _AudioBubbleState extends State<_AudioBubble> {
                 color: context.xPrimary, size: 26),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start, children: [
             SizedBox(height: 32,
               child: _WaveformBars(
                   progress: progress, isSelf: widget.isSelf,
                   isPlaying: _playing)),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(_playing ? _fmt(_position) : _fmt(_duration),
                 style: TextStyle(color: context.xMuted, fontSize: 10)),
           ])),

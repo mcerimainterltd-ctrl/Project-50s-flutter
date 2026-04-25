@@ -207,9 +207,9 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
             child: Icon(Icons.schedule_outlined,
                 color: context.xPrimary, size: 20),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Schedule Call', style: TextStyle(color: context.xText,
+            Text('Schedule Call', style: TextStyle(color: context.xText,
                 fontSize: 16, fontWeight: FontWeight.w700)),
             Text('To: ${widget.recipientName}',
                 style: TextStyle(color: context.xMuted, fontSize: 12)),
@@ -226,14 +226,14 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
               decoration: BoxDecoration(
                 color: context.xCard,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: context.xText10),
+                border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
               ),
               child: Text('View All',
                   style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12)),
             ),
           ),
         ]),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         // Call type toggle
         Container(
           padding: const EdgeInsets.all(4),
@@ -246,7 +246,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
             _typeBtn('video', '📹  Video'),
           ]),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         // Date/time picker
         GestureDetector(
           onTap: _pickDateTime,
@@ -256,22 +256,22 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
             decoration: BoxDecoration(
               color: context.xCard,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: context.xText10),
+              border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
             ),
             child: Row(children: [
               Icon(Icons.calendar_today_outlined,
                   color: context.xPrimary, size: 18),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Text(_formattedDT,
-                  style: const TextStyle(color: context.xText, fontSize: 14,
+                  style: TextStyle(color: context.xText, fontSize: 14,
                       fontWeight: FontWeight.w500)),
               const Spacer(),
               Icon(Icons.edit_outlined,
-                  color: context.xText30, size: 16),
+                  color: context.xMuted.withValues(alpha: 0.3), size: 16),
             ]),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         // Schedule button
         GestureDetector(
           onTap: _loading ? null : () async {
@@ -415,9 +415,9 @@ class _ScheduledCallsListDialogState
                   child: Icon(Icons.schedule_outlined,
                       color: context.xPrimary, size: 18),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Text('Scheduled Calls (${_calls.length})',
-                    style: const TextStyle(color: context.xText, fontSize: 16,
+                    style: TextStyle(color: context.xText, fontSize: 16,
                         fontWeight: FontWeight.w700)),
               ]),
             ]),
@@ -425,9 +425,9 @@ class _ScheduledCallsListDialogState
           Expanded(
             child: _calls.isEmpty
                 ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    const Icon(Icons.schedule_outlined,
+                    Icon(Icons.schedule_outlined,
                         color: context.xMuted.withValues(alpha: 0.25), size: 48),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text('No scheduled calls',
                         style: TextStyle(color: context.xMuted, fontSize: 14)),
                   ])
@@ -435,7 +435,7 @@ class _ScheduledCallsListDialogState
                     controller: ctrl,
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
                     itemCount: _calls.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final c = _calls[i];
                       final isVideo = c.callType == 'video';
@@ -444,7 +444,7 @@ class _ScheduledCallsListDialogState
                         decoration: BoxDecoration(
                           color: context.xCard,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: context.xText10),
+                          border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                         ),
                         child: Row(children: [
                           Container(
@@ -458,19 +458,19 @@ class _ScheduledCallsListDialogState
                                       : Icons.mic_outlined,
                               color: context.xPrimary, size: 18),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(c.recipientId,
-                                  style: const TextStyle(color: context.xText,
+                                  style: TextStyle(color: context.xText,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 2),
+                              SizedBox(height: 2),
                               Row(children: [
-                                const Icon(Icons.calendar_today_outlined,
+                                Icon(Icons.calendar_today_outlined,
                                     color: context.xMuted, size: 12),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4),
                                 Text(_fmt(c.callAt),
                                     style: TextStyle(
                                         color: context.xMuted, fontSize: 12)),

@@ -69,7 +69,7 @@ class _NavItem extends StatelessWidget {
           Icon(icon,
               color: selected ? XameColors.primary : Colors.white38,
               size: 24),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(label,
               style: TextStyle(
                   color: selected ? XameColors.primary : Colors.white38,

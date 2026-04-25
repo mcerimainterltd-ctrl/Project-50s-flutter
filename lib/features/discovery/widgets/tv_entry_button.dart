@@ -23,14 +23,14 @@ class TVEntryButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: context.xText.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.xText10),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.live_tv_rounded, color: Colors.redAccent, size: 14),
-                    const SizedBox(width: 6),
-                    const Text(
+                    Icon(Icons.live_tv_rounded, color: Colors.redAccent, size: 14),
+                    SizedBox(width: 6),
+                    Text(
                       "TV",
                       style: TextStyle(
                         color: context.xText,

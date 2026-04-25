@@ -640,19 +640,19 @@ class _RecentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Center(child: CircularProgressIndicator(
+    if (loading) return Center(child: CircularProgressIndicator(
         color: _kGreen, strokeWidth: 1.5));
     if (records.isEmpty) return Center(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 72, height: 72,
           decoration: BoxDecoration(shape: BoxShape.circle,
               color: context.xText.withOpacity(0.04)),
-          child: const Icon(Icons.call_outlined,
+          child: Icon(Icons.call_outlined,
               color: context.xMuted.withValues(alpha: 0.5), size: 32)),
-        const SizedBox(height: 16),
-        const Text('No recent calls',
+        SizedBox(height: 16),
+        Text('No recent calls',
           style: TextStyle(color: context.xMuted, fontSize: 15)),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         GestureDetector(
           onTap: onRefresh,
           child: Container(
@@ -662,7 +662,7 @@ class _RecentsTab extends StatelessWidget {
               color: context.xText.withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
-            child: const Text('Refresh',
+            child: Text('Refresh',
               style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13)))),
       ]),
     );
@@ -763,10 +763,10 @@ class _ContactsTab extends StatelessWidget {
               color: context.xText.withOpacity(0.04)),
           child: Icon(Icons.contacts_outlined,
               color: context.xMuted.withValues(alpha: 0.5), size: 32)),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Text('Tap to load contacts',
           style: TextStyle(color: context.xMuted, fontSize: 15)),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         GestureDetector(
           onTap: onLoad,
           child: Container(
@@ -810,12 +810,12 @@ class _ContactsTab extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         child: TextField(
           onChanged: onQChange,
-          style: const TextStyle(color: context.xText, fontSize: 14),
+          style: TextStyle(color: context.xText, fontSize: 14),
           decoration: InputDecoration(
             hintText:  'Search contacts...',
-            hintStyle: const TextStyle(color: context.xText30),
-            prefixIcon: const Icon(Icons.search,
-                color: context.xText30, size: 18),
+            hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+            prefixIcon: Icon(Icons.search,
+                color: context.xMuted.withValues(alpha: 0.3), size: 18),
             filled:    true,
             fillColor: _kCard,
             border: OutlineInputBorder(
@@ -823,7 +823,7 @@ class _ContactsTab extends StatelessWidget {
                 borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
+                borderSide: BorderSide(
                     color: _kGreen, width: 1)),
             contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 10)),
@@ -835,7 +835,7 @@ class _ContactsTab extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(children: [
           Text('${fil.length} contact${fil.length != 1 ? "s" : ""}',
-            style: const TextStyle(color: context.xMuted, fontSize: 12)),
+            style: TextStyle(color: context.xMuted, fontSize: 12)),
           const Spacer(),
           if (fil.any((c) => c.isOnXame))
             Container(
@@ -848,16 +848,16 @@ class _ContactsTab extends StatelessWidget {
                     color: _kGreen.withOpacity(0.3))),
               child: Text(
                 '${fil.where((c) => c.isOnXame).length} on XamePage',
-                style: const TextStyle(
+                style: TextStyle(
                     color: _kGreen, fontSize: 11,
                     fontWeight: FontWeight.w600))),
         ]),
       ),
-      const SizedBox(height: 4),
+      SizedBox(height: 4),
 
       // List
       Expanded(child: fil.isEmpty
-        ? const Center(child: Text('No contacts found',
+        ? Center(child: Text('No contacts found',
             style: TextStyle(color: context.xMuted)))
         : ListView.builder(
             itemCount: keys.fold<int>(
@@ -984,10 +984,10 @@ class _XameContactsSection extends StatelessWidget {
             child: Text('XamePage',
                 style: TextStyle(color: context.xAccent,
                     fontSize: 11, fontWeight: FontWeight.w700))),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text(
             '${xameContacts.length} contact${xameContacts.length == 1 ? "" : "s"}',
-            style: const TextStyle(color: context.xMuted, fontSize: 11)),
+            style: TextStyle(color: context.xMuted, fontSize: 11)),
         ]),
       ),
       SizedBox(
@@ -996,7 +996,7 @@ class _XameContactsSection extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: xameContacts.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 14),
+          separatorBuilder: (_, __) => SizedBox(width: 14),
           itemBuilder: (ctx, i) {
             final c = xameContacts[i];
             return SizedBox(width: 68,
@@ -1020,13 +1020,13 @@ class _XameContactsSection extends StatelessWidget {
                           border: Border.all(
                               color: context.xSurface, width: 2)))),
                 ]),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(c.name,
                     style: TextStyle(color: context.xText,
                         fontSize: 10, fontWeight: FontWeight.w600),
                     overflow: TextOverflow.ellipsis, maxLines: 1,
                     textAlign: TextAlign.center),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   GestureDetector(
                     onTap: () => ctx.go(
@@ -1039,7 +1039,7 @@ class _XameContactsSection extends StatelessWidget {
                               color: context.xAccent.withValues(alpha: 0.2))),
                       child: Icon(Icons.call_rounded,
                           color: context.xAccent, size: 14))),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   GestureDetector(
                     onTap: () => ctx.go(
                         '/call/${c.id}?video=true&incoming=false'),
@@ -1099,16 +1099,16 @@ class _KeypadTab extends StatelessWidget {
               border:       Border.all(color: context.xMuted.withValues(alpha: 0.25))),
             child: Row(children: [
               Text(country.flag,
-                  style: const TextStyle(fontSize: 22)),
-              const SizedBox(width: 10),
+                  style: TextStyle(fontSize: 22)),
+              SizedBox(width: 10),
               Expanded(child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(country.name,
-                    style: const TextStyle(color: context.xText,
+                    style: TextStyle(color: context.xText,
                         fontSize: 14, fontWeight: FontWeight.w600)),
                   Text('${country.dial}  ·  $creditsCurr $rate/min',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: context.xMuted, fontSize: 11)),
                 ],
               )),
@@ -1117,7 +1117,7 @@ class _KeypadTab extends StatelessWidget {
             ]),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Number display
         SizedBox(height: 60, child: Center(
@@ -1125,7 +1125,7 @@ class _KeypadTab extends StatelessWidget {
             ? Text('Enter number',
                 style: TextStyle(color: context.xCard,
                     fontSize: 26, letterSpacing: 6))
-            : Text(dial, style: const TextStyle(
+            : Text(dial, style: TextStyle(
                 color: context.xText, fontSize: 28,
                 fontWeight: FontWeight.w300, letterSpacing: 5),
                 textAlign: TextAlign.center))),
@@ -1155,10 +1155,10 @@ class _KeypadTab extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 8),
-              child: const Icon(Icons.backspace_outlined,
+              child: Icon(Icons.backspace_outlined,
                   color: context.xMuted, size: 22))),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
 
         // Call + SMS row
         Row(children: [
@@ -1173,7 +1173,7 @@ class _KeypadTab extends StatelessWidget {
                 border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
               child: Icon(Icons.message_outlined,
                   color: context.xText.withValues(alpha: 0.54), size: 22))),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           // Call
           Expanded(child: GestureDetector(
             onTap: onCall,
@@ -1288,15 +1288,15 @@ class _CountryPickerState extends State<_CountryPicker> {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.75,
       child: Column(children: [
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Container(width: 36, height: 4,
           decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2))),
-        const SizedBox(height: 16),
-        const Text('Select Country', style: TextStyle(
+        SizedBox(height: 16),
+        Text('Select Country', style: TextStyle(
             color: context.xText, fontSize: 17,
             fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: TextField(
@@ -1305,9 +1305,9 @@ class _CountryPickerState extends State<_CountryPicker> {
             autofocus: true,
             decoration: InputDecoration(
               hintText:  'Search country or code...',
-              hintStyle: TextStyle(color: context.xText30),
+              hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
               prefixIcon: Icon(Icons.search,
-                  color: context.xText30, size: 18),
+                  color: context.xMuted.withValues(alpha: 0.3), size: 18),
               filled:    true,
               fillColor: context.xBg,
               border: OutlineInputBorder(
@@ -1315,12 +1315,12 @@ class _CountryPickerState extends State<_CountryPicker> {
                   borderSide: BorderSide.none),
               focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
+                  borderSide: BorderSide(
                       color: _kGreen, width: 1)),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 10))),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Expanded(child: ListView.builder(
           itemCount: fil.length,
           itemBuilder: (_, i) {
@@ -1329,7 +1329,7 @@ class _CountryPickerState extends State<_CountryPicker> {
             return ListTile(
               onTap: () => widget.onSelect(c),
               leading: Text(c.flag,
-                  style: const TextStyle(fontSize: 24)),
+                  style: TextStyle(fontSize: 24)),
               title: Text(c.name, style: TextStyle(
                   color: isSelected ? _kGreen : context.xText,
                   fontSize: 14,

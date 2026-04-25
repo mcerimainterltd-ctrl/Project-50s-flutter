@@ -145,7 +145,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
             backgroundColor: _kBg,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new,
+              icon: Icon(Icons.arrow_back_ios_new,
                   color: context.xText.withValues(alpha: 0.7), size: 18),
               onPressed: () {
                 if (Navigator.canPop(context)) Navigator.pop(context);
@@ -160,10 +160,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                     _layout = _layout == 'grid' ? 'masonry' : 'grid')),
               if (widget.isOwner)
                 IconButton(
-                  icon: const Icon(Icons.add_circle_outline,
+                  icon: Icon(Icons.add_circle_outline,
                       color: _kTeal, size: 24),
                   onPressed: () => _showUploadSheet(self?.xameId ?? '')),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
             ],
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 56),
@@ -189,14 +189,14 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(44),
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(bottom: BorderSide(color: _kBorder))),
                 child: TabBar(
                   controller: _tabs,
                   indicatorColor: _kTeal, indicatorWeight: 2,
                   labelColor: _kTeal,
                   unselectedLabelColor: context.xMuted,
-                  labelStyle: const TextStyle(
+                  labelStyle: TextStyle(
                       fontSize: 13, fontWeight: FontWeight.w700),
                   dividerColor: Colors.transparent,
                   tabs: const [Tab(text: 'Personal'), Tab(text: 'Business')],
@@ -206,14 +206,14 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
           ),
         ],
         body: gallery.when(
-          loading: () => const Center(child: CircularProgressIndicator(
+          loading: () => Center(child: CircularProgressIndicator(
               color: _kTeal, strokeWidth: 1.5)),
           error: (_, __) => Center(child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.wifi_off_rounded, color: context.xMuted.withValues(alpha: 0.5), size: 48),
-              const SizedBox(height: 12),
-              const Text('Failed to load gallery',
+              Icon(Icons.wifi_off_rounded, color: context.xMuted.withValues(alpha: 0.5), size: 48),
+              SizedBox(height: 12),
+              Text('Failed to load gallery',
                   style: TextStyle(color: context.xMuted)),
               const SizedBox(height: 12),
               TextButton(
@@ -349,7 +349,7 @@ class _Stat extends StatelessWidget {
     children: [
       Text(value, style: TextStyle(color: color, fontSize: 20,
           fontWeight: FontWeight.w800)),
-      Text(label, style: const TextStyle(color: Colors.white38,
+      Text(label, style: TextStyle(color: Colors.white38,
           fontSize: 10, fontWeight: FontWeight.w500)),
     ]);
 }
@@ -357,7 +357,7 @@ class _Stat extends StatelessWidget {
 class _SDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      Container(width: 1, height: 28, color: context.xText10);
+      Container(width: 1, height: 28, color: context.xMuted.withValues(alpha: 0.1));
 }
 
 // ── Grid Cell ─────────────────────────────────────────────────────────────────
@@ -593,10 +593,10 @@ class _LightboxState extends State<_Lightbox> {
                   it.url,
                   fit: BoxFit.contain,
                   loadingBuilder: (_, child, progress) =>
-                      progress == null ? child : const Center(
+                      progress == null ? child : Center(
                           child: CircularProgressIndicator(
                               color: _kTeal, strokeWidth: 1.5)),
-                  errorBuilder: (_, __, ___) => const Icon(
+                  errorBuilder: (_, __, ___) => Icon(
                       Icons.broken_image_outlined,
                       color: context.xMuted.withValues(alpha: 0.5), size: 64),
                 ),
@@ -610,7 +610,7 @@ class _LightboxState extends State<_Lightbox> {
             duration: const Duration(milliseconds: 200),
             child: Positioned(top: 0, left: 0, right: 0,
               child: Container(
-                decoration: const BoxDecoration(gradient: LinearGradient(
+                decoration: BoxDecoration(gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
                   colors: [Colors.black87, Colors.transparent])),
                 padding: EdgeInsets.only(
@@ -618,7 +618,7 @@ class _LightboxState extends State<_Lightbox> {
                     left: 4, right: 16, bottom: 20),
                 child: Row(children: [
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
+                    icon: Icon(Icons.close_rounded,
                         color: context.xText, size: 22),
                     onPressed: () => Navigator.pop(context)),
                   const Spacer(),
@@ -628,7 +628,7 @@ class _LightboxState extends State<_Lightbox> {
                     decoration: BoxDecoration(color: Colors.black54,
                         borderRadius: BorderRadius.circular(20)),
                     child: Text('${_idx + 1} / ${widget.items.length}',
-                        style: const TextStyle(color: context.xText.withValues(alpha: 0.7),
+                        style: TextStyle(color: context.xText.withValues(alpha: 0.7),
                             fontSize: 12, fontWeight: FontWeight.w600))),
                 ]),
               )),
@@ -642,7 +642,7 @@ class _LightboxState extends State<_Lightbox> {
               duration: const Duration(milliseconds: 200),
               child: Positioned(bottom: 0, left: 0, right: 0,
                 child: Container(
-                  decoration: const BoxDecoration(gradient: LinearGradient(
+                  decoration: BoxDecoration(gradient: LinearGradient(
                     begin: Alignment.bottomCenter, end: Alignment.topCenter,
                     colors: [Colors.black, Colors.transparent])),
                   padding: EdgeInsets.fromLTRB(20, 32, 20,
@@ -656,11 +656,11 @@ class _LightboxState extends State<_Lightbox> {
                             color: context.xText, fontSize: 16,
                             fontWeight: FontWeight.w700)),
                       if (item.description.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(item.description, style: TextStyle(
                             color: context.xText.withValues(alpha: 0.7), fontSize: 13)),
                       ],
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                       Wrap(spacing: 8, runSpacing: 8, children: [
                         if (item.hasPrice)
                           _InfoChip('₦${item.price}', Icons.payments_outlined,
@@ -783,11 +783,11 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Center(child: Container(width: 36, height: 4,
               decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2)))),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
                 color: _kCard, borderRadius: BorderRadius.circular(12)),
@@ -817,7 +817,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
                   ? ClipRRect(borderRadius: BorderRadius.circular(14),
                       child: Image.file(_file!, fit: BoxFit.cover,
                           width: double.infinity))
-                  : const Column(
+                  : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.add_photo_alternate_outlined,
@@ -832,46 +832,46 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
           const SizedBox(height: 16),
           _buildField(_caption, 'Title / Caption', Icons.title),
           if (_mode == 'business') ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _buildField(_description, 'Description',
                 Icons.description_outlined, maxLines: 3),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _buildField(_price, 'Price (e.g. 5000)',
                 Icons.payments_outlined,
                 type: TextInputType.number),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _buildField(_phone, 'Phone Number',
                 Icons.phone_outlined,
                 type: TextInputType.phone),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _buildField(_email, 'Email Address',
                 Icons.email_outlined,
                 type: TextInputType.emailAddress),
           ],
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Row(children: [
-            const Text('Visibility', style: TextStyle(
+            Text('Visibility', style: TextStyle(
                 color: context.xText.withValues(alpha: 0.54), fontSize: 13)),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(children: [
                 _buildVisChip('contacts', Icons.people_outline, 'Contacts'),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _buildVisChip('public', Icons.public, 'Public'),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _buildVisChip('private', Icons.lock_outline, 'Private'),
               ]),
             )),
           ]),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           if (_uploading) ...[
             ClipRRect(borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(value: _progress,
                   color: _kTeal, backgroundColor: _kCard, minHeight: 6)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Center(child: Text('${(_progress * 100).toInt()}% uploaded',
-                style: const TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12))),
+                style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12))),
           ] else
             SizedBox(width: double.infinity,
               child: ElevatedButton.icon(

@@ -257,7 +257,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         style: TextStyle(color: context.xPrimary,
                             fontWeight: FontWeight.w700, fontSize: 15)),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
@@ -271,7 +271,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
                     // Avatar
                     GestureDetector(
                       onTap: _pickImage,
@@ -300,13 +300,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               color: context.xPrimary,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.camera_alt,
+                            child: Icon(Icons.camera_alt,
                                 color: Colors.black, size: 14),
                           ),
                         ),
                       ]),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     Text('@${user.xameId}',
                       style: TextStyle(color: context.xText.withValues(alpha: 0.5),
                           fontSize: 13)),
@@ -331,11 +331,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   icon:       Icons.person_outline,
                 ),
 
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // ── XameID ──────────────────────────────────────────────────
                 _sectionTitle('XameID'),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 GestureDetector(
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: user.xameId));
@@ -346,16 +346,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     decoration: BoxDecoration(
                       color: context.xSurface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: context.xText10),
+                      border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                     ),
                     child: Row(children: [
                       Icon(Icons.tag, color: context.xPrimary, size: 18),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Text(user.xameId,
-                        style: const TextStyle(color: context.xText,
+                        style: TextStyle(color: context.xText,
                             fontSize: 15, fontWeight: FontWeight.w500)),
                       const Spacer(),
-                      const Icon(Icons.copy_outlined,
+                      Icon(Icons.copy_outlined,
                           color: context.xMuted, size: 16),
                     ]),
                   ),
@@ -399,11 +399,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             builder: (_) => const ThemePickerScreen())),
                   );
                 }),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // ── Security ─────────────────────────────────────────────────
                 _sectionTitle('Security'),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 _actionTile(
                   icon:    Icons.shield_outlined,
                   title:   'Extra Security',
@@ -771,20 +771,20 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
               decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2)))),
 
-            const Row(children: [
+            Row(children: [
               Text('🛡️', style: TextStyle(fontSize: 20)),
               SizedBox(width: 10),
               Text('Extra Security',
                 style: TextStyle(color: context.xText, fontSize: 18,
                     fontWeight: FontWeight.w700)),
             ]),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'When enabled, a one-time code will be sent to your '
               'email or phone every time you log in from an unrecognised device.',
               style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13, height: 1.6)),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Enable toggle
             Container(
@@ -806,25 +806,25 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
               ]),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Email
-            const Text('📧 Email for OTP',
+            Text('📧 Email for OTP',
               style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12,
                   fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _field(_emailCtrl, 'your@email.com', TextInputType.emailAddress),
 
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Phone
             Text('📱 Phone for OTP (with country code)',
               style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12,
                   fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _field(_phoneCtrl, '+2348012345678', TextInputType.phone),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             SizedBox(
               width: double.infinity, height: 52,

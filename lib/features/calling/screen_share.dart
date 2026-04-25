@@ -134,7 +134,7 @@ class ScreenShareBanner extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.xSurface,
             border: const Border(
-                bottom: BorderSide(color: context.xText10)),
+                bottom: BorderSide(color: context.xMuted.withValues(alpha: 0.1))),
           ),
           child: SafeArea(
             bottom: false,
@@ -152,13 +152,13 @@ class ScreenShareBanner extends StatelessWidget {
                   ] : null,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   state == ScreenShareState.paused
                       ? 'Screen share paused'
                       : 'You are presenting',
-                  style: const TextStyle(color: context.xText, fontSize: 13,
+                  style: TextStyle(color: context.xText, fontSize: 13,
                       fontWeight: FontWeight.w500),
                 ),
               ),
@@ -172,7 +172,7 @@ class ScreenShareBanner extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: context.xText.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.xText10),
+                    border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                   ),
                   child: Text(
                     state == ScreenShareState.paused ? 'Resume' : 'Pause',
@@ -180,7 +180,7 @@ class ScreenShareBanner extends StatelessWidget {
                         fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               // Stop
               GestureDetector(
                 onTap: () => service.stop(),

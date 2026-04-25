@@ -271,11 +271,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new,
+                child: Icon(Icons.arrow_back_ios_new,
                     color: context.xText.withValues(alpha: 0.7), size: 16),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             const Expanded(
               child: Text('Xame Groups',
                   style: TextStyle(color: context.xText, fontSize: 18,
@@ -305,15 +305,15 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
             decoration: BoxDecoration(
               color: context.xCard,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: context.xText10),
+              border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
             ),
             child: TextField(
               onChanged: (v) => setState(() => _search = v),
-              style: const TextStyle(color: context.xText, fontSize: 14),
-              decoration: const InputDecoration(
+              style: TextStyle(color: context.xText, fontSize: 14),
+              decoration: InputDecoration(
                 hintText: 'Search groups...',
-                hintStyle: TextStyle(color: context.xText30),
-                prefixIcon: Icon(Icons.search, color: context.xText30, size: 18),
+                hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+                prefixIcon: Icon(Icons.search, color: context.xMuted.withValues(alpha: 0.3), size: 18),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                     horizontal: 14, vertical: 11),
@@ -331,11 +331,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       children: [
                       Icon(Icons.group_outlined,
                           color: context.xMuted.withValues(alpha: 0.25), size: 56),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Text('No groups yet',
                           style: TextStyle(color: context.xMuted,
                               fontSize: 15)),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       GestureDetector(
                         onTap: () => _showCreateDialog(context),
                         child: Text('Create your first group →',
@@ -348,7 +348,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           horizontal: 16, vertical: 4),
                       itemCount: groups.length,
                       separatorBuilder: (_, __) =>
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                       itemBuilder: (_, i) {
                         final g = groups[i];
                         return GestureDetector(
@@ -358,7 +358,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             decoration: BoxDecoration(
                               color: context.xCard,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: context.xText10),
+                              border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                             ),
                             child: Row(children: [
                               // Avatar
@@ -384,26 +384,26 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                         child: Text(
                                           g.name.substring(0, 2)
                                               .toUpperCase(),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               color: Colors.black,
                                               fontSize: 16,
                                               fontWeight:
                                                   FontWeight.w800)),
                                       ),
                                     ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(child: Column(
                                 crossAxisAlignment:
                                     CrossAxisAlignment.start,
                                 children: [
-                                  Text(g.name, style: const TextStyle(
+                                  Text(g.name, style: TextStyle(
                                       color: context.xText, fontSize: 15,
                                       fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 2),
+                                  SizedBox(height: 2),
                                   Text(
                                     g.lastMessagePreview ??
                                         '${g.members.length} members',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         color: context.xMuted,
                                         fontSize: 13),
                                     maxLines: 1,
@@ -430,7 +430,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600)),
                                   ),
-                                  const Icon(Icons.chevron_right,
+                                  Icon(Icons.chevron_right,
                                       color: context.xMuted.withValues(alpha: 0.5), size: 16),
                                 ],
                               ),
@@ -526,7 +526,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                   child: Icon(Icons.group_add_outlined,
                       color: Colors.black, size: 20),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Text('Create Group', style: TextStyle(
                     color: context.xText, fontSize: 16,
                     fontWeight: FontWeight.w700)),
@@ -544,25 +544,25 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                             fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
               ]),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               _inputField(_nameCtrl, 'Group name', Icons.group_outlined),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               _inputField(_descCtrl, 'Description (optional)',
                   Icons.info_outline),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.xText10),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                 ),
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
-                  style: const TextStyle(color: context.xText, fontSize: 14),
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: context.xText, fontSize: 14),
+                  decoration: InputDecoration(
                     hintText: 'Search contacts...',
-                    hintStyle: TextStyle(color: context.xText30),
-                    prefixIcon: Icon(Icons.search, color: context.xText30,
+                    hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+                    prefixIcon: Icon(Icons.search, color: context.xMuted.withValues(alpha: 0.3),
                         size: 18),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
@@ -598,7 +598,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                       border: Border.all(
                         color: sel
                             ? context.xPrimary.withValues(alpha: 0.3)
-                            : context.xText10),
+                            : context.xMuted.withValues(alpha: 0.1)),
                     ),
                     child: Row(children: [
                       Container(
@@ -613,7 +613,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                                 color: context.xPrimary,
                                 fontWeight: FontWeight.w700))),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -648,7 +648,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                 MediaQuery.of(context).viewInsets.bottom + 20),
             decoration: BoxDecoration(
               color: context.xSurface,
-              border: Border(top: BorderSide(color: context.xText10)),
+              border: Border(top: BorderSide(color: context.xMuted.withValues(alpha: 0.1))),
             ),
             child: GestureDetector(
               onTap: _loading ? null : () async {
@@ -808,21 +808,21 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                     border: Border.all(color: context.xSurface,
                         width: 2),
                   ),
-                  child: const Icon(Icons.camera_alt,
+                  child: Icon(Icons.camera_alt,
                       color: Colors.black, size: 13),
                 ),
             ]),
           ),
-          const SizedBox(height: 10),
-          Text(_group.name, style: const TextStyle(color: context.xText,
+          SizedBox(height: 10),
+          Text(_group.name, style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
           if (_group.description != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(_group.description!, style: const TextStyle(
+              child: Text(_group.description!, style: TextStyle(
                   color: context.xMuted, fontSize: 13)),
             ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Members section
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -848,13 +848,13 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                 ),
             ]),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Expanded(
             child: ListView.separated(
               controller: ctrl,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: _group.members.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              separatorBuilder: (_, __) => SizedBox(height: 6),
               itemBuilder: (_, i) {
                 final m = _group.members[i];
                 return Container(
@@ -863,7 +863,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                   decoration: BoxDecoration(
                     color: context.xCard,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: context.xText10),
+                    border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                   ),
                   child: Row(children: [
                     Container(
@@ -878,14 +878,14 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                           style: TextStyle(color: context.xPrimary,
                               fontWeight: FontWeight.w700))),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(m.name.isNotEmpty ? m.name : m.userId,
-                            style: const TextStyle(color: context.xText,
+                            style: TextStyle(color: context.xText,
                                 fontSize: 14, fontWeight: FontWeight.w600)),
-                        Text(m.role, style: const TextStyle(
+                        Text(m.role, style: TextStyle(
                             color: context.xMuted, fontSize: 11)),
                       ],
                     )),
@@ -927,16 +927,16 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        const Text('Leave Group?',
+                        Text('Leave Group?',
                             style: TextStyle(color: context.xText,
                                 fontSize: 16, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 8),
-                        const Text(
+                        SizedBox(height: 8),
+                        Text(
                             'You will no longer receive messages from this group.',
                             style: TextStyle(color: context.xMuted,
                                 fontSize: 13),
                             textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         Row(children: [
                           Expanded(child: GestureDetector(
                             onTap: () => Navigator.pop(context, false),
@@ -948,7 +948,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                               child: Text('Cancel',
                                   style: TextStyle(color: context.xText.withValues(alpha: 0.54)))),
                           )),
-                          const SizedBox(width: 10),
+                          SizedBox(width: 10),
                           Expanded(child: GestureDetector(
                             onTap: () => Navigator.pop(context, true),
                             child: Container(height: 42,
@@ -956,7 +956,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                                 color: context.xDanger,
                                 borderRadius: BorderRadius.circular(12)),
                               alignment: Alignment.center,
-                              child: const Text('Leave',
+                              child: Text('Leave',
                                   style: TextStyle(color: context.xText,
                                       fontWeight: FontWeight.w700))),
                           )),

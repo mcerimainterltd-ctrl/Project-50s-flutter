@@ -683,7 +683,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                   child: Icon(Icons.person_add_outlined,
                       color: context.xPrimary, size: 20),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   Text('Add to Call', style: TextStyle(color: context.xText,
@@ -692,28 +692,28 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                       style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
               ]),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.xText10),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                 ),
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
-                  style: const TextStyle(color: context.xText, fontSize: 14),
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: context.xText, fontSize: 14),
+                  decoration: InputDecoration(
                     hintText: 'Search contacts...',
-                    hintStyle: TextStyle(color: context.xText30),
+                    hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
                     prefixIcon: Icon(Icons.search,
-                        color: context.xText30, size: 18),
+                        color: context.xMuted.withValues(alpha: 0.3), size: 18),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                         horizontal: 14, vertical: 11),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
             ]),
           ),
           Expanded(
@@ -721,7 +721,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
               controller: ctrl,
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
               itemCount: filtered.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, __) => SizedBox(height: 8),
               itemBuilder: (_, i) {
                 final c = filtered[i];
                 return GestureDetector(
@@ -732,7 +732,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                     decoration: BoxDecoration(
                       color: context.xCard,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: context.xText10),
+                      border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                     ),
                     child: Row(children: [
                       Container(
@@ -749,7 +749,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16))),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

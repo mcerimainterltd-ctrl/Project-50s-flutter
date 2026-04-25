@@ -407,13 +407,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             color: Colors.red.withValues(alpha: 0.1),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Row(children: [
-              const Icon(Icons.circle, color: Colors.red, size: 10),
-              const SizedBox(width: 8),
+              Icon(Icons.circle, color: Colors.red, size: 10),
+              SizedBox(width: 8),
               Text('Recording $m:$s',
-                  style: const TextStyle(color: Colors.red, fontSize: 13,
+                  style: TextStyle(color: Colors.red, fontSize: 13,
                       fontWeight: FontWeight.w500)),
               const Spacer(),
-              const Text('Release to send · Slide to cancel',
+              Text('Release to send · Slide to cancel',
                   style: TextStyle(color: context.xMuted, fontSize: 11)),
             ]),
           );
@@ -793,7 +793,7 @@ class _ReplyPreview extends StatelessWidget {
             maxLines: 1, overflow: TextOverflow.ellipsis),
       ])),
       IconButton(
-          icon: const Icon(Icons.close, color: Colors.white38, size: 18),
+          icon: Icon(Icons.close, color: Colors.white38, size: 18),
           onPressed: onCancel),
     ]),
   );

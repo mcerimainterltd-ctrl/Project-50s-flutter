@@ -128,7 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
               Center(
                 child: Container(
                   width: 72, height: 72,
@@ -140,27 +140,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Icon(Icons.chat_bubble_rounded, color: context.xPrimary, size: 36),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Center(child: Text('XamePage',
+              SizedBox(height: 24),
+              Center(child: Text('XamePage',
                 style: TextStyle(color: context.xText, fontSize: 28,
                   fontWeight: FontWeight.bold, letterSpacing: 1))),
-              const Center(child: Text('Ultramodern calling & messaging',
+              Center(child: Text('Ultramodern calling & messaging',
                 style: TextStyle(color: context.xMuted, fontSize: 13))),
-              const SizedBox(height: 48),
-              const Text('Welcome back',
+              SizedBox(height: 48),
+              Text('Welcome back',
                 style: TextStyle(color: context.xText, fontSize: 22, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              const Text('Sign in to continue',
+              SizedBox(height: 6),
+              Text('Sign in to continue',
                 style: TextStyle(color: context.xMuted, fontSize: 14)),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               _label('Xame-ID'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               _field(controller: _xameIdCtrl, hint: 'Enter your Xame-ID',
                 icon: Icons.alternate_email,
                 onSubmitted: (_) => FocusScope.of(context).nextFocus()),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               _label('Password'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               _field(
                 controller: _passwordCtrl, hint: 'Enter your password',
                 icon: Icons.lock_outline, obscure: _obscure,
@@ -171,7 +171,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onSubmitted: (_) => _needsOTP ? FocusScope.of(context).nextFocus() : _login(),
               ),
               if (_needsOTP) ...[
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 if (_otpMessage != null)
                   Container(
                     padding: const EdgeInsets.all(10),
@@ -182,19 +182,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     child: Row(children: [
                       Icon(Icons.info_outline, color: context.xPrimary, size: 16),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(child: Text(_otpMessage!,
                         style: TextStyle(color: context.xPrimary, fontSize: 13))),
                     ]),
                   ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _label('One-Time Code'),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _field(controller: _otpCtrl, hint: 'Enter 6-digit OTP',
                   icon: Icons.security, type: TextInputType.number,
                   onSubmitted: (_) => _login()),
               ],
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               if (_error != null)
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -205,12 +205,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   child: Row(children: [
                     Icon(Icons.error_outline, color: context.xDanger, size: 16),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(child: Text(_error!,
                       style: TextStyle(color: context.xDanger, fontSize: 13))),
                   ]),
                 ),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
               SizedBox(
                 width: double.infinity, height: 52,
                 child: ElevatedButton(
@@ -222,13 +222,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     elevation: 0,
                   ),
                   child: _loading
-                    ? const SizedBox(width: 20, height: 20,
+                    ? SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
                     : Text(_needsOTP ? 'Verify & Sign In' : 'Sign In',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Center(
                 child: GestureDetector(
                   onTap: () => context.go('/register'),

@@ -156,11 +156,11 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                       begin: Alignment.topLeft, end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.campaign_outlined,
+                  child: Icon(Icons.campaign_outlined,
                       color: Colors.black, size: 20),
                 ),
-                const SizedBox(width: 12),
-                const Column(crossAxisAlignment: CrossAxisAlignment.start,
+                SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   Text('Mass Messaging', style: TextStyle(color: context.xText,
                       fontSize: 16, fontWeight: FontWeight.w700)),
@@ -173,7 +173,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                   child: Icon(Icons.close, color: context.xMuted, size: 20),
                 ),
               ]),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               // Action buttons
               Row(children: [
                 Expanded(child: _ActionBtn(
@@ -182,7 +182,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                   color: context.xPrimary,
                   onTap: () => _openNewBroadcast(context),
                 )),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(child: _ActionBtn(
                   icon: Icons.list_outlined,
                   label: 'Manage Lists',
@@ -190,12 +190,12 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                   onTap: () => _openManageLists(context),
                 )),
               ]),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               if (lists.isNotEmpty)
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text('Saved Lists (${lists.length})',
-                      style: const TextStyle(color: context.xMuted,
+                      style: TextStyle(color: context.xMuted,
                           fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
             ]),
@@ -207,10 +207,10 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                     children: [
                     Icon(Icons.campaign_outlined,
                         color: context.xMuted.withValues(alpha: 0.25), size: 48),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text('No saved lists yet',
                         style: TextStyle(color: context.xMuted, fontSize: 14)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     GestureDetector(
                       onTap: () => _openNewBroadcast(context),
                       child: Text('Create your first broadcast →',
@@ -222,7 +222,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                     controller: ctrl,
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                     itemCount: lists.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final l = lists[i];
                       return Container(
@@ -230,7 +230,7 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                         decoration: BoxDecoration(
                           color: context.xCard,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: context.xText10),
+                          border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                         ),
                         child: Row(children: [
                           Container(
@@ -246,11 +246,11 @@ class _BroadcastScreenState extends State<BroadcastScreen> {
                                       fontWeight: FontWeight.w700)),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(l.name, style: const TextStyle(
+                              Text(l.name, style: TextStyle(
                                   color: context.xText, fontSize: 14,
                                   fontWeight: FontWeight.w600)),
                               Text('${l.members.length} recipients',
@@ -385,21 +385,21 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                             fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
               ]),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               // Search
               Container(
                 decoration: BoxDecoration(
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.xText10),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                 ),
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
-                  style: const TextStyle(color: context.xText, fontSize: 14),
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: context.xText, fontSize: 14),
+                  decoration: InputDecoration(
                     hintText: 'Search contacts...',
-                    hintStyle: TextStyle(color: context.xText30),
-                    prefixIcon: Icon(Icons.search, color: context.xText30,
+                    hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+                    prefixIcon: Icon(Icons.search, color: context.xMuted.withValues(alpha: 0.3),
                         size: 18),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
@@ -436,7 +436,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       border: Border.all(
                         color: sel
                             ? context.xPrimary.withValues(alpha: 0.3)
-                            : context.xText10,
+                            : context.xMuted.withValues(alpha: 0.1),
                       ),
                     ),
                     child: Row(children: [
@@ -454,7 +454,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                                   fontWeight: FontWeight.w700)),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -476,7 +476,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: sel
-                            ? const Icon(Icons.check, color: Colors.black,
+                            ? Icon(Icons.check, color: Colors.black,
                                 size: 14)
                             : null,
                       ),
@@ -492,29 +492,29 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                 20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 20),
             decoration: BoxDecoration(
               color: context.xSurface,
-              border: Border(top: BorderSide(color: context.xText10)),
+              border: Border(top: BorderSide(color: context.xMuted.withValues(alpha: 0.1))),
             ),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               Container(
                 decoration: BoxDecoration(
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.xText10),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                 ),
                 child: TextField(
                   controller: _textCtrl,
                   maxLines: 3, minLines: 1,
-                  style: const TextStyle(color: context.xText, fontSize: 14),
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: context.xText, fontSize: 14),
+                  decoration: InputDecoration(
                     hintText: 'Type your message...',
-                    hintStyle: TextStyle(color: context.xText30),
+                    hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Row(children: [
                 Expanded(
                   child: GestureDetector(
@@ -531,10 +531,10 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                       decoration: BoxDecoration(
                         color: context.xCard,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: context.xText10),
+                        border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                       ),
                       alignment: Alignment.center,
-                      child: const Text('💾 Save List',
+                      child: Text('💾 Save List',
                           style: TextStyle(color: context.xText.withValues(alpha: 0.54),
                               fontSize: 13, fontWeight: FontWeight.w600)),
                     ),
@@ -704,7 +704,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                     borderRadius: BorderRadius.circular(2)),
               )),
               Row(children: [
-                const Text('Broadcast Lists',
+                Text('Broadcast Lists',
                     style: TextStyle(color: context.xText, fontSize: 16,
                         fontWeight: FontWeight.w700)),
                 const Spacer(),
@@ -729,7 +729,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                           colors: [context.xPrimary, context.xSurface]),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text('+ New List',
+                    child: Text('+ New List',
                         style: TextStyle(color: Colors.black, fontSize: 12,
                             fontWeight: FontWeight.w700)),
                   ),
@@ -745,7 +745,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                     controller: ctrl,
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                     itemCount: _lists.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final l = _lists[i];
                       return Container(
@@ -753,7 +753,7 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                         decoration: BoxDecoration(
                           color: context.xCard,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: context.xText10),
+                          border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                         ),
                         child: Row(children: [
                           Container(
@@ -767,11 +767,11 @@ class _ManageListsSheetState extends State<_ManageListsSheet> {
                                     color: context.xPrimary, fontSize: 15,
                                     fontWeight: FontWeight.w700))),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(l.name, style: const TextStyle(
+                              Text(l.name, style: TextStyle(
                                   color: context.xText, fontSize: 14,
                                   fontWeight: FontWeight.w600)),
                               Text('${l.members.length} members',

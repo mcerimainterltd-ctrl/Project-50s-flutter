@@ -20,9 +20,9 @@ class ProfilePortfolioGrid extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.xText.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.xText10),
+          border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
         ),
-        child: const Center(
+        child: Center(
           child: Text("Gallery Content Coming Soon", 
             style: TextStyle(color: context.xMuted.withValues(alpha: 0.5))),
         ),
@@ -45,7 +45,7 @@ class ProfilePortfolioGrid extends StatelessWidget {
             color: context.xText.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.image, color: context.xMuted.withValues(alpha: 0.5)),
+          child: Icon(Icons.image, color: context.xMuted.withValues(alpha: 0.5)),
         );
       },
     );

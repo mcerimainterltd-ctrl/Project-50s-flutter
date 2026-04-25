@@ -121,7 +121,7 @@ class ThemePickerScreen extends ConsumerWidget {
                                   color: theme.primary,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.check,
+                                child: Icon(Icons.check,
                                     color: context.xText, size: 14),
                               ),
                             ),

@@ -75,9 +75,9 @@ class _NetIcon extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5)),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(net.label,
-            style: const TextStyle(color: context.xText,
+            style: TextStyle(color: context.xText,
                 fontSize: 10, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
@@ -466,13 +466,13 @@ class _XamePayScreenState extends State<XamePayScreen>
           backgroundColor: _kCard,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.chevron_left, color: context.xText, size: 28),
+            icon: Icon(Icons.chevron_left, color: context.xText, size: 28),
             onPressed: _goBack,
           ),
           title: Row(mainAxisSize: MainAxisSize.min, children: [
-            Text(_ri.flag, style: const TextStyle(fontSize: 18)),
-            const SizedBox(width: 6),
-            const Text('XamePay',
+            Text(_ri.flag, style: TextStyle(fontSize: 18)),
+            SizedBox(width: 6),
+            Text('XamePay',
                 style: TextStyle(color: context.xText,
                     fontSize: 17, fontWeight: FontWeight.w700)),
           ]),
@@ -2462,7 +2462,7 @@ class _HistoryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (txs.isEmpty) return const Center(
+    if (txs.isEmpty) return Center(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Text('📭', style: TextStyle(fontSize: 48)),
         SizedBox(height: 14),
@@ -2473,7 +2473,7 @@ class _HistoryTab extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16), itemCount: txs.length,
       separatorBuilder: (_, __) =>
-          const Divider(color: context.xText10, height: 1),
+          const Divider(color: context.xMuted.withValues(alpha: 0.1), height: 1),
       itemBuilder: (_, i) {
         final tx = txs[i]; final cr = tx.type == 'credit';
         return Padding(
@@ -2485,7 +2485,7 @@ class _HistoryTab extends StatelessWidget {
                 shape: BoxShape.circle),
               child: Center(child: Text(tx.icon,
                   style: TextStyle(fontSize: 18)))),
-            const SizedBox(width: 14),
+            SizedBox(width: 14),
             Expanded(child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(tx.label, style: TextStyle(color: context.xText,

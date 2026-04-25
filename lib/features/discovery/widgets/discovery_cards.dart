@@ -144,7 +144,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                       radius: 28),
                   errorWidget: (_, __, ___) => Container(
                     color: context.xSurface,
-                    child: const Icon(Icons.image_outlined,
+                    child: Icon(Icons.image_outlined,
                         color: context.xMuted.withValues(alpha: 0.25), size: 48)),
                 ),
 
@@ -208,7 +208,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: context.xText30, width: 1)),
+                                      color: context.xMuted.withValues(alpha: 0.3), width: 1)),
                                 child: ClipOval(
                                   child: CachedNetworkImage(
                                     imageUrl:    widget.authorAvatar!,
@@ -219,34 +219,34 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                 ),
                               ),
                             Text(widget.authorName!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color:      context.xText.withValues(alpha: 0.6),
                                   fontSize:   12,
                                   fontWeight: FontWeight.w500)),
                           ]),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
 
                         // Title
                         Text(widget.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color:      context.xText,
                             fontSize:   20,
                             fontWeight: FontWeight.w800,
                             height:     1.2)),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
 
                         // Stats row
                         Row(children: [
                           // Views
                           Row(children: [
-                            const Icon(Icons.remove_red_eye_outlined,
+                            Icon(Icons.remove_red_eye_outlined,
                                 color: context.xMuted, size: 14),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Text(_fmt(widget.viewCount),
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color: context.xMuted, fontSize: 12)),
                           ]),
-                          const SizedBox(width: 14),
+                          SizedBox(width: 14),
 
                           // Like button — persistent
                           ScaleTransition(
@@ -262,7 +262,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                     ? context.xDanger
                                     : context.xMuted,
                                   size: 16),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4),
                                 Text(_fmt(likeCount),
                                   style: TextStyle(
                                     color: _liked
@@ -288,7 +288,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                 color: context.xText.withOpacity(0.1),
                                 border: Border.all(
                                     color: context.xMuted.withValues(alpha: 0.5), width: 0.5)),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.share_outlined,

@@ -115,7 +115,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             backgroundColor: context.xBg,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new,
+              icon: Icon(Icons.arrow_back_ios_new,
                   color: context.xText, size: 18),
               onPressed: () {
                 if (Navigator.of(context, rootNavigator: true).canPop()) {
@@ -142,11 +142,11 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.delete_sweep_outlined,
+                icon: Icon(Icons.delete_sweep_outlined,
                     color: context.xText.withValues(alpha: 0.54)),
                 onPressed: () => _confirmClear(user?.xameId ?? ''),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(44),
@@ -275,8 +275,8 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
       const Text('No calls yet',
         style: TextStyle(color: Colors.white38, fontSize: 16,
             fontWeight: FontWeight.w500)),
-      const SizedBox(height: 8),
-      const Text('Your call history will appear here',
+      SizedBox(height: 8),
+      Text('Your call history will appear here',
         style: TextStyle(color: Colors.white24, fontSize: 13)),
     ]),
   );
@@ -297,9 +297,9 @@ class _FilterTabs extends StatelessWidget {
       indicatorWeight: 2,
       labelColor: context.xAccent,
       unselectedLabelColor: context.xMuted,
-      labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+      labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
           letterSpacing: 0.3),
-      dividerColor: context.xText10,
+      dividerColor: context.xMuted.withValues(alpha: 0.1),
       tabs: const [
         Tab(text: 'All'),
         Tab(text: 'Missed'),
@@ -329,7 +329,7 @@ class _DateDivider extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(label,
-        style: const TextStyle(color: context.xMuted, fontSize: 12,
+        style: TextStyle(color: context.xMuted, fontSize: 12,
             fontWeight: FontWeight.w600, letterSpacing: 0.5)),
     );
   }
@@ -369,7 +369,7 @@ class _CallTile extends StatelessWidget {
           Container(
             width: 52, height: 52,
             decoration: BoxDecoration(shape: BoxShape.circle,
-                border: Border.all(color: context.xText10, width: 1)),
+                border: Border.all(color: context.xMuted.withValues(alpha: 0.1), width: 1)),
             child: ClipOval(
               child: photoUrl != null
                 ? CachedNetworkImage(imageUrl: photoUrl!, fit: BoxFit.cover,
@@ -378,7 +378,7 @@ class _CallTile extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 14),
+          SizedBox(width: 14),
 
           // Info
           Expanded(
@@ -388,20 +388,20 @@ class _CallTile extends StatelessWidget {
                 Text(name,
                   style: TextStyle(color: nameColor, fontSize: 16,
                       fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Row(children: [
                   _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed || isNoAnswer || isDeclined),
-                  const SizedBox(width: 5),
+                  SizedBox(width: 5),
                   Text(_statusLabel(),
                     style: TextStyle(
                       color: isMissed
                           ? context.xDanger : context.xMuted,
                       fontSize: 12)),
                   if (call.duration > 0) ...[
-                    const Text(' · ',
+                    Text(' · ',
                         style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
                     Text(_fmtDuration(call.duration),
-                      style: const TextStyle(color: context.xMuted,
+                      style: TextStyle(color: context.xMuted,
                           fontSize: 12)),
                   ],
                 ]),
@@ -415,7 +415,7 @@ class _CallTile extends StatelessWidget {
             children: [
               Text(DateFormat('h:mm a').format(call.startTime),
                 style: TextStyle(color: context.xMuted, fontSize: 11)),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               GestureDetector(
                 onTap: onTap,
                 child: Container(

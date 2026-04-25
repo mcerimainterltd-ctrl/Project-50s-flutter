@@ -93,13 +93,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   child: Icon(Icons.check_rounded, color: context.xAccent, size: 40),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
                 Text('Account Created!',
                   style: TextStyle(color: context.xText, fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text('Your Xame-ID is:',
                   style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 14)),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   decoration: BoxDecoration(
@@ -111,11 +111,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     style: TextStyle(color: context.xPrimary, fontSize: 26,
                       fontWeight: FontWeight.bold, letterSpacing: 2)),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text('Save this ID — you need it to log in.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: context.xMuted, fontSize: 13)),
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity, height: 52,
                   child: ElevatedButton(
@@ -141,10 +141,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: context.xBg,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: context.xText),
+          icon: Icon(Icons.arrow_back_ios, color: context.xText),
           onPressed: () => context.go('/login'),
         ),
-        title: const Text('Create Account',
+        title: Text('Create Account',
           style: TextStyle(color: context.xText, fontSize: 18)),
       ),
       body: SafeArea(
@@ -160,32 +160,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Expanded(child: _section('Last Name',
                   _field(_lastNameCtrl, 'Last name', Icons.person_outline))),
               ]),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _label('Date of Birth'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Row(children: [
                 Expanded(child: _dobField(_dobDayCtrl,   'DD',   null,        _monthFocus, 2, 1,    31)),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(child: _dobField(_dobMonthCtrl, 'MM',   _monthFocus, _yearFocus,  2, 1,    12)),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(flex: 2,
                   child: _dobField(_dobYearCtrl, 'YYYY', _yearFocus, null, 4, 1900, DateTime.now().year)),
               ]),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _section('Password', _field(_passwordCtrl, 'Min 8 characters', Icons.lock_outline,
                 obscure: _obscure,
                 suffix: IconButton(
                   icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility,
                     color: context.xMuted, size: 20),
                   onPressed: () => setState(() => _obscure = !_obscure)))),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _section('Confirm Password', _field(_confirmCtrl, 'Re-enter password', Icons.lock_outline,
                 obscure: _obscure2,
                 suffix: IconButton(
                   icon: Icon(_obscure2 ? Icons.visibility_off : Icons.visibility,
                     color: context.xMuted, size: 20),
                   onPressed: () => setState(() => _obscure2 = !_obscure2)))),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -198,7 +198,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   Text('· One special character',                          style: TextStyle(color: context.xMuted, fontSize: 11)),
                 ]),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               if (_error != null)
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -209,11 +209,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   child: Row(children: [
                     Icon(Icons.error_outline, color: context.xDanger, size: 16),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(child: Text(_error!, style: TextStyle(color: context.xDanger, fontSize: 13))),
                   ]),
                 ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               SizedBox(
                 width: double.infinity, height: 52,
                 child: ElevatedButton(
@@ -225,13 +225,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     elevation: 0,
                   ),
                   child: _loading
-                    ? const SizedBox(width: 20, height: 20,
+                    ? SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
                     : Text('Create Account',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Center(
                 child: GestureDetector(
                   onTap: () => context.go('/login'),

@@ -144,7 +144,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
               child: Icon(Icons.message_outlined,
                   color: context.xPrimary, size: 18),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Text('Quick Reply',
                 style: TextStyle(color: context.xText, fontSize: 16,
                     fontWeight: FontWeight.w700)),
@@ -157,12 +157,12 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text('Manage',
+                child: Text('Manage',
                     style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12)),
               ),
             ),
           ]),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Template chips
           Wrap(
             spacing: 8, runSpacing: 8,
@@ -174,7 +174,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   color: context.xCard,
-                  border: Border.all(color: context.xText10),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                 ),
                 child: Text(t,
                     style: TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 13),
@@ -182,7 +182,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
               ),
             )).toList(),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Custom input
           Row(children: [
             Expanded(
@@ -190,14 +190,14 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                 decoration: BoxDecoration(
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: context.xText10),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                 ),
                 child: TextField(
                   controller: _customCtrl,
-                  style: const TextStyle(color: context.xText, fontSize: 14),
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: context.xText, fontSize: 14),
+                  decoration: InputDecoration(
                     hintText: 'Type a custom reply...',
-                    hintStyle: TextStyle(color: context.xText30),
+                    hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
@@ -206,7 +206,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             GestureDetector(
               onTap: () => _send(_customCtrl.text),
               child: Container(
@@ -218,7 +218,7 @@ class _QuickReplySheetState extends State<QuickReplySheet> {
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.send_rounded,
+                child: Icon(Icons.send_rounded,
                     color: context.xText, size: 18),
               ),
             ),
@@ -291,8 +291,8 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                   child: Icon(Icons.message_outlined,
                       color: context.xPrimary, size: 18),
                 ),
-                const SizedBox(width: 10),
-                const Text('SMS Templates',
+                SizedBox(width: 10),
+                Text('SMS Templates',
                     style: TextStyle(color: context.xText, fontSize: 16,
                         fontWeight: FontWeight.w700)),
                 const Spacer(),
@@ -305,7 +305,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                       style: TextStyle(color: context.xMuted, fontSize: 13)),
                 ),
               ]),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               // Add input
               Row(children: [
                 Expanded(
@@ -313,14 +313,14 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                     decoration: BoxDecoration(
                       color: context.xCard,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: context.xText10),
+                      border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                     ),
                     child: TextField(
                       controller: _addCtrl,
-                      style: const TextStyle(color: context.xText, fontSize: 14),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: context.xText, fontSize: 14),
+                      decoration: InputDecoration(
                         hintText: 'Add new template...',
-                        hintStyle: TextStyle(color: context.xText30),
+                        hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                             horizontal: 14, vertical: 11),
@@ -333,7 +333,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 GestureDetector(
                   onTap: () async {
                     if (await _svc.addTemplate(_addCtrl.text)) {
@@ -346,11 +346,11 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                       color: context.xPrimary,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.add, color: Colors.black, size: 20),
+                    child: Icon(Icons.add, color: Colors.black, size: 20),
                   ),
                 ),
               ]),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
             ]),
           ),
           // List
@@ -362,22 +362,22 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                     controller: ctrl,
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                     itemCount: _templates.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => SizedBox(height: 8),
                     itemBuilder: (_, i) => Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: context.xCard,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: context.xText10),
+                        border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                       ),
                       child: Row(children: [
                         Expanded(
                           child: Text(_templates[i],
-                              style: const TextStyle(
+                              style: TextStyle(
                                   color: context.xText.withValues(alpha: 0.7), fontSize: 13)),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         GestureDetector(
                           onTap: () async {
                             final ctrl2 = TextEditingController(
@@ -401,7 +401,7 @@ class _ManageTemplatesDialogState extends State<ManageTemplatesDialog> {
                                 color: context.xText.withValues(alpha: 0.54), size: 15),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         GestureDetector(
                           onTap: () async {
                             await _svc.deleteTemplate(i);

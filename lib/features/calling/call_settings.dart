@@ -127,8 +127,8 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                   child: Icon(Icons.block_outlined,
                       color: context.xDanger, size: 18),
                 ),
-                const SizedBox(width: 10),
-                const Column(crossAxisAlignment: CrossAxisAlignment.start,
+                SizedBox(width: 10),
+                Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   Text('Blocked Numbers',
                       style: TextStyle(color: context.xText, fontSize: 16,
@@ -137,7 +137,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                       style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
               ]),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               // Input row
               Row(children: [
                 Expanded(
@@ -145,16 +145,16 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                     decoration: BoxDecoration(
                       color: context.xCard,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: context.xText10),
+                      border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                     ),
                     child: TextField(
                       controller: _inputCtrl,
-                      style: const TextStyle(color: context.xText, fontSize: 14),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: context.xText, fontSize: 14),
+                      decoration: InputDecoration(
                         hintText: 'Enter Xame-ID to block',
-                        hintStyle: TextStyle(color: context.xText30),
+                        hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
                         prefixIcon: Icon(Icons.person_outline,
-                            color: context.xText30, size: 18),
+                            color: context.xMuted.withValues(alpha: 0.3), size: 18),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                             horizontal: 14, vertical: 11),
@@ -162,7 +162,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 GestureDetector(
                   onTap: () async {
                     final val = _inputCtrl.text.trim();
@@ -188,11 +188,11 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                       color: context.xDanger,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.block, color: context.xText, size: 18),
+                    child: Icon(Icons.block, color: context.xText, size: 18),
                   ),
                 ),
               ]),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
             ]),
           ),
           // List
@@ -201,7 +201,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                 ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(Icons.check_circle_outline,
                         color: context.xMuted.withValues(alpha: 0.25), size: 48),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Text('No blocked numbers',
                         style: TextStyle(color: context.xMuted, fontSize: 14)),
                   ])
@@ -209,7 +209,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                     controller: ctrl,
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                     itemCount: _blocked.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final e = _blocked[i];
                       return Container(
@@ -218,7 +218,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                         decoration: BoxDecoration(
                           color: context.xCard,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: context.xText10),
+                          border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                         ),
                         child: Row(children: [
                           Container(
@@ -230,15 +230,15 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                             child: Icon(Icons.person_off_outlined,
                                 color: context.xDanger, size: 18),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(e.name.isNotEmpty ? e.name : e.xameId,
-                                  style: const TextStyle(color: context.xText,
+                                  style: TextStyle(color: context.xText,
                                       fontSize: 14, fontWeight: FontWeight.w600)),
                               if (e.name.isNotEmpty)
-                                Text(e.xameId, style: const TextStyle(
+                                Text(e.xameId, style: TextStyle(
                                     color: context.xMuted, fontSize: 12)),
                             ],
                           )),
@@ -253,9 +253,9 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                               decoration: BoxDecoration(
                                 color: context.xText.withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: context.xText10),
+                                border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
                               ),
-                              child: const Text('Unblock',
+                              child: Text('Unblock',
                                   style: TextStyle(color: context.xText.withValues(alpha: 0.6),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600)),

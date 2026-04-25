@@ -136,7 +136,7 @@ class _PersonCardState extends State<_PersonCard>
                     Container(color: context.xSurface),
                   errorWidget: (_, __, ___) => Container(
                     color: context.xSurface,
-                    child: const Icon(Icons.person,
+                    child: Icon(Icons.person,
                         color: context.xMuted.withValues(alpha: 0.5), size: 32)),
                 ),
               ),
@@ -145,19 +145,19 @@ class _PersonCardState extends State<_PersonCard>
               Positioned(bottom: 2, right: 2,
                 child: OnlinePulseDot(size: 10)),
           ]),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(user.name,
-            style: const TextStyle(color: context.xText,
+            style: TextStyle(color: context.xText,
                 fontSize: 14, fontWeight: FontWeight.w700),
             maxLines: 1, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 3),
+          SizedBox(height: 3),
           Text(
             user.mutualCount > 0
               ? '${user.mutualCount} mutual${user.mutualCount > 1 ? "s" : ""}'
               : user.tagline ?? 'New to XamePage',
             style: TextStyle(
                 color: context.xMuted, fontSize: 11)),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           ScaleTransition(
             scale: _scale,
             child: user.isAdded
@@ -188,7 +188,7 @@ class _PersonCardState extends State<_PersonCard>
                       gradient: LinearGradient(colors: [
                         context.xPrimary, context.xSecondary,
                       ])),
-                    child: const Text('Add',
+                    child: Text('Add',
                       style: TextStyle(color: context.xText,
                           fontSize: 12, fontWeight: FontWeight.w700)),
                   ),

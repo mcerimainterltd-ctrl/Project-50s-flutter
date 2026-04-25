@@ -300,11 +300,11 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                   shaderCallback: (b) => LinearGradient(
                     colors: [context.xPrimary, context.xSecondary],
                   ).createShader(b),
-                  child: const Text('DISCOVERY',
+                  child: Text('DISCOVERY',
                     style: TextStyle(color: context.xText, fontSize: 22,
                         fontWeight: FontWeight.w900, letterSpacing: 2.5)),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
               ]),
               actions: [
@@ -317,10 +317,10 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       key: ValueKey(_searchOpen), color: context.xText.withValues(alpha: 0.7))),
                   onPressed: _searchOpen ? _closeSearch : _openSearch),
                 IconButton(
-                  icon: const Icon(Icons.tune_rounded, color: context.xText.withValues(alpha: 0.7)),
+                  icon: Icon(Icons.tune_rounded, color: context.xText.withValues(alpha: 0.7)),
                   onPressed: () => _showFilterSheet(context)),
                 IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: context.xText.withValues(alpha: 0.7)),
+                  icon: Icon(Icons.refresh_rounded, color: context.xText.withValues(alpha: 0.7)),
                   onPressed: () => _loadData(refresh: true)),
                 const SizedBox(width: 4),
               ],
@@ -901,7 +901,7 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
             ? const SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2))
-            : const Text('Share Story',
+            : Text('Share Story',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
       ),
@@ -927,7 +927,7 @@ class _LiveCountBadge extends StatelessWidget {
         Container(width: 5, height: 5,
           decoration: BoxDecoration(
             shape: BoxShape.circle, color: context.xDanger)),
-        const SizedBox(width: 4),
+        SizedBox(width: 4),
         Text('$count LIVE', style: TextStyle(
             color: context.xDanger, fontSize: 9,
             fontWeight: FontWeight.w800, letterSpacing: 0.5)),
@@ -1302,28 +1302,28 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                       letterSpacing: 1))),
               const Spacer(),
               Text('${_fmt(item.viewCount)} views',
-                style: const TextStyle(
+                style: TextStyle(
                     color: context.xMuted, fontSize: 12)),
             ]),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(item.title, style: TextStyle(color: context.xText,
                 fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             if (item.subtitle.isNotEmpty)
               Text(item.subtitle, style: TextStyle(
                   color: context.xText.withValues(alpha: 0.54), fontSize: 14, height: 1.5)),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(children: [
               CircleAvatar(radius: 20,
                 backgroundImage: item.authorAvatar.isNotEmpty
                   ? NetworkImage(item.authorAvatar) : null,
                 backgroundColor: context.xSurface,
                 child: item.authorAvatar.isEmpty
-                  ? const Icon(Icons.person, color: context.xMuted) : null),
-              const SizedBox(width: 10),
+                  ? Icon(Icons.person, color: context.xMuted) : null),
+              SizedBox(width: 10),
               Column(crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                Text(item.authorName, style: const TextStyle(
+                Text(item.authorName, style: TextStyle(
                     color: context.xText, fontWeight: FontWeight.w600)),
                 Text(item.region, style: TextStyle(
                     color: context.xMuted, fontSize: 12)),
@@ -1342,11 +1342,11 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                         : [context.xPrimary, context.xSecondary]),
                   ),
                   child: _followLoading
-                      ? const SizedBox(width: 14, height: 14,
+                      ? SizedBox(width: 14, height: 14,
                           child: CircularProgressIndicator(
                               strokeWidth: 1.5, color: context.xText))
                       : Text(_following ? 'Following' : 'Follow',
-                          style: const TextStyle(color: context.xText,
+                          style: TextStyle(color: context.xText,
                               fontSize: 13, fontWeight: FontWeight.w700)),
                 ),
               ),

@@ -158,9 +158,9 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
             child: Row(children: [
-              const Text('🌍', style: TextStyle(fontSize: 20)),
-              const SizedBox(width: 10),
-              const Text('Translate Message',
+              Text('🌍', style: TextStyle(fontSize: 20)),
+              SizedBox(width: 10),
+              Text('Translate Message',
                 style: TextStyle(color: context.xText, fontSize: 17,
                     fontWeight: FontWeight.w700)),
               const Spacer(),
@@ -181,12 +181,12 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             ),
             child: SingleChildScrollView(
               child: Text(widget.messageText,
-                style: const TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 14,
+                style: TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 14,
                     height: 1.5)),
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Search
           Padding(
@@ -197,8 +197,8 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
               style: TextStyle(color: context.xText, fontSize: 14),
               decoration: InputDecoration(
                 hintText:  'Search language...',
-                hintStyle: TextStyle(color: context.xText30),
-                prefixIcon: Icon(Icons.search, color: context.xText30, size: 18),
+                hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+                prefixIcon: Icon(Icons.search, color: context.xMuted.withValues(alpha: 0.3), size: 18),
                 filled:    true,
                 fillColor: context.xSurface,
                 border: OutlineInputBorder(
@@ -210,7 +210,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Language list
           Expanded(
@@ -277,7 +277,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                 children: [
                   Row(children: [
                     Text('🌍', style: TextStyle(fontSize: 12)),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(_resultLang ?? '',
                       style: TextStyle(color: context.xPrimary,
                           fontSize: 11, fontWeight: FontWeight.w700)),
@@ -306,9 +306,9 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                       ]),
                     ),
                   ]),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(_result!,
-                    style: const TextStyle(color: context.xText,
+                    style: TextStyle(color: context.xText,
                         fontSize: 14, height: 1.5)),
                 ],
               ),

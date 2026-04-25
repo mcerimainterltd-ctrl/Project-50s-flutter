@@ -25,13 +25,13 @@ class DiscoverySearchOverlay extends StatelessWidget {
                     padding: const EdgeInsets.all(16.0),
                     child: TextField(
                       autofocus: isVisible,
-                      style: const TextStyle(color: context.xText, fontSize: 18),
+                      style: TextStyle(color: context.xText, fontSize: 18),
                       decoration: InputDecoration(
                         hintText: "Search people, topics, or channels...",
                         hintStyle: TextStyle(color: context.xText.withOpacity(0.3)),
-                        prefixIcon: const Icon(Icons.search, color: Colors.blueAccent),
+                        prefixIcon: Icon(Icons.search, color: Colors.blueAccent),
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.close, color: context.xText),
+                          icon: Icon(Icons.close, color: context.xText),
                           onPressed: onClose,
                         ),
                         filled: true,
@@ -50,7 +50,7 @@ class DiscoverySearchOverlay extends StatelessWidget {
                         child: ActionChip(
                           label: Text(tag),
                           backgroundColor: context.xText.withOpacity(0.1),
-                          labelStyle: const TextStyle(color: context.xText, fontSize: 12),
+                          labelStyle: TextStyle(color: context.xText, fontSize: 12),
                           onPressed: () {},
                         ),
                       )).toList(),
