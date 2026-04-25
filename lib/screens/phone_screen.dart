@@ -300,7 +300,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 Text('Rate / min',
-                    style: TextStyle(color: context.xMuted, fontSize: 11)),
+                    style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
                 SizedBox(height: 4),
                 Text('$_creditsCurr $rate',
                     style: TextStyle(color: XameColors.primary,
@@ -316,7 +316,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 const Text('Your Balance',
-                    style: TextStyle(color: context.xMuted, fontSize: 11)),
+                    style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
                 const SizedBox(height: 4),
                 Text('$_creditsCurr ${_credits.toStringAsFixed(2)}',
                     style: TextStyle(
