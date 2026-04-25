@@ -172,13 +172,13 @@ class _AvatarCanvasPainter extends CustomPainter {
         width: 52*s, height: 56*s), p);
 
     // Eyes
-    p.color = Colors.white;
+    p.color = context.xText;
     canvas.drawCircle(Offset(36*s, 48*s), 7*s, p);
     canvas.drawCircle(Offset(64*s, 48*s), 7*s, p);
     p.color = _c(config.eyeColor);
     canvas.drawCircle(Offset(37*s, 49*s), 4*s, p);
     canvas.drawCircle(Offset(65*s, 49*s), 4*s, p);
-    p.color = Colors.white;
+    p.color = context.xText;
     canvas.drawCircle(Offset(38*s, 48*s), 1.5*s, p);
     canvas.drawCircle(Offset(66*s, 48*s), 1.5*s, p);
 
@@ -433,7 +433,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                     ? SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(
                             color: context.xPrimary, strokeWidth: 2))
-                    : const Text('✓ Use This Avatar',
+                    : Text('✓ Use This Avatar',
                         style: TextStyle(color: Colors.black, fontSize: 15,
                             fontWeight: FontWeight.w700)),
               ),
@@ -448,7 +448,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(color: Colors.white54,
+          Text(label, style: TextStyle(color: context.xText.withValues(alpha: 0.54),
               fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8,
@@ -457,7 +457,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
               return GestureDetector(
                 onTap: () => setState(() => _setVal(key, c)),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
+                  duration: Duration(milliseconds: 150),
                   width: 30, height: 30,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
@@ -481,16 +481,16 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(color: Colors.white54,
+          Text(label, style: TextStyle(color: context.xText.withValues(alpha: 0.54),
               fontSize: 12, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8,
             children: List.generate(ids.length, (i) {
               final sel = _getVal(key) == ids[i];
               return GestureDetector(
                 onTap: () => setState(() => _setVal(key, ids[i])),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
+                  duration: Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
@@ -501,10 +501,10 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                     border: Border.all(
                       color: sel
                           ? XameColors.primary.withValues(alpha: 0.5)
-                          : Colors.white10),
+                          : context.xText10),
                   ),
                   child: Text(labels[i], style: TextStyle(
-                    color: sel ? XameColors.primary : Colors.white54,
+                    color: sel ? XameColors.primary : context.xText.withValues(alpha: 0.54),
                     fontSize: 12,
                     fontWeight: sel ? FontWeight.w600 : FontWeight.normal)),
                 ),

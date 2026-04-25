@@ -439,7 +439,7 @@ class _Section extends StatelessWidget {
   final XameTheme theme;
   final String title;
   final List<Widget> children;
-  const _Section({required this.theme, required this.title,
+  _Section({required this.theme, required this.title,
       required this.children});
 
   @override
@@ -457,7 +457,7 @@ class _Section extends StatelessWidget {
         decoration: BoxDecoration(
           color:  theme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: context.xText.withValues(alpha: 0.06)),
         ),
         child: Column(children: _separated(children)),
       ),
@@ -469,7 +469,7 @@ class _Section extends StatelessWidget {
     for (int i = 0; i < items.length; i++) {
       result.add(items[i]);
       if (i < items.length - 1) {
-        result.add(Divider(height: 1, color: Colors.white.withValues(alpha: 0.05),
+        result.add(Divider(height: 1, color: context.xText.withValues(alpha: 0.05),
             indent: 52));
       }
     }
@@ -495,7 +495,7 @@ class _ToggleTile extends StatelessWidget {
   final String?   subtitle;
   final bool      value;
   final ValueChanged<bool> onChanged;
-  const _ToggleTile({required this.theme, required this.icon,
+  _ToggleTile({required this.theme, required this.icon,
       required this.title, this.subtitle, required this.value,
       required this.onChanged});
 
@@ -504,7 +504,7 @@ class _ToggleTile extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     child: Row(children: [
       Icon(icon, color: theme.textSecondary, size: 20),
-      const SizedBox(width: 14),
+      SizedBox(width: 14),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: TextStyle(color: theme.text, fontSize: 14,
@@ -517,7 +517,7 @@ class _ToggleTile extends StatelessWidget {
         value:     value,
         onChanged: onChanged,
         activeColor: theme.primary,
-        inactiveTrackColor: Colors.white12,
+        inactiveTrackColor: context.xMuted.withValues(alpha: 0.25),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     ]),
@@ -543,13 +543,13 @@ class _SelectTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(children: [
         Icon(icon, color: theme.textSecondary, size: 20),
-        const SizedBox(width: 14),
+        SizedBox(width: 14),
         Expanded(child: Text(title, style: TextStyle(color: theme.text,
             fontSize: 14, fontWeight: FontWeight.w500))),
         Text(labels[options.indexOf(value)],
           style: TextStyle(color: theme.primary, fontSize: 13,
               fontWeight: FontWeight.w500)),
-        const SizedBox(width: 4),
+        SizedBox(width: 4),
         Icon(Icons.chevron_right, color: theme.textSecondary, size: 16),
       ]),
     ),
@@ -567,7 +567,7 @@ class _SelectTile extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(margin: const EdgeInsets.only(top: 12, bottom: 8),
             width: 40, height: 4,
-            decoration: BoxDecoration(color: Colors.white24,
+            decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2))),
           Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
             child: Text(title, style: TextStyle(color: theme.text,

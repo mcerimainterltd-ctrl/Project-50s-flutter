@@ -70,7 +70,7 @@ class NebulaCard extends StatelessWidget {
                 Spacer(),
                 Text(item.title, style: TextStyle(color: context.xText, fontSize: 28, fontWeight: FontWeight.bold)),
                 Text(item.subtitle, style: TextStyle(color: context.xText.withOpacity(0.7), fontSize: 16)),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 _buildActionButton(context),
               ],
             ),
@@ -83,8 +83,8 @@ class NebulaCard extends StatelessWidget {
   Widget _buildChip() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-      child: Text(item.type.name.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+      decoration: BoxDecoration(color: context.xText.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+      child: Text(item.type.name.toUpperCase(), style: TextStyle(color: context.xText, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
     );
   }
 
@@ -95,7 +95,7 @@ class NebulaCard extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: 50,
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: context.xText, borderRadius: BorderRadius.circular(16)),
         child: const Center(child: Text('EXPLORE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
       ),
     );

@@ -54,7 +54,7 @@ class _StoryRingState extends State<_StoryRing>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 3))
+        vsync: this, duration: Duration(seconds: 3))
       ..repeat();
   }
   @override
@@ -73,17 +73,17 @@ class _StoryRingState extends State<_StoryRing>
               AnimatedBuilder(
                 animation: _ctrl,
                 builder: (_, __) => CustomPaint(
-                  size: const Size(66, 66),
+                  size: Size(66, 66),
                   painter: _GradientRingPainter(_ctrl.value)),
               )
             else
               Container(width: 66, height: 66,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white12, width: 2))),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.25), width: 2))),
             Container(
               width: 56, height: 56,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle, color: XameColors.darkSurface),
               child: ClipOval(
                 child: CachedNetworkImage(
@@ -92,8 +92,8 @@ class _StoryRingState extends State<_StoryRing>
                     Container(color: XameColors.darkSurface),
                   errorWidget: (_, __, ___) => Container(
                     color: XameColors.darkSurface,
-                    child: const Icon(Icons.person,
-                        color: Colors.white24, size: 28)),
+                    child: Icon(Icons.person,
+                        color: context.xMuted.withValues(alpha: 0.5), size: 28)),
                 ),
               ),
             ),
@@ -108,16 +108,16 @@ class _StoryRingState extends State<_StoryRing>
             if (widget.isFirst)
               Positioned(bottom: 0, right: 0,
                 child: Container(width: 20, height: 20,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle, color: XameColors.primary),
-                  child: const Icon(Icons.add,
-                      color: Colors.white, size: 14))),
+                  child: Icon(Icons.add,
+                      color: context.xText, size: 14))),
           ]),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         Text(widget.name,
-          style: const TextStyle(
-              color: Colors.white70, fontSize: 11,
+          style: TextStyle(
+              color: context.xText.withValues(alpha: 0.7), fontSize: 11,
               fontWeight: FontWeight.w500),
           maxLines: 1, overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center),

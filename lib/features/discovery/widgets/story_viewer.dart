@@ -368,13 +368,13 @@ class _StoryMedia extends StatelessWidget {
 // ── Video story placeholder ───────────────────────────────────────────────────
 class _VideoStory extends StatelessWidget {
   final String url;
-  const _VideoStory({Key? key, required this.url}) : super(key: key);
+  _VideoStory({Key? key, required this.url}) : super(key: key);
 
   @override
   Widget build(BuildContext context) => Container(
     color: Colors.black,
-    child: const Center(child: Icon(Icons.play_circle_outline,
-        color: Colors.white38, size: 64)),
+    child: Center(child: Icon(Icons.play_circle_outline,
+        color: context.xMuted, size: 64)),
   );
 }
 

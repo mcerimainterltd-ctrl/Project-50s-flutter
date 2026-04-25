@@ -349,7 +349,7 @@ class _Stat extends StatelessWidget {
     children: [
       Text(value, style: TextStyle(color: color, fontSize: 20,
           fontWeight: FontWeight.w800)),
-      Text(label, style: TextStyle(color: Colors.white38,
+      Text(label, style: TextStyle(color: context.xMuted,
           fontSize: 10, fontWeight: FontWeight.w500)),
     ]);
 }
@@ -364,7 +364,7 @@ class _SDivider extends StatelessWidget {
 class _GridCell extends StatelessWidget {
   final GalleryItem item; final bool isOwner;
   final Function(GalleryItem) onTap; final Function(String) onDelete;
-  const _GridCell({required this.item, required this.isOwner,
+  _GridCell({required this.item, required this.isOwner,
       required this.onTap, required this.onDelete});
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -373,12 +373,12 @@ class _GridCell extends StatelessWidget {
     child: Stack(fit: StackFit.expand, children: [
       Image.network(item.url, fit: BoxFit.cover,
           loadingBuilder: (_, child, p) => p == null ? child
-              : Container(color: _kCard, child: const Center(
+              : Container(color: _kCard, child: Center(
                   child: CircularProgressIndicator(color: _kTeal, strokeWidth: 1))),
           errorBuilder: (_, __, ___) => Container(color: _kCard,
-              child: const Icon(Icons.broken_image_outlined, color: Colors.white24))),
+              child: Icon(Icons.broken_image_outlined, color: context.xMuted.withValues(alpha: 0.5)))),
       if (item.isVideo) const Positioned.fill(child: Center(
-          child: Icon(Icons.play_circle_fill, color: Colors.white70, size: 28))),
+          child: Icon(Icons.play_circle_fill, color: context.xText.withValues(alpha: 0.7), size: 28))),
       if (item.hasPrice)
         Positioned(bottom: 0, left: 0, right: 0,
           child: Container(
@@ -411,7 +411,7 @@ class _MasonryGrid extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 4),
           child: _MasonryCell(item: item, isOwner: isOwner,
               onTap: onTap, onDelete: onDelete))).toList())),
-        const SizedBox(width: 4),
+        SizedBox(width: 4),
         Expanded(child: Column(children: right.map((item) => Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: _MasonryCell(item: item, isOwner: isOwner,
@@ -423,7 +423,7 @@ class _MasonryGrid extends StatelessWidget {
 class _MasonryCell extends StatelessWidget {
   final GalleryItem item; final bool isOwner;
   final Function(GalleryItem) onTap; final Function(String) onDelete;
-  const _MasonryCell({required this.item, required this.isOwner,
+  _MasonryCell({required this.item, required this.isOwner,
       required this.onTap, required this.onDelete});
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -433,22 +433,22 @@ class _MasonryCell extends StatelessWidget {
       child: Stack(children: [
         Image.network(item.url, fit: BoxFit.cover, width: double.infinity,
             loadingBuilder: (_, child, p) => p == null ? child
-                : Container(height: 120, color: _kCard, child: const Center(
+                : Container(height: 120, color: _kCard, child: Center(
                     child: CircularProgressIndicator(color: _kTeal, strokeWidth: 1))),
             errorBuilder: (_, __, ___) => Container(height: 120, color: _kCard,
-                child: const Icon(Icons.broken_image_outlined, color: Colors.white24))),
+                child: Icon(Icons.broken_image_outlined, color: context.xMuted.withValues(alpha: 0.5)))),
         if (item.isVideo) const Positioned.fill(child: Center(
-            child: Icon(Icons.play_circle_fill, color: Colors.white70, size: 32))),
+            child: Icon(Icons.play_circle_fill, color: context.xText.withValues(alpha: 0.7), size: 32))),
         if (item.caption.isNotEmpty)
           Positioned(bottom: 0, left: 0, right: 0,
             child: Container(
               padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(gradient: LinearGradient(
+              decoration: BoxDecoration(gradient: LinearGradient(
                 begin: Alignment.bottomCenter, end: Alignment.topCenter,
                 colors: [Colors.black87, Colors.transparent])),
               child: Text(item.caption, maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 11)))),
+                  style: TextStyle(color: context.xText, fontSize: 11)))),
       ])),
   );
 }
@@ -457,7 +457,7 @@ class _MasonryCell extends StatelessWidget {
 class _BizCard extends StatelessWidget {
   final GalleryItem item; final bool isOwner;
   final Function(GalleryItem) onTap; final Function(String) onDelete;
-  const _BizCard({required this.item, required this.isOwner,
+  _BizCard({required this.item, required this.isOwner,
       required this.onTap, required this.onDelete});
 
   @override
@@ -469,29 +469,29 @@ class _BizCard extends StatelessWidget {
         color: _kCard, borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _kBorder),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8, offset: const Offset(0, 4))]),
+            blurRadius: 8, offset: Offset(0, 4))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(flex: 5, child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           child: Stack(fit: StackFit.expand, children: [
             Image.network(item.url, fit: BoxFit.cover,
                 loadingBuilder: (_, child, p) => p == null ? child
-                    : Container(color: _kBg, child: const Center(
+                    : Container(color: _kBg, child: Center(
                         child: CircularProgressIndicator(color: _kTeal, strokeWidth: 1))),
                 errorBuilder: (_, __, ___) => Container(color: _kBg,
-                    child: const Icon(Icons.store_outlined,
-                        color: Colors.white24, size: 32))),
-            if (item.isVideo) const Center(child: Icon(
-                Icons.play_circle_fill, color: Colors.white70, size: 36)),
+                    child: Icon(Icons.store_outlined,
+                        color: context.xMuted.withValues(alpha: 0.5), size: 32))),
+            if (item.isVideo) Center(child: Icon(
+                Icons.play_circle_fill, color: context.xText.withValues(alpha: 0.7), size: 36)),
             Positioned(top: 8, right: 8, child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(color: Colors.black54,
                   borderRadius: BorderRadius.circular(20)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(_visIcon(item.visibility), color: Colors.white70, size: 10),
-                const SizedBox(width: 4),
-                Text(_visLabel(item.visibility), style: const TextStyle(
-                    color: Colors.white70, fontSize: 9,
+                Icon(_visIcon(item.visibility), color: context.xText.withValues(alpha: 0.7), size: 10),
+                SizedBox(width: 4),
+                Text(_visLabel(item.visibility), style: TextStyle(
+                    color: context.xText.withValues(alpha: 0.7), fontSize: 9,
                     fontWeight: FontWeight.w600)),
               ]))),
             if (isOwner) Positioned(top: 8, left: 8,
@@ -501,21 +501,21 @@ class _BizCard extends StatelessWidget {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(color: Colors.black54,
                       borderRadius: BorderRadius.circular(20)),
-                  child: const Icon(Icons.close, color: Colors.white70, size: 12)))),
+                  child: Icon(Icons.close, color: context.xText.withValues(alpha: 0.7), size: 12)))),
           ]))),
         Expanded(flex: 3, child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (item.caption.isNotEmpty)
               Text(item.caption, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 12,
+                  style: TextStyle(color: context.xText, fontSize: 12,
                       fontWeight: FontWeight.w700)),
             if (item.description.isNotEmpty) ...[
-              const SizedBox(height: 2),
+              SizedBox(height: 2),
               Text(item.description, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                  style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 10)),
             ],
-            const Spacer(),
+            Spacer(),
             Row(children: [
               if (item.hasPrice)
                 Container(
@@ -525,12 +525,12 @@ class _BizCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: XameColors.accent
                         .withValues(alpha: 0.4))),
-                  child: Text('₦${item.price}', style: const TextStyle(
+                  child: Text('₦${item.price}', style: TextStyle(
                       color: XameColors.accent, fontSize: 10,
                       fontWeight: FontWeight.w800)))
               else
-                const Text('Free', style: TextStyle(
-                    color: Colors.white38, fontSize: 10)),
+                Text('Free', style: TextStyle(
+                    color: context.xMuted, fontSize: 10)),
               const Spacer(),
               if (item.hasContact) const Icon(Icons.contact_phone_outlined,
                   color: _kTeal, size: 14),
@@ -876,8 +876,8 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
             SizedBox(width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _file == null ? null : _upload,
-                icon: const Icon(Icons.cloud_upload_outlined),
-                label: const Text('Upload to Gallery',
+                icon: Icon(Icons.cloud_upload_outlined),
+                label: Text('Upload to Gallery',
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kTeal,
@@ -896,17 +896,17 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
       {TextInputType type = TextInputType.text, int maxLines = 1}) =>
     TextField(
       controller: ctrl, keyboardType: type, maxLines: maxLines,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: context.xText, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
-        prefixIcon: Icon(icon, color: Colors.white30, size: 18),
+        hintStyle: TextStyle(color: context.xText30, fontSize: 13),
+        prefixIcon: Icon(icon, color: context.xText30, size: 18),
         filled: true, fillColor: _kCard,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _kTeal, width: 1.5)),
+            borderSide: BorderSide(color: _kTeal, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 14, vertical: 12)),
     );
@@ -916,17 +916,17 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
     return GestureDetector(
       onTap: () => setState(() => _visibility = val),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: sel ? _kTeal.withValues(alpha: 0.15) : _kCard,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: sel ? _kTeal : _kBorder)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, color: sel ? _kTeal : Colors.white38, size: 14),
-          const SizedBox(width: 6),
+          Icon(icon, color: sel ? _kTeal : context.xMuted, size: 14),
+          SizedBox(width: 6),
           Text(label, style: TextStyle(
-              color: sel ? _kTeal : Colors.white38,
+              color: sel ? _kTeal : context.xMuted,
               fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
       ),
@@ -937,7 +937,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
 // ── Empty State ───────────────────────────────────────────────────────────────
 class _Empty extends StatelessWidget {
   final IconData icon; final String label; final String? sub;
-  const _Empty({required this.icon, required this.label, this.sub});
+  _Empty({required this.icon, required this.label, this.sub});
   @override
   Widget build(BuildContext context) => Center(
     child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -945,13 +945,13 @@ class _Empty extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(color: _kCard, shape: BoxShape.circle,
             border: Border.all(color: _kBorder)),
-        child: Icon(icon, color: Colors.white24, size: 48)),
-      const SizedBox(height: 16),
-      Text(label, style: const TextStyle(color: Colors.white54,
+        child: Icon(icon, color: context.xMuted.withValues(alpha: 0.5), size: 48)),
+      SizedBox(height: 16),
+      Text(label, style: TextStyle(color: context.xText.withValues(alpha: 0.54),
           fontSize: 16, fontWeight: FontWeight.w600)),
       if (sub != null) ...[
-        const SizedBox(height: 6),
-        Text(sub!, style: const TextStyle(color: Colors.white30, fontSize: 13)),
+        SizedBox(height: 6),
+        Text(sub!, style: TextStyle(color: context.xText30, fontSize: 13)),
       ],
     ]),
   );

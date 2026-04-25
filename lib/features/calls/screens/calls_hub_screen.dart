@@ -55,7 +55,7 @@ class _NavItem extends StatelessWidget {
   final String   label;
   final bool     selected;
   final VoidCallback onTap;
-  const _NavItem({required this.icon, required this.label,
+  _NavItem({required this.icon, required this.label,
       required this.selected, required this.onTap});
 
   @override
@@ -67,12 +67,12 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon,
-              color: selected ? XameColors.primary : Colors.white38,
+              color: selected ? XameColors.primary : context.xMuted,
               size: 24),
           SizedBox(height: 4),
           Text(label,
               style: TextStyle(
-                  color: selected ? XameColors.primary : Colors.white38,
+                  color: selected ? XameColors.primary : context.xMuted,
                   fontSize: 11,
                   fontWeight: selected
                       ? FontWeight.w700 : FontWeight.w400)),
@@ -100,13 +100,13 @@ class _CallScheduleTab extends StatelessWidget {
                 color: XameColors.primary.withValues(alpha: 0.3))),
           child: Icon(Icons.schedule_outlined,
               color: XameColors.primary, size: 56)),
-        const SizedBox(height: 24),
-        const Text('Call Schedule',
-            style: TextStyle(color: Colors.white,
+        SizedBox(height: 24),
+        Text('Call Schedule',
+            style: TextStyle(color: context.xText,
                 fontSize: 22, fontWeight: FontWeight.w700)),
         SizedBox(height: 8),
         Text('Schedule calls with your contacts',
-            style: TextStyle(color: Colors.white38, fontSize: 14),
+            style: TextStyle(color: context.xMuted, fontSize: 14),
             textAlign: TextAlign.center),
         SizedBox(height: 32),
         ElevatedButton.icon(
@@ -144,13 +144,13 @@ class _ConferenceTab extends StatelessWidget {
                 color: XameColors.primary.withValues(alpha: 0.3))),
           child: Icon(Icons.groups_rounded,
               color: XameColors.primary, size: 56)),
-        const SizedBox(height: 24),
-        const Text('Conference Call',
-            style: TextStyle(color: Colors.white,
+        SizedBox(height: 24),
+        Text('Conference Call',
+            style: TextStyle(color: context.xText,
                 fontSize: 22, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        const Text('Start a call with multiple contacts at once',
-            style: TextStyle(color: Colors.white38, fontSize: 14),
+        SizedBox(height: 8),
+        Text('Start a call with multiple contacts at once',
+            style: TextStyle(color: context.xMuted, fontSize: 14),
             textAlign: TextAlign.center),
         const SizedBox(height: 32),
         ElevatedButton.icon(

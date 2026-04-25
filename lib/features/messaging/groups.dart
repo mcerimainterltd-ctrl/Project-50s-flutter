@@ -688,7 +688,7 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
                     ? SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(
                             color: context.xPrimary, strokeWidth: 2))
-                    : const Text('Create Group',
+                    : Text('Create Group',
                         style: TextStyle(color: Colors.black, fontSize: 15,
                             fontWeight: FontWeight.w700)),
               ),
@@ -705,15 +705,15 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
     decoration: BoxDecoration(
       color: XameColors.darkCard,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.white10),
+      border: Border.all(color: context.xText10),
     ),
     child: TextField(
       controller: ctrl,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: context.xText, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white30),
-        prefixIcon: Icon(icon, color: Colors.white30, size: 18),
+        hintStyle: TextStyle(color: context.xText30),
+        prefixIcon: Icon(icon, color: context.xText30, size: 18),
         border: InputBorder.none,
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 14, vertical: 12),
@@ -1011,7 +1011,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
             !existing.contains(c['id']))
         .toList();
     if (available.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('All contacts are already members'),
         backgroundColor: XameColors.darkCard,
         behavior: SnackBarBehavior.floating));
@@ -1024,7 +1024,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
       isScrollControlled: true,
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSt) => Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: XameColors.darkSurface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
@@ -1033,14 +1033,14 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
             Center(child: Container(
               width: 36, height: 4,
               margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(color: Colors.white24,
+              decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2)),
             )),
-            const Text('Add Member', style: TextStyle(color: Colors.white,
+            Text('Add Member', style: TextStyle(color: context.xText,
                 fontSize: 16, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 300),
+              constraints: BoxConstraints(maxHeight: 300),
               child: ListView(shrinkWrap: true,
                 children: available.map((c) {
                   final id   = c['id']   as String;
@@ -1061,18 +1061,18 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                         border: Border.all(
                           color: sel
                               ? XameColors.primary.withValues(alpha: 0.3)
-                              : Colors.white10),
+                              : context.xText10),
                       ),
                       child: Row(children: [
-                        Expanded(child: Text(name, style: const TextStyle(
-                            color: Colors.white, fontSize: 14))),
+                        Expanded(child: Text(name, style: TextStyle(
+                            color: context.xText, fontSize: 14))),
                         AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
+                          duration: Duration(milliseconds: 150),
                           width: 20, height: 20,
                           decoration: BoxDecoration(
                             color: sel ? XameColors.primary : Colors.transparent,
                             border: Border.all(
-                              color: sel ? XameColors.primary : Colors.white24,
+                              color: sel ? XameColors.primary : context.xMuted.withValues(alpha: 0.5),
                               width: 1.5),
                             borderRadius: BorderRadius.circular(5),
                           ),

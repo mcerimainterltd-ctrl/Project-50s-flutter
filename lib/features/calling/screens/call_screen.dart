@@ -145,12 +145,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       floatingActionButton: hasRemote
           ? AnimatedOpacity(
               opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
+              duration: Duration(milliseconds: 200),
               child: FloatingActionButton.small(
                 onPressed: _openAddCall,
-                backgroundColor: Colors.white24,
-                child: const Icon(Icons.person_add_outlined,
-                    color: Colors.white, size: 20)))
+                backgroundColor: context.xMuted.withValues(alpha: 0.5),
+                child: Icon(Icons.person_add_outlined,
+                    color: context.xText, size: 20)))
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: GestureDetector(
@@ -171,16 +171,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               Positioned(
                 bottom: botPad + 180, left: 0, right: 0,
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const CircularProgressIndicator(
-                      color: Colors.white38, strokeWidth: 1.5),
-                  const SizedBox(height: 14),
+                  CircularProgressIndicator(
+                      color: context.xMuted, strokeWidth: 1.5),
+                  SizedBox(height: 14),
                   Text(
                       widget.isIncoming
                           ? 'Connecting...'
                           : webrtc.isRinging
                               ? 'Ringing...'
                               : 'Calling $name...',
-                      style: const TextStyle(color: Colors.white60, fontSize: 15)),
+                      style: TextStyle(color: context.xText.withValues(alpha: 0.6), fontSize: 15)),
                 ]),
               ),
 
@@ -216,11 +216,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               top: 0, left: 0, right: 0,
               child: AnimatedOpacity(
                 opacity: _showControls ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 250),
+                duration: Duration(milliseconds: 250),
                 child: Container(
                   padding: EdgeInsets.only(
                       top: topPad + 14, left: 16, right: 16, bottom: 24),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -229,7 +229,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   ),
                   child: Row(children: [
                     Expanded(child: Text(name,
-                      style: const TextStyle(color: Colors.white,
+                      style: TextStyle(color: context.xText,
                           fontSize: 18, fontWeight: FontWeight.w600,
                           shadows: [Shadow(color: Colors.black, blurRadius: 8)]))),
                     Container(
@@ -238,15 +238,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                       decoration: BoxDecoration(
                         color: Colors.black54,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white24),
+                        border: Border.all(color: context.xMuted.withValues(alpha: 0.5)),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.circle,
+                        Icon(Icons.circle,
                             color: XameColors.accent, size: 8),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Text(_fmt(_seconds),
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13)),
+                          style: TextStyle(
+                              color: context.xText, fontSize: 13)),
                       ]),
                     ),
                   ]),
@@ -350,12 +350,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
           SafeArea(
             child: Column(children: [
-              const Spacer(flex: 2),
+              Spacer(flex: 2),
 
               // ── Avatar ───────────────────────────────────────────
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 800),
+                duration: Duration(milliseconds: 800),
                 curve: Curves.easeOutCubic,
                 builder: (_, v, child) => Transform.scale(
                     scale: v, child: Opacity(opacity: v, child: child)),
@@ -364,7 +364,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: Colors.white.withOpacity(0.15), width: 1.5),
+                        color: context.xText.withOpacity(0.15), width: 1.5),
                   ),
                   child: CircleAvatar(
                     radius: 75,
@@ -373,15 +373,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         ? CachedNetworkImageProvider(photoUrl) : null,
                     child: photoUrl == null
                         ? Text(initials,
-                            style: const TextStyle(fontSize: 45,
-                                color: Colors.white,
+                            style: TextStyle(fontSize: 45,
+                                color: context.xText,
                                 fontWeight: FontWeight.bold))
                         : null,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
 
               // ── Name ─────────────────────────────────────────────
               Padding(
@@ -389,20 +389,20 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 child: Text(name,
                   textAlign: TextAlign.center,
                   maxLines: 2,
-                  style: const TextStyle(color: Colors.white, fontSize: 34,
+                  style: TextStyle(color: context.xText, fontSize: 34,
                       fontWeight: FontWeight.w900, letterSpacing: -0.5)),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // ── Status / timer ────────────────────────────────────
               AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
+                duration: Duration(milliseconds: 400),
                 child: Text(statusText,
                   key: ValueKey(statusText),
                   style: TextStyle(
                     color: isActive
-                        ? XameColors.accent : Colors.white54,
+                        ? XameColors.accent : context.xText.withValues(alpha: 0.54),
                     fontSize: 18,
                     fontWeight: isActive
                         ? FontWeight.w600 : FontWeight.w400,
@@ -475,31 +475,31 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             backgroundImage: photoUrl != null
                 ? CachedNetworkImageProvider(photoUrl) : null,
             child: photoUrl == null
-                ? Text(initials, style: const TextStyle(
-                    fontSize: 32, color: Colors.white,
+                ? Text(initials, style: TextStyle(
+                    fontSize: 32, color: context.xText,
                     fontWeight: FontWeight.w600))
                 : null,
           ),
-          const SizedBox(height: 24),
-          Text(name, style: const TextStyle(color: Colors.white,
+          SizedBox(height: 24),
+          Text(name, style: TextStyle(color: context.xText,
               fontSize: 22, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             decoration: BoxDecoration(
               color: isDeclined
                   ? Colors.red.withOpacity(0.15)
-                  : Colors.white.withOpacity(0.08),
+                  : context.xText.withOpacity(0.08),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
                 color: isDeclined
                     ? Colors.red.withOpacity(0.4)
-                    : Colors.white24),
+                    : context.xMuted.withValues(alpha: 0.5)),
             ),
             child: Text(reason,
               style: TextStyle(
                 color: isDeclined
-                    ? XameColors.danger : Colors.white70,
+                    ? XameColors.danger : context.xText.withValues(alpha: 0.7),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -565,15 +565,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         Container(
           width: 54, height: 54,
           decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.white12,
+            color: active ? context.xText : context.xMuted.withValues(alpha: 0.25),
             shape: BoxShape.circle,
           ),
           child: Icon(icon,
-              color: active ? Colors.black : Colors.white, size: 22),
+              color: active ? Colors.black : context.xText, size: 22),
         ),
-        const SizedBox(height: 6),
-        Text(label, style: const TextStyle(
-            color: Colors.white60, fontSize: 10)),
+        SizedBox(height: 6),
+        Text(label, style: TextStyle(
+            color: context.xText.withValues(alpha: 0.6), fontSize: 10)),
       ]),
     );
   }
@@ -590,18 +590,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         Container(
           width: 62, height: 62,
           decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.white12,
+            color: active ? context.xText : context.xMuted.withValues(alpha: 0.25),
             shape: BoxShape.circle,
             boxShadow: active ? [BoxShadow(
-                color: Colors.white.withOpacity(0.2),
+                color: context.xText.withOpacity(0.2),
                 blurRadius: 12, spreadRadius: 2)] : [],
           ),
           child: Icon(icon,
-              color: active ? Colors.black : Colors.white, size: 26),
+              color: active ? Colors.black : context.xText, size: 26),
         ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(
-            color: Colors.white60, fontSize: 12)),
+        SizedBox(height: 8),
+        Text(label, style: TextStyle(
+            color: context.xText.withValues(alpha: 0.6), fontSize: 12)),
       ]),
     );
   }
@@ -619,12 +619,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 color: Colors.red.withOpacity(0.45),
                 blurRadius: 20, spreadRadius: 3)],
           ),
-          child: Icon(Icons.call_end, color: Colors.white,
+          child: Icon(Icons.call_end, color: context.xText,
               size: size * 0.48),
         ),
-        const SizedBox(height: 8),
-        const Text('End', style: TextStyle(
-            color: Colors.white60, fontSize: 12)),
+        SizedBox(height: 8),
+        Text('End', style: TextStyle(
+            color: context.xText.withValues(alpha: 0.6), fontSize: 12)),
       ]),
     );
   }

@@ -362,7 +362,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin:  Alignment.topCenter,
                       end:    Alignment.bottomCenter,
                       colors: [Colors.transparent, Color(0xCC000000)])),
@@ -372,15 +372,15 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(widget.category.toUpperCase(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color:       XameColors.primary,
                           fontSize:    11,
                           fontWeight:  FontWeight.w800,
                           letterSpacing: 1.2)),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(widget.title,
-                        style: const TextStyle(
-                          color:      Colors.white,
+                        style: TextStyle(
+                          color:      context.xText,
                           fontSize:   24,
                           fontWeight: FontWeight.w800)),
                     ],

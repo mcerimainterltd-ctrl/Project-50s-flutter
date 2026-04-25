@@ -90,7 +90,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         onPressed:       _showAddContactDialog,
         backgroundColor: context.xPrimary,
         foregroundColor: Colors.black,
-        child:           const Icon(Icons.add_rounded, size: 28),
+        child:           Icon(Icons.add_rounded, size: 28),
       ) : null,
     );
   }
@@ -105,19 +105,19 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           profilePic: user?.profilePic,
           size: 36, isOnline: true),
       ),
-      const SizedBox(width: 12),
+      SizedBox(width: 12),
       Expanded(child: _tab == 0
         ? TextField(
             controller: _searchCtrl,
             onChanged:  (v) => setState(() => _filter = v),
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            style: TextStyle(color: context.xText, fontSize: 14),
             decoration: InputDecoration(
               hintText:  'Search chats...',
-              hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
-              prefixIcon: const Icon(Icons.search, color: Colors.white30, size: 18),
+              hintStyle: TextStyle(color: context.xText30, fontSize: 14),
+              prefixIcon: Icon(Icons.search, color: context.xText30, size: 18),
               suffixIcon: _filter.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white30, size: 18),
+                    icon: Icon(Icons.close, color: context.xText30, size: 18),
                     onPressed: () {
                       _searchCtrl.clear();
                       setState(() => _filter = '');
@@ -132,12 +132,12 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             ),
           )
         : Text(['Chats','Calls','Discover','Phone','Pay'][_tab],
-            style: const TextStyle(color: Colors.white, fontSize: 20,
+            style: TextStyle(color: context.xText, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
       _ConnectionDot(),
       IconButton(
-        icon: const Icon(Icons.more_vert, color: Colors.white70),
+        icon: Icon(Icons.more_vert, color: context.xText.withValues(alpha: 0.7)),
         onPressed: _showMainMenu),
     ]),
   );
@@ -146,13 +146,13 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
     decoration: BoxDecoration(
       color: XameColors.darkSurface,
       border: Border(top: BorderSide(
-        color: Colors.white.withValues(alpha: 0.06)))),
+        color: context.xText.withValues(alpha: 0.06)))),
     child: TabBar(
       controller: _tabCtrl,
       indicatorColor: XameColors.primary,
       indicatorSize: TabBarIndicatorSize.label,
       labelColor: XameColors.primary,
-      unselectedLabelColor: Colors.white38,
+      unselectedLabelColor: context.xMuted,
       labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
       tabs: [
         const Tab(icon: Icon(Icons.chat_bubble_outline_rounded, size: 22), text: 'Chats'),
@@ -169,9 +169,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                   child: const Icon(Icons.call_outlined, size: 22));
           }),
           text: 'Calls'),
-        const Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
-        const Tab(icon: Icon(Icons.phone_outlined,              size: 22), text: 'Phone'),
-        const Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 22), text: "Pay"),
+        Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
+        Tab(icon: Icon(Icons.phone_outlined,              size: 22), text: 'Phone'),
+        Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 22), text: "Pay"),
       ],
     ),
   );
@@ -186,7 +186,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       context: context,
       backgroundColor: XameColors.darkCard,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(builder: (ctx, setS) =>
         Padding(
@@ -195,20 +195,20 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           child: Column(mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Text('Add Contact',
-                style: TextStyle(color: Colors.white, fontSize: 18,
+              Text('Add Contact',
+                style: TextStyle(color: context.xText, fontSize: 18,
                   fontWeight: FontWeight.bold)),
-              const Spacer(),
+              Spacer(),
               IconButton(
-                icon: const Icon(Icons.close, color: Colors.white38),
+                icon: Icon(Icons.close, color: context.xMuted),
                 onPressed: () => Navigator.pop(ctx)),
             ]),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(children: [
               Expanded(
                 child: TextField(
                   controller: ctrl,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.xText),
                   onSubmitted: (_) => _doSearch(
                     ctrl, setS,
                     (e) => error = e,
@@ -216,9 +216,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     (s) => searching = s),
                   decoration: InputDecoration(
                     hintText:  'Enter Xame-ID',
-                    hintStyle: const TextStyle(color: Colors.white30),
-                    prefixIcon: const Icon(Icons.alternate_email,
-                      color: Colors.white38, size: 20),
+                    hintStyle: TextStyle(color: context.xText30),
+                    prefixIcon: Icon(Icons.alternate_email,
+                      color: context.xMuted, size: 20),
                     filled: true, fillColor: XameColors.darkBg,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -253,18 +253,18 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 )),
             ]),
             if (error != null) ...[
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Row(children: [
-                const Icon(Icons.info_outline,
+                Icon(Icons.info_outline,
                   color: XameColors.danger, size: 16),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(error!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: XameColors.danger, fontSize: 13)),
               ]),
             ],
             if (foundUser != null) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -274,17 +274,17 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     color: XameColors.primary.withValues(alpha: 0.3))),
                 child: Row(children: [
                   XameAvatar(name: _contactName(foundUser!), size: 44),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(_contactName(foundUser!),
-                        style: const TextStyle(color: Colors.white,
+                        style: TextStyle(color: context.xText,
                           fontWeight: FontWeight.w600, fontSize: 15)),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(foundUser!['xameId']?.toString() ?? '',
-                        style: const TextStyle(
-                          color: Colors.white38, fontSize: 12)),
+                        style: TextStyle(
+                          color: context.xMuted, fontSize: 12)),
                     ])),
                   ElevatedButton(
                     onPressed: () async {
@@ -360,24 +360,24 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: XameColors.darkCard,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(
         mainAxisSize: MainAxisSize.min, children: [
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(width: 36, height: 4,
-          decoration: BoxDecoration(color: Colors.white24,
+          decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
 
         ListTile(
-          leading: const Icon(Icons.photo_library_outlined, color: Colors.white70),
-          title: const Text('My Portfolio',
-            style: TextStyle(color: Colors.white)),
+          leading: Icon(Icons.photo_library_outlined, color: context.xText.withValues(alpha: 0.7)),
+          title: Text('My Portfolio',
+            style: TextStyle(color: context.xText)),
           onTap: () => context.push("/gallery")),
         ListTile(
-          leading: const Icon(Icons.campaign_outlined, color: Colors.white70),
-          title: const Text("Mass Messaging",
-            style: TextStyle(color: Colors.white)),
+          leading: Icon(Icons.campaign_outlined, color: context.xText.withValues(alpha: 0.7)),
+          title: Text("Mass Messaging",
+            style: TextStyle(color: context.xText)),
           onTap: () {
             Navigator.pop(context);
             final user = ref.read(currentUserProvider);
@@ -391,9 +391,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             ));
           }),
         ListTile(
-          leading: const Icon(Icons.group_outlined, color: Colors.white70),
-          title: const Text("Groups",
-            style: TextStyle(color: Colors.white)),
+          leading: Icon(Icons.group_outlined, color: context.xText.withValues(alpha: 0.7)),
+          title: Text("Groups",
+            style: TextStyle(color: context.xText)),
           onTap: () {
             Navigator.pop(context);
             final user = ref.read(currentUserProvider);
@@ -410,9 +410,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             );
           }),
         ListTile(
-          leading: const Icon(Icons.settings_outlined, color: Colors.white70),
-          title: const Text('Settings',
-            style: TextStyle(color: Colors.white)),
+          leading: Icon(Icons.settings_outlined, color: context.xText.withValues(alpha: 0.7)),
+          title: Text('Settings',
+            style: TextStyle(color: context.xText)),
           onTap: () { Navigator.pop(context); context.go('/settings'); }),
         ListTile(
           leading: const Icon(Icons.logout_rounded, color: XameColors.danger),
@@ -501,17 +501,17 @@ class _ChatsTab extends ConsumerWidget {
 
 class _SectionHeader extends StatelessWidget {
   final int count;
-  const _SectionHeader(this.count);
+  _SectionHeader(this.count);
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
     child: Row(children: [
-      const Text('All Contacts',
-        style: TextStyle(color: Colors.white38, fontSize: 12,
+      Text('All Contacts',
+        style: TextStyle(color: context.xMuted, fontSize: 12,
           fontWeight: FontWeight.w600, letterSpacing: 0.5)),
-      const SizedBox(width: 8),
+      SizedBox(width: 8),
       Text('$count',
-        style: const TextStyle(color: Colors.white24, fontSize: 12)),
+        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
     ]),
   );
 }
@@ -524,18 +524,18 @@ class _EmptyChats extends StatelessWidget {
         decoration: BoxDecoration(
           color: XameColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(24)),
-        child: const Icon(Icons.chat_bubble_outline_rounded,
+        child: Icon(Icons.chat_bubble_outline_rounded,
           color: XameColors.primary, size: 36)),
-      const SizedBox(height: 20),
-      const Text('XamePage',
+      SizedBox(height: 20),
+      Text('XamePage',
         style: TextStyle(color: XameColors.primary, fontSize: 28,
           fontWeight: FontWeight.w900, letterSpacing: 1)),
-      const SizedBox(height: 4),
-      const Text('created by Gibson Agbor',
-        style: TextStyle(color: Colors.white24, fontSize: 12)),
-      const SizedBox(height: 16),
-      const Text('Tap + to add a contact and start chatting',
-        style: TextStyle(color: Colors.white38, fontSize: 14),
+      SizedBox(height: 4),
+      Text('created by Gibson Agbor',
+        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+      SizedBox(height: 16),
+      Text('Tap + to add a contact and start chatting',
+        style: TextStyle(color: context.xMuted, fontSize: 14),
         textAlign: TextAlign.center),
     ]),
   );
@@ -694,16 +694,16 @@ class _Initials extends StatelessWidget {
 
 class _PlaceholderTab extends StatelessWidget {
   final String label; final IconData icon;
-  const _PlaceholderTab(this.label, this.icon);
+  _PlaceholderTab(this.label, this.icon);
   @override
   Widget build(BuildContext context) => Center(
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, color: Colors.white24, size: 48),
-      const SizedBox(height: 12),
-      Text(label, style: const TextStyle(color: Colors.white38, fontSize: 16)),
-      const SizedBox(height: 4),
-      const Text('Coming soon',
-        style: TextStyle(color: Colors.white24, fontSize: 12)),
+      Icon(icon, color: context.xMuted.withValues(alpha: 0.5), size: 48),
+      SizedBox(height: 12),
+      Text(label, style: TextStyle(color: context.xMuted, fontSize: 16)),
+      SizedBox(height: 4),
+      Text('Coming soon',
+        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
     ]),
   );
 }

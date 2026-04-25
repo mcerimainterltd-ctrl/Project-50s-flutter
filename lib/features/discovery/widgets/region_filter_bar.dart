@@ -36,7 +36,7 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
               widget.onRegionSelected(r);
             },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+              duration: Duration(milliseconds: 200),
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 8),
@@ -44,7 +44,7 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
                 borderRadius: BorderRadius.circular(20),
                 color: isSelected
                   ? XameColors.primary.withOpacity(0.15)
-                  : Colors.white.withOpacity(0.05),
+                  : context.xText.withOpacity(0.05),
                 border: Border.all(
                   color: isSelected
                     ? XameColors.primary.withOpacity(0.6)
@@ -52,14 +52,14 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
                   width: 1.2)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 if (isSelected) ...[
-                  const Icon(Icons.check_rounded,
+                  Icon(Icons.check_rounded,
                       color: XameColors.primary, size: 12),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                 ],
                 Text('${r.flag} ${r.name}',
                   style: TextStyle(
                     color: isSelected
-                      ? XameColors.primary : Colors.white54,
+                      ? XameColors.primary : context.xText.withValues(alpha: 0.54),
                     fontSize:   12,
                     fontWeight: isSelected
                       ? FontWeight.w700 : FontWeight.normal)),

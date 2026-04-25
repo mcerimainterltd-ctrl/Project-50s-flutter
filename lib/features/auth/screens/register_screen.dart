@@ -243,7 +243,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   )),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
             ],
           ),
         ),
@@ -253,23 +253,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Widget _section(String label, Widget child) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
-    children: [_label(label), const SizedBox(height: 8), child]);
+    children: [_label(label), SizedBox(height: 8), child]);
 
   Widget _label(String text) => Text(text,
-    style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500));
+    style: TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w500));
 
   Widget _field(TextEditingController ctrl, String hint, IconData icon,
       {bool obscure = false, Widget? suffix, TextInputType? type}) =>
     TextField(
       controller: ctrl, obscureText: obscure, keyboardType: type,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: context.xText),
       decoration: InputDecoration(
-        hintText: hint, hintStyle: const TextStyle(color: Colors.white24),
-        prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+        hintText: hint, hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.5)),
+        prefixIcon: Icon(icon, color: context.xMuted, size: 20),
         suffixIcon: suffix, filled: true, fillColor: XameColors.darkCard,
         border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: XameColors.primary, width: 1.5)),
+          borderSide: BorderSide(color: XameColors.primary, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
@@ -279,7 +279,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     TextField(
       controller: ctrl, focusNode: focus,
       keyboardType: TextInputType.number, maxLength: maxLen,
-      style: const TextStyle(color: Colors.white), textAlign: TextAlign.center,
+      style: TextStyle(color: context.xText), textAlign: TextAlign.center,
       onChanged: (v) {
         final clean = v.replaceAll(RegExp(r'[^0-9]'), '');
         if (clean != v) ctrl.text = clean;
@@ -290,7 +290,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         }
       },
       decoration: InputDecoration(
-        hintText: hint, hintStyle: const TextStyle(color: Colors.white24),
+        hintText: hint, hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.5)),
         counterText: '', filled: true, fillColor: XameColors.darkCard,
         border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),

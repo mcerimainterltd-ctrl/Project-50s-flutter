@@ -269,16 +269,16 @@ class _PhoneScreenState extends State<PhoneScreen>
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('📞 Confirm Call',
-              style: TextStyle(color: Colors.white,
+          Text('📞 Confirm Call',
+              style: TextStyle(color: context.xText,
                   fontSize: 17, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Number row
           Container(
             padding: const EdgeInsets.all(14),
@@ -286,15 +286,15 @@ class _PhoneScreenState extends State<PhoneScreen>
                 borderRadius: BorderRadius.circular(12)),
             child: Row(children: [
               Text(_country.flag,
-                  style: const TextStyle(fontSize: 22)),
-              const SizedBox(width: 10),
+                  style: TextStyle(fontSize: 22)),
+              SizedBox(width: 10),
               Expanded(child: Text(full,
-                  style: const TextStyle(color: Colors.white,
+                  style: TextStyle(color: context.xText,
                       fontSize: 18, fontWeight: FontWeight.w700,
                       letterSpacing: 1))),
             ]),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           // Rate and balance
           Row(children: [
             Expanded(child: Container(
@@ -304,11 +304,11 @@ class _PhoneScreenState extends State<PhoneScreen>
                   borderRadius: BorderRadius.circular(10)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                const Text('Rate / min',
+                Text('Rate / min',
                     style: TextStyle(color: _kMuted, fontSize: 11)),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text('$_creditsCurr $rate',
-                    style: const TextStyle(color: Colors.white,
+                    style: TextStyle(color: context.xText,
                         fontSize: 15, fontWeight: FontWeight.w700)),
               ]),
             )),
@@ -333,7 +333,7 @@ class _PhoneScreenState extends State<PhoneScreen>
             )),
           ]),
           if (_credits < rate) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -342,27 +342,27 @@ class _PhoneScreenState extends State<PhoneScreen>
                   border: Border.all(
                       color: XameColors.danger.withValues(alpha: 0.2))),
               child: Row(children: [
-                const Icon(Icons.warning_amber_rounded,
+                Icon(Icons.warning_amber_rounded,
                     color: XameColors.danger, size: 16),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(child: Text(
                   'Insufficient credits. Top up to continue.',
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: XameColors.danger, fontSize: 12))),
               ]),
             ),
           ],
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Row(children: [
             Expanded(child: OutlinedButton(
               style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white24),
+                  side: BorderSide(color: context.xMuted.withValues(alpha: 0.5)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12))),
               onPressed: () => Navigator.pop(_, false),
-              child: const Text('Cancel',
-                  style: TextStyle(color: Colors.white)))),
+              child: Text('Cancel',
+                  style: TextStyle(color: context.xText)))),
             const SizedBox(width: 12),
             Expanded(flex: 2, child: ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -557,13 +557,13 @@ class _CreditsBar extends StatelessWidget {
   final double credits;
   final String currency;
   final VoidCallback onTopUp;
-  const _CreditsBar({required this.credits, required this.currency,
+  _CreditsBar({required this.credits, required this.currency,
       required this.onTopUp});
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       color: XameColors.darkSurface,
       border: Border(bottom: BorderSide(color: XameColors.darkCard))),
     child: Row(children: [
@@ -574,31 +574,31 @@ class _CreditsBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border:       Border.all(color: _kGreen.withOpacity(0.3))),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.phone_in_talk_rounded,
+          Icon(Icons.phone_in_talk_rounded,
               color: _kGreen, size: 14),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           Text('$currency ${credits.toStringAsFixed(2)}',
-            style: const TextStyle(color: _kGreen,
+            style: TextStyle(color: _kGreen,
                 fontSize: 13, fontWeight: FontWeight.w700)),
-          const SizedBox(width: 4),
-          const Text('credits',
-            style: TextStyle(color: Colors.white38, fontSize: 11)),
+          SizedBox(width: 4),
+          Text('credits',
+            style: TextStyle(color: context.xMuted, fontSize: 11)),
         ]),
       ),
-      const Spacer(),
+      Spacer(),
       GestureDetector(
         onTap: onTopUp,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color:        Colors.white.withOpacity(0.05),
+            color:        context.xText.withOpacity(0.05),
             borderRadius: BorderRadius.circular(20),
-            border:       Border.all(color: Colors.white12)),
-          child: const Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.add_rounded, color: Colors.white70, size: 14),
+            border:       Border.all(color: context.xMuted.withValues(alpha: 0.25))),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.add_rounded, color: context.xText.withValues(alpha: 0.7), size: 14),
             SizedBox(width: 4),
             Text('Top Up', style: TextStyle(
-                color: Colors.white70, fontSize: 12,
+                color: context.xText.withValues(alpha: 0.7), fontSize: 12,
                 fontWeight: FontWeight.w600)),
           ]),
         ),
@@ -892,7 +892,7 @@ class _ContactsTab extends StatelessWidget {
 class _ContactTile extends StatelessWidget {
   final _DevContact contact;
   final VoidCallback onCall, onSms;
-  const _ContactTile({
+  _ContactTile({
     required this.contact,
     required this.onCall,
     required this.onSms});
@@ -906,7 +906,7 @@ class _ContactTile extends StatelessWidget {
         radius:          21,
         backgroundColor: XameColors.darkSurface,
         child: Text(contact.initials,
-          style: const TextStyle(color: _kGreen,
+          style: TextStyle(color: _kGreen,
               fontSize: 14, fontWeight: FontWeight.w700))),
       if (contact.isOnXame)
         Positioned(bottom: -2, right: -2,
@@ -916,20 +916,20 @@ class _ContactTile extends StatelessWidget {
               color:  _kGreen,
               shape:  BoxShape.circle,
               border: Border.all(color: _kBg, width: 2)),
-            child: const Icon(Icons.check,
+            child: Icon(Icons.check,
                 color: Colors.black, size: 9))),
     ]),
     title: Text(contact.name,
-      style: const TextStyle(color: Colors.white,
+      style: TextStyle(color: context.xText,
           fontSize: 14, fontWeight: FontWeight.w600),
       overflow: TextOverflow.ellipsis),
     subtitle: Row(children: [
       Flexible(child: Text(contact.primary,
-        style: const TextStyle(color: _kMuted, fontSize: 12),
+        style: TextStyle(color: _kMuted, fontSize: 12),
         overflow: TextOverflow.ellipsis)),
       if (contact.isOnXame) ...[
-        const Text(' · ', style: TextStyle(color: _kMuted)),
-        const Text('XamePage',
+        Text(' · ', style: TextStyle(color: _kMuted)),
+        Text('XamePage',
           style: TextStyle(color: _kGreen, fontSize: 12,
               fontWeight: FontWeight.w500)),
       ],
@@ -943,10 +943,10 @@ class _ContactTile extends StatelessWidget {
           margin: const EdgeInsets.only(right: 8),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.05),
-            border: Border.all(color: Colors.white12)),
-          child: const Icon(Icons.message_outlined,
-              color: Colors.white54, size: 16))),
+            color: context.xText.withOpacity(0.05),
+            border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
+          child: Icon(Icons.message_outlined,
+              color: context.xText.withValues(alpha: 0.54), size: 16))),
       // Call
       GestureDetector(
         onTap: onCall,
@@ -1228,7 +1228,7 @@ class _DialKeyState extends State<_DialKey>
   void initState() {
     super.initState();
     _ctrl  = AnimationController(vsync: this,
-        duration: const Duration(milliseconds: 80));
+        duration: Duration(milliseconds: 80));
     _scale = Tween(begin: 1.0, end: 0.9).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
@@ -1245,17 +1245,17 @@ class _DialKeyState extends State<_DialKey>
       child: Container(
         alignment:  Alignment.center,
         decoration: BoxDecoration(
-          color:        Colors.white.withOpacity(0.04),
+          color:        context.xText.withOpacity(0.04),
           borderRadius: BorderRadius.circular(14),
-          border:       Border.all(color: Colors.white.withOpacity(0.06))),
+          border:       Border.all(color: context.xText.withOpacity(0.06))),
         child: Column(mainAxisAlignment: MainAxisAlignment.center,
           children: [
-          Text(widget.label, style: const TextStyle(
-              color: Colors.white, fontSize: 24,
+          Text(widget.label, style: TextStyle(
+              color: context.xText, fontSize: 24,
               fontWeight: FontWeight.w300)),
           if (widget.sub.isNotEmpty)
-            Text(widget.sub, style: const TextStyle(
-                color: Colors.white38, fontSize: 8,
+            Text(widget.sub, style: TextStyle(
+                color: context.xMuted, fontSize: 8,
                 letterSpacing: 1.5, fontWeight: FontWeight.w600)),
         ]),
       ),
@@ -1424,7 +1424,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         Uri.parse('${widget.serverUrl}/api/call-credits/recharge'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': widget.userId, 'token': token}),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(Duration(seconds: 10));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         widget.onSuccess((d['balance'] as num).toDouble());
@@ -1444,24 +1444,24 @@ class _TopUpSheetState extends State<_TopUpSheet> {
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       // Handle
       Container(width: 36, height: 4,
-        decoration: BoxDecoration(color: Colors.white24,
+        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
-      const SizedBox(height: 20),
+      SizedBox(height: 20),
 
       // Title
-      const Text('Top Up Credits',
-        style: TextStyle(color: Colors.white, fontSize: 18,
+      Text('Top Up Credits',
+        style: TextStyle(color: context.xText, fontSize: 18,
             fontWeight: FontWeight.w700)),
-      const SizedBox(height: 6),
+      SizedBox(height: 6),
       Text('Add call credits to your account',
-        style: const TextStyle(color: Colors.white38, fontSize: 13)),
-      const SizedBox(height: 20),
+        style: TextStyle(color: context.xMuted, fontSize: 13)),
+      SizedBox(height: 20),
 
       // Tab selector
       Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color:        Colors.white.withOpacity(0.05),
+          color:        context.xText.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12)),
         child: Row(children: [
           _TabBtn(label: '🎟 Recharge Token', selected: _tab == 0,
@@ -1470,7 +1470,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
               onTap: () => setState(() => _tab = 1)),
         ]),
       ),
-      const SizedBox(height: 20),
+      SizedBox(height: 20),
 
       if (_tab == 0) ...[
         // Token input
@@ -1478,11 +1478,11 @@ class _TopUpSheetState extends State<_TopUpSheet> {
           decoration: BoxDecoration(
             color:        XameColors.darkBg,
             borderRadius: BorderRadius.circular(14),
-            border:       Border.all(color: Colors.white12)),
+            border:       Border.all(color: context.xMuted.withValues(alpha: 0.25))),
           child: TextField(
             controller:    _tokenCtrl,
-            style: const TextStyle(
-              color:       Colors.white,
+            style: TextStyle(
+              color:       context.xText,
               fontSize:    18,
               fontWeight:  FontWeight.w700,
               letterSpacing: 2),
@@ -1504,7 +1504,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
             },
             decoration: InputDecoration(
               hintText:  'XAME-XXXX-XXXX-XXXX',
-              hintStyle: const TextStyle(
+              hintStyle: TextStyle(
                 color:       XameColors.darkCard,
                 fontSize:    18,
                 letterSpacing: 2),
@@ -1513,11 +1513,11 @@ class _TopUpSheetState extends State<_TopUpSheet> {
                   horizontal: 16, vertical: 16)),
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
+        SizedBox(height: 8),
+        Text(
           'Enter your XamePage recharge token\nAvailable from authorized resellers',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white24, fontSize: 12, height: 1.5)),
+          style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12, height: 1.5)),
       ] else ...[
         // Wallet balance display
         FutureBuilder<double>(
@@ -1531,51 +1531,51 @@ class _TopUpSheetState extends State<_TopUpSheet> {
                 borderRadius: BorderRadius.circular(14),
                 border:       Border.all(color: _kGreen.withOpacity(0.2))),
               child: Row(children: [
-                const Icon(Icons.account_balance_wallet_outlined,
+                Icon(Icons.account_balance_wallet_outlined,
                     color: _kGreen, size: 28),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                  const Text('XamePay Wallet',
-                    style: TextStyle(color: Colors.white,
+                  Text('XamePay Wallet',
+                    style: TextStyle(color: context.xText,
                         fontSize: 13, fontWeight: FontWeight.w600)),
                   Text('${widget.currency} ${bal.toStringAsFixed(2)} available',
-                    style: const TextStyle(
-                        color: Colors.white38, fontSize: 12)),
+                    style: TextStyle(
+                        color: context.xMuted, fontSize: 12)),
                 ]),
               ]),
             );
           },
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         // Amount input
         Container(
           decoration: BoxDecoration(
             color:        XameColors.darkBg,
             borderRadius: BorderRadius.circular(14),
-            border:       Border.all(color: Colors.white12)),
+            border:       Border.all(color: context.xMuted.withValues(alpha: 0.25))),
           child: TextField(
             controller:   _amountCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(color: Colors.white,
+            style: TextStyle(color: context.xText,
                 fontSize: 22, fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               hintText:  '0.00',
-              hintStyle: const TextStyle(color: XameColors.darkCard,
+              hintStyle: TextStyle(color: XameColors.darkCard,
                   fontSize: 22),
               prefixText: '${widget.currency} ',
-              prefixStyle: const TextStyle(color: _kGreen,
+              prefixStyle: TextStyle(color: _kGreen,
                   fontSize: 16, fontWeight: FontWeight.w600),
               border:    InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 14)),
           ),
         ),
-        const SizedBox(height: 8),
-        const Text('Amount will be deducted from your XamePay wallet',
+        SizedBox(height: 8),
+        Text('Amount will be deducted from your XamePay wallet',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white24, fontSize: 11)),
+          style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 11)),
       ],
 
       if (_error != null) ...[
@@ -1629,7 +1629,7 @@ class _TabBtn extends StatelessWidget {
   final String label;
   final bool   selected;
   final VoidCallback onTap;
-  const _TabBtn({required this.label, required this.selected,
+  _TabBtn({required this.label, required this.selected,
       required this.onTap});
 
   @override
@@ -1637,7 +1637,7 @@ class _TabBtn extends StatelessWidget {
     child: GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
           color:        selected ? _kGreen.withOpacity(0.15) : Colors.transparent,
@@ -1648,7 +1648,7 @@ class _TabBtn extends StatelessWidget {
         child: Text(label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color:      selected ? _kGreen : Colors.white38,
+            color:      selected ? _kGreen : context.xMuted,
             fontSize:   12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
       ),

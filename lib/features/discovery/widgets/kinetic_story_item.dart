@@ -125,7 +125,7 @@ class StoryNeonPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     if (!hasUnseen) {
-      paint.color = Colors.white.withOpacity(0.1);
+      paint.color = context.xText.withOpacity(0.1);
       canvas.drawCircle(center, radius, paint);
     } else {
       // Ultramodern Gradient: Deep Blue to Neon Cyan

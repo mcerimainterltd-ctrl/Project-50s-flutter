@@ -318,7 +318,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
                 ? SizedBox(width: 20, height: 20,
                     child: CircularProgressIndicator(
                         color: context.xPrimary, strokeWidth: 2))
-                : const Text('Schedule Call',
+                : Text('Schedule Call',
                     style: TextStyle(color: Colors.black, fontSize: 15,
                         fontWeight: FontWeight.w700)),
           ),
@@ -331,7 +331,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
     child: GestureDetector(
       onTap: () => setState(() => _callType = type),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: Duration(milliseconds: 150),
         height: 40,
         decoration: BoxDecoration(
           color: _callType == type
@@ -345,7 +345,7 @@ class _ScheduleCallDialogState extends State<ScheduleCallDialog> {
         alignment: Alignment.center,
         child: Text(label,
             style: TextStyle(
-              color: _callType == type ? XameColors.primary : Colors.white38,
+              color: _callType == type ? XameColors.primary : context.xMuted,
               fontSize: 13, fontWeight: FontWeight.w600)),
       ),
     ),

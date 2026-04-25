@@ -87,26 +87,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final x = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: XameColors.darkSurface,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Container(width: 36, height: 4,
-            decoration: BoxDecoration(color: Colors.white24,
+            decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           ListTile(
-            leading: const Icon(Icons.camera_alt_outlined, color: Colors.white70),
-            title: const Text('Camera', style: TextStyle(color: Colors.white)),
+            leading: Icon(Icons.camera_alt_outlined, color: context.xText.withValues(alpha: 0.7)),
+            title: Text('Camera', style: TextStyle(color: context.xText)),
             onTap: () => Navigator.pop(context, ImageSource.camera)),
           ListTile(
-            leading: const Icon(Icons.photo_library_outlined, color: Colors.white70),
-            title: const Text('Gallery', style: TextStyle(color: Colors.white)),
+            leading: Icon(Icons.photo_library_outlined, color: context.xText.withValues(alpha: 0.7)),
+            title: Text('Gallery', style: TextStyle(color: context.xText)),
             onTap: () => Navigator.pop(context, ImageSource.gallery)),
           ListTile(
-            leading: const Icon(Icons.face_outlined, color: XameColors.primary),
-            title: const Text('🎨 Build Avatar', style: TextStyle(color: Colors.white)),
+            leading: Icon(Icons.face_outlined, color: XameColors.primary),
+            title: Text('🎨 Build Avatar', style: TextStyle(color: context.xText)),
             onTap: () { Navigator.pop(context); _openAvatarBuilder(); }),
           ListTile(
             leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
@@ -208,7 +208,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _snack(String msg, {bool success = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: TextStyle(color: Colors.white)),
+      content: Text(msg, style: TextStyle(color: context.xText)),
       backgroundColor: success
           ? XameColors.accent : XameColors.darkSurface,
       behavior:  SnackBarBehavior.floating,
@@ -468,7 +468,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           initialChildSize: 0.6,
           maxChildSize:     0.9,
           builder: (_, ctrl) => Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: XameColors.darkCard,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
@@ -477,13 +477,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
                 child: Row(children: [
-                  const Icon(Icons.devices_outlined,
+                  Icon(Icons.devices_outlined,
                       color: Colors.blueAccent, size: 20),
-                  const SizedBox(width: 10),
-                  const Text('Active Sessions',
-                    style: TextStyle(color: Colors.white, fontSize: 17,
+                  SizedBox(width: 10),
+                  Text('Active Sessions',
+                    style: TextStyle(color: context.xText, fontSize: 17,
                         fontWeight: FontWeight.w700)),
-                  const Spacer(),
+                  Spacer(),
                   TextButton(
                     onPressed: () async {
                       await _dio.post('/api/sessions/kill-all',
@@ -491,17 +491,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       if (ctx.mounted) Navigator.pop(ctx);
                       _snack('All other devices logged out', success: true);
                     },
-                    child: const Text('Log out all',
+                    child: Text('Log out all',
                         style: TextStyle(color: Colors.redAccent,
                             fontSize: 12))),
                 ]),
               ),
               Expanded(child: sessions.when(
-                loading: () => const Center(child: CircularProgressIndicator(
+                loading: () => Center(child: CircularProgressIndicator(
                     color: XameColors.primary, strokeWidth: 2)),
-                error: (_, __) => const Center(
+                error: (_, __) => Center(
                     child: Text('Failed to load sessions',
-                        style: TextStyle(color: Colors.white38))),
+                        style: TextStyle(color: context.xMuted))),
                 data: (list) => ListView.builder(
                   controller:  ctrl,
                   padding:     const EdgeInsets.symmetric(horizontal: 20),
@@ -515,23 +515,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
+                        color: context.xText.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white10),
+                        border: Border.all(color: context.xText10),
                       ),
                       child: Row(children: [
-                        const Icon(Icons.phone_android,
-                            color: Colors.white54, size: 20),
-                        const SizedBox(width: 12),
+                        Icon(Icons.phone_android,
+                            color: context.xText.withValues(alpha: 0.54), size: 20),
+                        SizedBox(width: 12),
                         Expanded(child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(device,
-                              style: const TextStyle(color: Colors.white,
+                              style: TextStyle(color: context.xText,
                                   fontSize: 13, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 3),
+                            SizedBox(height: 3),
                             Text('Logged in: ${_fmtDate(date)}',
-                              style: const TextStyle(color: Colors.white38,
+                              style: TextStyle(color: context.xMuted,
                                   fontSize: 11)),
                           ],
                         )),
@@ -588,11 +588,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget _initialsWidget(String initials) => Container(
     color: XameColors.darkSurface,
     child: Center(child: Text(initials,
-      style: const TextStyle(color: Colors.white, fontSize: 32,
+      style: TextStyle(color: context.xText, fontSize: 32,
           fontWeight: FontWeight.w600))));
 
   Widget _sectionTitle(String t) => Text(t,
-    style: const TextStyle(color: Colors.white38, fontSize: 12,
+    style: TextStyle(color: context.xMuted, fontSize: 12,
         fontWeight: FontWeight.w600, letterSpacing: 0.8));
 
   Widget _inputField({
@@ -602,15 +602,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     decoration: BoxDecoration(
       color: XameColors.darkSurface,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: Colors.white10),
+      border: Border.all(color: context.xText10),
     ),
     child: TextField(
       controller: controller,
-      style: const TextStyle(color: Colors.white, fontSize: 15),
+      style: TextStyle(color: context.xText, fontSize: 15),
       decoration: InputDecoration(
         hintText:    hint,
-        hintStyle:   const TextStyle(color: Colors.white30),
-        prefixIcon:  Icon(icon, color: Colors.white38, size: 20),
+        hintStyle:   TextStyle(color: context.xText30),
+        prefixIcon:  Icon(icon, color: context.xMuted, size: 20),
         border:      InputBorder.none,
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 16, vertical: 14),
@@ -627,17 +627,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     decoration: BoxDecoration(
       color: XameColors.darkSurface,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: Colors.white10),
+      border: Border.all(color: context.xText10),
     ),
     child: Row(children: [
-      Icon(icon, color: Colors.white54, size: 20),
-      const SizedBox(width: 14),
+      Icon(icon, color: context.xText.withValues(alpha: 0.54), size: 20),
+      SizedBox(width: 14),
       Expanded(child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white,
+          Text(title, style: TextStyle(color: context.xText,
               fontSize: 14, fontWeight: FontWeight.w500)),
-          Text(subtitle, style: const TextStyle(color: Colors.white38,
+          Text(subtitle, style: TextStyle(color: context.xMuted,
               fontSize: 12)),
         ],
       )),
@@ -645,7 +645,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         value:           value,
         onChanged:       onChanged,
         activeColor:     XameColors.accent,
-        inactiveTrackColor: Colors.white12,
+        inactiveTrackColor: context.xMuted.withValues(alpha: 0.25),
       ),
     ]),
   );
@@ -661,21 +661,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       decoration: BoxDecoration(
         color: XameColors.darkSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: context.xText10),
       ),
       child: Row(children: [
         Icon(icon, color: color, size: 20),
-        const SizedBox(width: 14),
+        SizedBox(width: 14),
         Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: TextStyle(color: color,
                 fontSize: 14, fontWeight: FontWeight.w500)),
-            Text(subtitle, style: const TextStyle(color: Colors.white38,
+            Text(subtitle, style: TextStyle(color: context.xMuted,
                 fontSize: 12)),
           ],
         )),
-        const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
+        Icon(Icons.chevron_right, color: context.xMuted.withValues(alpha: 0.5), size: 20),
       ]),
     ),
   );
@@ -683,7 +683,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget _sheetHandle() => Container(
     margin: const EdgeInsets.only(top: 12, bottom: 8),
     width: 40, height: 4,
-    decoration: BoxDecoration(color: Colors.white24,
+    decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(2)));
 }
 
@@ -837,10 +837,10 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
                       borderRadius: BorderRadius.circular(14)),
                 ),
                 child: _saving
-                    ? const SizedBox(width: 20, height: 20,
+                    ? SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(
                             color: Colors.black, strokeWidth: 2))
-                    : const Text('Save Security Settings',
+                    : Text('Save Security Settings',
                         style: TextStyle(fontSize: 15,
                             fontWeight: FontWeight.w700)),
               ),
@@ -860,16 +860,16 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
   Widget _field(TextEditingController ctrl, String hint,
       TextInputType type) => Container(
     decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.07),
+      color: context.xText.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.white10),
+      border: Border.all(color: context.xText10),
     ),
     child: TextField(
       controller: ctrl, keyboardType: type,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
+      style: TextStyle(color: context.xText, fontSize: 14),
       decoration: InputDecoration(
         hintText:    hint,
-        hintStyle:   const TextStyle(color: Colors.white30),
+        hintStyle:   TextStyle(color: context.xText30),
         border:      InputBorder.none,
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 16, vertical: 12),

@@ -527,31 +527,31 @@ class _XamePayScreenState extends State<XamePayScreen>
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
             colors: [XameColors.primary, XameColors.accent],
             begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Wallet Balance',
+        Text('Wallet Balance',
             style: TextStyle(color: Color(0xCCFFFFFF),
                 fontSize: 12, letterSpacing: 1)),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Text(_fmt(_balance),
-            style: const TextStyle(color: Colors.white,
+            style: TextStyle(color: context.xText,
                 fontSize: 32, fontWeight: FontWeight.w800)),
         if (conv.isNotEmpty)
           Padding(padding: const EdgeInsets.only(top: 4),
-              child: Text(conv, style: const TextStyle(
+              child: Text(conv, style: TextStyle(
                   color: Color(0xB3FFFFFF), fontSize: 13))),
         Text('XamePay • $_currency',
-            style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 12)),
-        const SizedBox(height: 20),
+            style: TextStyle(color: Color(0xB3FFFFFF), fontSize: 12)),
+        SizedBox(height: 20),
         Row(children: [
           _cBtn('+ Add Money', () => _showAddMoney()),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           _cBtn('↗ Send',     () => _tab.animateTo(3)),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           _cBtn('📊 History', () => _tab.animateTo(4)),
         ]),
       ]),
@@ -564,12 +564,12 @@ class _XamePayScreenState extends State<XamePayScreen>
         padding: const EdgeInsets.symmetric(vertical: 10),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: const Color(0x33FFFFFF),
+          color: Color(0x33FFFFFF),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0x4DFFFFFF)),
+          border: Border.all(color: Color(0x4DFFFFFF)),
         ),
         child: Text(l, textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white,
+            style: TextStyle(color: context.xText,
                 fontSize: 11, fontWeight: FontWeight.w600)),
       ),
     ),
@@ -608,17 +608,17 @@ class _XamePayScreenState extends State<XamePayScreen>
     ];
     showModalBottomSheet(
       context: context, backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => DraggableScrollableSheet(
         expand: false, initialChildSize: 0.55,
         builder: (_, sc) => ListView(
           controller: sc, padding: const EdgeInsets.all(24),
           children: [
-            const Text('💳 Add Money',
-                style: TextStyle(color: Colors.white,
+            Text('💳 Add Money',
+                style: TextStyle(color: context.xText,
                     fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             ...methods.map((m) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: GestureDetector(
@@ -627,19 +627,19 @@ class _XamePayScreenState extends State<XamePayScreen>
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(color: _kCard,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white12)),
+                      border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
                   child: Row(children: [
-                    Text(m[0], style: const TextStyle(fontSize: 28)),
-                    const SizedBox(width: 16),
+                    Text(m[0], style: TextStyle(fontSize: 28)),
+                    SizedBox(width: 16),
                     Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text(m[1], style: const TextStyle(color: Colors.white,
+                      Text(m[1], style: TextStyle(color: context.xText,
                           fontSize: 15, fontWeight: FontWeight.w700)),
-                      Text(m[2], style: const TextStyle(
+                      Text(m[2], style: TextStyle(
                           color: _kMuted, fontSize: 12)),
                     ])),
-                    const Icon(Icons.chevron_right, color: _kMuted),
+                    Icon(Icons.chevron_right, color: _kMuted),
                   ]),
                 ),
               ),
@@ -656,7 +656,7 @@ class _XamePayScreenState extends State<XamePayScreen>
     String tc = _currency, td = _dispCurrency;
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(builder: (ctx, ss) =>
         DraggableScrollableSheet(expand: false, initialChildSize: 0.75,
@@ -664,55 +664,55 @@ class _XamePayScreenState extends State<XamePayScreen>
             controller: sc, padding: const EdgeInsets.all(24),
             children: [
               Row(children: [
-                const Expanded(child: Text('⚙️ Wallet Settings',
-                    style: TextStyle(color: Colors.white,
+                Expanded(child: Text('⚙️ Wallet Settings',
+                    style: TextStyle(color: context.xText,
                         fontSize: 17, fontWeight: FontWeight.w700))),
-                IconButton(icon: const Icon(Icons.close, color: Colors.grey),
+                IconButton(icon: Icon(Icons.close, color: Colors.grey),
                     onPressed: () => Navigator.pop(ctx)),
               ]),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _sLabel('🌍 Region & Currency'),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               // Region picker — shows flag + country + currency code
               DropdownButtonFormField<String>(
                 value: tc, isExpanded: true, dropdownColor: _kBg,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(color: context.xText, fontSize: 14),
                 decoration: _dropDeco(),
                 items: _kRegions.map((r) => DropdownMenuItem(
                   value: r.currency,
                   child: Row(children: [
-                    Text(r.flag, style: const TextStyle(fontSize: 18)),
-                    const SizedBox(width: 10),
+                    Text(r.flag, style: TextStyle(fontSize: 18)),
+                    SizedBox(width: 10),
                     Expanded(child: Text('${r.country} (${r.currency})',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 14))),
+                        style: TextStyle(
+                            color: context.xText, fontSize: 14))),
                   ]),
                 )).toList(),
                 onChanged: (v) { if (v != null) ss(() => tc = v); },
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               _sLabel('💱 Display Balance In'),
-              const SizedBox(height: 4),
-              const Text(
+              SizedBox(height: 4),
+              Text(
                 'Shows your balance converted to another currency '
                 'alongside your wallet currency.',
                 style: TextStyle(color: _kMuted, fontSize: 12)),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: td, isExpanded: true, dropdownColor: _kBg,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(color: context.xText, fontSize: 14),
                 decoration: _dropDeco(),
                 items: _kRegions.map((r) => DropdownMenuItem(
                   value: r.currency,
                   child: Row(children: [
-                    Text(r.flag, style: const TextStyle(fontSize: 18)),
-                    const SizedBox(width: 10),
+                    Text(r.flag, style: TextStyle(fontSize: 18)),
+                    SizedBox(width: 10),
                     Expanded(child: Text(
                         '${r.symbol} ${r.currency} — ${r.country}',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 14))),
+                        style: TextStyle(
+                            color: context.xText, fontSize: 14))),
                   ]),
                 )).toList(),
                 onChanged: (v) { if (v != null) ss(() => td = v); },
@@ -761,7 +761,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                   await _FxService.load(_currency);
                   if (mounted) { Navigator.pop(ctx); _snack('✅ Settings saved'); }
                 },
-                child: const Text('Save Settings',
+                child: Text('Save Settings',
                     style: TextStyle(color: Colors.black,
                         fontSize: 16, fontWeight: FontWeight.w700)),
               ),
@@ -773,15 +773,15 @@ class _XamePayScreenState extends State<XamePayScreen>
   }
 
   static Widget _sLabel(String t) => Text(t,
-      style: const TextStyle(color: _kMuted,
+      style: TextStyle(color: _kMuted,
           fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1));
 
   static InputDecoration _dropDeco() => InputDecoration(
     filled: true, fillColor: _kCard,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white12)),
+        borderSide: BorderSide(color: context.xMuted.withValues(alpha: 0.25))),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white12)),
+        borderSide: BorderSide(color: context.xMuted.withValues(alpha: 0.25))),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
   );
 }
@@ -933,7 +933,7 @@ class _SendTabState extends State<_SendTab> {
             'account_number': _accNum, 'amount': _amount,
             'currency': widget.currency, 'narration': 'XamePay Transfer',
             'accName': _accName, 'userId': widget.userId}),
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(Duration(seconds: 20));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess(); widget.snack('✅ Transfer successful!');
@@ -945,24 +945,24 @@ class _SendTabState extends State<_SendTab> {
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('💸 Send Money',
-          style: TextStyle(color: Colors.white,
+      Text('💸 Send Money',
+          style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 4),
-      const Text('Send to contacts or any bank in the world',
+      Text('Send to contacts or any bank in the world',
           style: TextStyle(color: _kMuted, fontSize: 13)),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
       Row(children: [
         _tog('To Contact', !_bankMode, () => setState(() => _bankMode = false)),
-        const SizedBox(width: 10),
+        SizedBox(width: 10),
         _tog('To Bank',    _bankMode,  () => setState(() => _bankMode = true)),
       ]),
-      const SizedBox(height: 20),
+      SizedBox(height: 20),
       if (!_bankMode) ...[
         // Contact search
         _xf(_contactSearchCtrl, '🔍 Search XamePage contacts…',
             TextInputType.text, (v) => setState(() => _contactQuery = v)),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         if (_selContact != null) ...[
           Container(
             padding: const EdgeInsets.all(12),
@@ -974,25 +974,25 @@ class _SendTabState extends State<_SendTab> {
               CircleAvatar(radius: 18,
                 backgroundColor: _kTeal.withOpacity(0.2),
                 child: Text(_selContact!.substring(0,1).toUpperCase(),
-                  style: const TextStyle(color: _kTeal,
+                  style: TextStyle(color: _kTeal,
                       fontWeight: FontWeight.w700))),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(child: Text(_selContact!,
-                style: const TextStyle(color: Colors.white,
+                style: TextStyle(color: context.xText,
                     fontSize: 14, fontWeight: FontWeight.w600))),
               GestureDetector(
                 onTap: () => setState(() => _selContact = null),
-                child: const Icon(Icons.close, color: _kMuted, size: 18)),
+                child: Icon(Icons.close, color: _kMuted, size: 18)),
             ]),
           ),
         ] else ...[
           Container(
-            constraints: const BoxConstraints(maxHeight: 220),
+            constraints: BoxConstraints(maxHeight: 220),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white10)),
+              border: Border.all(color: context.xText10)),
             child: widget.contacts.isEmpty
-              ? const Padding(padding: EdgeInsets.all(20),
+              ? Padding(padding: EdgeInsets.all(20),
                   child: Center(child: Text('No XamePage contacts found',
                     style: TextStyle(color: _kMuted, fontSize: 13))))
               : ListView.builder(
@@ -1010,18 +1010,18 @@ class _SendTabState extends State<_SendTab> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 11),
                         decoration: BoxDecoration(border: Border(bottom:
-                          BorderSide(color: Colors.white.withOpacity(0.05)))),
+                          BorderSide(color: context.xText.withOpacity(0.05)))),
                         child: Row(children: [
                           CircleAvatar(radius: 16,
                             backgroundColor: _kTeal.withOpacity(0.15),
                             child: Text((c['name'] as String).substring(0,1).toUpperCase(),
-                              style: const TextStyle(color: _kTeal,
+                              style: TextStyle(color: _kTeal,
                                   fontSize: 12, fontWeight: FontWeight.w700))),
-                          const SizedBox(width: 10),
+                          SizedBox(width: 10),
                           Column(crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                             Text(c['name'] as String,
-                              style: const TextStyle(color: Colors.white,
+                              style: TextStyle(color: context.xText,
                                   fontSize: 14, fontWeight: FontWeight.w500)),
                             Text(c['id'] as String,
                               style: const TextStyle(
@@ -1041,10 +1041,10 @@ class _SendTabState extends State<_SendTab> {
         _xf(_amtCtrl, 'Enter amount',
             const TextInputType.numberWithOptions(decimal: true),
             (v) => _amount = double.tryParse(v) ?? 0),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         Text('Balance: ${widget.fmt(widget.balance)}',
-            style: const TextStyle(color: _kMuted, fontSize: 12)),
-        const SizedBox(height: 20),
+            style: TextStyle(color: _kMuted, fontSize: 12)),
+        SizedBox(height: 20),
         SizedBox(width: double.infinity,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
@@ -1052,30 +1052,30 @@ class _SendTabState extends State<_SendTab> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14))),
             onPressed: _sendToContact,
-            child: const Text('Send Money',
+            child: Text('Send Money',
                 style: TextStyle(color: Colors.black,
                     fontSize: 16, fontWeight: FontWeight.w700)),
           ),
         ),
       ] else ...[
-        const Text('Select Bank',
+        Text('Select Bank',
             style: TextStyle(color: _kMuted,
                 fontSize: 13, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         if (_bankError) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white10)),
+                border: Border.all(color: context.xText10)),
             child: Row(children: [
-              const Icon(Icons.wifi_off_rounded, color: _kMuted, size: 20),
-              const SizedBox(width: 12),
-              const Expanded(child: Text(
+              Icon(Icons.wifi_off_rounded, color: _kMuted, size: 20),
+              SizedBox(width: 12),
+              Expanded(child: Text(
                   'Could not load banks. Check connection.',
                   style: TextStyle(color: _kMuted, fontSize: 13))),
               TextButton(onPressed: _fetchBanks,
-                  child: const Text('Retry',
+                  child: Text('Retry',
                       style: TextStyle(color: _kTeal,
                           fontWeight: FontWeight.w700))),
             ]),
@@ -1087,23 +1087,23 @@ class _SendTabState extends State<_SendTab> {
             if (_selBank != null) setState(() { _selBank = null; });
           }),
           if (_selBank != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             _chip('✅ ${_selBank!.name}'),
           ] else if (_loadingBanks) ...[
-            const Padding(padding: EdgeInsets.symmetric(vertical: 16),
+            Padding(padding: EdgeInsets.symmetric(vertical: 16),
                 child: Center(child: CircularProgressIndicator(
                     color: _kTeal, strokeWidth: 2))),
           ] else ...[
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Container(
-              constraints: const BoxConstraints(maxHeight: 200),
+              constraints: BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white10)),
+                  border: Border.all(color: context.xText10)),
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: _filtered.isEmpty ? 1 : _filtered.length,
                 itemBuilder: (_, i) {
-                  if (_filtered.isEmpty) return const Padding(
+                  if (_filtered.isEmpty) return Padding(
                     padding: EdgeInsets.all(16),
                     child: Text('No banks found',
                         style: TextStyle(color: _kMuted, fontSize: 13)));
@@ -1117,25 +1117,25 @@ class _SendTabState extends State<_SendTab> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(border: Border(bottom:
-                          BorderSide(color: Colors.white.withOpacity(0.05)))),
-                      child: Text(b.name, style: const TextStyle(
-                          color: Colors.white, fontSize: 14))),
+                          BorderSide(color: context.xText.withOpacity(0.05)))),
+                      child: Text(b.name, style: TextStyle(
+                          color: context.xText, fontSize: 14))),
                   );
                 },
               ),
             ),
           ],
         ],
-        const SizedBox(height: 16),
-        const Text('Account Number',
+        SizedBox(height: 16),
+        Text('Account Number',
             style: TextStyle(color: _kMuted,
                 fontSize: 13, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         _xf(_accCtrl, 'Enter account number', TextInputType.number, (v) {
           _accNum = v; if (v.length >= 10) _resolve();
         }),
         if (_resolving)
-          const Padding(padding: EdgeInsets.only(bottom: 8),
+          Padding(padding: EdgeInsets.only(bottom: 8),
               child: Text('Verifying…',
                   style: TextStyle(color: _kMuted, fontSize: 12))),
         if (!_resolving && _resolved.isNotEmpty)
@@ -1144,7 +1144,7 @@ class _SendTabState extends State<_SendTab> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white10)),
+                border: Border.all(color: context.xText10)),
             child: Text(_resolved, style: TextStyle(
                 color: _resolved.startsWith('✅')
                     ? _kTeal : XameColors.accent,
@@ -1159,10 +1159,10 @@ class _SendTabState extends State<_SendTab> {
       _xf(_amtCtrl, 'Enter amount',
           const TextInputType.numberWithOptions(decimal: true),
           (v) => _amount = double.tryParse(v) ?? 0),
-      const SizedBox(height: 6),
+      SizedBox(height: 6),
       Text('Balance: ${widget.fmt(widget.balance)}',
-          style: const TextStyle(color: _kMuted, fontSize: 12)),
-      const SizedBox(height: 20),
+          style: TextStyle(color: _kMuted, fontSize: 12)),
+      SizedBox(height: 20),
       SizedBox(width: double.infinity,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
@@ -1170,7 +1170,7 @@ class _SendTabState extends State<_SendTab> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14))),
           onPressed: _bankMode ? _send : () => widget.snack('Select a contact'),
-          child: const Text('Send Money',
+          child: Text('Send Money',
               style: TextStyle(color: Colors.black,
                   fontSize: 16, fontWeight: FontWeight.w700)),
         ),
@@ -1186,10 +1186,10 @@ class _SendTabState extends State<_SendTab> {
         decoration: BoxDecoration(
           color: on ? _kTeal : _kCard,
           borderRadius: BorderRadius.circular(10),
-          border: on ? null : Border.all(color: Colors.white12),
+          border: on ? null : Border.all(color: context.xMuted.withValues(alpha: 0.25)),
         ),
         child: Text(l, style: TextStyle(
-            color: on ? Colors.black : Colors.white,
+            color: on ? Colors.black : context.xText,
             fontSize: 13, fontWeight: FontWeight.w600)),
       ),
     ),
@@ -1239,7 +1239,7 @@ class _AirtimeTabState extends State<_AirtimeTab> {
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'phone': _phone, 'operatorId': _net,
               'amount': a, 'userId': widget.userId}))
-          .timeout(const Duration(seconds: 15));
+          .timeout(Duration(seconds: 15));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess(); widget.snack('✅ Airtime sent!');
@@ -1251,31 +1251,31 @@ class _AirtimeTabState extends State<_AirtimeTab> {
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('📱 Buy Airtime',
-          style: TextStyle(color: Colors.white,
+      Text('📱 Buy Airtime',
+          style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 20),
-      const Text('Select Network',
+      SizedBox(height: 20),
+      Text('Select Network',
           style: TextStyle(color: _kMuted,
               fontSize: 13, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 10),
+      SizedBox(height: 10),
       _netGrid(widget.region.networks, _net,
           (id) => setState(() => _net = id)),
-      const SizedBox(height: 16),
-      const Text('Phone Number',
+      SizedBox(height: 16),
+      Text('Phone Number',
           style: TextStyle(color: _kMuted,
               fontSize: 13, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 8),
+      SizedBox(height: 8),
       _xf(_pCtrl, 'Enter phone number',
           TextInputType.phone, (v) => _phone = v),
-      const SizedBox(height: 16),
-      const Text('Amount',
+      SizedBox(height: 16),
+      Text('Amount',
           style: TextStyle(color: _kMuted,
               fontSize: 13, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 8),
+      SizedBox(height: 8),
       GridView.count(
         crossAxisCount: 3, shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+        physics: NeverScrollableScrollPhysics(),
         mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 2.5,
         children: [50, 100, 200, 500, 1000, 2000].map((a) => GestureDetector(
           onTap: () { setState(() => _amt = '$a'); _aCtrl.text = '$a'; },
@@ -1283,9 +1283,9 @@ class _AirtimeTabState extends State<_AirtimeTab> {
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: _amt == '$a' ? _kTeal : Colors.white12)),
+                    color: _amt == '$a' ? _kTeal : context.xMuted.withValues(alpha: 0.25))),
             child: Text(widget.fmt(a.toDouble()),
-                style: const TextStyle(color: Colors.white,
+                style: TextStyle(color: context.xText,
                     fontSize: 13, fontWeight: FontWeight.w600))),
         )).toList(),
       ),
@@ -1860,7 +1860,7 @@ class _DataTabState extends State<_DataTab> {
           'amount':     _plan!.price,
           'userId':     widget.userId,
         }),
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(Duration(seconds: 20));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess();
@@ -1875,8 +1875,8 @@ class _DataTabState extends State<_DataTab> {
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('📶 Buy Data',
-          style: TextStyle(color: Colors.white,
+      Text('📶 Buy Data',
+          style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
       const SizedBox(height: 20),
 
@@ -1904,18 +1904,18 @@ class _DataTabState extends State<_DataTab> {
         const Text('Select Plan',
             style: TextStyle(color: _kMuted,
                 fontSize: 13, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         if (_plans.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text('No plans available for this network.',
                 style: TextStyle(color: _kMuted, fontSize: 13)))
         else
           ListView.separated(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+            physics: NeverScrollableScrollPhysics(),
             itemCount: _plans.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, __) => SizedBox(height: 8),
             itemBuilder: (_, i) {
               final p = _plans[i];
               final selected = _plan == p;
@@ -1932,7 +1932,7 @@ class _DataTabState extends State<_DataTab> {
                     border: Border.all(
                         color: selected
                             ? _kTeal
-                            : Colors.white12,
+                            : context.xMuted.withValues(alpha: 0.25),
                         width: selected ? 2 : 1),
                   ),
                   child: Row(children: [
@@ -1943,26 +1943,26 @@ class _DataTabState extends State<_DataTab> {
                       decoration: BoxDecoration(
                         color: selected
                             ? _kTeal
-                            : const Color(0x22FFFFFF),
+                            : Color(0x22FFFFFF),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(p.size,
                           style: TextStyle(
-                              color: selected ? Colors.black : Colors.white,
+                              color: selected ? Colors.black : context.xText,
                               fontSize: 13,
                               fontWeight: FontWeight.w800)),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     // Validity
                     Expanded(
                       child: Text('${p.days} days',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: _kMuted, fontSize: 13)),
                     ),
                     // Price
                     Text(widget.fmt(p.price),
                         style: TextStyle(
-                            color: selected ? _kTeal : Colors.white,
+                            color: selected ? _kTeal : context.xText,
                             fontSize: 15,
                             fontWeight: FontWeight.w700)),
                   ]),
@@ -1972,7 +1972,7 @@ class _DataTabState extends State<_DataTab> {
           ),
       ],
 
-      const SizedBox(height: 24),
+      SizedBox(height: 24),
 
       // ── Balance row ─────────────────────────────────────────────────────
       Container(
@@ -1981,10 +1981,10 @@ class _DataTabState extends State<_DataTab> {
             borderRadius: BorderRadius.circular(12)),
         child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          const Text('Balance',
+          Text('Balance',
               style: TextStyle(color: _kMuted, fontSize: 13)),
           Text(widget.fmt(widget.balance),
-              style: const TextStyle(color: Colors.white,
+              style: TextStyle(color: context.xText,
                   fontSize: 13, fontWeight: FontWeight.w600)),
         ]),
       ),
@@ -2170,7 +2170,7 @@ class _BillsTabState extends State<_BillsTab> {
           'amount':       amt,
           'country':      _cc,
         }),
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(Duration(seconds: 20));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess();
@@ -2197,25 +2197,25 @@ class _BillsTabState extends State<_BillsTab> {
   Widget _buildCategoryGrid() => SingleChildScrollView(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('🧾 Pay Bills',
-          style: TextStyle(color: Colors.white,
+      Text('🧾 Pay Bills',
+          style: TextStyle(color: context.xText,
               fontSize: 18, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 20),
+      SizedBox(height: 20),
       GridView.count(
         crossAxisCount: 2, shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+        physics: NeverScrollableScrollPhysics(),
         mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 1.3,
         children: _kBillCats.map((c) => GestureDetector(
           onTap: () => _loadBillers(c),
           child: Container(
             decoration: BoxDecoration(color: _kCard,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white10)),
+                border: Border.all(color: context.xText10)),
             child: Column(mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-              Text(c.icon, style: const TextStyle(fontSize: 32)),
-              const SizedBox(height: 10),
-              Text(c.label, style: const TextStyle(color: Colors.white,
+              Text(c.icon, style: TextStyle(fontSize: 32)),
+              SizedBox(height: 10),
+              Text(c.label, style: TextStyle(color: context.xText,
                   fontSize: 14, fontWeight: FontWeight.w700)),
             ]),
           ),
@@ -2233,28 +2233,28 @@ class _BillsTabState extends State<_BillsTab> {
         padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
         child: Row(children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left, color: _kTeal, size: 28),
+            icon: Icon(Icons.chevron_left, color: _kTeal, size: 28),
             onPressed: () => setState(() { _cat = null; _billers = []; _billersError = false; })),
           Text('${_cat!.icon}  ${_cat!.label}',
-              style: const TextStyle(color: Colors.white,
+              style: TextStyle(color: context.xText,
                   fontSize: 17, fontWeight: FontWeight.w700)),
         ]),
       ),
       Expanded(child: _loadingBillers
-        ? const Center(child: CircularProgressIndicator(color: _kTeal))
+        ? Center(child: CircularProgressIndicator(color: _kTeal))
         : _billersError
             ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.wifi_off_rounded, color: _kMuted, size: 40),
-                const SizedBox(height: 12),
-                const Text('Could not load billers.',
+                Icon(Icons.wifi_off_rounded, color: _kMuted, size: 40),
+                SizedBox(height: 12),
+                Text('Could not load billers.',
                     style: TextStyle(color: _kMuted, fontSize: 14)),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
                       foregroundColor: Colors.black,
-                      shape: const StadiumBorder()),
+                      shape: StadiumBorder()),
                   onPressed: () => _loadBillers(_cat!),
-                  child: const Text('Retry')),
+                  child: Text('Retry')),
               ]))
             : ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -2269,10 +2269,10 @@ class _BillsTabState extends State<_BillsTab> {
                           horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(color: _kCard,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white10)),
+                          border: Border.all(color: context.xText10)),
                       child: Row(children: [
                         Expanded(child: Text(b.name,
-                            style: const TextStyle(color: Colors.white,
+                            style: TextStyle(color: context.xText,
                                 fontSize: 14, fontWeight: FontWeight.w600))),
                         const Icon(Icons.chevron_right, color: _kMuted, size: 20),
                       ]),
@@ -2296,41 +2296,41 @@ class _BillsTabState extends State<_BillsTab> {
         GestureDetector(
           onTap: () => setState(() { _biller = null; _validated = ''; }),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.chevron_left, color: _kTeal, size: 24),
+            Icon(Icons.chevron_left, color: _kTeal, size: 24),
             Text(_biller!.name,
-                style: const TextStyle(color: _kTeal,
+                style: TextStyle(color: _kTeal,
                     fontSize: 14, fontWeight: FontWeight.w600)),
           ]),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         Text('${_cat!.icon}  ${_biller!.name}',
-            style: const TextStyle(color: Colors.white,
+            style: TextStyle(color: context.xText,
                 fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text('Balance: ${widget.fmt(widget.balance)}',
-            style: const TextStyle(color: _kMuted, fontSize: 12)),
-        const SizedBox(height: 20),
+            style: TextStyle(color: _kMuted, fontSize: 12)),
+        SizedBox(height: 20),
 
         // Package selector (only when biller has multiple items)
         if (_biller!.items.length > 1) ...[
-          const Text('Select Package',
+          Text('Select Package',
               style: TextStyle(color: _kMuted,
                   fontSize: 13, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: _selItem?.itemCode,
             dropdownColor: _kBg,
             isExpanded: true,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            style: TextStyle(color: context.xText, fontSize: 14),
             decoration: InputDecoration(
               filled: true, fillColor: _kBg,
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white12)),
+                  borderSide: BorderSide(color: context.xMuted.withValues(alpha: 0.25))),
               enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white12)),
+                  borderSide: BorderSide(color: context.xMuted.withValues(alpha: 0.25))),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14, vertical: 12),
             ),
@@ -2340,7 +2340,7 @@ class _BillsTabState extends State<_BillsTab> {
                 item.amount > 0
                     ? '${item.label}  —  ${widget.fmt(item.amount)}'
                     : item.label,
-                style: const TextStyle(color: Colors.white, fontSize: 14)),
+                style: TextStyle(color: context.xText, fontSize: 14)),
             )).toList(),
             onChanged: (v) => setState(() {
               _selItem = _biller!.items.firstWhere(
@@ -2349,26 +2349,26 @@ class _BillsTabState extends State<_BillsTab> {
               if (_customer.length >= 4) _validate(_customer);
             }),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
         ],
 
         // Customer ID
         Text(labelName,
-            style: const TextStyle(color: _kMuted,
+            style: TextStyle(color: _kMuted,
                 fontSize: 13, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         TextField(
           controller: _custCtrl,
-          style: const TextStyle(color: Colors.white, fontSize: 15),
+          style: TextStyle(color: context.xText, fontSize: 15),
           decoration: InputDecoration(
             hintText: 'Enter $labelName',
-            hintStyle: const TextStyle(color: _kMuted, fontSize: 14),
+            hintStyle: TextStyle(color: _kMuted, fontSize: 14),
             filled: true, fillColor: _kCard,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.white12)),
+                borderSide: BorderSide(color: context.xMuted.withValues(alpha: 0.25))),
             enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.white12)),
+                borderSide: BorderSide(color: context.xMuted.withValues(alpha: 0.25))),
             focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: _kTeal)),
@@ -2510,16 +2510,16 @@ Widget _xf(TextEditingController c, String hint, TextInputType kt,
     void Function(String) fn) =>
     TextField(
       controller: c, keyboardType: kt,
-      style: const TextStyle(color: Colors.white, fontSize: 15),
+      style: TextStyle(color: context.xText, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: _kMuted, fontSize: 14),
+        hintStyle: TextStyle(color: _kMuted, fontSize: 14),
         filled: true, fillColor: _kCard,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.white12)),
+            borderSide: BorderSide(color: context.xMuted.withValues(alpha: 0.25))),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.white12)),
+            borderSide: BorderSide(color: context.xMuted.withValues(alpha: 0.25))),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _kTeal)),

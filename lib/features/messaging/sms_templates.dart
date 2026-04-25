@@ -438,27 +438,27 @@ class _EditDialog extends StatelessWidget {
     child: Padding(
       padding: const EdgeInsets.all(20),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Text('Edit Template',
-            style: TextStyle(color: Colors.white, fontSize: 15,
+        Text('Edit Template',
+            style: TextStyle(color: context.xText, fontSize: 15,
                 fontWeight: FontWeight.w700)),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         Container(
           decoration: BoxDecoration(
             color: XameColors.darkSurface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white10),
+            border: Border.all(color: context.xText10),
           ),
           child: TextField(
             controller: ctrl, autofocus: true,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-            decoration: const InputDecoration(
+            style: TextStyle(color: context.xText, fontSize: 14),
+            decoration: InputDecoration(
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                   horizontal: 14, vertical: 12),
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         Row(children: [
           Expanded(
             child: GestureDetector(
@@ -466,12 +466,12 @@ class _EditDialog extends StatelessWidget {
               child: Container(
                 height: 42,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: context.xText.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
-                child: const Text('Cancel',
-                    style: TextStyle(color: Colors.white54, fontSize: 14)),
+                child: Text('Cancel',
+                    style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 14)),
               ),
             ),
           ),

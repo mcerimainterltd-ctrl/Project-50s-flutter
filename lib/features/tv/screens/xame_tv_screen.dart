@@ -185,7 +185,7 @@ class _XameTvScreenState extends State<XameTvScreen>
           if (_error)                _errorOverlay(),
           _gradientLayer(),
           FadeTransition(opacity:_oFade, child:Column(children:[
-            _topBar(), _catStrip(), const Spacer(), _bottomBar(),
+            _topBar(), _catStrip(), Spacer(), _bottomBar(),
           ])),
           if (_showOverlay && !_showList) _swipeHint(),
           if (_showList)   _listPanel(),
@@ -198,25 +198,25 @@ class _XameTvScreenState extends State<XameTvScreen>
   // ── Screens ───────────────────────────────────────────────────────────
   Widget _splashScreen() => Scaffold(backgroundColor:Colors.black,
     body:Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
-      const Icon(Icons.live_tv_rounded, color:Colors.white24, size:64),
-      const SizedBox(height:20),
-      const CircularProgressIndicator(color:Colors.white54, strokeWidth:1.5),
-      const SizedBox(height:14),
-      const Text('Loading XameTV', style:TextStyle(color:Colors.white54,fontSize:14,fontWeight:FontWeight.w600)),
-      const SizedBox(height:6),
-      const Text('Fetching 11,000+ live channels', style:TextStyle(color:Colors.white24,fontSize:11)),
+      Icon(Icons.live_tv_rounded, color:context.xMuted.withValues(alpha: 0.5), size:64),
+      SizedBox(height:20),
+      CircularProgressIndicator(color:context.xText.withValues(alpha: 0.54), strokeWidth:1.5),
+      SizedBox(height:14),
+      Text('Loading XameTV', style:TextStyle(color:context.xText.withValues(alpha: 0.54),fontSize:14,fontWeight:FontWeight.w600)),
+      SizedBox(height:6),
+      Text('Fetching 11,000+ live channels', style:TextStyle(color:context.xMuted.withValues(alpha: 0.5),fontSize:11)),
     ])),
   );
 
   Widget _errorScreen() => Scaffold(backgroundColor:Colors.black,
     body:Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
-      const Icon(Icons.wifi_off_rounded, color:Colors.white24, size:56),
-      const SizedBox(height:14),
-      const Text('No connection', style:TextStyle(color:Colors.white60,fontSize:16,fontWeight:FontWeight.w600)),
-      const SizedBox(height:6),
-      const Text('Check your internet and retry', style:TextStyle(color:Colors.white38,fontSize:12)),
-      const SizedBox(height:22),
-      _pill('Retry', ()=>_fetch(force:true), Colors.white12),
+      Icon(Icons.wifi_off_rounded, color:context.xMuted.withValues(alpha: 0.5), size:56),
+      SizedBox(height:14),
+      Text('No connection', style:TextStyle(color:context.xText.withValues(alpha: 0.6),fontSize:16,fontWeight:FontWeight.w600)),
+      SizedBox(height:6),
+      Text('Check your internet and retry', style:TextStyle(color:context.xMuted,fontSize:12)),
+      SizedBox(height:22),
+      _pill('Retry', ()=>_fetch(force:true), context.xMuted.withValues(alpha: 0.25)),
     ])),
   );
 
@@ -226,8 +226,8 @@ class _XameTvScreenState extends State<XameTvScreen>
       return _cur?.logo.isNotEmpty==true
           ? CachedNetworkImage(imageUrl:_cur!.logo, fit:BoxFit.contain,
               color:Colors.black54, colorBlendMode:BlendMode.darken,
-              errorWidget:(_,__,___)=>const ColoredBox(color:XameColors.darkBg))
-          : const ColoredBox(color:XameColors.darkBg);
+              errorWidget:(_,__,___)=>ColoredBox(color:XameColors.darkBg))
+          : ColoredBox(color:XameColors.darkBg);
     }
     return SlideTransition(position:_sSlide,
       child:Center(child:AspectRatio(
@@ -240,28 +240,28 @@ class _XameTvScreenState extends State<XameTvScreen>
   Widget _bufferingOverlay() => Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
     SizedBox(width:40,height:40,
       child:CircularProgressIndicator(
-          color:kCategoryColors[_category]??Colors.white54, strokeWidth:2)),
-    const SizedBox(height:10),
+          color:kCategoryColors[_category]??context.xText.withValues(alpha: 0.54), strokeWidth:2)),
+    SizedBox(height:10),
     if (_cur!=null) Text('Loading ${_cur!.name}...',
-        style:const TextStyle(color:Colors.white54,fontSize:11)),
+        style:TextStyle(color:context.xText.withValues(alpha: 0.54),fontSize:11)),
   ]));
 
   Widget _errorOverlay() => Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
-    const Icon(Icons.signal_cellular_connected_no_internet_4_bar_rounded,
-        color:Colors.white24, size:44),
-    const SizedBox(height:8),
-    const Text('Stream unavailable',
-        style:TextStyle(color:Colors.white54,fontSize:13,fontWeight:FontWeight.w600)),
-    if (_cur!=null) Text(_cur!.name, style:const TextStyle(color:Colors.white30,fontSize:10)),
-    const SizedBox(height:14),
+    Icon(Icons.signal_cellular_connected_no_internet_4_bar_rounded,
+        color:context.xMuted.withValues(alpha: 0.5), size:44),
+    SizedBox(height:8),
+    Text('Stream unavailable',
+        style:TextStyle(color:context.xText.withValues(alpha: 0.54),fontSize:13,fontWeight:FontWeight.w600)),
+    if (_cur!=null) Text(_cur!.name, style:TextStyle(color:context.xText30,fontSize:10)),
+    SizedBox(height:14),
     Row(mainAxisSize:MainAxisSize.min, children:[
-      _pill(_retries>=3?'Next':'Retry', _retry, Colors.white10),
-      const SizedBox(width:8),
+      _pill(_retries>=3?'Next':'Retry', _retry, context.xText10),
+      SizedBox(width:8),
       _pill('Skip', _next, (kCategoryColors[_category]??Colors.blue).withOpacity(0.3)),
     ]),
   ]));
 
-  Widget _gradientLayer() => Container(decoration:const BoxDecoration(
+  Widget _gradientLayer() => Container(decoration:BoxDecoration(
     gradient:LinearGradient(
       begin:Alignment.topCenter, end:Alignment.bottomCenter,
       stops:[0.0,0.3,0.7,1.0],
@@ -274,7 +274,7 @@ class _XameTvScreenState extends State<XameTvScreen>
     padding:const EdgeInsets.fromLTRB(12,8,12,0),
     child:Row(children:[
       _ib(Icons.arrow_back_ios_new_rounded, ()=>Navigator.pop(context)),
-      const SizedBox(width:7),
+      SizedBox(width:7),
       Container(
         padding:const EdgeInsets.symmetric(horizontal:9,vertical:4),
         decoration:BoxDecoration(
@@ -284,34 +284,34 @@ class _XameTvScreenState extends State<XameTvScreen>
           ]),
           borderRadius:BorderRadius.circular(7),
         ),
-        child:const Row(mainAxisSize:MainAxisSize.min, children:[
-          Icon(Icons.live_tv_rounded, color:Colors.white, size:12),
+        child:Row(mainAxisSize:MainAxisSize.min, children:[
+          Icon(Icons.live_tv_rounded, color:context.xText, size:12),
           SizedBox(width:4),
-          Text('XAME TV', style:TextStyle(color:Colors.white,fontSize:9,
+          Text('XAME TV', style:TextStyle(color:context.xText,fontSize:9,
               fontWeight:FontWeight.w900,letterSpacing:1)),
         ]),
       ),
-      const SizedBox(width:5),
+      SizedBox(width:5),
       Container(
         padding:const EdgeInsets.symmetric(horizontal:4,vertical:2),
         decoration:BoxDecoration(color:Colors.red,borderRadius:BorderRadius.circular(3)),
-        child:const Text('LIVE',style:TextStyle(color:Colors.white,fontSize:7,
+        child:Text('LIVE',style:TextStyle(color:context.xText,fontSize:7,
             fontWeight:FontWeight.w900,letterSpacing:1)),
       ),
       if (_all.isNotEmpty) ...[
-        const SizedBox(width:5),
-        Text('${_all.length}+ ch',style:const TextStyle(color:Colors.white30,fontSize:9)),
+        SizedBox(width:5),
+        Text('${_all.length}+ ch',style:TextStyle(color:context.xText30,fontSize:9)),
       ],
-      const Spacer(),
+      Spacer(),
       _ib(Icons.search_rounded, (){setState((){_showSearch=true;_showList=false;});_showBriefly();}),
-      const SizedBox(width:5),
+      SizedBox(width:5),
       _ib(_isMuted?Icons.volume_off_rounded:Icons.volume_up_rounded, (){
         setState(()=>_isMuted=!_isMuted); _ctrl?.setVolume(_isMuted?0:1); _showBriefly();
       }),
-      const SizedBox(width:5),
+      SizedBox(width:5),
       _ib(_isFullscreen?Icons.fullscreen_exit_rounded:Icons.fullscreen_rounded,
           (){_toggleFullscreen();_showBriefly();}),
-      const SizedBox(width:5),
+      SizedBox(width:5),
       _ib(Icons.refresh_rounded, (){TvChannelService.clearCache();_fetch(force:true);}),
     ]),
   ));
@@ -319,8 +319,8 @@ class _XameTvScreenState extends State<XameTvScreen>
   Widget _ib(IconData icon, VoidCallback onTap) => GestureDetector(onTap:onTap,
     child:Container(width:32,height:32,
       decoration:BoxDecoration(color:Colors.black45,shape:BoxShape.circle,
-          border:Border.all(color:Colors.white12)),
-      child:Icon(icon,color:Colors.white,size:15)),
+          border:Border.all(color:context.xMuted.withValues(alpha: 0.25))),
+      child:Icon(icon,color:context.xText,size:15)),
   );
 
   // ── Category strip ────────────────────────────────────────────────────
@@ -342,20 +342,20 @@ class _XameTvScreenState extends State<XameTvScreen>
             _showBriefly();
           },
           child:AnimatedContainer(
-            duration:const Duration(milliseconds:180),
+            duration:Duration(milliseconds:180),
             margin:const EdgeInsets.only(right:6),
             padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),
             decoration:BoxDecoration(
               color:active?color:Colors.black45,
               borderRadius:BorderRadius.circular(16),
-              border:Border.all(color:active?color:Colors.white.withOpacity(0.18)),
+              border:Border.all(color:active?color:context.xText.withOpacity(0.18)),
             ),
             child:Row(mainAxisSize:MainAxisSize.min, children:[
-              Text(cat,style:TextStyle(color:Colors.white,fontSize:11,
+              Text(cat,style:TextStyle(color:context.xText,fontSize:11,
                   fontWeight:active?FontWeight.w700:FontWeight.w400)),
               if(active && count>0)...[
-                const SizedBox(width:4),
-                Text('$count',style:const TextStyle(color:Colors.white60,fontSize:9)),
+                SizedBox(width:4),
+                Text('$count',style:TextStyle(color:context.xText.withValues(alpha: 0.6),fontSize:9)),
               ],
             ]),
           ),
@@ -370,7 +370,7 @@ class _XameTvScreenState extends State<XameTvScreen>
     child:Row(crossAxisAlignment:CrossAxisAlignment.end, children:[
       Container(width:48,height:48,
         decoration:BoxDecoration(color:Colors.black54,borderRadius:BorderRadius.circular(10),
-            border:Border.all(color:Colors.white12)),
+            border:Border.all(color:context.xMuted.withValues(alpha: 0.25))),
         child:ClipRRect(borderRadius:BorderRadius.circular(9),
           child:_cur?.logo.isNotEmpty==true
               ? CachedNetworkImage(imageUrl:_cur!.logo,fit:BoxFit.contain,
@@ -378,22 +378,22 @@ class _XameTvScreenState extends State<XameTvScreen>
               : _logoFb(),
         ),
       ),
-      const SizedBox(width:10),
+      SizedBox(width:10),
       Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,
           mainAxisSize:MainAxisSize.min, children:[
-        Text(_cur?.name??'—',style:const TextStyle(color:Colors.white,fontSize:15,
+        Text(_cur?.name??'—',style:TextStyle(color:context.xText,fontSize:15,
             fontWeight:FontWeight.w700),maxLines:1,overflow:TextOverflow.ellipsis),
-        const SizedBox(height:2),
+        SizedBox(height:2),
         Row(children:[
           if(_cur?.country.isNotEmpty==true)
-            Text(_cur!.country,style:const TextStyle(color:Colors.white38,fontSize:10)),
+            Text(_cur!.country,style:TextStyle(color:context.xMuted,fontSize:10)),
           if(_cur?.country.isNotEmpty==true && _cur?.language.isNotEmpty==true)
-            const Text(' · ',style:TextStyle(color:Colors.white24,fontSize:10)),
+            Text(' · ',style:TextStyle(color:context.xMuted.withValues(alpha: 0.5),fontSize:10)),
           if(_cur?.language.isNotEmpty==true)
-            Flexible(child:Text(_cur!.language,style:const TextStyle(color:Colors.white38,fontSize:10),
+            Flexible(child:Text(_cur!.language,style:TextStyle(color:context.xMuted,fontSize:10),
                 maxLines:1,overflow:TextOverflow.ellipsis)),
         ]),
-        const SizedBox(height:2),
+        SizedBox(height:2),
         Text(_cur?.category??'',style:TextStyle(
             color:(kCategoryColors[_cur?.category]??Colors.blue).withOpacity(0.8),
             fontSize:10,fontWeight:FontWeight.w500)),
@@ -402,13 +402,13 @@ class _XameTvScreenState extends State<XameTvScreen>
         onTap:(){setState(()=>_showList=true);_showBriefly();},
         child:Container(
           padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),
-          decoration:BoxDecoration(color:Colors.white12,borderRadius:BorderRadius.circular(18),
-              border:Border.all(color:Colors.white.withOpacity(0.18))),
+          decoration:BoxDecoration(color:context.xMuted.withValues(alpha: 0.25),borderRadius:BorderRadius.circular(18),
+              border:Border.all(color:context.xText.withOpacity(0.18))),
           child:Row(mainAxisSize:MainAxisSize.min, children:[
-            const Icon(Icons.list_rounded,color:Colors.white,size:14),
-            const SizedBox(width:4),
+            Icon(Icons.list_rounded,color:context.xText,size:14),
+            SizedBox(width:4),
             Text('${_index+1}/${_filtered.length}',
-                style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.w600)),
+                style:TextStyle(color:context.xText,fontSize:10,fontWeight:FontWeight.w600)),
           ]),
         ),
       ),
@@ -417,16 +417,16 @@ class _XameTvScreenState extends State<XameTvScreen>
 
   Widget _logoFb() => Center(child:Text(
     _cur?.name.isNotEmpty==true?_cur!.name[0].toUpperCase():'TV',
-    style:const TextStyle(color:Colors.white54,fontSize:18,fontWeight:FontWeight.w800)));
+    style:TextStyle(color:context.xText.withValues(alpha: 0.54),fontSize:18,fontWeight:FontWeight.w800)));
 
   Widget _swipeHint() => Align(alignment:Alignment.centerRight,
     child:Padding(padding:const EdgeInsets.only(right:10),
       child:Column(mainAxisSize:MainAxisSize.min, children:const[
-        Icon(Icons.keyboard_arrow_up_rounded,color:Colors.white30,size:16),
+        Icon(Icons.keyboard_arrow_up_rounded,color:context.xText30,size:16),
         SizedBox(height:2),
-        Text('Swipe',style:TextStyle(color:Colors.white24,fontSize:8)),
+        Text('Swipe',style:TextStyle(color:context.xMuted.withValues(alpha: 0.5),fontSize:8)),
         SizedBox(height:2),
-        Icon(Icons.keyboard_arrow_down_rounded,color:Colors.white30,size:16),
+        Icon(Icons.keyboard_arrow_down_rounded,color:context.xText30,size:16),
       ]),
     ),
   );
@@ -449,13 +449,13 @@ class _XameTvScreenState extends State<XameTvScreen>
                         color:kCategoryColors[_category]??Colors.blue,
                         fontSize:16,fontWeight:FontWeight.w800)),
                     Text('${_filtered.length} channels',
-                        style:const TextStyle(color:Colors.white38,fontSize:10)),
+                        style:TextStyle(color:context.xMuted,fontSize:10)),
                   ])),
                   GestureDetector(onTap:()=>setState(()=>_showList=false),
-                      child:const Icon(Icons.close_rounded,color:Colors.white38,size:18)),
+                      child:Icon(Icons.close_rounded,color:context.xMuted,size:18)),
                 ]),
               )),
-              const Divider(color:Colors.white10,height:1),
+              Divider(color:context.xText10,height:1),
               Expanded(child:ListView.builder(
                 controller:_listCtrl,
                 padding:const EdgeInsets.symmetric(vertical:6),
@@ -467,7 +467,7 @@ class _XameTvScreenState extends State<XameTvScreen>
                   return GestureDetector(
                     onTap:(){setState(()=>_showList=false);_switchTo(i);},
                     child:AnimatedContainer(
-                      duration:const Duration(milliseconds:150),
+                      duration:Duration(milliseconds:150),
                       margin:const EdgeInsets.symmetric(horizontal:8,vertical:2),
                       padding:const EdgeInsets.all(10),
                       decoration:BoxDecoration(
@@ -477,29 +477,29 @@ class _XameTvScreenState extends State<XameTvScreen>
                       ),
                       child:Row(children:[
                         Container(width:38,height:38,
-                          decoration:BoxDecoration(color:Colors.white10,
+                          decoration:BoxDecoration(color:context.xText10,
                               borderRadius:BorderRadius.circular(7)),
                           child:ClipRRect(borderRadius:BorderRadius.circular(7),
                             child:ch.logo.isNotEmpty
                                 ?CachedNetworkImage(imageUrl:ch.logo,fit:BoxFit.contain,
                                     errorWidget:(_,__,___)=>Center(child:Text(
                                         ch.name.isNotEmpty?ch.name[0]:'T',
-                                        style:const TextStyle(color:Colors.white54,
+                                        style:TextStyle(color:context.xText.withValues(alpha: 0.54),
                                             fontWeight:FontWeight.w700))))
                                 :Center(child:Text(ch.name.isNotEmpty?ch.name[0]:'T',
-                                    style:const TextStyle(color:Colors.white54,
+                                    style:TextStyle(color:context.xText.withValues(alpha: 0.54),
                                         fontWeight:FontWeight.w700))),
                           ),
                         ),
-                        const SizedBox(width:9),
+                        SizedBox(width:9),
                         Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,
                             mainAxisSize:MainAxisSize.min, children:[
-                          Text(ch.name,style:TextStyle(color:active?Colors.white:Colors.white70,
+                          Text(ch.name,style:TextStyle(color:active?context.xText:context.xText.withValues(alpha: 0.7),
                               fontSize:12,fontWeight:active?FontWeight.w700:FontWeight.w400),
                               maxLines:1,overflow:TextOverflow.ellipsis),
                           Text([if(ch.country.isNotEmpty)ch.country,
                                 if(ch.language.isNotEmpty)ch.language].join(' · '),
-                              style:const TextStyle(color:Colors.white30,fontSize:9),
+                              style:TextStyle(color:context.xText30,fontSize:9),
                               maxLines:1,overflow:TextOverflow.ellipsis),
                         ])),
                         if(active) Container(width:6,height:6,
@@ -525,27 +525,27 @@ class _XameTvScreenState extends State<XameTvScreen>
         child:Row(children:[
           Expanded(child:Container(
             height:42,
-            decoration:BoxDecoration(color:Colors.white12,
+            decoration:BoxDecoration(color:context.xMuted.withValues(alpha: 0.25),
                 borderRadius:BorderRadius.circular(22),
-                border:Border.all(color:Colors.white.withOpacity(0.18))),
+                border:Border.all(color:context.xText.withOpacity(0.18))),
             child:TextField(
               controller:_searchCtrl, autofocus:true,
-              style:const TextStyle(color:Colors.white,fontSize:14),
-              decoration:const InputDecoration(
+              style:TextStyle(color:context.xText,fontSize:14),
+              decoration:InputDecoration(
                 hintText:'Search channels, country, language...',
-                hintStyle:TextStyle(color:Colors.white30,fontSize:12),
-                prefixIcon:Icon(Icons.search_rounded,color:Colors.white38,size:18),
+                hintStyle:TextStyle(color:context.xText30,fontSize:12),
+                prefixIcon:Icon(Icons.search_rounded,color:context.xMuted,size:18),
                 border:InputBorder.none,
                 contentPadding:EdgeInsets.symmetric(vertical:12),
               ),
               onChanged:(q){setState(()=>_searchQuery=q);_applyFilter();},
             ),
           )),
-          const SizedBox(width:8),
+          SizedBox(width:8),
           GestureDetector(
             onTap:(){setState((){_showSearch=false;_searchQuery='';_searchCtrl.clear();});
                 _applyFilter();},
-            child:const Text('Cancel',style:TextStyle(color:Colors.white60,fontSize:13)),
+            child:Text('Cancel',style:TextStyle(color:context.xText.withValues(alpha: 0.6),fontSize:13)),
           ),
         ]),
       ),
@@ -553,10 +553,10 @@ class _XameTvScreenState extends State<XameTvScreen>
         padding:const EdgeInsets.fromLTRB(12,8,12,4),
         child:Row(children:[
           Text('${_filtered.length} results',
-              style:const TextStyle(color:Colors.white38,fontSize:11)),
+              style:TextStyle(color:context.xMuted,fontSize:11)),
         ]),
       ),
-      const Divider(color:Colors.white10,height:1),
+      Divider(color:context.xText10,height:1),
       Expanded(child:ListView.builder(
         padding:const EdgeInsets.symmetric(vertical:6),
         itemCount:_filtered.length.clamp(0,200),
@@ -571,24 +571,24 @@ class _XameTvScreenState extends State<XameTvScreen>
               padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),
               child:Row(children:[
                 Container(width:36,height:36,
-                  decoration:BoxDecoration(color:Colors.white10,
+                  decoration:BoxDecoration(color:context.xText10,
                       borderRadius:BorderRadius.circular(6)),
                   child:ch.logo.isNotEmpty
                       ?ClipRRect(borderRadius:BorderRadius.circular(6),
                           child:CachedNetworkImage(imageUrl:ch.logo,fit:BoxFit.contain,
                               errorWidget:(_,__,___)=>Center(child:Text(
                                   ch.name.isNotEmpty?ch.name[0]:'T',
-                                  style:const TextStyle(color:Colors.white54)))))
+                                  style:TextStyle(color:context.xText.withValues(alpha: 0.54))))))
                       :Center(child:Text(ch.name.isNotEmpty?ch.name[0]:'T',
-                          style:const TextStyle(color:Colors.white54))),
+                          style:TextStyle(color:context.xText.withValues(alpha: 0.54)))),
                 ),
-                const SizedBox(width:10),
+                SizedBox(width:10),
                 Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
-                  Text(ch.name,style:const TextStyle(color:Colors.white,fontSize:13),
+                  Text(ch.name,style:TextStyle(color:context.xText,fontSize:13),
                       maxLines:1,overflow:TextOverflow.ellipsis),
                   Text([ch.category,if(ch.country.isNotEmpty)ch.country,
                         if(ch.language.isNotEmpty)ch.language].join(' · '),
-                      style:const TextStyle(color:Colors.white38,fontSize:10),
+                      style:TextStyle(color:context.xMuted,fontSize:10),
                       maxLines:1,overflow:TextOverflow.ellipsis),
                 ])),
                 Container(
@@ -613,8 +613,8 @@ class _XameTvScreenState extends State<XameTvScreen>
     child:Container(
       padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),
       decoration:BoxDecoration(color:color,borderRadius:BorderRadius.circular(20),
-          border:Border.all(color:Colors.white.withOpacity(0.18))),
-      child:Text(label,style:const TextStyle(color:Colors.white,
+          border:Border.all(color:context.xText.withOpacity(0.18))),
+      child:Text(label,style:TextStyle(color:context.xText,
           fontWeight:FontWeight.w600,fontSize:12)),
     ),
   );

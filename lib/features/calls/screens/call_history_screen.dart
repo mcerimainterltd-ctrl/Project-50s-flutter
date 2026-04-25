@@ -236,16 +236,16 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
       builder: (_) => AlertDialog(
         backgroundColor: XameColors.darkSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Clear Call History',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-        content: const Text('This will delete all your call records.',
-            style: TextStyle(color: Colors.white54)),
+        title: Text('Clear Call History',
+            style: TextStyle(color: context.xText, fontWeight: FontWeight.w700)),
+        content: Text('This will delete all your call records.',
+            style: TextStyle(color: context.xText.withValues(alpha: 0.54))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel',
-                  style: TextStyle(color: Colors.white38))),
+              child: Text('Cancel',
+                  style: TextStyle(color: context.xMuted))),
           TextButton(onPressed: () => Navigator.pop(context, true),
-              child: const Text('Clear',
+              child: Text('Clear',
                   style: TextStyle(color: XameColors.danger,
                       fontWeight: FontWeight.w700))),
         ],
@@ -266,18 +266,18 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         width: 80, height: 80,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.05),
+          color: context.xText.withOpacity(0.05),
         ),
         child: Icon(Icons.call_outlined,
-            color: Colors.white24, size: 36),
+            color: context.xMuted.withValues(alpha: 0.5), size: 36),
       ),
       SizedBox(height: 20),
       Text('No calls yet',
-        style: TextStyle(color: Colors.white38, fontSize: 16,
+        style: TextStyle(color: context.xMuted, fontSize: 16,
             fontWeight: FontWeight.w500)),
       SizedBox(height: 8),
       Text('Your call history will appear here',
-        style: TextStyle(color: Colors.white24, fontSize: 13)),
+        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 13)),
     ]),
   );
 }
@@ -441,7 +441,7 @@ class _CallTile extends StatelessWidget {
   Widget _initialsAvatar(String initials) => Container(
     color: XameColors.darkSurface,
     child: Center(child: Text(initials,
-      style: const TextStyle(color: Colors.white, fontSize: 18,
+      style: TextStyle(color: context.xText, fontSize: 18,
           fontWeight: FontWeight.w600))),
   );
 

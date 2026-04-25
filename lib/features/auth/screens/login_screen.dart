@@ -65,23 +65,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     showDialog(context: context, barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setS) => AlertDialog(
         backgroundColor: XameColors.darkCard,
-        title: const Text('Set Your Password',
-          style: TextStyle(color: Colors.white, fontSize: 18)),
+        title: Text('Set Your Password',
+          style: TextStyle(color: context.xText, fontSize: 18)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           Text('Welcome back, ${user.firstName}! Please set a password.',
-            style: const TextStyle(color: Colors.white54, fontSize: 13)),
-          const SizedBox(height: 16),
+            style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13)),
+          SizedBox(height: 16),
           _dialogField(pwCtrl,  'New password',     true),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _dialogField(pw2Ctrl, 'Confirm password', true),
           if (err != null) ...[
-            const SizedBox(height: 8),
-            Text(err!, style: const TextStyle(color: XameColors.danger, fontSize: 12)),
+            SizedBox(height: 8),
+            Text(err!, style: TextStyle(color: XameColors.danger, fontSize: 12)),
           ],
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+            child: Text('Cancel', style: TextStyle(color: context.xMuted))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: XameColors.primary, foregroundColor: Colors.black),
@@ -107,9 +107,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _dialogField(TextEditingController ctrl, String hint, bool obscure) =>
     TextField(
       controller: ctrl, obscureText: obscure,
-      style: TextStyle(color: Colors.white),
+      style: TextStyle(color: context.xText),
       decoration: InputDecoration(
-        hintText: hint, hintStyle: TextStyle(color: Colors.white24),
+        hintText: hint, hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.5)),
         filled: true, fillColor: XameColors.darkBg,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
@@ -248,7 +248,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _label(String text) => Text(text,
-    style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500));
+    style: TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w500));
 
   Widget _field({
     required TextEditingController controller,
@@ -258,10 +258,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }) => TextField(
     controller: controller, obscureText: obscure,
     keyboardType: type, onSubmitted: onSubmitted,
-    style: const TextStyle(color: Colors.white),
+    style: TextStyle(color: context.xText),
     decoration: InputDecoration(
-      hintText: hint, hintStyle: const TextStyle(color: Colors.white24),
-      prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+      hintText: hint, hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.5)),
+      prefixIcon: Icon(icon, color: context.xMuted, size: 20),
       suffixIcon: suffix, filled: true, fillColor: XameColors.darkCard,
       border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),

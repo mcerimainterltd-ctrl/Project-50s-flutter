@@ -165,7 +165,7 @@ class MessageBubble extends ConsumerWidget {
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(time, style: const TextStyle(color: context.xMuted, fontSize: 10)),
+        Text(time, style: TextStyle(color: context.xMuted, fontSize: 10)),
         if (isSelf) ...[
           const SizedBox(width: 4),
           _StatusTick(status: message.status),
@@ -295,7 +295,7 @@ class _StatusTick extends StatelessWidget {
 // ─── Reply quote ──────────────────────────────────────────────────────────
 class _ReplyQuote extends StatelessWidget {
   final String text;
-  const _ReplyQuote({required this.text});
+  _ReplyQuote({required this.text});
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 4),
@@ -303,10 +303,10 @@ class _ReplyQuote extends StatelessWidget {
     decoration: BoxDecoration(
       color: context.xText.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(10),
-      border: const Border(left: BorderSide(color: XameColors.primary, width: 3)),
+      border: Border(left: BorderSide(color: XameColors.primary, width: 3)),
     ),
     child: Text(text.isNotEmpty ? text : '📎 Attachment',
-        style: const TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12),
+        style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12),
         maxLines: 2, overflow: TextOverflow.ellipsis),
   );
 }
@@ -376,7 +376,7 @@ class _ImageBubble extends StatelessWidget {
 // ─── Full-screen image viewer ─────────────────────────────────────────────
 class _FullScreenImageViewer extends StatefulWidget {
   final String url;
-  const _FullScreenImageViewer({required this.url});
+  _FullScreenImageViewer({required this.url});
   @override
   State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
 }
@@ -395,8 +395,8 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
       final cached = File(path);
       if (cached.existsSync() && cached.lengthSync() == 0) await cached.delete();
       await Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(minutes: 5),
+        connectTimeout: Duration(seconds: 30),
+        receiveTimeout: Duration(minutes: 5),
       )).download(_resolveUrl(widget.url), path,
           onReceiveProgress: (r, t) {
         if (t > 0 && mounted) setState(() => _progress = r / t);
@@ -423,7 +423,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
     appBar: AppBar(
       backgroundColor: Colors.black54,
       leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: Icon(Icons.close, color: context.xText),
           onPressed: () => Navigator.pop(context)),
       actions: [
         if (_downloading)
@@ -431,10 +431,10 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
             child: SizedBox(width: 22, height: 22,
               child: CircularProgressIndicator(
                   value: _progress > 0 ? _progress : null,
-                  color: Colors.white, strokeWidth: 2)))
+                  color: context.xText, strokeWidth: 2)))
         else
           IconButton(
-              icon: const Icon(Icons.download_outlined, color: Colors.white),
+              icon: Icon(Icons.download_outlined, color: context.xText),
               onPressed: _download),
       ],
     ),
@@ -445,9 +445,9 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
         child: Center(child: CachedNetworkImage(
           imageUrl: _resolveUrl(widget.url), fit: BoxFit.contain,
           placeholder: (_, __) =>
-              const CircularProgressIndicator(color: XameColors.primary),
+              CircularProgressIndicator(color: XameColors.primary),
           errorWidget: (_, __, ___) =>
-              const Icon(Icons.broken_image, color: Colors.white24, size: 60),
+              Icon(Icons.broken_image, color: context.xMuted.withValues(alpha: 0.5), size: 60),
         )),
       ),
     ),
@@ -756,7 +756,7 @@ class _FileBubbleState extends State<_FileBubble> {
       if (widget.url.isEmpty) {
         if (mounted) {
           setState(() => _opening = false);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('File not available — upload may still be in progress'),
               backgroundColor: Colors.orange));
         }
@@ -773,8 +773,8 @@ class _FileBubbleState extends State<_FileBubble> {
       if (!cached.existsSync() || cached.lengthSync() == 0) {
         if (cached.existsSync()) await cached.delete();
         await Dio(BaseOptions(
-          connectTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(minutes: 5),
+          connectTimeout: Duration(seconds: 30),
+          receiveTimeout: Duration(minutes: 5),
         )).download(_resolveUrl(widget.url), path,
             onReceiveProgress: (r, t) {
           if (t > 0 && mounted) setState(() => _progress = r / t);
@@ -783,7 +783,7 @@ class _FileBubbleState extends State<_FileBubble> {
       if (mounted) setState(() => _opening = false);
       final result = await OpenFilex.open(path);
       if (result.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('No app found to open this file type'),
             backgroundColor: context.xCard));
       }
@@ -803,31 +803,31 @@ class _FileBubbleState extends State<_FileBubble> {
     final n = widget.fileName.toLowerCase();
     if (m.contains('pdf')   || n.endsWith('.pdf'))
       return _DocStyle(Icons.picture_as_pdf_outlined,
-          XameColors.danger, const Color(0xFF23111100), 'PDF');
+          XameColors.danger, Color(0xFF23111100), 'PDF');
     if (m.contains('word')  || n.endsWith('.doc') || n.endsWith('.docx'))
       return _DocStyle(Icons.description_outlined,
-          XameColors.primary, const Color(0xFF23001155), 'WORD');
+          XameColors.primary, Color(0xFF23001155), 'WORD');
     if (m.contains('sheet') || m.contains('excel') ||
         n.endsWith('.xls')  || n.endsWith('.xlsx'))
       return _DocStyle(Icons.table_chart_outlined,
-          XameColors.accent, const Color(0xFF23001100), 'EXCEL');
+          XameColors.accent, Color(0xFF23001100), 'EXCEL');
     if (m.contains('presentation') || m.contains('powerpoint') ||
         n.endsWith('.ppt')  || n.endsWith('.pptx'))
       return _DocStyle(Icons.slideshow_outlined,
-          XameColors.danger, const Color(0xFF23110000), 'PPT');
+          XameColors.danger, Color(0xFF23110000), 'PPT');
     if (m.contains('zip')   || m.contains('rar') || m.contains('tar') ||
         n.endsWith('.zip')  || n.endsWith('.rar'))
       return _DocStyle(Icons.folder_zip_outlined,
-          XameColors.accent, const Color(0xFF23110B00), 'ZIP');
+          XameColors.accent, Color(0xFF23110B00), 'ZIP');
     if (m.contains('audio') || n.endsWith('.mp3') || n.endsWith('.aac'))
       return _DocStyle(Icons.audio_file_outlined,
-          XameColors.secondary, const Color(0xFF23050011), 'AUDIO');
+          XameColors.secondary, Color(0xFF23050011), 'AUDIO');
     if (m.contains('video') || n.endsWith('.mp4') || n.endsWith('.mov'))
       return _DocStyle(Icons.video_file_outlined,
-          XameColors.accent, const Color(0xFF23001111), 'VIDEO');
+          XameColors.accent, Color(0xFF23001111), 'VIDEO');
     if (m.contains('text')  || n.endsWith('.txt'))
       return _DocStyle(Icons.article_outlined,
-          Colors.white70, const Color(0xFF23111111), 'TXT');
+          context.xText.withValues(alpha: 0.7), Color(0xFF23111111), 'TXT');
     return _DocStyle(Icons.insert_drive_file_outlined,
         XameColors.accent, const Color(0xFF23000B1A), 'FILE');
   }
@@ -1144,7 +1144,7 @@ class _WaveformBarsState extends State<_WaveformBars>
           decoration: BoxDecoration(
             color: isPast
                 ? XameColors.primary
-                : Colors.white.withValues(alpha: 0.2),
+                : context.xText.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(2),
           ),
         );

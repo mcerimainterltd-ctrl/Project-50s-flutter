@@ -17,7 +17,7 @@ class StoryRingPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     if (!hasUnseen) {
-      paint.color = Colors.white.withOpacity(0.2);
+      paint.color = context.xText.withOpacity(0.2);
       canvas.drawCircle(size.center(Offset.zero), size.width / 2, paint);
     } else {
       // Neon Gradient for active stories

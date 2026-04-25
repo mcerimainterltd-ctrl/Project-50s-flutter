@@ -28,7 +28,7 @@ class _Placeholder extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: context.xBg,
     body: Center(child: Text(name,
-      style: const TextStyle(color: Colors.white, fontSize: 18))));
+      style: TextStyle(color: context.xText, fontSize: 18))));
 }
 
 final routerProvider = Provider<GoRouter>((ref) {

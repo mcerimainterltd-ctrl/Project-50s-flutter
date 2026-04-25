@@ -507,8 +507,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
           currentUserId:     ref.read(currentUserProvider)?.xameId ?? '',
         ),
       ),
-      transitionDuration:        const Duration(milliseconds: 200),
-      reverseTransitionDuration: const Duration(milliseconds: 200),
+      transitionDuration:        Duration(milliseconds: 200),
+      reverseTransitionDuration: Duration(milliseconds: 200),
     ));
   }
 
@@ -517,7 +517,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       context:          context,
       backgroundColor:  XameColors.darkSurface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _CreateStorySheet(
         userId:   userId,
@@ -530,13 +530,13 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 // ── Post FAB ──────────────────────────────────────────────────────────────────
 class _PostFAB extends StatelessWidget {
   final VoidCallback onPost;
-  const _PostFAB({required this.onPost});
+  _PostFAB({required this.onPost});
 
   @override
   Widget build(BuildContext context) => FloatingActionButton.extended(
     onPressed: onPost,
     backgroundColor: XameColors.primary,
-    foregroundColor: Colors.white,
+    foregroundColor: context.xText,
     elevation: 4,
     icon: const Icon(Icons.add_photo_alternate_outlined),
     label: const Text('Post',
@@ -644,7 +644,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
     if (err == null) {
       Navigator.pop(context);
       widget.onPosted();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Post published!'),
         backgroundColor: XameColors.darkSurface));
     } else {
@@ -658,12 +658,12 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         MediaQuery.of(context).viewInsets.bottom + 20),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 36, height: 4,
-        decoration: BoxDecoration(color: Colors.white24,
+        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
-      const SizedBox(height: 16),
-      const Text('Create Post', style: TextStyle(color: Colors.white,
+      SizedBox(height: 16),
+      Text('Create Post', style: TextStyle(color: context.xText,
           fontSize: 18, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
 
       // Media picker
       GestureDetector(
@@ -671,9 +671,9 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         child: Container(
           height: 160,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: context.xText.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white12)),
+            border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
           child: _mediaFile != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -684,13 +684,13 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.videocam_rounded,
+                            Icon(Icons.videocam_rounded,
                                 color: XameColors.primary, size: 48),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Text(
                               _mediaFile!.path.split('/').last,
-                              style: const TextStyle(
-                                  color: Colors.white60, fontSize: 12),
+                              style: TextStyle(
+                                  color: context.xText.withValues(alpha: 0.6), fontSize: 12),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -700,8 +700,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                                 snap.hasData
                                     ? '${(snap.data! / 1024 / 1024).toStringAsFixed(1)}MB'
                                     : '',
-                                style: const TextStyle(
-                                    color: Colors.white38, fontSize: 11)),
+                                style: TextStyle(
+                                    color: context.xMuted, fontSize: 11)),
                             ),
                           ],
                         ),
@@ -709,72 +709,72 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                     : Image.file(_mediaFile!, fit: BoxFit.cover,
                         width: double.infinity),
                   if (_mediaType == 'video')
-                    const Center(child: Icon(Icons.play_circle_outline,
-                        color: Colors.white54, size: 40)),
+                    Center(child: Icon(Icons.play_circle_outline,
+                        color: context.xText.withValues(alpha: 0.54), size: 40)),
                 ]))
             : Column(mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                const Icon(Icons.add_photo_alternate_outlined,
-                    color: Colors.white38, size: 40),
-                const SizedBox(height: 8),
+                Icon(Icons.add_photo_alternate_outlined,
+                    color: context.xMuted, size: 40),
+                SizedBox(height: 8),
                 Row(mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                   GestureDetector(onTap: _pickMedia,
-                    child: const Text('Photo',
+                    child: Text('Photo',
                       style: TextStyle(color: XameColors.primary,
                           fontWeight: FontWeight.w600))),
-                  const Text('  or  ',
-                      style: TextStyle(color: Colors.white38)),
+                  Text('  or  ',
+                      style: TextStyle(color: context.xMuted)),
                   GestureDetector(onTap: _pickVideo,
-                    child: const Text('Video',
+                    child: Text('Video',
                       style: TextStyle(color: XameColors.primary,
                           fontWeight: FontWeight.w600))),
                 ]),
               ]),
         ),
       ),
-      const SizedBox(height: 12),
+      SizedBox(height: 12),
 
       // Title
       TextField(
         controller: _titleCtrl,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: context.xText),
         decoration: InputDecoration(
           hintText:  'Title',
-          hintStyle: const TextStyle(color: Colors.white30),
+          hintStyle: TextStyle(color: context.xText30),
           filled: true, fillColor: XameColors.darkBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                   color: XameColors.primary, width: 1))),
       ),
-      const SizedBox(height: 8),
+      SizedBox(height: 8),
 
       // Caption
       TextField(
         controller: _captionCtrl,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: context.xText),
         maxLines: 2,
         decoration: InputDecoration(
           hintText:  'Caption (optional)',
-          hintStyle: const TextStyle(color: Colors.white30),
+          hintStyle: TextStyle(color: context.xText30),
           filled: true, fillColor: XameColors.darkBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                   color: XameColors.primary, width: 1))),
       ),
-      const SizedBox(height: 8),
+      SizedBox(height: 8),
 
       if (_error != null)
         Padding(padding: const EdgeInsets.only(bottom: 8),
-          child: Text(_error!, style: const TextStyle(
+          child: Text(_error!, style: TextStyle(
               color: XameColors.danger, fontSize: 13))),
 
       SizedBox(width: double.infinity, height: 50,
@@ -782,14 +782,14 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
           onPressed: _uploading ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: XameColors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: context.xText,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
             elevation: 0),
           child: _uploading
-            ? const SizedBox(width: 20, height: 20,
+            ? SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
+                    color: context.xText, strokeWidth: 2))
             : const Text('Publish',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
@@ -836,7 +836,7 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
     if (err == null) {
       Navigator.pop(context);
       widget.onPosted();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Story posted! Expires in 24hrs'),
         backgroundColor: XameColors.darkSurface));
     } else {
@@ -850,57 +850,57 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
         MediaQuery.of(context).viewInsets.bottom + 20),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 36, height: 4,
-        decoration: BoxDecoration(color: Colors.white24,
+        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
-      const SizedBox(height: 16),
-      const Text('Add to Your Story',
-        style: TextStyle(color: Colors.white, fontSize: 18,
+      SizedBox(height: 16),
+      Text('Add to Your Story',
+        style: TextStyle(color: context.xText, fontSize: 18,
             fontWeight: FontWeight.w700)),
-      const SizedBox(height: 8),
-      const Text('Stories disappear after 24 hours',
-        style: TextStyle(color: Colors.white38, fontSize: 13)),
-      const SizedBox(height: 16),
+      SizedBox(height: 8),
+      Text('Stories disappear after 24 hours',
+        style: TextStyle(color: context.xMuted, fontSize: 13)),
+      SizedBox(height: 16),
       GestureDetector(
         onTap: _pickMedia,
         child: Container(
           height: 200,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: context.xText.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white12)),
+            border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
           child: _mediaFile != null
             ? ClipRRect(borderRadius: BorderRadius.circular(16),
                 child: Image.file(_mediaFile!, fit: BoxFit.cover,
                     width: double.infinity))
-            : const Column(
+            : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                 Icon(Icons.camera_alt_outlined,
-                    color: Colors.white38, size: 48),
+                    color: context.xMuted, size: 48),
                 SizedBox(height: 8),
                 Text('Tap to select photo',
-                  style: TextStyle(color: Colors.white38)),
+                  style: TextStyle(color: context.xMuted)),
               ]),
         ),
       ),
-      const SizedBox(height: 12),
+      SizedBox(height: 12),
       if (_error != null)
         Padding(padding: const EdgeInsets.only(bottom: 8),
-          child: Text(_error!, style: const TextStyle(
+          child: Text(_error!, style: TextStyle(
               color: XameColors.danger, fontSize: 13))),
       SizedBox(width: double.infinity, height: 50,
         child: ElevatedButton(
           onPressed: _uploading ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: XameColors.secondary,
-            foregroundColor: Colors.white,
+            foregroundColor: context.xText,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
             elevation: 0),
           child: _uploading
             ? SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
+                    color: context.xText, strokeWidth: 2))
             : Text('Share Story',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
@@ -994,26 +994,26 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               controller: widget.ctrl,
               autofocus:  true,
               onChanged:  _search,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: context.xText),
               decoration: InputDecoration(
                 hintText:  'Search people, topics, moments...',
-                hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
-                prefixIcon: const Icon(Icons.search,
-                    color: Colors.white38, size: 20),
+                hintStyle: TextStyle(color: context.xText30, fontSize: 14),
+                prefixIcon: Icon(Icons.search,
+                    color: context.xMuted, size: 20),
                 filled: true, fillColor: XameColors.darkSurface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                         color: XameColors.primary, width: 1)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12)),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           GestureDetector(onTap: widget.onClose,
-            child: const Text('Cancel', style: TextStyle(
+            child: Text('Cancel', style: TextStyle(
                 color: XameColors.primary, fontSize: 14,
                 fontWeight: FontWeight.w600))),
         ]),
@@ -1022,8 +1022,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
         child: _results.isEmpty && widget.ctrl.text.isEmpty
           ? _SearchSuggestions(ctrl: widget.ctrl, onSearch: widget.onSearch)
           : _results.isEmpty
-            ? const Center(child: Text('No results found',
-                style: TextStyle(color: Colors.white38)))
+            ? Center(child: Text('No results found',
+                style: TextStyle(color: context.xMuted)))
             : ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _results.length,
@@ -1039,13 +1039,13 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                         errorWidget: (_, __, ___) => Container(
                           width: 52, height: 52,
                           color: XameColors.darkSurface))),
-                    title: Text(item.title, style: const TextStyle(
-                        color: Colors.white, fontSize: 14,
+                    title: Text(item.title, style: TextStyle(
+                        color: context.xText, fontSize: 14,
                         fontWeight: FontWeight.w600)),
-                    subtitle: Text(item.category, style: const TextStyle(
-                        color: Colors.white38, fontSize: 12)),
+                    subtitle: Text(item.category, style: TextStyle(
+                        color: context.xMuted, fontSize: 12)),
                     trailing: item.isLive
-                      ? const LivePulseIndicator(compact: true) : null,
+                      ? LivePulseIndicator(compact: true) : null,
                   );
                 }),
       ),
@@ -1056,7 +1056,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 class _SearchSuggestions extends StatelessWidget {
   final TextEditingController ctrl;
   final Function(String) onSearch;
-  const _SearchSuggestions({required this.ctrl, required this.onSearch});
+  _SearchSuggestions({required this.ctrl, required this.onSearch});
   final _trending = const [
     '🔥 Afrobeats','⚡ Tech Africa','🌍 Global Culture',
     '🎬 Nollywood','🏆 Sport','🎨 Street Art',
@@ -1066,10 +1066,10 @@ class _SearchSuggestions extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('TRENDING SEARCHES', style: TextStyle(
-          color: Colors.white38, fontSize: 11,
+      Text('TRENDING SEARCHES', style: TextStyle(
+          color: context.xMuted, fontSize: 11,
           fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-      const SizedBox(height: 14),
+      SizedBox(height: 14),
       Wrap(spacing: 8, runSpacing: 8,
         children: _trending.map((t) => GestureDetector(
           onTap: () {
@@ -1082,11 +1082,11 @@ class _SearchSuggestions extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: context.xText.withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white10)),
-            child: Text(t, style: const TextStyle(
-                color: Colors.white60, fontSize: 13)),
+              border: Border.all(color: context.xText10)),
+            child: Text(t, style: TextStyle(
+                color: context.xText.withValues(alpha: 0.6), fontSize: 13)),
           ),
         )).toList()),
     ]),
@@ -1097,7 +1097,7 @@ class _SearchSuggestions extends StatelessWidget {
 class _FilterSheet extends StatefulWidget {
   final String currentRegion;
   final Function(DiscoveryRegion) onApply;
-  const _FilterSheet({required this.currentRegion, required this.onApply});
+  _FilterSheet({required this.currentRegion, required this.onApply});
   @override
   State<_FilterSheet> createState() => _FilterSheetState();
 }
@@ -1113,17 +1113,17 @@ class _FilterSheetState extends State<_FilterSheet> {
       padding: const EdgeInsets.all(20),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 36, height: 4,
-          decoration: BoxDecoration(color: Colors.white24,
+          decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2))),
-        const SizedBox(height: 20),
-        const Text('Filter by Region', style: TextStyle(
-            color: Colors.white, fontSize: 18,
+        SizedBox(height: 20),
+        Text('Filter by Region', style: TextStyle(
+            color: context.xText, fontSize: 18,
             fontWeight: FontWeight.w700)),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         SizedBox(height: 320,
           child: GridView.builder(
             gridDelegate:
-              const SliverGridDelegateWithFixedCrossAxisCount(
+              SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3, childAspectRatio: 2.2,
                 crossAxisSpacing: 8, mainAxisSpacing: 8),
             itemCount: discoveryRegions.length,
@@ -1133,20 +1133,20 @@ class _FilterSheetState extends State<_FilterSheet> {
               return GestureDetector(
                 onTap: () => setState(() => _selected = r.code),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
+                  duration: Duration(milliseconds: 150),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: isSelected
                       ? XameColors.primary.withOpacity(0.15)
-                      : Colors.white.withOpacity(0.04),
+                      : context.xText.withOpacity(0.04),
                     border: Border.all(
                       color: isSelected
                         ? XameColors.primary.withOpacity(0.5)
-                        : Colors.white10)),
+                        : context.xText10)),
                   child: Center(child: Text('${r.flag} ${r.name}',
                     style: TextStyle(
                       color: isSelected
-                        ? XameColors.primary : Colors.white54,
+                        ? XameColors.primary : context.xText.withValues(alpha: 0.54),
                       fontSize: 12,
                       fontWeight: isSelected
                         ? FontWeight.w700 : FontWeight.normal),
@@ -1158,7 +1158,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             },
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         SizedBox(width: double.infinity, height: 50,
           child: ElevatedButton(
             onPressed: () {
@@ -1168,7 +1168,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: XameColors.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: context.xText,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
               elevation: 0),
@@ -1351,7 +1351,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                 ),
               ),
             ]),
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
           ]),
         ),
       ),
@@ -1363,7 +1363,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
 class _EmptyState extends StatelessWidget {
   final String region;
   final VoidCallback onPost;
-  const _EmptyState({required this.region, required this.onPost});
+  _EmptyState({required this.region, required this.onPost});
 
   @override
   Widget build(BuildContext context) => Center(
@@ -1372,18 +1372,18 @@ class _EmptyState extends StatelessWidget {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 80, height: 80,
           decoration: BoxDecoration(shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.04)),
-          child: const Icon(Icons.explore_outlined,
-              color: Colors.white24, size: 36)),
-        const SizedBox(height: 20),
-        Text('Nothing in $region yet', style: const TextStyle(
-            color: Colors.white38, fontSize: 16,
+              color: context.xText.withOpacity(0.04)),
+          child: Icon(Icons.explore_outlined,
+              color: context.xMuted.withValues(alpha: 0.5), size: 36)),
+        SizedBox(height: 20),
+        Text('Nothing in $region yet', style: TextStyle(
+            color: context.xMuted, fontSize: 16,
             fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        const Text('Be the first to share a moment\nfrom this region',
-          style: TextStyle(color: Colors.white24, fontSize: 13,
+        SizedBox(height: 8),
+        Text('Be the first to share a moment\nfrom this region',
+          style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 13,
               height: 1.5), textAlign: TextAlign.center),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         GestureDetector(
           onTap: onPost,
           child: Container(
@@ -1391,11 +1391,11 @@ class _EmptyState extends StatelessWidget {
                 horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(colors: [
+              gradient: LinearGradient(colors: [
                 XameColors.primary, XameColors.secondary,
               ])),
-            child: const Text('Post First',
-              style: TextStyle(color: Colors.white, fontSize: 14,
+            child: Text('Post First',
+              style: TextStyle(color: context.xText, fontSize: 14,
                   fontWeight: FontWeight.w700))),
         ),
       ]),
