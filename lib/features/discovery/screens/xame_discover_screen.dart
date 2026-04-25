@@ -468,7 +468,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: XameColors.darkSurface,
+      backgroundColor: context.xSurface,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _FilterSheet(
@@ -480,7 +480,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   void _showPostDialog(BuildContext context, String userId) {
     showModalBottomSheet(
       context:          context,
-      backgroundColor:  XameColors.darkSurface,
+      backgroundColor:  context.xSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -515,7 +515,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   void _showPostStoryDialog(BuildContext context, String userId) {
     showModalBottomSheet(
       context:          context,
-      backgroundColor:  XameColors.darkSurface,
+      backgroundColor:  context.xSurface,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -536,7 +536,7 @@ class _PostFAB extends StatelessWidget {
   Widget build(BuildContext context) => FloatingActionButton.extended(
     onPressed: onPost,
     backgroundColor: XameColors.primary,
-    foregroundColor: XameColors.darkBg,
+    foregroundColor: context.xBg,
     elevation: 4,
     icon: const Icon(Icons.add_photo_alternate_outlined),
     label: const Text('Post',
@@ -646,7 +646,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       widget.onPosted();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Post published!'),
-        backgroundColor: XameColors.darkSurface));
+        backgroundColor: context.xSurface));
     } else {
       setState(() => _error = err);
     }
@@ -658,10 +658,10 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         MediaQuery.of(context).viewInsets.bottom + 20),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 36, height: 4,
-        decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
+        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
       SizedBox(height: 16),
-      Text('Create Post', style: TextStyle(color: XameColors.darkBg,
+      Text('Create Post', style: TextStyle(color: context.xText,
           fontSize: 18, fontWeight: FontWeight.w700)),
       SizedBox(height: 16),
 
@@ -671,16 +671,16 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         child: Container(
           height: 160,
           decoration: BoxDecoration(
-            color: XameColors.darkBg.withOpacity(0.05),
+            color: context.xBg.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: XameColors.darkSurface)),
+            border: Border.all(color: context.xSurface)),
           child: _mediaFile != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Stack(fit: StackFit.expand, children: [
                   _mediaType == 'video'
                     ? Container(
-                        color: XameColors.darkBg,
+                        color: context.xText,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -690,7 +690,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                             Text(
                               _mediaFile!.path.split('/').last,
                               style: TextStyle(
-                                  color: XameColors.darkBg.withValues(alpha: 0.6), fontSize: 12),
+                                  color: context.xText.withValues(alpha: 0.6), fontSize: 12),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -701,7 +701,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                                     ? '${(snap.data! / 1024 / 1024).toStringAsFixed(1)}MB'
                                     : '',
                                 style: TextStyle(
-                                    color: XameColors.darkSurface, fontSize: 11)),
+                                    color: context.xMuted, fontSize: 11)),
                             ),
                           ],
                         ),
@@ -710,12 +710,12 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                         width: double.infinity),
                   if (_mediaType == 'video')
                     Center(child: Icon(Icons.play_circle_outline,
-                        color: XameColors.darkBg.withValues(alpha: 0.54), size: 40)),
+                        color: context.xText.withValues(alpha: 0.54), size: 40)),
                 ]))
             : Column(mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                 Icon(Icons.add_photo_alternate_outlined,
-                    color: XameColors.darkSurface, size: 40),
+                    color: context.xMuted, size: 40),
                 SizedBox(height: 8),
                 Row(mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -724,7 +724,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                       style: TextStyle(color: XameColors.primary,
                           fontWeight: FontWeight.w600))),
                   Text('  or  ',
-                      style: TextStyle(color: XameColors.darkSurface)),
+                      style: TextStyle(color: context.xSurface)),
                   GestureDetector(onTap: _pickVideo,
                     child: Text('Video',
                       style: TextStyle(color: XameColors.primary,
@@ -738,11 +738,11 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       // Title
       TextField(
         controller: _titleCtrl,
-        style: TextStyle(color: XameColors.darkBg),
+        style: TextStyle(color: context.xBg),
         decoration: InputDecoration(
           hintText:  'Title',
-          hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
-          filled: true, fillColor: XameColors.darkBg,
+          hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+          filled: true, fillColor: context.xBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none),
@@ -756,12 +756,12 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       // Caption
       TextField(
         controller: _captionCtrl,
-        style: TextStyle(color: XameColors.darkBg),
+        style: TextStyle(color: context.xBg),
         maxLines: 2,
         decoration: InputDecoration(
           hintText:  'Caption (optional)',
-          hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
-          filled: true, fillColor: XameColors.darkBg,
+          hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+          filled: true, fillColor: context.xBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none),
@@ -782,14 +782,14 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
           onPressed: _uploading ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: XameColors.primary,
-            foregroundColor: XameColors.darkBg,
+            foregroundColor: context.xBg,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
             elevation: 0),
           child: _uploading
             ? SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(
-                    color: XameColors.darkBg, strokeWidth: 2))
+                    color: context.xText, strokeWidth: 2))
             : const Text('Publish',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
@@ -838,7 +838,7 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
       widget.onPosted();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Story posted! Expires in 24hrs'),
-        backgroundColor: XameColors.darkSurface));
+        backgroundColor: context.xSurface));
     } else {
       setState(() => _error = err);
     }
@@ -850,24 +850,24 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
         MediaQuery.of(context).viewInsets.bottom + 20),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 36, height: 4,
-        decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
+        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
       SizedBox(height: 16),
       Text('Add to Your Story',
-        style: TextStyle(color: XameColors.darkBg, fontSize: 18,
+        style: TextStyle(color: context.xText, fontSize: 18,
             fontWeight: FontWeight.w700)),
       SizedBox(height: 8),
       Text('Stories disappear after 24 hours',
-        style: TextStyle(color: XameColors.darkSurface, fontSize: 13)),
+        style: TextStyle(color: context.xMuted, fontSize: 13)),
       SizedBox(height: 16),
       GestureDetector(
         onTap: _pickMedia,
         child: Container(
           height: 200,
           decoration: BoxDecoration(
-            color: XameColors.darkBg.withOpacity(0.05),
+            color: context.xBg.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: XameColors.darkSurface)),
+            border: Border.all(color: context.xSurface)),
           child: _mediaFile != null
             ? ClipRRect(borderRadius: BorderRadius.circular(16),
                 child: Image.file(_mediaFile!, fit: BoxFit.cover,
@@ -876,10 +876,10 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                 Icon(Icons.camera_alt_outlined,
-                    color: XameColors.darkSurface, size: 48),
+                    color: context.xMuted, size: 48),
                 SizedBox(height: 8),
                 Text('Tap to select photo',
-                  style: TextStyle(color: XameColors.darkSurface)),
+                  style: TextStyle(color: context.xSurface)),
               ]),
         ),
       ),
@@ -893,14 +893,14 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
           onPressed: _uploading ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: XameColors.secondary,
-            foregroundColor: XameColors.darkBg,
+            foregroundColor: context.xBg,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
             elevation: 0),
           child: _uploading
             ? SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(
-                    color: XameColors.darkBg, strokeWidth: 2))
+                    color: context.xText, strokeWidth: 2))
             : Text('Share Story',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
@@ -994,13 +994,13 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               controller: widget.ctrl,
               autofocus:  true,
               onChanged:  _search,
-              style: TextStyle(color: XameColors.darkBg),
+              style: TextStyle(color: context.xBg),
               decoration: InputDecoration(
                 hintText:  'Search people, topics, moments...',
-                hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3), fontSize: 14),
+                hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3), fontSize: 14),
                 prefixIcon: Icon(Icons.search,
-                    color: XameColors.darkSurface, size: 20),
-                filled: true, fillColor: XameColors.darkSurface,
+                    color: context.xMuted, size: 20),
+                filled: true, fillColor: context.xSurface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none),
@@ -1023,7 +1023,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
           ? _SearchSuggestions(ctrl: widget.ctrl, onSearch: widget.onSearch)
           : _results.isEmpty
             ? Center(child: Text('No results found',
-                style: TextStyle(color: XameColors.darkSurface)))
+                style: TextStyle(color: context.xSurface)))
             : ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _results.length,
@@ -1038,12 +1038,12 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                         width: 52, height: 52, fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => Container(
                           width: 52, height: 52,
-                          color: XameColors.darkSurface))),
+                          color: context.xSurface))),
                     title: Text(item.title, style: TextStyle(
-                        color: XameColors.darkBg, fontSize: 14,
+                        color: context.xText, fontSize: 14,
                         fontWeight: FontWeight.w600)),
                     subtitle: Text(item.category, style: TextStyle(
-                        color: XameColors.darkSurface, fontSize: 12)),
+                        color: context.xMuted, fontSize: 12)),
                     trailing: item.isLive
                       ? LivePulseIndicator(compact: true) : null,
                   );
@@ -1067,7 +1067,7 @@ class _SearchSuggestions extends StatelessWidget {
     padding: const EdgeInsets.all(20),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('TRENDING SEARCHES', style: TextStyle(
-          color: XameColors.darkSurface, fontSize: 11,
+          color: context.xMuted, fontSize: 11,
           fontWeight: FontWeight.w800, letterSpacing: 1.2)),
       SizedBox(height: 14),
       Wrap(spacing: 8, runSpacing: 8,
@@ -1082,11 +1082,11 @@ class _SearchSuggestions extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: XameColors.darkBg.withOpacity(0.05),
+              color: context.xBg.withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: XameColors.darkSurface)),
+              border: Border.all(color: context.xSurface)),
             child: Text(t, style: TextStyle(
-                color: XameColors.darkBg.withValues(alpha: 0.6), fontSize: 13)),
+                color: context.xText.withValues(alpha: 0.6), fontSize: 13)),
           ),
         )).toList()),
     ]),
@@ -1113,11 +1113,11 @@ class _FilterSheetState extends State<_FilterSheet> {
       padding: const EdgeInsets.all(20),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 36, height: 4,
-          decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5),
+          decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 20),
         Text('Filter by Region', style: TextStyle(
-            color: XameColors.darkBg, fontSize: 18,
+            color: context.xText, fontSize: 18,
             fontWeight: FontWeight.w700)),
         SizedBox(height: 16),
         SizedBox(height: 320,
@@ -1138,15 +1138,15 @@ class _FilterSheetState extends State<_FilterSheet> {
                     borderRadius: BorderRadius.circular(12),
                     color: isSelected
                       ? XameColors.primary.withOpacity(0.15)
-                      : XameColors.darkBg.withOpacity(0.04),
+                      : context.xBg.withOpacity(0.04),
                     border: Border.all(
                       color: isSelected
                         ? XameColors.primary.withOpacity(0.5)
-                        : XameColors.darkSurface)),
+                        : context.xSurface)),
                   child: Center(child: Text('${r.flag} ${r.name}',
                     style: TextStyle(
                       color: isSelected
-                        ? XameColors.primary : XameColors.darkBg.withValues(alpha: 0.54),
+                        ? XameColors.primary : context.xText.withValues(alpha: 0.54),
                       fontSize: 12,
                       fontWeight: isSelected
                         ? FontWeight.w700 : FontWeight.normal),
@@ -1168,7 +1168,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: XameColors.primary,
-              foregroundColor: XameColors.darkBg,
+              foregroundColor: context.xBg,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
               elevation: 0),
@@ -1217,7 +1217,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Unfollowed \${widget.item.authorName}'),
-            backgroundColor: XameColors.darkSurface,
+            backgroundColor: context.xSurface,
           ));
         }
       } else {
@@ -1230,7 +1230,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Now following \${widget.item.authorName}'),
-            backgroundColor: XameColors.darkSurface,
+            backgroundColor: context.xSurface,
           ));
         }
       }
@@ -1372,16 +1372,16 @@ class _EmptyState extends StatelessWidget {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 80, height: 80,
           decoration: BoxDecoration(shape: BoxShape.circle,
-              color: XameColors.darkBg.withOpacity(0.04)),
+              color: context.xBg.withOpacity(0.04)),
           child: Icon(Icons.explore_outlined,
-              color: XameColors.darkSurface.withValues(alpha: 0.5), size: 36)),
+              color: context.xMuted.withValues(alpha: 0.5), size: 36)),
         SizedBox(height: 20),
         Text('Nothing in $region yet', style: TextStyle(
-            color: XameColors.darkSurface, fontSize: 16,
+            color: context.xText, fontSize: 16,
             fontWeight: FontWeight.w600)),
         SizedBox(height: 8),
         Text('Be the first to share a moment\nfrom this region',
-          style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 13,
+          style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 13,
               height: 1.5), textAlign: TextAlign.center),
         SizedBox(height: 20),
         GestureDetector(
@@ -1395,7 +1395,7 @@ class _EmptyState extends StatelessWidget {
                 XameColors.primary, XameColors.secondary,
               ])),
             child: Text('Post First',
-              style: TextStyle(color: XameColors.darkBg, fontSize: 14,
+              style: TextStyle(color: context.xText, fontSize: 14,
                   fontWeight: FontWeight.w700))),
         ),
       ]),
