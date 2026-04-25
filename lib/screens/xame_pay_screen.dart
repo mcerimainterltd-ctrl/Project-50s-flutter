@@ -5,12 +5,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── COLOURS ───────────────────────────────────────────────────────────────────
-const _kTeal  = Color(0xFF00B0A0);
-const _kBg    = Color(0xFF0D1520);
-const _kCard  = Color(0xFF111E2E);
-const _kMuted = Color(0xFF7A9BB5);
+const _kTeal  = XameColors.accent;
+const _kBg    = XameColors.darkSurface;
+const _kCard  = XameColors.darkCard;
+const _kMuted = XameColors.darkSurface;
 
 // ── MODELS ────────────────────────────────────────────────────────────────────
 
@@ -527,7 +528,7 @@ class _XamePayScreenState extends State<XamePayScreen>
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-            colors: [const Color(0xFF00D4FF), Color(0xFF008A7D)],
+            colors: [XameColors.primary, XameColors.accent],
             begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -726,9 +727,9 @@ class _XamePayScreenState extends State<XamePayScreen>
                       margin: const EdgeInsets.only(top: 10),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0x1A00B0A0),
+                        color: XameColors.accent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0x3300B0A0)),
+                        border: Border.all(color: XameColors.accent.withValues(alpha: 0.2)),
                       ),
                       child: Text(
                         rv != null
@@ -966,9 +967,9 @@ class _SendTabState extends State<_SendTab> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0x1A00B0A0),
+              color: XameColors.accent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x3300B0A0))),
+              border: Border.all(color: XameColors.accent.withValues(alpha: 0.2))),
             child: Row(children: [
               CircleAvatar(radius: 18,
                 backgroundColor: _kTeal.withOpacity(0.2),
@@ -1146,7 +1147,7 @@ class _SendTabState extends State<_SendTab> {
                 border: Border.all(color: Colors.white10)),
             child: Text(_resolved, style: TextStyle(
                 color: _resolved.startsWith('✅')
-                    ? _kTeal : const Color(0xFFF0A500),
+                    ? _kTeal : XameColors.accent,
                 fontSize: 13)),
           ),
         const SizedBox(height: 8),
@@ -1197,9 +1198,9 @@ class _SendTabState extends State<_SendTab> {
   Widget _chip(String t) => Container(
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-    decoration: BoxDecoration(color: const Color(0x1A00B0A0),
+    decoration: BoxDecoration(color: XameColors.accent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0x3300B0A0))),
+        border: Border.all(color: XameColors.accent.withValues(alpha: 0.2))),
     child: Text(t, style: const TextStyle(color: _kTeal,
         fontSize: 13, fontWeight: FontWeight.w600)),
   );
@@ -1925,7 +1926,7 @@ class _DataTabState extends State<_DataTab> {
                       horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: selected
-                        ? const Color(0x1A00B0A0)
+                        ? XameColors.accent.withValues(alpha: 0.1)
                         : _kCard,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
@@ -2396,7 +2397,7 @@ class _BillsTabState extends State<_BillsTab> {
             child: Text(_validated,
                 style: TextStyle(
                     color: _validated.startsWith('✅')
-                        ? _kTeal : const Color(0xFFF0A500),
+                        ? _kTeal : XameColors.accent,
                     fontSize: 12)),
           ),
         const SizedBox(height: 16),
@@ -2480,7 +2481,7 @@ class _HistoryTab extends StatelessWidget {
           child: Row(children: [
             Container(width: 42, height: 42,
               decoration: BoxDecoration(
-                color: cr ? const Color(0x1A00B0A0) : const Color(0x1AFF6464),
+                color: cr ? context.xAccent.withValues(alpha: 0.1) : context.xDanger.withValues(alpha: 0.1),
                 shape: BoxShape.circle),
               child: Center(child: Text(tx.icon,
                   style: const TextStyle(fontSize: 18)))),
@@ -2494,7 +2495,7 @@ class _HistoryTab extends StatelessWidget {
             ])),
             Text('${cr ? '+' : '-'}${fmt(tx.amount)}',
                 style: TextStyle(
-                    color: cr ? _kTeal : const Color(0xFFFF6464),
+                    color: cr ? _kTeal : context.xDanger,
                     fontSize: 15, fontWeight: FontWeight.w700)),
           ]),
         );

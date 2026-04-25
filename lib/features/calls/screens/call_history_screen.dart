@@ -10,6 +10,7 @@ import '../../../core/services/cache_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/webrtc_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Model ────────────────────────────────────────────────────────────────────
 class CallRecord {
@@ -105,13 +106,13 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     final history  = ref.watch(callHistoryProvider(user?.xameId ?? ''));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.xBg,
       body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverAppBar(
             pinned: true,
             expandedHeight: 120,
-            backgroundColor: const Color(0xFF0A0A0F),
+            backgroundColor: context.xBg,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
@@ -134,7 +135,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [const Color(0xFF141420), const Color(0xFF0A0A0F)],
+                    colors: [context.xSurface, context.xBg],
                   ),
                 ),
               ),
@@ -156,7 +157,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         body: history.when(
           loading: () => const Center(
             child: CircularProgressIndicator(
-                color: const Color(0xFF00FF88), strokeWidth: 1.5)),
+                color: context.xAccent, strokeWidth: 1.5)),
           error: (e, _) => Center(
             child: Text('Failed to load calls',
               style: TextStyle(color: Colors.white38))),
@@ -164,8 +165,8 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             final filtered = _filterCalls(calls, user?.xameId ?? '');
             if (filtered.isEmpty) return _emptyState();
             return RefreshIndicator(
-              color: const Color(0xFF00FF88),
-              backgroundColor: const Color(0xFF161B22),
+              color: context.xAccent,
+              backgroundColor: context.xSurface,
               onRefresh: () => ref.refresh(
                   callHistoryProvider(user?.xameId ?? '').future),
               child: ListView.builder(
@@ -233,7 +234,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
+        backgroundColor: XameColors.darkSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Clear Call History',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
@@ -245,7 +246,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
                   style: TextStyle(color: Colors.white38))),
           TextButton(onPressed: () => Navigator.pop(context, true),
               child: const Text('Clear',
-                  style: TextStyle(color: const Color(0xFFE53935),
+                  style: TextStyle(color: XameColors.danger,
                       fontWeight: FontWeight.w700))),
         ],
       ),
@@ -292,9 +293,9 @@ class _FilterTabs extends StatelessWidget {
       controller: controller,
       isScrollable: true,
       tabAlignment: TabAlignment.start,
-      indicatorColor: const Color(0xFF00FF88),
+      indicatorColor: context.xAccent,
       indicatorWeight: 2,
-      labelColor: const Color(0xFF00FF88),
+      labelColor: context.xAccent,
       unselectedLabelColor: Colors.white38,
       labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
           letterSpacing: 0.3),
@@ -354,7 +355,7 @@ class _CallTile extends StatelessWidget {
     final isDeclined   = call.status == 'rejected';
     final isVideo      = call.callType == 'video';
     final nameColor    = (isMissed || isNoAnswer || isDeclined)
-        ? const Color(0xFFE53935) : Colors.white;
+        ? context.xDanger : Colors.white;
     final initials  = name.trim().split(' ').take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
@@ -394,7 +395,7 @@ class _CallTile extends StatelessWidget {
                   Text(_statusLabel(),
                     style: TextStyle(
                       color: isMissed
-                          ? const Color(0xFFE53935) : Colors.white38,
+                          ? context.xDanger : Colors.white38,
                       fontSize: 12)),
                   if (call.duration > 0) ...[
                     const Text(' · ',
@@ -420,14 +421,14 @@ class _CallTile extends StatelessWidget {
                 child: Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00FF88).withOpacity(0.1),
+                    color: context.xAccent.withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: const Color(0xFF00FF88).withOpacity(0.3)),
+                        color: context.xAccent.withOpacity(0.3)),
                   ),
                   child: Icon(
                     isVideo ? Icons.videocam_outlined : Icons.call_outlined,
-                    color: const Color(0xFF00FF88), size: 16),
+                    color: context.xAccent, size: 16),
                 ),
               ),
             ],
@@ -438,7 +439,7 @@ class _CallTile extends StatelessWidget {
   }
 
   Widget _initialsAvatar(String initials) => Container(
-    color: const Color(0xFF1E2533),
+    color: XameColors.darkSurface,
     child: Center(child: Text(initials,
       style: const TextStyle(color: Colors.white, fontSize: 18,
           fontWeight: FontWeight.w600))),
@@ -484,9 +485,9 @@ class _DirectionIcon extends StatelessWidget {
       isOutgoing ? Icons.call_made : Icons.call_received,
       size: 13,
       color: isMissed
-          ? const Color(0xFFE53935)
+          ? context.xDanger
           : isOutgoing
-              ? const Color(0xFF00FF88)
+              ? context.xAccent
               : Colors.white38,
     );
   }

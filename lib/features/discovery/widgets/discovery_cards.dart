@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/config/constants.dart';
 import 'live_pulse.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Media Discover Card ───────────────────────────────────────────────────────
 class MediaDiscoverCard extends StatefulWidget {
@@ -142,7 +143,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                       height: 420,
                       radius: 28),
                   errorWidget: (_, __, ___) => Container(
-                    color: const Color(0xFF1A1A2E),
+                    color: context.xSurface,
                     child: const Icon(Icons.image_outlined,
                         color: Colors.white12, size: 48)),
                 ),
@@ -181,7 +182,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                       border: Border.all(color: Colors.white12)),
                     child: Text(widget.category.toUpperCase(),
                       style: const TextStyle(
-                        color:       Color(0xFF2196F3),
+                        color:       context.xPrimary,
                         fontSize:    10,
                         fontWeight:  FontWeight.w800,
                         letterSpacing: 1.2)),
@@ -213,7 +214,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                     imageUrl:    widget.authorAvatar!,
                                     fit:         BoxFit.cover,
                                     errorWidget: (_, __, ___) =>
-                                      Container(color: const Color(0xFF1A1A2E)),
+                                      Container(color: context.xSurface),
                                   ),
                                 ),
                               ),
@@ -258,14 +259,14 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                     ? Icons.favorite_rounded
                                     : Icons.favorite_border_rounded,
                                   color: _liked
-                                    ? const Color(0xFFFF6B6B)
+                                    ? context.xDanger
                                     : Colors.white38,
                                   size: 16),
                                 const SizedBox(width: 4),
                                 Text(_fmt(likeCount),
                                   style: TextStyle(
                                     color: _liked
-                                      ? const Color(0xFFFF6B6B)
+                                      ? context.xDanger
                                       : Colors.white38,
                                     fontSize:   12,
                                     fontWeight: _liked
@@ -329,7 +330,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Link copied to clipboard'),
-          backgroundColor: Color(0xFF1A4A3A)));
+          backgroundColor: XameColors.darkSurface));
       }
     }
   }
@@ -372,7 +373,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                     children: [
                       Text(widget.category.toUpperCase(),
                         style: const TextStyle(
-                          color:       Color(0xFF2196F3),
+                          color:       XameColors.primary,
                           fontSize:    11,
                           fontWeight:  FontWeight.w800,
                           letterSpacing: 1.2)),

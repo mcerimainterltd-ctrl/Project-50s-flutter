@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/discovery_item.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 class RegionFilterBar extends StatefulWidget {
   final Function(DiscoveryRegion) onRegionSelected;
@@ -42,23 +43,23 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 color: isSelected
-                  ? const Color(0xFF2196F3).withOpacity(0.15)
+                  ? XameColors.primary.withOpacity(0.15)
                   : Colors.white.withOpacity(0.05),
                 border: Border.all(
                   color: isSelected
-                    ? const Color(0xFF2196F3).withOpacity(0.6)
+                    ? XameColors.primary.withOpacity(0.6)
                     : Colors.transparent,
                   width: 1.2)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 if (isSelected) ...[
                   const Icon(Icons.check_rounded,
-                      color: Color(0xFF2196F3), size: 12),
+                      color: XameColors.primary, size: 12),
                   const SizedBox(width: 4),
                 ],
                 Text('${r.flag} ${r.name}',
                   style: TextStyle(
                     color: isSelected
-                      ? const Color(0xFF2196F3) : Colors.white54,
+                      ? XameColors.primary : Colors.white54,
                     fontSize:   12,
                     fontWeight: isSelected
                       ? FontWeight.w700 : FontWeight.normal)),

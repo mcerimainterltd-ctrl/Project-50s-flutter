@@ -86,7 +86,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Future<void> _pickImage() async {
     final x = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: const Color(0xFF161B22),
+      backgroundColor: XameColors.darkSurface,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min,
@@ -105,7 +105,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             title: const Text('Gallery', style: TextStyle(color: Colors.white)),
             onTap: () => Navigator.pop(context, ImageSource.gallery)),
           ListTile(
-            leading: const Icon(Icons.face_outlined, color: const Color(0xFF00D4FF)),
+            leading: const Icon(Icons.face_outlined, color: XameColors.primary),
             title: const Text('🎨 Build Avatar', style: TextStyle(color: Colors.white)),
             onTap: () { Navigator.pop(context); _openAvatarBuilder(); }),
           ListTile(
@@ -210,7 +210,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white)),
       backgroundColor: success
-          ? const Color(0xFF00B0A0) : const Color(0xFF1E2533),
+          ? XameColors.accent : XameColors.darkSurface,
       behavior:  SnackBarBehavior.floating,
       shape:     RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       duration:  const Duration(seconds: 3),
@@ -221,7 +221,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget build(BuildContext context) {
     final user     = ref.watch(currentUserProvider);
     if (user == null) return const Scaffold(
-        backgroundColor: const Color(0xFF0A0A0F));
+        backgroundColor: context.xBg);
 
     final photoUrl = _removeImage ? null
         : _newImage != null ? null
@@ -231,7 +231,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.xBg,
       body: FadeTransition(
         opacity: _fade,
         child: CustomScrollView(slivers: [
@@ -240,7 +240,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           SliverAppBar(
             pinned:          true,
             expandedHeight:  200,
-            backgroundColor: const Color(0xFF0A0A0F),
+            backgroundColor: context.xBg,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
@@ -252,9 +252,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 child: _saving
                     ? const SizedBox(width: 18, height: 18,
                         child: CircularProgressIndicator(
-                            color: const Color(0xFF00D4FF), strokeWidth: 2))
+                            color: context.xPrimary, strokeWidth: 2))
                     : const Text('Save',
-                        style: TextStyle(color: const Color(0xFF00D4FF),
+                        style: TextStyle(color: context.xPrimary,
                             fontWeight: FontWeight.w700, fontSize: 15)),
               ),
               const SizedBox(width: 8),
@@ -265,7 +265,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [const Color(0xFF141420), const Color(0xFF0A0A0F)],
+                    colors: [context.xSurface, context.xBg],
                   ),
                 ),
                 child: Column(
@@ -281,7 +281,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: const Color(0xFF00B0A0), width: 2.5),
+                                color: context.xAccent, width: 2.5),
                           ),
                           child: ClipOval(child: _newImage != null
                             ? Image.file(_newImage!, fit: BoxFit.cover)
@@ -297,7 +297,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           child: Container(
                             width: 28, height: 28,
                             decoration: const BoxDecoration(
-                              color: const Color(0xFF00D4FF),
+                              color: context.xPrimary,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.camera_alt,
@@ -344,12 +344,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF161B22),
+                      color: context.xSurface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: Colors.white10),
                     ),
                     child: Row(children: [
-                      const Icon(Icons.tag, color: const Color(0xFF00D4FF), size: 18),
+                      const Icon(Icons.tag, color: context.xPrimary, size: 18),
                       const SizedBox(width: 12),
                       Text(user.xameId,
                         style: const TextStyle(color: Colors.white,
@@ -408,7 +408,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   icon:    Icons.shield_outlined,
                   title:   'Extra Security',
                   subtitle: 'OTP on new device login',
-                  color:   const Color(0xFF00B0A0),
+                  color:   context.xAccent,
                   onTap:   () => _showExtraSecuritySheet(user.xameId),
                 ),
                 const SizedBox(height: 8),
@@ -469,7 +469,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           maxChildSize:     0.9,
           builder: (_, ctrl) => Container(
             decoration: const BoxDecoration(
-              color: const Color(0xFF1E1E2E),
+              color: XameColors.darkCard,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(children: [
@@ -498,7 +498,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               ),
               Expanded(child: sessions.when(
                 loading: () => const Center(child: CircularProgressIndicator(
-                    color: const Color(0xFF00D4FF), strokeWidth: 2)),
+                    color: XameColors.primary, strokeWidth: 2)),
                 error: (_, __) => const Center(
                     child: Text('Failed to load sessions',
                         style: TextStyle(color: Colors.white38))),
@@ -586,7 +586,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   // ── Widgets ──────────────────────────────────────────────────────────────
   Widget _initialsWidget(String initials) => Container(
-    color: const Color(0xFF1E2533),
+    color: XameColors.darkSurface,
     child: Center(child: Text(initials,
       style: const TextStyle(color: Colors.white, fontSize: 32,
           fontWeight: FontWeight.w600))));
@@ -600,7 +600,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     required String hint, required IconData icon,
   }) => Container(
     decoration: BoxDecoration(
-      color: const Color(0xFF161B22),
+      color: XameColors.darkSurface,
       borderRadius: BorderRadius.circular(14),
       border: Border.all(color: Colors.white10),
     ),
@@ -625,7 +625,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     decoration: BoxDecoration(
-      color: const Color(0xFF161B22),
+      color: XameColors.darkSurface,
       borderRadius: BorderRadius.circular(14),
       border: Border.all(color: Colors.white10),
     ),
@@ -644,7 +644,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       Switch(
         value:           value,
         onChanged:       onChanged,
-        activeColor:     const Color(0xFF00B0A0),
+        activeColor:     XameColors.accent,
         inactiveTrackColor: Colors.white12,
       ),
     ]),
@@ -659,7 +659,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: XameColors.darkSurface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white10),
       ),
@@ -743,7 +743,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
         if (mounted) Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Extra security settings saved ✓'),
-          backgroundColor: const Color(0xFF00D4FF)));
+          backgroundColor: XameColors.primary));
       }
     } catch (_) {} finally {
       setState(() => _saving = false);
@@ -760,7 +760,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
       maxChildSize:     0.9,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1A2332),
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: ListView(controller: ctrl, padding: const EdgeInsets.all(20),
@@ -801,7 +801,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
                 Switch(
                   value:     _enabled,
                   onChanged: (v) => setState(() => _enabled = v),
-                  activeColor: const Color(0xFF00B0A0),
+                  activeColor: context.xAccent,
                 ),
               ]),
             ),
@@ -831,7 +831,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
               child: ElevatedButton(
                 onPressed: _saving ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:     const Color(0xFF00B0A0),
+                  backgroundColor:     context.xAccent,
                   foregroundColor:     Colors.black,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),

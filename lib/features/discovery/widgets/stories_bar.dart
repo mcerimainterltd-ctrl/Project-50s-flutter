@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'live_pulse.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 class DiscoveryStoriesBar extends StatelessWidget {
   final List<Map<String, dynamic>>? users;
@@ -83,14 +84,14 @@ class _StoryRingState extends State<_StoryRing>
             Container(
               width: 56, height: 56,
               decoration: const BoxDecoration(
-                shape: BoxShape.circle, color: const Color(0xFF141420)),
+                shape: BoxShape.circle, color: XameColors.darkSurface),
               child: ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: widget.avatar, fit: BoxFit.cover,
                   placeholder: (_, __) =>
-                    Container(color: const Color(0xFF1A1A2E)),
+                    Container(color: XameColors.darkSurface),
                   errorWidget: (_, __, ___) => Container(
-                    color: const Color(0xFF1A1A2E),
+                    color: XameColors.darkSurface,
                     child: const Icon(Icons.person,
                         color: Colors.white24, size: 28)),
                 ),
@@ -101,14 +102,14 @@ class _StoryRingState extends State<_StoryRing>
                 child: Container(width: 12, height: 12,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF00FF88),
+                    color: XameColors.accent,
                     border: Border.all(
-                        color: const Color(0xFF0A0A0F), width: 2)))),
+                        color: XameColors.darkBg, width: 2)))),
             if (widget.isFirst)
               Positioned(bottom: 0, right: 0,
                 child: Container(width: 20, height: 20,
                   decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: Color(0xFF2196F3)),
+                    shape: BoxShape.circle, color: XameColors.primary),
                   child: const Icon(Icons.add,
                       color: Colors.white, size: 14))),
           ]),
@@ -138,9 +139,9 @@ class _GradientRingPainter extends CustomPainter {
         startAngle: progress * 2 * pi,
         endAngle:   progress * 2 * pi + 2 * pi,
         colors: const [
-          Color(0xFF7B2FFF), Color(0xFF2196F3),
-          const Color(0xFF00FF88), Color(0xFFFF6B6B),
-          Color(0xFF7B2FFF),
+          XameColors.secondary, XameColors.primary,
+          XameColors.accent, XameColors.danger,
+          XameColors.secondary,
         ],
       ).createShader(rect);
     canvas.drawArc(rect, 0, 2 * pi, false, paint);

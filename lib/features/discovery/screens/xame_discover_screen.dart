@@ -18,6 +18,7 @@ import '../widgets/region_filter_bar.dart';
 import '../widgets/live_pulse.dart';
 import '../widgets/story_viewer.dart';
 import '../models/discovery_item.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── API Service ───────────────────────────────────────────────────────────────
 class DiscoveryApiService {
@@ -281,7 +282,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.xBg,
       floatingActionButton: _PostFAB(
         onPost: () => _showPostDialog(context, user?.xameId ?? ''),
       ),
@@ -291,13 +292,13 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
           physics:    const BouncingScrollPhysics(),
           slivers: [
             SliverAppBar(
-              backgroundColor:  const Color(0xFF0A0A0F),
+              backgroundColor:  context.xBg,
               surfaceTintColor: Colors.transparent,
               floating: true, snap: true, elevation: 0,
               title: Row(children: [
                 ShaderMask(
                   shaderCallback: (b) => const LinearGradient(
-                    colors: [Color(0xFF2196F3), Color(0xFF7B2FFF)],
+                    colors: [context.xPrimary, context.xSecondary],
                   ).createShader(b),
                   child: const Text('DISCOVERY',
                     style: TextStyle(color: Colors.white, fontSize: 22,
@@ -371,7 +372,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                   onAdd: (user) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text('Request sent to ${user.name}'),
-                      backgroundColor: const Color(0xFF1A4A3A),
+                      backgroundColor: context.xSurface,
                       duration: const Duration(seconds: 2)));
                   },
                 ),
@@ -393,7 +394,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                   if (_loading)
                     const SizedBox(width: 14, height: 14,
                       child: CircularProgressIndicator(
-                          color: Color(0xFF2196F3), strokeWidth: 1.5)),
+                          color: context.xPrimary, strokeWidth: 1.5)),
                 ]),
               ),
             ),
@@ -435,7 +436,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 child: Padding(
                   padding: EdgeInsets.all(20),
                   child: Center(child: CircularProgressIndicator(
-                      color: Color(0xFF2196F3), strokeWidth: 1.5)))),
+                      color: context.xPrimary, strokeWidth: 1.5)))),
 
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
@@ -467,7 +468,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF161B22),
+      backgroundColor: XameColors.darkSurface,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _FilterSheet(
@@ -479,7 +480,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   void _showPostDialog(BuildContext context, String userId) {
     showModalBottomSheet(
       context:          context,
-      backgroundColor:  const Color(0xFF161B22),
+      backgroundColor:  XameColors.darkSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -514,7 +515,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   void _showPostStoryDialog(BuildContext context, String userId) {
     showModalBottomSheet(
       context:          context,
-      backgroundColor:  const Color(0xFF161B22),
+      backgroundColor:  XameColors.darkSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -534,7 +535,7 @@ class _PostFAB extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FloatingActionButton.extended(
     onPressed: onPost,
-    backgroundColor: const Color(0xFF2196F3),
+    backgroundColor: XameColors.primary,
     foregroundColor: Colors.white,
     elevation: 4,
     icon: const Icon(Icons.add_photo_alternate_outlined),
@@ -645,7 +646,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       widget.onPosted();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Post published!'),
-        backgroundColor: Color(0xFF1A4A3A)));
+        backgroundColor: XameColors.darkSurface));
     } else {
       setState(() => _error = err);
     }
@@ -679,12 +680,12 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                 child: Stack(fit: StackFit.expand, children: [
                   _mediaType == 'video'
                     ? Container(
-                        color: const Color(0xFF0A0A1A),
+                        color: XameColors.darkBg,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(Icons.videocam_rounded,
-                                color: Color(0xFF2196F3), size: 48),
+                                color: XameColors.primary, size: 48),
                             const SizedBox(height: 8),
                             Text(
                               _mediaFile!.path.split('/').last,
@@ -720,13 +721,13 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                   children: [
                   GestureDetector(onTap: _pickMedia,
                     child: const Text('Photo',
-                      style: TextStyle(color: Color(0xFF2196F3),
+                      style: TextStyle(color: XameColors.primary,
                           fontWeight: FontWeight.w600))),
                   const Text('  or  ',
                       style: TextStyle(color: Colors.white38)),
                   GestureDetector(onTap: _pickVideo,
                     child: const Text('Video',
-                      style: TextStyle(color: Color(0xFF2196F3),
+                      style: TextStyle(color: XameColors.primary,
                           fontWeight: FontWeight.w600))),
                 ]),
               ]),
@@ -741,14 +742,14 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         decoration: InputDecoration(
           hintText:  'Title',
           hintStyle: const TextStyle(color: Colors.white30),
-          filled: true, fillColor: const Color(0xFF0A0A0F),
+          filled: true, fillColor: XameColors.darkBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                  color: Color(0xFF2196F3), width: 1))),
+                  color: XameColors.primary, width: 1))),
       ),
       const SizedBox(height: 8),
 
@@ -760,27 +761,27 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         decoration: InputDecoration(
           hintText:  'Caption (optional)',
           hintStyle: const TextStyle(color: Colors.white30),
-          filled: true, fillColor: const Color(0xFF0A0A0F),
+          filled: true, fillColor: XameColors.darkBg,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                  color: Color(0xFF2196F3), width: 1))),
+                  color: XameColors.primary, width: 1))),
       ),
       const SizedBox(height: 8),
 
       if (_error != null)
         Padding(padding: const EdgeInsets.only(bottom: 8),
           child: Text(_error!, style: const TextStyle(
-              color: const Color(0xFFE53935), fontSize: 13))),
+              color: XameColors.danger, fontSize: 13))),
 
       SizedBox(width: double.infinity, height: 50,
         child: ElevatedButton(
           onPressed: _uploading ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2196F3),
+            backgroundColor: XameColors.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
@@ -837,7 +838,7 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
       widget.onPosted();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Story posted! Expires in 24hrs'),
-        backgroundColor: Color(0xFF1A4A3A)));
+        backgroundColor: XameColors.darkSurface));
     } else {
       setState(() => _error = err);
     }
@@ -886,12 +887,12 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
       if (_error != null)
         Padding(padding: const EdgeInsets.only(bottom: 8),
           child: Text(_error!, style: const TextStyle(
-              color: const Color(0xFFE53935), fontSize: 13))),
+              color: XameColors.danger, fontSize: 13))),
       SizedBox(width: double.infinity, height: 50,
         child: ElevatedButton(
           onPressed: _uploading ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF7B2FFF),
+            backgroundColor: XameColors.secondary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
@@ -918,17 +919,17 @@ class _LiveCountBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF4444).withOpacity(0.15),
+        color: context.xDanger.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-            color: const Color(0xFFFF4444).withOpacity(0.3))),
+            color: context.xDanger.withOpacity(0.3))),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 5, height: 5,
           decoration: const BoxDecoration(
-            shape: BoxShape.circle, color: const Color(0xFFE53935))),
+            shape: BoxShape.circle, color: context.xDanger)),
         const SizedBox(width: 4),
         Text('$count LIVE', style: const TextStyle(
-            color: const Color(0xFFE53935), fontSize: 9,
+            color: context.xDanger, fontSize: 9,
             fontWeight: FontWeight.w800, letterSpacing: 0.5)),
       ]),
     );
@@ -983,7 +984,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
 
   @override
   Widget build(BuildContext context) => Container(
-    color: const Color(0xF00A0A0F),
+    color: context.xBg.withValues(alpha: 0.94),
     child: SafeArea(child: Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -999,21 +1000,21 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
                 prefixIcon: const Icon(Icons.search,
                     color: Colors.white38, size: 20),
-                filled: true, fillColor: const Color(0xFF161B22),
+                filled: true, fillColor: XameColors.darkSurface,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(
-                        color: Color(0xFF2196F3), width: 1)),
+                        color: XameColors.primary, width: 1)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12)),
             ),
           ),
           const SizedBox(width: 8),
           GestureDetector(onTap: widget.onClose,
             child: const Text('Cancel', style: TextStyle(
-                color: Color(0xFF2196F3), fontSize: 14,
+                color: XameColors.primary, fontSize: 14,
                 fontWeight: FontWeight.w600))),
         ]),
       ),
@@ -1037,7 +1038,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                         width: 52, height: 52, fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => Container(
                           width: 52, height: 52,
-                          color: const Color(0xFF1A1A2E)))),
+                          color: XameColors.darkSurface))),
                     title: Text(item.title, style: const TextStyle(
                         color: Colors.white, fontSize: 14,
                         fontWeight: FontWeight.w600)),
@@ -1136,16 +1137,16 @@ class _FilterSheetState extends State<_FilterSheet> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: isSelected
-                      ? const Color(0xFF2196F3).withOpacity(0.15)
+                      ? XameColors.primary.withOpacity(0.15)
                       : Colors.white.withOpacity(0.04),
                     border: Border.all(
                       color: isSelected
-                        ? const Color(0xFF2196F3).withOpacity(0.5)
+                        ? XameColors.primary.withOpacity(0.5)
                         : Colors.white10)),
                   child: Center(child: Text('${r.flag} ${r.name}',
                     style: TextStyle(
                       color: isSelected
-                        ? const Color(0xFF2196F3) : Colors.white54,
+                        ? XameColors.primary : Colors.white54,
                       fontSize: 12,
                       fontWeight: isSelected
                         ? FontWeight.w700 : FontWeight.normal),
@@ -1166,7 +1167,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               widget.onApply(r);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2196F3),
+              backgroundColor: XameColors.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
@@ -1216,7 +1217,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Unfollowed \${widget.item.authorName}'),
-            backgroundColor: const Color(0xFF1A2332),
+            backgroundColor: XameColors.darkSurface,
           ));
         }
       } else {
@@ -1229,7 +1230,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Now following \${widget.item.authorName}'),
-            backgroundColor: const Color(0xFF1A4A3A),
+            backgroundColor: XameColors.darkSurface,
           ));
         }
       }
@@ -1251,11 +1252,11 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
   Widget build(BuildContext context) {
     final item = widget.item;
     return Scaffold(
-    backgroundColor: const Color(0xFF0A0A0F),
+    backgroundColor: context.xBg,
     body: CustomScrollView(slivers: [
       SliverAppBar(
         expandedHeight: 360, pinned: true,
-        backgroundColor: const Color(0xFF0A0A0F),
+        backgroundColor: context.xBg,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
@@ -1269,7 +1270,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
             CachedNetworkImage(imageUrl: item.mediaUrl,
               fit: BoxFit.cover,
               errorWidget: (_, __, ___) =>
-                Container(color: const Color(0xFF1A1A2E))),
+                Container(color: context.xSurface)),
             Container(decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -1291,12 +1292,12 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2196F3).withOpacity(0.1),
+                  color: context.xPrimary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: const Color(0xFF2196F3).withOpacity(0.3))),
+                      color: context.xPrimary.withOpacity(0.3))),
                 child: Text(item.category.toUpperCase(),
-                  style: const TextStyle(color: Color(0xFF2196F3),
+                  style: const TextStyle(color: context.xPrimary,
                       fontSize: 10, fontWeight: FontWeight.w800,
                       letterSpacing: 1))),
               const Spacer(),
@@ -1316,7 +1317,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
               CircleAvatar(radius: 20,
                 backgroundImage: item.authorAvatar.isNotEmpty
                   ? NetworkImage(item.authorAvatar) : null,
-                backgroundColor: const Color(0xFF1A1A2E),
+                backgroundColor: context.xSurface,
                 child: item.authorAvatar.isEmpty
                   ? const Icon(Icons.person, color: Colors.white38) : null),
               const SizedBox(width: 10),
@@ -1338,7 +1339,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                     borderRadius: BorderRadius.circular(20),
                     gradient: LinearGradient(colors: _following
                         ? [Colors.white24, Colors.white24]
-                        : [const Color(0xFF2196F3), const Color(0xFF7B2FFF)]),
+                        : [context.xPrimary, context.xSecondary]),
                   ),
                   child: _followLoading
                       ? const SizedBox(width: 14, height: 14,
@@ -1391,7 +1392,7 @@ class _EmptyState extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: const LinearGradient(colors: [
-                Color(0xFF2196F3), Color(0xFF7B2FFF),
+                XameColors.primary, XameColors.secondary,
               ])),
             child: const Text('Post First',
               style: TextStyle(color: Colors.white, fontSize: 14,

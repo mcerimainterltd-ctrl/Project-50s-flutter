@@ -71,7 +71,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.xBg,
       body: SafeArea(child: Column(children: [
         _buildHeader(user),
         Expanded(child: IndexedStack(index: _tab, children: [
@@ -88,7 +88,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       bottomNavigationBar: _buildBottomNav(),
       floatingActionButton: _tab == 0 ? FloatingActionButton(
         onPressed:       _showAddContactDialog,
-        backgroundColor: const Color(0xFF00D4FF),
+        backgroundColor: context.xPrimary,
         foregroundColor: Colors.black,
         child:           const Icon(Icons.add_rounded, size: 28),
       ) : null,
@@ -123,7 +123,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                       setState(() => _filter = '');
                     })
                 : null,
-              filled: true, fillColor: const Color(0xFF1E1E2E),
+              filled: true, fillColor: XameColors.darkCard,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none),
@@ -144,14 +144,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
 
   Widget _buildBottomNav() => Container(
     decoration: BoxDecoration(
-      color: const Color(0xFF141420),
+      color: XameColors.darkSurface,
       border: Border(top: BorderSide(
         color: Colors.white.withValues(alpha: 0.06)))),
     child: TabBar(
       controller: _tabCtrl,
-      indicatorColor: const Color(0xFF00D4FF),
+      indicatorColor: XameColors.primary,
       indicatorSize: TabBarIndicatorSize.label,
-      labelColor: const Color(0xFF00D4FF),
+      labelColor: XameColors.primary,
       unselectedLabelColor: Colors.white38,
       labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
       tabs: [
@@ -165,7 +165,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                   label: Text(missed > 99 ? '99+' : '$missed',
                       style: const TextStyle(fontSize: 10,
                           fontWeight: FontWeight.w700)),
-                  backgroundColor: const Color(0xFFE53935),
+                  backgroundColor: XameColors.danger,
                   child: const Icon(Icons.call_outlined, size: 22));
           }),
           text: 'Calls'),
@@ -184,7 +184,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1E2E),
+      backgroundColor: XameColors.darkCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -219,14 +219,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     hintStyle: const TextStyle(color: Colors.white30),
                     prefixIcon: const Icon(Icons.alternate_email,
                       color: Colors.white38, size: 20),
-                    filled: true, fillColor: const Color(0xFF0A0A0F),
+                    filled: true, fillColor: XameColors.darkBg,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(
-                        color: const Color(0xFF00D4FF), width: 1.5)),
+                        color: XameColors.primary, width: 1.5)),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 14),
                   ),
@@ -241,7 +241,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     (u) => foundUser = u,
                     (s) => searching = s),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00D4FF),
+                    backgroundColor: XameColors.primary,
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12))),
@@ -256,11 +256,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               const SizedBox(height: 10),
               Row(children: [
                 const Icon(Icons.info_outline,
-                  color: const Color(0xFFE53935), size: 16),
+                  color: XameColors.danger, size: 16),
                 const SizedBox(width: 6),
                 Text(error!,
                   style: const TextStyle(
-                    color: const Color(0xFFE53935), fontSize: 13)),
+                    color: XameColors.danger, fontSize: 13)),
               ]),
             ],
             if (foundUser != null) ...[
@@ -268,10 +268,10 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00D4FF).withValues(alpha: 0.08),
+                  color: XameColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: const Color(0xFF00D4FF).withValues(alpha: 0.3))),
+                    color: XameColors.primary.withValues(alpha: 0.3))),
                 child: Row(children: [
                   XameAvatar(name: _contactName(foundUser!), size: 44),
                   const SizedBox(width: 12),
@@ -300,11 +300,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Contact added!'),
-                            backgroundColor: const Color(0xFF00FF88)));
+                            backgroundColor: XameColors.accent));
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00D4FF),
+                      backgroundColor: XameColors.primary,
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 10),
@@ -359,7 +359,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   void _showMainMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1E2E),
+      backgroundColor: XameColors.darkCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(
@@ -415,9 +415,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             style: TextStyle(color: Colors.white)),
           onTap: () { Navigator.pop(context); context.go('/settings'); }),
         ListTile(
-          leading: const Icon(Icons.logout_rounded, color: const Color(0xFFE53935)),
+          leading: const Icon(Icons.logout_rounded, color: XameColors.danger),
           title: const Text('Sign Out',
-            style: TextStyle(color: const Color(0xFFE53935))),
+            style: TextStyle(color: XameColors.danger)),
           onTap: () { Navigator.pop(context); _signOut(); }),
         const SizedBox(height: 16),
       ])),
@@ -445,7 +445,7 @@ class _ConnectionDot extends ConsumerWidget {
       width: 8, height: 8, margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: connected ? const Color(0xFF00FF88) : Colors.orange),
+        color: connected ? context.xAccent : Colors.orange),
     );
   }
 }
@@ -462,7 +462,7 @@ class _ChatsTab extends ConsumerWidget {
 
     return contacts.when(
       loading: () => const Center(
-        child: CircularProgressIndicator(color: const Color(0xFF00D4FF))),
+        child: CircularProgressIndicator(color: context.xPrimary)),
       error: (e, _) => Center(
         child: Text('Error: $e',
           style: const TextStyle(color: Colors.white38))),
@@ -522,13 +522,13 @@ class _EmptyChats extends StatelessWidget {
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Container(width: 80, height: 80,
         decoration: BoxDecoration(
-          color: const Color(0xFF00D4FF).withValues(alpha: 0.08),
+          color: XameColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(24)),
         child: const Icon(Icons.chat_bubble_outline_rounded,
-          color: const Color(0xFF00D4FF), size: 36)),
+          color: XameColors.primary, size: 36)),
       const SizedBox(height: 20),
       const Text('XamePage',
-        style: TextStyle(color: const Color(0xFF00D4FF), fontSize: 28,
+        style: TextStyle(color: XameColors.primary, fontSize: 28,
           fontWeight: FontWeight.w900, letterSpacing: 1)),
       const SizedBox(height: 4),
       const Text('created by Gibson Agbor',
@@ -569,7 +569,7 @@ class _ContactTile extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(
-                    color: const Color(0xFF00D4FF), shape: BoxShape.circle),
+                    color: context.xPrimary, shape: BoxShape.circle),
                   child: Text(
                     contact.unreadCount > 99
                       ? '99+' : '${contact.unreadCount}',
@@ -590,7 +590,7 @@ class _ContactTile extends ConsumerWidget {
                 Text(_fmtTime(contact.lastInteractionTs),
                   style: TextStyle(
                     color: contact.unreadCount > 0
-                      ? const Color(0xFF00D4FF) : Colors.white30,
+                      ? context.xPrimary : Colors.white30,
                     fontSize: 11)),
             ]),
             const SizedBox(height: 3),
@@ -600,7 +600,7 @@ class _ContactTile extends ConsumerWidget {
                   ? contact.lastInteractionPreview
                   : "Hey there I'm on XamePage",
               style: TextStyle(
-                color: isTyping ? const Color(0xFF00FF88) : Colors.white38,
+                color: isTyping ? context.xAccent : Colors.white38,
                 fontSize: 13,
                 fontStyle: isTyping
                   ? FontStyle.italic : FontStyle.normal),
@@ -656,7 +656,7 @@ class XameAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: isOnline
-          ? Border.all(color: const Color(0xFF2196F3), width: 2) : null),
+          ? Border.all(color: XameColors.primary, width: 2) : null),
       child: ClipOval(
         child: profilePic != null && profilePic!.isNotEmpty
           ? CachedNetworkImage(
@@ -671,10 +671,10 @@ class XameAvatar extends StatelessWidget {
         child: Container(
           width: size * 0.26, height: size * 0.26,
           decoration: BoxDecoration(
-            color: hasNewGallery ? const Color(0xFF00FF88) : Colors.transparent,
+            color: hasNewGallery ? XameColors.accent : Colors.transparent,
             shape: BoxShape.circle,
             border: hasNewGallery
-                ? Border.all(color: const Color(0xFF0A0A0F), width: 1.5)
+                ? Border.all(color: XameColors.darkBg, width: 1.5)
                 : null),
         )),
   ]);
@@ -685,9 +685,9 @@ class _Initials extends StatelessWidget {
   const _Initials(this.text, this.size);
   @override
   Widget build(BuildContext context) => Container(
-    width: size, height: size, color: const Color(0xFF1E1E2E),
+    width: size, height: size, color: context.xCard,
     child: Center(child: Text(text,
-      style: TextStyle(color: const Color(0xFF00D4FF),
+      style: TextStyle(color: XameColors.primary,
         fontSize: size * 0.35, fontWeight: FontWeight.bold))),
   );
 }

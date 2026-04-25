@@ -11,12 +11,12 @@ import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
 // ── Colours ───────────────────────────────────────────────────────────────────
-const _kBg      = Color(0xFF080C14);
-const _kCard    = Color(0xFF111827);
-const _kBorder  = Color(0xFF1F2937);
-const _kTeal    = Color(0xFF00D4AA);
-const _kGold    = Color(0xFFFFB800);
-const _kRed     = Color(0xFFEF4444);
+const _kBg      = XameColors.darkBg;
+const _kCard    = XameColors.darkSurface;
+const _kBorder  = XameColors.darkSurface;
+const _kTeal    = XameColors.accent;
+const _kGold    = XameColors.accent;
+const _kRed     = XameColors.danger;
 
 // ── Model ─────────────────────────────────────────────────────────────────────
 String _resolveUrl(String url) {
@@ -183,7 +183,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft, end: Alignment.bottomRight,
-                    colors: [_kBg, Color(0xFF0F172A)])),
+                    colors: [_kBg, context.xBg])),
               ),
             ),
             bottom: PreferredSize(
@@ -331,11 +331,11 @@ class _BizStats extends StatelessWidget {
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         _Stat('Listings', '${items.length}', _kTeal),
         _SDivider(),
-        _Stat('For Sale', '$priced', const Color(0xFF4CAF50)),
+        _Stat('For Sale', '$priced', context.xAccent),
         _SDivider(),
-        _Stat('Videos',   '$videos', const Color(0xFFFF9800)),
+        _Stat('Videos',   '$videos', context.xAccent),
         _SDivider(),
-        _Stat('Contacts', '$contact', const Color(0xFF8B5CF6)),
+        _Stat('Contacts', '$contact', context.xSecondary),
       ]),
     );
   }
@@ -387,7 +387,7 @@ class _GridCell extends StatelessWidget {
               begin: Alignment.bottomCenter, end: Alignment.topCenter,
               colors: [Colors.black87, Colors.transparent])),
             child: Text('₦${item.price}', style: const TextStyle(
-                color: Color(0xFF4CAF50), fontSize: 10,
+                color: XameColors.accent, fontSize: 10,
                 fontWeight: FontWeight.w800)))),
     ]),
   );
@@ -521,12 +521,12 @@ class _BizCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                    color: XameColors.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF4CAF50)
+                    border: Border.all(color: XameColors.accent
                         .withValues(alpha: 0.4))),
                   child: Text('₦${item.price}', style: const TextStyle(
-                      color: Color(0xFF4CAF50), fontSize: 10,
+                      color: XameColors.accent, fontSize: 10,
                       fontWeight: FontWeight.w800)))
               else
                 const Text('Free', style: TextStyle(
@@ -664,12 +664,12 @@ class _LightboxState extends State<_Lightbox> {
                       Wrap(spacing: 8, runSpacing: 8, children: [
                         if (item.hasPrice)
                           _InfoChip('₦${item.price}', Icons.payments_outlined,
-                              const Color(0xFF4CAF50)),
+                              context.xAccent),
                         if (item.phone.isNotEmpty)
                           _InfoChip(item.phone, Icons.phone_outlined, _kTeal),
                         if (item.email.isNotEmpty)
                           _InfoChip(item.email, Icons.email_outlined,
-                              const Color(0xFF8B5CF6)),
+                              context.xSecondary),
                       ]),
                     ],
                   ),
@@ -775,7 +775,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: context.xBg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       padding: EdgeInsets.fromLTRB(20, 0, 20,
           MediaQuery.of(context).viewInsets.bottom + 20),

@@ -57,7 +57,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
     final String? profilePic = (contact?.isProfilePicHidden ?? false) ? null : contact?.profilePic;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: context.xBg,
       body: Stack(
         children: [
           // 1. Full Screen Blurred Background
@@ -66,9 +66,9 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                 ? CachedNetworkImage(
                     imageUrl: profilePic,
                     fit: BoxFit.cover,
-                    errorWidget: (context, url, error) => Container(color: const Color(0xFF161B22)),
+                    errorWidget: (context, url, error) => Container(color: context.xSurface),
                   )
-                : Container(color: const Color(0xFF161B22)),
+                : Container(color: context.xSurface),
           ),
           
           BackdropFilter(
@@ -109,7 +109,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                     ),
                     child: CircleAvatar(
                       radius: 75,
-                      backgroundColor: const Color(0xFF30363D),
+                      backgroundColor: context.xCard,
                       backgroundImage: profilePic != null ? CachedNetworkImageProvider(profilePic) : null,
                       child: profilePic == null
                           ? Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : "?",
@@ -173,7 +173,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                       _buildControl(
                         icon: isVideo ? Icons.videocam : Icons.call,
                         label: "Accept",
-                        color: const Color(0xFF00FF88), // XamePage Accent
+                        color: context.xAccent, // XamePage Accent
                         onTap: () {
                           context.push('/call/$userId?video=$isVideo&incoming=true');
                         },
@@ -268,7 +268,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: const Color(0xFF141420),
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -285,11 +285,11 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00D4FF).withValues(alpha: 0.12),
+                    color: context.xPrimary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.person_add_outlined,
-                      color: const Color(0xFF00D4FF), size: 20),
+                      color: context.xPrimary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 const Column(crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,7 +303,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E2E),
+                  color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -338,7 +338,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E2E),
+                      color: context.xCard,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: Colors.white10),
                     ),
@@ -346,13 +346,13 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                       Container(
                         width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00D4FF).withValues(alpha: 0.1),
+                          color: context.xPrimary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(child: Text(
                             c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
                             style: const TextStyle(
-                                color: const Color(0xFF00D4FF),
+                                color: context.xPrimary,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16))),
                       ),
@@ -371,13 +371,13 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00D4FF).withValues(alpha: 0.12),
+                          color: context.xPrimary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF00D4FF)
+                          border: Border.all(color: context.xPrimary
                               .withValues(alpha: 0.3)),
                         ),
                         child: const Text('Add',
-                            style: TextStyle(color: const Color(0xFF00D4FF),
+                            style: TextStyle(color: context.xPrimary,
                                 fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                     ]),

@@ -67,7 +67,7 @@ class MessageBubble extends ConsumerWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         color: isSelected
-            ? const Color(0xFF00D4FF).withValues(alpha: 0.15)
+            ? context.xPrimary.withValues(alpha: 0.15)
             : Colors.transparent,
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Align(
@@ -89,8 +89,8 @@ class MessageBubble extends ConsumerWidget {
                       : EdgeInsets.zero,
                   decoration: BoxDecoration(
                     color: isSelf
-                        ? const Color(0xFF1A4A3A)
-                        : const Color(0xFF1E1E2E),
+                        ? context.xSurface
+                        : context.xCard,
                     borderRadius: BorderRadius.only(
                       topLeft:     const Radius.circular(18),
                       topRight:    const Radius.circular(18),
@@ -224,8 +224,8 @@ class _ShimmerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final base    = const Color(0xFF1E2D3D);
-    final highlight = const Color(0xFF2A3F52);
+    final base    = XameColors.darkSurface;
+    final highlight = XameColors.darkCard;
     canvas.drawRect(Offset.zero & size, Paint()..color = base);
     final gradient = LinearGradient(
       begin: Alignment(-1 + position * 2, 0),
@@ -285,9 +285,9 @@ class _StatusTick extends StatelessWidget {
     if (status == 'failed')
       return const Tooltip(
         message: 'Upload failed — long press to retry',
-        child: Icon(Icons.error_outline, size: 14, color: Color(0xFFFF6464)));
+        child: Icon(Icons.error_outline, size: 14, color: context.xDanger));
     if (status == 'seen')
-      return const Icon(Icons.done_all, size: 14, color: Color(0xFF4FC3F7));
+      return const Icon(Icons.done_all, size: 14, color: context.xPrimary);
     if (status == 'delivered')
       return const Icon(Icons.done_all, size: 14, color: Colors.white38);
     return const Icon(Icons.done, size: 14, color: Colors.white38);
@@ -305,7 +305,7 @@ class _ReplyQuote extends StatelessWidget {
     decoration: BoxDecoration(
       color: Colors.white.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(10),
-      border: const Border(left: BorderSide(color: const Color(0xFF00D4FF), width: 3)),
+      border: const Border(left: BorderSide(color: XameColors.primary, width: 3)),
     ),
     child: Text(text.isNotEmpty ? text : '📎 Attachment',
         style: const TextStyle(color: Colors.white54, fontSize: 12),
@@ -407,7 +407,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Saved to $path'),
-            backgroundColor: const Color(0xFF1E1E2E)));
+            backgroundColor: XameColors.darkCard));
       }
     } catch (e) {
       if (mounted) {
@@ -447,7 +447,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
         child: Center(child: CachedNetworkImage(
           imageUrl: _resolveUrl(widget.url), fit: BoxFit.contain,
           placeholder: (_, __) =>
-              const CircularProgressIndicator(color: const Color(0xFF00D4FF)),
+              const CircularProgressIndicator(color: XameColors.primary),
           errorWidget: (_, __, ___) =>
               const Icon(Icons.broken_image, color: Colors.white24, size: 60),
         )),
@@ -588,7 +588,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end:   Alignment.bottomRight,
-                    colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+                    colors: [context.xBg, context.xSurface, context.xCard],
                   ),
                 ),
                 child: const Center(
@@ -749,7 +749,7 @@ class _FileBubbleState extends State<_FileBubble> {
         if (result.type != ResultType.done && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('No app found to open this file (${result.message})'),
-              backgroundColor: const Color(0xFF1E1E2E)));
+              backgroundColor: XameColors.darkCard));
         }
         return;
       }
@@ -787,7 +787,7 @@ class _FileBubbleState extends State<_FileBubble> {
       if (result.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('No app found to open this file type'),
-            backgroundColor: const Color(0xFF1E1E2E)));
+            backgroundColor: XameColors.darkCard));
       }
     } catch (e) {
       if (mounted) {
@@ -805,33 +805,33 @@ class _FileBubbleState extends State<_FileBubble> {
     final n = widget.fileName.toLowerCase();
     if (m.contains('pdf')   || n.endsWith('.pdf'))
       return _DocStyle(Icons.picture_as_pdf_outlined,
-          const Color(0xFFE53935), const Color(0xFF23111100), 'PDF');
+          XameColors.danger, const Color(0xFF23111100), 'PDF');
     if (m.contains('word')  || n.endsWith('.doc') || n.endsWith('.docx'))
       return _DocStyle(Icons.description_outlined,
-          const Color(0xFF1565C0), const Color(0xFF23001155), 'WORD');
+          XameColors.primary, const Color(0xFF23001155), 'WORD');
     if (m.contains('sheet') || m.contains('excel') ||
         n.endsWith('.xls')  || n.endsWith('.xlsx'))
       return _DocStyle(Icons.table_chart_outlined,
-          const Color(0xFF2E7D32), const Color(0xFF23001100), 'EXCEL');
+          XameColors.accent, const Color(0xFF23001100), 'EXCEL');
     if (m.contains('presentation') || m.contains('powerpoint') ||
         n.endsWith('.ppt')  || n.endsWith('.pptx'))
       return _DocStyle(Icons.slideshow_outlined,
-          const Color(0xFFD84315), const Color(0xFF23110000), 'PPT');
+          XameColors.danger, const Color(0xFF23110000), 'PPT');
     if (m.contains('zip')   || m.contains('rar') || m.contains('tar') ||
         n.endsWith('.zip')  || n.endsWith('.rar'))
       return _DocStyle(Icons.folder_zip_outlined,
-          const Color(0xFFF9A825), const Color(0xFF23110B00), 'ZIP');
+          XameColors.accent, const Color(0xFF23110B00), 'ZIP');
     if (m.contains('audio') || n.endsWith('.mp3') || n.endsWith('.aac'))
       return _DocStyle(Icons.audio_file_outlined,
-          const Color(0xFF6A1B9A), const Color(0xFF23050011), 'AUDIO');
+          XameColors.secondary, const Color(0xFF23050011), 'AUDIO');
     if (m.contains('video') || n.endsWith('.mp4') || n.endsWith('.mov'))
       return _DocStyle(Icons.video_file_outlined,
-          const Color(0xFF00838F), const Color(0xFF23001111), 'VIDEO');
+          XameColors.accent, const Color(0xFF23001111), 'VIDEO');
     if (m.contains('text')  || n.endsWith('.txt'))
       return _DocStyle(Icons.article_outlined,
           Colors.white70, const Color(0xFF23111111), 'TXT');
     return _DocStyle(Icons.insert_drive_file_outlined,
-        const Color(0xFF00FF88), const Color(0xFF23000B1A), 'FILE');
+        XameColors.accent, const Color(0xFF23000B1A), 'FILE');
   }
 
   @override
@@ -865,9 +865,9 @@ class _FileBubbleState extends State<_FileBubble> {
                         begin: Alignment.topLeft,
                         end:   Alignment.bottomRight,
                         colors: [
-                          const Color(0xFF1E1E2E),
+                          context.xCard,
                           st.bgTint,
-                          const Color(0xFF1E1E2E),
+                          context.xCard,
                         ],
                       ),
                     ),
@@ -934,7 +934,7 @@ class _FileBubbleState extends State<_FileBubble> {
             // ── Metadata footer bar ──────────────────────────────────
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              color: const Color(0xFF1E1E2E),
+              color: context.xCard,
               child: Row(children: [
                 Icon(st.icon, color: st.color, size: 16),
                 const SizedBox(width: 8),
@@ -1048,14 +1048,14 @@ class _AudioBubbleState extends State<_AudioBubble> {
             child: Container(
               width: 42, height: 42,
               decoration: BoxDecoration(
-                color: const Color(0xFF00D4FF).withValues(alpha: 0.15),
+                color: context.xPrimary.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: const Color(0xFF00D4FF).withValues(alpha: 0.4)),
+                    color: context.xPrimary.withValues(alpha: 0.4)),
               ),
               child: Icon(
                 _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                color: const Color(0xFF00D4FF), size: 26),
+                color: context.xPrimary, size: 26),
             ),
           ),
           const SizedBox(width: 10),
@@ -1075,10 +1075,10 @@ class _AudioBubbleState extends State<_AudioBubble> {
             trackHeight:        2,
             thumbShape:         const RoundSliderThumbShape(enabledThumbRadius: 5),
             overlayShape:       const RoundSliderOverlayShape(overlayRadius: 10),
-            activeTrackColor:   const Color(0xFF00D4FF),
+            activeTrackColor:   context.xPrimary,
             inactiveTrackColor: Colors.white12,
-            thumbColor:         const Color(0xFF00D4FF),
-            overlayColor:       const Color(0xFF00D4FF).withValues(alpha: 0.2),
+            thumbColor:         context.xPrimary,
+            overlayColor:       context.xPrimary.withValues(alpha: 0.2),
           ),
           child: Slider(
             value: progress,
@@ -1145,7 +1145,7 @@ class _WaveformBarsState extends State<_WaveformBars>
           width: 3, height: animH,
           decoration: BoxDecoration(
             color: isPast
-                ? const Color(0xFF00D4FF)
+                ? XameColors.primary
                 : Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(2),
           ),

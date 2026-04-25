@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Language list (mirrors translation.js) ────────────────────────────────────
 class XameLang {
@@ -140,7 +141,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
       minChildSize:     0.5,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: const Color(0xFF1E1E2E),
+          color: context.xCard,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -175,7 +176,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             padding: const EdgeInsets.all(14),
             constraints: const BoxConstraints(maxHeight: 80),
             decoration: BoxDecoration(
-              color: const Color(0xFF0D1520),
+              color: context.xSurface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: SingleChildScrollView(
@@ -199,7 +200,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                 hintStyle: const TextStyle(color: Colors.white30),
                 prefixIcon: const Icon(Icons.search, color: Colors.white30, size: 18),
                 filled:    true,
-                fillColor: const Color(0xFF0D1520),
+                fillColor: context.xSurface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none),
@@ -225,13 +226,13 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 13),
                     color: selected
-                        ? const Color(0xFF00B0A0).withValues(alpha: 0.1)
+                        ? context.xAccent.withValues(alpha: 0.1)
                         : Colors.transparent,
                     child: Row(children: [
                       Text(lang.name,
                         style: TextStyle(
                           color:      selected
-                              ? const Color(0xFF00B0A0) : Colors.white70,
+                              ? context.xAccent : Colors.white70,
                           fontSize:   14,
                           fontWeight: selected
                               ? FontWeight.w600 : FontWeight.normal)),
@@ -239,13 +240,13 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                       Text(lang.code.toUpperCase(),
                         style: TextStyle(
                           color:    selected
-                              ? const Color(0xFF00B0A0) : Colors.white24,
+                              ? context.xAccent : Colors.white24,
                           fontSize: 11)),
                       if (selected)
                         const Padding(
                           padding: EdgeInsets.only(left: 8),
                           child: Icon(Icons.check_circle,
-                              color: const Color(0xFF00D4FF), size: 16)),
+                              color: context.xPrimary, size: 16)),
                     ]),
                   ),
                 );
@@ -258,7 +259,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             const Padding(
               padding: EdgeInsets.all(20),
               child: CircularProgressIndicator(
-                  color: const Color(0xFF00D4FF), strokeWidth: 2),
+                  color: context.xPrimary, strokeWidth: 2),
             ),
 
           if (_result != null)
@@ -266,10 +267,10 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
               margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF00B0A0).withValues(alpha: 0.1),
+                color: context.xAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: const Color(0xFF00B0A0).withValues(alpha: 0.3)),
+                    color: context.xAccent.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,7 +279,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                     const Text('🌍', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: 6),
                     Text(_resultLang ?? '',
-                      style: const TextStyle(color: const Color(0xFF00D4FF),
+                      style: const TextStyle(color: context.xPrimary,
                           fontSize: 11, fontWeight: FontWeight.w700)),
                     const Spacer(),
                     GestureDetector(
@@ -287,7 +288,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text('Translation copied!'),
-                            backgroundColor: const Color(0xFF00B0A0),
+                            backgroundColor: context.xAccent,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
@@ -297,10 +298,10 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                       },
                       child: const Row(children: [
                         Icon(Icons.copy_outlined,
-                            color: const Color(0xFF00D4FF), size: 14),
+                            color: context.xPrimary, size: 14),
                         SizedBox(width: 4),
                         Text('Copy', style: TextStyle(
-                            color: const Color(0xFF00D4FF), fontSize: 12,
+                            color: context.xPrimary, fontSize: 12,
                             fontWeight: FontWeight.w600)),
                       ]),
                     ),

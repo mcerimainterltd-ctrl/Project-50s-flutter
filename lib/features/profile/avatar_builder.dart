@@ -192,7 +192,7 @@ class _AvatarCanvasPainter extends CustomPainter {
     canvas.drawPath(lip, p);
 
     // Cheeks
-    p.color = const Color(0xFFE88080).withValues(alpha: 0.3);
+    p.color = XameColors.danger.withValues(alpha: 0.3);
     canvas.drawOval(Rect.fromCenter(center: Offset(28*s, 60*s),
         width: 8*s, height: 5*s), p);
     canvas.drawOval(Rect.fromCenter(center: Offset(72*s, 60*s),
@@ -245,7 +245,7 @@ class _AvatarCanvasPainter extends CustomPainter {
     switch (config.accessory) {
       case 'glasses':
         final gp = Paint()
-          ..color = const Color(0xFF333333)
+          ..color = XameColors.darkCard
           ..strokeWidth = 2*s
           ..style = PaintingStyle.stroke;
         canvas.drawRRect(RRect.fromRectAndRadius(
@@ -255,20 +255,20 @@ class _AvatarCanvasPainter extends CustomPainter {
         canvas.drawLine(Offset(42*s, 54*s), Offset(58*s, 54*s), gp);
         break;
       case 'hat':
-        p.color = const Color(0xFF333333);
+        p.color = XameColors.darkCard;
         canvas.drawRRect(RRect.fromRectAndRadius(
             Rect.fromLTWH(15*s, 18*s, 70*s, 8*s), Radius.circular(4*s)), p);
         canvas.drawRRect(RRect.fromRectAndRadius(
             Rect.fromLTWH(28*s, 4*s, 44*s, 18*s), Radius.circular(6*s)), p);
         break;
       case 'earrings':
-        p.color = const Color(0xFFFFD700);
+        p.color = XameColors.accent;
         canvas.drawCircle(Offset(12*s, 65*s), 4*s, p);
         canvas.drawCircle(Offset(88*s, 65*s), 4*s, p);
         break;
       case 'headband':
         final hp = Paint()
-          ..color = const Color(0xFFFF6B6B)
+          ..color = XameColors.danger
           ..strokeWidth = 6*s
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round;
@@ -316,7 +316,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       maxChildSize: 0.95,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: const Color(0xFF141420),
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -335,7 +335,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                   width: 40, height: 40,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [const Color(0xFF00D4FF), const Color(0xFF141420)],
+                      colors: [context.xPrimary, context.xSurface],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(12),
@@ -368,9 +368,9 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: const Color(0xFF00D4FF), width: 3),
+                        color: context.xPrimary, width: 3),
                     boxShadow: [BoxShadow(
-                      color: const Color(0xFF00D4FF).withValues(alpha: 0.3),
+                      color: context.xPrimary.withValues(alpha: 0.3),
                       blurRadius: 20)],
                   ),
                   child: AvatarPainter(config: _config, size: 100),
@@ -381,10 +381,10 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                   child: Container(
                     width: 32, height: 32,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E2E),
+                      color: context.xCard,
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: const Color(0xFF141420), width: 2),
+                          color: context.xSurface, width: 2),
                     ),
                     child: const Icon(Icons.casino_outlined,
                         color: Colors.white70, size: 14),
@@ -424,15 +424,15 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                 width: double.infinity, height: 52,
                 decoration: BoxDecoration(
                   gradient: _saving ? null : const LinearGradient(
-                    colors: [const Color(0xFF00D4FF), const Color(0xFF141420)]),
-                  color: _saving ? const Color(0xFF1E1E2E) : null,
+                    colors: [context.xPrimary, context.xSurface]),
+                  color: _saving ? context.xCard : null,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 alignment: Alignment.center,
                 child: _saving
                     ? const SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(
-                            color: const Color(0xFF00D4FF), strokeWidth: 2))
+                            color: context.xPrimary, strokeWidth: 2))
                     : const Text('✓ Use This Avatar',
                         style: TextStyle(color: Colors.black, fontSize: 15,
                             fontWeight: FontWeight.w700)),
@@ -464,10 +464,10 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                     color: Color(int.parse(
                         'FF${c.replaceAll('#', '')}', radix: 16)),
                     border: Border.all(
-                      color: sel ? const Color(0xFF00D4FF) : Colors.transparent,
+                      color: sel ? XameColors.primary : Colors.transparent,
                       width: 3),
                     boxShadow: sel ? [BoxShadow(
-                        color: const Color(0xFF00D4FF).withValues(alpha: 0.4),
+                        color: XameColors.primary.withValues(alpha: 0.4),
                         blurRadius: 8)] : null,
                   ),
                 ),
@@ -496,15 +496,15 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     color: sel
-                        ? const Color(0xFF00D4FF).withValues(alpha: 0.15)
-                        : const Color(0xFF1E1E2E),
+                        ? XameColors.primary.withValues(alpha: 0.15)
+                        : XameColors.darkCard,
                     border: Border.all(
                       color: sel
-                          ? const Color(0xFF00D4FF).withValues(alpha: 0.5)
+                          ? XameColors.primary.withValues(alpha: 0.5)
                           : Colors.white10),
                   ),
                   child: Text(labels[i], style: TextStyle(
-                    color: sel ? const Color(0xFF00D4FF) : Colors.white54,
+                    color: sel ? XameColors.primary : Colors.white54,
                     fontSize: 12,
                     fontWeight: sel ? FontWeight.w600 : FontWeight.normal)),
                 ),
@@ -565,7 +565,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       debugPrint('[AvatarBuilder] Save error: $e');
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Failed to save avatar'),
-        backgroundColor: const Color(0xFF1E1E2E),
+        backgroundColor: XameColors.darkCard,
         behavior: SnackBarBehavior.floating));
     } finally {
       if (mounted) setState(() => _saving = false);

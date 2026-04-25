@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import '../data/tv_channels.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 class XameTvScreen extends StatefulWidget {
   const XameTvScreen({Key? key}) : super(key: key);
@@ -225,8 +226,8 @@ class _XameTvScreenState extends State<XameTvScreen>
       return _cur?.logo.isNotEmpty==true
           ? CachedNetworkImage(imageUrl:_cur!.logo, fit:BoxFit.contain,
               color:Colors.black54, colorBlendMode:BlendMode.darken,
-              errorWidget:(_,__,___)=>const ColoredBox(color:Color(0xFF050505)))
-          : const ColoredBox(color:Color(0xFF050505));
+              errorWidget:(_,__,___)=>const ColoredBox(color:XameColors.darkBg))
+          : const ColoredBox(color:XameColors.darkBg);
     }
     return SlideTransition(position:_sSlide,
       child:Center(child:AspectRatio(
@@ -438,7 +439,7 @@ class _XameTvScreenState extends State<XameTvScreen>
         child:GestureDetector(onTap:(){},
           child:Container(
             width:MediaQuery.of(context).size.width*0.78,
-            color:const Color(0xFF0A0A0F),
+            color:XameColors.darkBg,
             child:Column(children:[
               SafeArea(bottom:false,child:Padding(
                 padding:const EdgeInsets.fromLTRB(14,14,14,8),

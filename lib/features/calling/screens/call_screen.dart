@@ -242,7 +242,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(Icons.circle,
-                            color: Color(0xFF4CAF50), size: 8),
+                            color: XameColors.accent, size: 8),
                         const SizedBox(width: 6),
                         Text(_fmt(_seconds),
                           style: const TextStyle(
@@ -368,7 +368,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   ),
                   child: CircleAvatar(
                     radius: 75,
-                    backgroundColor: const Color(0xFF30363D),
+                    backgroundColor: XameColors.darkCard,
                     backgroundImage: photoUrl != null
                         ? CachedNetworkImageProvider(photoUrl) : null,
                     child: photoUrl == null
@@ -402,7 +402,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   key: ValueKey(statusText),
                   style: TextStyle(
                     color: isActive
-                        ? const Color(0xFF00FF88) : Colors.white54,
+                        ? XameColors.accent : Colors.white54,
                     fontSize: 18,
                     fontWeight: isActive
                         ? FontWeight.w600 : FontWeight.w400,
@@ -471,7 +471,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
           CircleAvatar(
             radius: 50,
-            backgroundColor: const Color(0xFF1E2533),
+            backgroundColor: XameColors.darkSurface,
             backgroundImage: photoUrl != null
                 ? CachedNetworkImageProvider(photoUrl) : null,
             child: photoUrl == null
@@ -499,7 +499,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             child: Text(reason,
               style: TextStyle(
                 color: isDeclined
-                    ? const Color(0xFFFF5252) : Colors.white70,
+                    ? XameColors.danger : Colors.white70,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -514,7 +514,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     decoration: const BoxDecoration(
       gradient: RadialGradient(
         center: Alignment.topCenter, radius: 1.4,
-        colors: [Color(0xFF1A2340), const Color(0xFF141420), Color(0xFF000000)],
+        colors: [XameColors.darkSurface, XameColors.darkSurface, Color(0xFF000000)],
       ),
     ),
   );
@@ -613,7 +613,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         Container(
           width: size, height: size,
           decoration: BoxDecoration(
-            color: const Color(0xFFD32F2F),
+            color: XameColors.danger,
             shape: BoxShape.circle,
             boxShadow: [BoxShadow(
                 color: Colors.red.withOpacity(0.45),
@@ -660,7 +660,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: const Color(0xFF141420),
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -677,11 +677,11 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00D4FF).withValues(alpha: 0.12),
+                    color: context.xPrimary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.person_add_outlined,
-                      color: const Color(0xFF00D4FF), size: 20),
+                      color: context.xPrimary, size: 20),
                 ),
                 const SizedBox(width: 12),
                 const Column(crossAxisAlignment: CrossAxisAlignment.start,
@@ -695,7 +695,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E2E),
+                  color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -730,7 +730,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E2E),
+                      color: context.xCard,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: Colors.white10),
                     ),
@@ -738,14 +738,14 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                       Container(
                         width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00D4FF).withValues(alpha: 0.1),
+                          color: context.xPrimary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(child: Text(
                             c.name.isNotEmpty
                                 ? c.name[0].toUpperCase() : '?',
                             style: const TextStyle(
-                                color: const Color(0xFF00D4FF),
+                                color: context.xPrimary,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16))),
                       ),
@@ -764,14 +764,14 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00D4FF).withValues(alpha: 0.12),
+                          color: context.xPrimary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                              color: const Color(0xFF00D4FF)
+                              color: context.xPrimary
                                   .withValues(alpha: 0.3)),
                         ),
                         child: const Text('Add',
-                            style: TextStyle(color: const Color(0xFF00D4FF),
+                            style: TextStyle(color: context.xPrimary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600)),
                       ),

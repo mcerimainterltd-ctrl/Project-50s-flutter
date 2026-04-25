@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/config/constants.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Story Viewer ──────────────────────────────────────────────────────────────
 // Full-screen immersive story viewer with progress bars, auto-advance,
@@ -239,10 +240,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           imageUrl: _currentGroup.authorAvatar,
                           fit:      BoxFit.cover,
                           errorWidget: (_, __, ___) =>
-                            Container(color: const Color(0xFF1A1A2E),
+                            Container(color: context.xSurface,
                               child: const Icon(Icons.person,
                                   color: Colors.white38, size: 20)))
-                      : Container(color: const Color(0xFF1A1A2E),
+                      : Container(color: context.xSurface,
                           child: const Icon(Icons.person,
                               color: Colors.white38, size: 20)),
                   ),
@@ -352,11 +353,11 @@ class _StoryMedia extends StatelessWidget {
             width:     double.infinity,
             height:    double.infinity,
             placeholder: (_, __) => Container(
-              color: const Color(0xFF0A0A0F),
+              color: context.xBg,
               child: const Center(child: CircularProgressIndicator(
                   color: Colors.white30, strokeWidth: 1.5))),
             errorWidget: (_, __, ___) => Container(
-              color: const Color(0xFF0A0A0F),
+              color: context.xBg,
               child: const Icon(Icons.broken_image,
                   color: Colors.white24, size: 48)),
           ),

@@ -103,7 +103,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
       maxChildSize: 0.92,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
-          color: const Color(0xFF141420),
+          color: context.xSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
@@ -121,11 +121,11 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                 Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE53935).withValues(alpha: 0.12),
+                    color: context.xDanger.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.block_outlined,
-                      color: const Color(0xFFE53935), size: 18),
+                      color: context.xDanger, size: 18),
                 ),
                 const SizedBox(width: 10),
                 const Column(crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,7 +143,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E2E),
+                      color: context.xCard,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.white10),
                     ),
@@ -175,7 +175,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                     else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text('$val is already blocked'),
-                        backgroundColor: const Color(0xFF1E1E2E),
+                        backgroundColor: context.xCard,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
@@ -185,7 +185,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                   child: Container(
                     width: 42, height: 42,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE53935),
+                      color: context.xDanger,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.block, color: Colors.white, size: 18),
@@ -216,7 +216,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E1E2E),
+                          color: context.xCard,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: Colors.white10),
                         ),
@@ -224,11 +224,11 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                           Container(
                             width: 40, height: 40,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                              color: context.xDanger.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.person_off_outlined,
-                                color: const Color(0xFFE53935), size: 18),
+                                color: context.xDanger, size: 18),
                           ),
                           const SizedBox(width: 12),
                           Expanded(child: Column(

@@ -1,12 +1,13 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 class LivePulseIndicator extends StatefulWidget {
   final Color color;
   final bool  compact;
   const LivePulseIndicator({
     Key? key,
-    this.color   = const Color(0xFF00FF88),
+    this.color   = XameColors.accent,
     this.compact = false,
   }) : super(key: key);
   @override
@@ -66,7 +67,7 @@ class OnlinePulseDot extends StatefulWidget {
   final Color  color;
   const OnlinePulseDot({
     Key? key, this.size = 10,
-    this.color = const Color(0xFF00FF88),
+    this.color = XameColors.accent,
   }) : super(key: key);
   @override
   State<OnlinePulseDot> createState() => _OnlinePulseDotState();
@@ -150,7 +151,7 @@ class _ShimmerBoxState extends State<ShimmerBox>
           begin: Alignment(_anim.value - 1, 0),
           end:   Alignment(_anim.value,     0),
           colors: const [
-            const Color(0xFF141420), Color(0xFF2A2A3E), const Color(0xFF141420),
+            XameColors.darkSurface, XameColors.darkCard, XameColors.darkSurface,
           ]),
       ),
     ),

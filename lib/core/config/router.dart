@@ -19,13 +19,14 @@ import '../../features/gallery/screens/gallery_screen.dart';
 import '../../screens/xame_pay_screen.dart';
 import '../../features/contacts/providers/contacts_provider.dart';
 import '../../screens/phone_screen.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;
   const _Placeholder(this.name);
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF0A0A0F),
+    backgroundColor: context.xBg,
     body: Center(child: Text(name,
       style: const TextStyle(color: Colors.white, fontSize: 18))));
 }

@@ -15,7 +15,7 @@ class _CallsHubScreenState extends ConsumerState<CallsHubScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: context.xBg,
       body: IndexedStack(index: _tab, children: const [
         CallHistoryScreen(),
         _CallScheduleTab(),
@@ -23,7 +23,7 @@ class _CallsHubScreenState extends ConsumerState<CallsHubScreen> {
       ]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF141420),
+          color: context.xSurface,
           border: Border(top: BorderSide(
               color: Colors.white.withValues(alpha: 0.06)))),
         child: SafeArea(
@@ -67,12 +67,12 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon,
-              color: selected ? const Color(0xFF00D4FF) : Colors.white38,
+              color: selected ? XameColors.primary : Colors.white38,
               size: 24),
           const SizedBox(height: 4),
           Text(label,
               style: TextStyle(
-                  color: selected ? const Color(0xFF00D4FF) : Colors.white38,
+                  color: selected ? XameColors.primary : Colors.white38,
                   fontSize: 11,
                   fontWeight: selected
                       ? FontWeight.w700 : FontWeight.w400)),
@@ -88,18 +88,18 @@ class _CallScheduleTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF0A0A0F),
+    backgroundColor: context.xBg,
     body: Center(child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E2E), shape: BoxShape.circle,
+            color: XameColors.darkCard, shape: BoxShape.circle,
             border: Border.all(
-                color: const Color(0xFF00D4FF).withValues(alpha: 0.3))),
+                color: XameColors.primary.withValues(alpha: 0.3))),
           child: Icon(Icons.schedule_outlined,
-              color: const Color(0xFF00D4FF), size: 56)),
+              color: XameColors.primary, size: 56)),
         const SizedBox(height: 24),
         const Text('Call Schedule',
             style: TextStyle(color: Colors.white,
@@ -115,7 +115,7 @@ class _CallScheduleTab extends StatelessWidget {
           label: const Text('Schedule a Call',
               style: TextStyle(fontWeight: FontWeight.w700)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00D4FF),
+            backgroundColor: XameColors.primary,
             foregroundColor: Colors.black,
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
             shape: RoundedRectangleBorder(
@@ -132,18 +132,18 @@ class _ConferenceTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF0A0A0F),
+    backgroundColor: context.xBg,
     body: Center(child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E2E), shape: BoxShape.circle,
+            color: XameColors.darkCard, shape: BoxShape.circle,
             border: Border.all(
-                color: const Color(0xFF00D4FF).withValues(alpha: 0.3))),
+                color: XameColors.primary.withValues(alpha: 0.3))),
           child: Icon(Icons.groups_rounded,
-              color: const Color(0xFF00D4FF), size: 56)),
+              color: XameColors.primary, size: 56)),
         const SizedBox(height: 24),
         const Text('Conference Call',
             style: TextStyle(color: Colors.white,
@@ -159,7 +159,7 @@ class _ConferenceTab extends StatelessWidget {
           label: const Text('Start Conference',
               style: TextStyle(fontWeight: FontWeight.w700)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00D4FF),
+            backgroundColor: XameColors.primary,
             foregroundColor: Colors.black,
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
             shape: RoundedRectangleBorder(

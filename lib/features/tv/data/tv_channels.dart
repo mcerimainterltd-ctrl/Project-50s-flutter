@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 class TvChannel {
   final String name, category, streamUrl, logo, country, language;
@@ -33,17 +34,17 @@ const kTvCategories = [
 ];
 
 const kCategoryColors = {
-  'All':           Color(0xFF455A64),
-  'Africa':        Color(0xFF2E7D32),
-  'News':          Color(0xFF1565C0),
-  'Sports':        Color(0xFF00838F),
-  'Movies':        Color(0xFF6A1B9A),
-  'Entertainment': Color(0xFF4527A0),
-  'Music':         Color(0xFFAD1457),
-  'Kids':          Color(0xFFE65100),
-  'Series':        Color(0xFF37474F),
-  'Documentary':   Color(0xFF558B2F),
-  'General':       Color(0xFF263238),
+  'All':           XameColors.darkSurface,
+  'Africa':        XameColors.accent,
+  'News':          XameColors.primary,
+  'Sports':        XameColors.accent,
+  'Movies':        XameColors.secondary,
+  'Entertainment': XameColors.secondary,
+  'Music':         XameColors.danger,
+  'Kids':          XameColors.danger,
+  'Series':        XameColors.darkCard,
+  'Documentary':   XameColors.accent,
+  'General':       XameColors.darkCard,
 };
 
 const kAfricanCountries = {

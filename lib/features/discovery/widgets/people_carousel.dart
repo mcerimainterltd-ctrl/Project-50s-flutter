@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'live_pulse.dart';
 import '../models/discovery_item.dart';
+import 'package:xamepage/core/theme/app_theme.dart';
 
 class PeoplePerspectiveCarousel extends StatefulWidget {
   final List<DiscoveryUser> users;
@@ -122,19 +123,19 @@ class _PersonCardState extends State<_PersonCard>
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: SweepGradient(colors: [
-                  Color(0xFF7B2FFF), Color(0xFF2196F3),
-                  const Color(0xFF00FF88), Color(0xFF7B2FFF),
+                  context.xSecondary, context.xPrimary,
+                  context.xAccent, context.xSecondary,
                 ]))),
             Container(width: 68, height: 68,
               decoration: const BoxDecoration(
-                shape: BoxShape.circle, color: const Color(0xFF0A0A0F)),
+                shape: BoxShape.circle, color: context.xBg),
               child: ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: user.avatarUrl, fit: BoxFit.cover,
                   placeholder: (_, __) =>
-                    Container(color: const Color(0xFF1A1A2E)),
+                    Container(color: context.xSurface),
                   errorWidget: (_, __, ___) => Container(
-                    color: const Color(0xFF1A1A2E),
+                    color: context.xSurface,
                     child: const Icon(Icons.person,
                         color: Colors.white24, size: 32)),
                 ),
@@ -165,16 +166,16 @@ class _PersonCardState extends State<_PersonCard>
                       horizontal: 20, vertical: 7),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: const Color(0xFF00FF88).withOpacity(0.12),
+                    color: context.xAccent.withOpacity(0.12),
                     border: Border.all(
-                        color: const Color(0xFF00FF88).withOpacity(0.3))),
+                        color: context.xAccent.withOpacity(0.3))),
                   child: const Row(mainAxisSize: MainAxisSize.min,
                     children: [
                     Icon(Icons.check_rounded,
-                        color: const Color(0xFF00FF88), size: 14),
+                        color: context.xAccent, size: 14),
                     SizedBox(width: 5),
                     Text('Added', style: TextStyle(
-                        color: const Color(0xFF00FF88), fontSize: 12,
+                        color: context.xAccent, fontSize: 12,
                         fontWeight: FontWeight.w700)),
                   ]))
               : GestureDetector(
@@ -185,7 +186,7 @@ class _PersonCardState extends State<_PersonCard>
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       gradient: const LinearGradient(colors: [
-                        Color(0xFF2196F3), Color(0xFF7B2FFF),
+                        context.xPrimary, context.xSecondary,
                       ])),
                     child: const Text('Add',
                       style: TextStyle(color: Colors.white,
