@@ -114,7 +114,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
               Center(child: Container(
                 width: 36, height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: Colors.white24,
+                decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2)),
               )),
               Row(children: [
@@ -131,10 +131,10 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                 const Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                   Text('Blocked Numbers',
-                      style: TextStyle(color: Colors.white, fontSize: 16,
+                      style: TextStyle(color: context.xText, fontSize: 16,
                           fontWeight: FontWeight.w700)),
                   Text('Calls from these IDs will be rejected',
-                      style: TextStyle(color: Colors.white38, fontSize: 12)),
+                      style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
               ]),
               const SizedBox(height: 16),
@@ -145,16 +145,16 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                     decoration: BoxDecoration(
                       color: context.xCard,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: context.xText10),
                     ),
                     child: TextField(
                       controller: _inputCtrl,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(color: context.xText, fontSize: 14),
                       decoration: const InputDecoration(
                         hintText: 'Enter Xame-ID to block',
-                        hintStyle: TextStyle(color: Colors.white30),
+                        hintStyle: TextStyle(color: context.xText30),
                         prefixIcon: Icon(Icons.person_outline,
-                            color: Colors.white30, size: 18),
+                            color: context.xText30, size: 18),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                             horizontal: 14, vertical: 11),
@@ -188,7 +188,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                       color: context.xDanger,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.block, color: Colors.white, size: 18),
+                    child: const Icon(Icons.block, color: context.xText, size: 18),
                   ),
                 ),
               ]),
@@ -200,10 +200,10 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
             child: _blocked.isEmpty
                 ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(Icons.check_circle_outline,
-                        color: Colors.white12, size: 48),
+                        color: context.xMuted.withValues(alpha: 0.25), size: 48),
                     const SizedBox(height: 12),
                     Text('No blocked numbers',
-                        style: TextStyle(color: Colors.white38, fontSize: 14)),
+                        style: TextStyle(color: context.xMuted, fontSize: 14)),
                   ])
                 : ListView.separated(
                     controller: ctrl,
@@ -218,7 +218,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                         decoration: BoxDecoration(
                           color: context.xCard,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white10),
+                          border: Border.all(color: context.xText10),
                         ),
                         child: Row(children: [
                           Container(
@@ -235,11 +235,11 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(e.name.isNotEmpty ? e.name : e.xameId,
-                                  style: const TextStyle(color: Colors.white,
+                                  style: const TextStyle(color: context.xText,
                                       fontSize: 14, fontWeight: FontWeight.w600)),
                               if (e.name.isNotEmpty)
                                 Text(e.xameId, style: const TextStyle(
-                                    color: Colors.white38, fontSize: 12)),
+                                    color: context.xMuted, fontSize: 12)),
                             ],
                           )),
                           GestureDetector(
@@ -251,12 +251,12 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 7),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.06),
+                                color: context.xText.withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.white10),
+                                border: Border.all(color: context.xText10),
                               ),
                               child: const Text('Unblock',
-                                  style: TextStyle(color: Colors.white60,
+                                  style: TextStyle(color: context.xText.withValues(alpha: 0.6),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600)),
                             ),

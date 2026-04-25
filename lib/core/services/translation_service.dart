@@ -150,7 +150,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             margin: const EdgeInsets.only(top: 12, bottom: 8),
             width: 40, height: 4,
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: context.xMuted.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2)),
           ),
 
@@ -161,12 +161,12 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
               const Text('🌍', style: TextStyle(fontSize: 20)),
               const SizedBox(width: 10),
               const Text('Translate Message',
-                style: TextStyle(color: Colors.white, fontSize: 17,
+                style: TextStyle(color: context.xText, fontSize: 17,
                     fontWeight: FontWeight.w700)),
               const Spacer(),
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: Icon(Icons.close, color: Colors.white38, size: 20)),
+                child: Icon(Icons.close, color: context.xMuted, size: 20)),
             ]),
           ),
 
@@ -181,7 +181,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             ),
             child: SingleChildScrollView(
               child: Text(widget.messageText,
-                style: const TextStyle(color: Colors.white70, fontSize: 14,
+                style: const TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 14,
                     height: 1.5)),
             ),
           ),
@@ -194,11 +194,11 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
             child: TextField(
               controller: _searchCtrl,
               onChanged:  (v) => setState(() => _query = v),
-              style: TextStyle(color: Colors.white, fontSize: 14),
+              style: TextStyle(color: context.xText, fontSize: 14),
               decoration: InputDecoration(
                 hintText:  'Search language...',
-                hintStyle: TextStyle(color: Colors.white30),
-                prefixIcon: Icon(Icons.search, color: Colors.white30, size: 18),
+                hintStyle: TextStyle(color: context.xText30),
+                prefixIcon: Icon(Icons.search, color: context.xText30, size: 18),
                 filled:    true,
                 fillColor: context.xSurface,
                 border: OutlineInputBorder(
@@ -232,7 +232,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                       Text(lang.name,
                         style: TextStyle(
                           color:      selected
-                              ? context.xAccent : Colors.white70,
+                              ? context.xAccent : context.xText.withValues(alpha: 0.7),
                           fontSize:   14,
                           fontWeight: selected
                               ? FontWeight.w600 : FontWeight.normal)),
@@ -240,7 +240,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                       Text(lang.code.toUpperCase(),
                         style: TextStyle(
                           color:    selected
-                              ? context.xAccent : Colors.white24,
+                              ? context.xAccent : context.xMuted.withValues(alpha: 0.5),
                           fontSize: 11)),
                       if (selected)
                         Padding(
@@ -308,7 +308,7 @@ class _TranslateSheetState extends ConsumerState<_TranslateSheet> {
                   ]),
                   const SizedBox(height: 8),
                   Text(_result!,
-                    style: const TextStyle(color: Colors.white,
+                    style: const TextStyle(color: context.xText,
                         fontSize: 14, height: 1.5)),
                 ],
               ),

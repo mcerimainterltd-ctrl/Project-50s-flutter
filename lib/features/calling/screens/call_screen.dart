@@ -670,7 +670,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
               Center(child: Container(
                 width: 36, height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: Colors.white24,
+                decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2)),
               )),
               Row(children: [
@@ -686,10 +686,10 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text('Add to Call', style: TextStyle(color: Colors.white,
+                  Text('Add to Call', style: TextStyle(color: context.xText,
                       fontSize: 16, fontWeight: FontWeight.w700)),
                   Text('Select a contact to add',
-                      style: TextStyle(color: Colors.white38, fontSize: 12)),
+                      style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
               ]),
               const SizedBox(height: 12),
@@ -697,16 +697,16 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                 decoration: BoxDecoration(
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: context.xText10),
                 ),
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: context.xText, fontSize: 14),
                   decoration: const InputDecoration(
                     hintText: 'Search contacts...',
-                    hintStyle: TextStyle(color: Colors.white30),
+                    hintStyle: TextStyle(color: context.xText30),
                     prefixIcon: Icon(Icons.search,
-                        color: Colors.white30, size: 18),
+                        color: context.xText30, size: 18),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                         horizontal: 14, vertical: 11),
@@ -732,7 +732,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                     decoration: BoxDecoration(
                       color: context.xCard,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: context.xText10),
                     ),
                     child: Row(children: [
                       Container(
@@ -754,10 +754,10 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(c.name, style: TextStyle(
-                              color: Colors.white, fontSize: 14,
+                              color: context.xText, fontSize: 14,
                               fontWeight: FontWeight.w600)),
                           Text(c.id, style: TextStyle(
-                              color: Colors.white38, fontSize: 12)),
+                              color: context.xMuted, fontSize: 12)),
                         ],
                       )),
                       Container(

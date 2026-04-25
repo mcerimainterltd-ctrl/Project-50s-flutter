@@ -18,13 +18,13 @@ class ProfilePortfolioGrid extends StatelessWidget {
         height: 200,
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: context.xText.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: context.xText10),
         ),
         child: const Center(
           child: Text("Gallery Content Coming Soon", 
-            style: TextStyle(color: Colors.white24)),
+            style: TextStyle(color: context.xMuted.withValues(alpha: 0.5))),
         ),
       );
     }
@@ -42,10 +42,10 @@ class ProfilePortfolioGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: context.xText.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.image, color: Colors.white24),
+          child: const Icon(Icons.image, color: context.xMuted.withValues(alpha: 0.5)),
         );
       },
     );

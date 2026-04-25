@@ -116,7 +116,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white, size: 18),
+                  color: context.xText, size: 18),
               onPressed: () {
                 if (Navigator.of(context, rootNavigator: true).canPop()) {
                   Navigator.of(context, rootNavigator: true).pop();
@@ -128,7 +128,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 60),
               title: Text('Calls',
-                style: TextStyle(color: Colors.white, fontSize: 28,
+                style: TextStyle(color: context.xText, fontSize: 28,
                     fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               background: Container(
                 decoration: BoxDecoration(
@@ -143,7 +143,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             actions: [
               IconButton(
                 icon: const Icon(Icons.delete_sweep_outlined,
-                    color: Colors.white54),
+                    color: context.xText.withValues(alpha: 0.54)),
                 onPressed: () => _confirmClear(user?.xameId ?? ''),
               ),
               const SizedBox(width: 8),
@@ -160,7 +160,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
                 color: context.xAccent, strokeWidth: 1.5)),
           error: (e, _) => Center(
             child: Text('Failed to load calls',
-              style: TextStyle(color: Colors.white38))),
+              style: TextStyle(color: context.xMuted))),
           data: (calls) {
             final filtered = _filterCalls(calls, user?.xameId ?? '');
             if (filtered.isEmpty) return _emptyState();
@@ -296,10 +296,10 @@ class _FilterTabs extends StatelessWidget {
       indicatorColor: context.xAccent,
       indicatorWeight: 2,
       labelColor: context.xAccent,
-      unselectedLabelColor: Colors.white38,
+      unselectedLabelColor: context.xMuted,
       labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
           letterSpacing: 0.3),
-      dividerColor: Colors.white10,
+      dividerColor: context.xText10,
       tabs: const [
         Tab(text: 'All'),
         Tab(text: 'Missed'),
@@ -329,7 +329,7 @@ class _DateDivider extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(label,
-        style: const TextStyle(color: Colors.white38, fontSize: 12,
+        style: const TextStyle(color: context.xMuted, fontSize: 12,
             fontWeight: FontWeight.w600, letterSpacing: 0.5)),
     );
   }
@@ -355,7 +355,7 @@ class _CallTile extends StatelessWidget {
     final isDeclined   = call.status == 'rejected';
     final isVideo      = call.callType == 'video';
     final nameColor    = (isMissed || isNoAnswer || isDeclined)
-        ? context.xDanger : Colors.white;
+        ? context.xDanger : context.xText;
     final initials  = name.trim().split(' ').take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
@@ -369,7 +369,7 @@ class _CallTile extends StatelessWidget {
           Container(
             width: 52, height: 52,
             decoration: BoxDecoration(shape: BoxShape.circle,
-                border: Border.all(color: Colors.white10, width: 1)),
+                border: Border.all(color: context.xText10, width: 1)),
             child: ClipOval(
               child: photoUrl != null
                 ? CachedNetworkImage(imageUrl: photoUrl!, fit: BoxFit.cover,
@@ -395,13 +395,13 @@ class _CallTile extends StatelessWidget {
                   Text(_statusLabel(),
                     style: TextStyle(
                       color: isMissed
-                          ? context.xDanger : Colors.white38,
+                          ? context.xDanger : context.xMuted,
                       fontSize: 12)),
                   if (call.duration > 0) ...[
                     const Text(' · ',
-                        style: TextStyle(color: Colors.white24, fontSize: 12)),
+                        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
                     Text(_fmtDuration(call.duration),
-                      style: const TextStyle(color: Colors.white38,
+                      style: const TextStyle(color: context.xMuted,
                           fontSize: 12)),
                   ],
                 ]),
@@ -414,7 +414,7 @@ class _CallTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(DateFormat('h:mm a').format(call.startTime),
-                style: TextStyle(color: Colors.white38, fontSize: 11)),
+                style: TextStyle(color: context.xMuted, fontSize: 11)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: onTap,
@@ -488,7 +488,7 @@ class _DirectionIcon extends StatelessWidget {
           ? context.xDanger
           : isOutgoing
               ? context.xAccent
-              : Colors.white38,
+              : context.xMuted,
     );
   }
 }

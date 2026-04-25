@@ -60,7 +60,7 @@ class NebulaCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.white.withOpacity(0.1), Colors.transparent],
+                colors: [context.xText.withOpacity(0.1), Colors.transparent],
               ),
             ),
             child: Column(
@@ -68,8 +68,8 @@ class NebulaCard extends StatelessWidget {
               children: [
                 _buildChip(),
                 const Spacer(),
-                Text(item.title, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                Text(item.subtitle, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16)),
+                Text(item.title, style: const TextStyle(color: context.xText, fontSize: 28, fontWeight: FontWeight.bold)),
+                Text(item.subtitle, style: TextStyle(color: context.xText.withOpacity(0.7), fontSize: 16)),
                 const SizedBox(height: 20),
                 _buildActionButton(context),
               ],

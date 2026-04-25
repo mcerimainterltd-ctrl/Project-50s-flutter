@@ -64,8 +64,8 @@ class TVBroadcastCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                Text(title, style: const TextStyle(color: context.xText, fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(subtitle, style: TextStyle(color: context.xText.withOpacity(0.6), fontSize: 13)),
               ],
             ),
           ),

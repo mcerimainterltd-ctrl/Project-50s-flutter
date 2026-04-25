@@ -25,17 +25,17 @@ class DiscoverySearchOverlay extends StatelessWidget {
                     padding: const EdgeInsets.all(16.0),
                     child: TextField(
                       autofocus: isVisible,
-                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                      style: const TextStyle(color: context.xText, fontSize: 18),
                       decoration: InputDecoration(
                         hintText: "Search people, topics, or channels...",
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                        hintStyle: TextStyle(color: context.xText.withOpacity(0.3)),
                         prefixIcon: const Icon(Icons.search, color: Colors.blueAccent),
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
+                          icon: const Icon(Icons.close, color: context.xText),
                           onPressed: onClose,
                         ),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.05),
+                        fillColor: context.xText.withOpacity(0.05),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                       ),
                     ),
@@ -49,8 +49,8 @@ class DiscoverySearchOverlay extends StatelessWidget {
                         margin: const EdgeInsets.only(right: 8),
                         child: ActionChip(
                           label: Text(tag),
-                          backgroundColor: Colors.white.withOpacity(0.1),
-                          labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                          backgroundColor: context.xText.withOpacity(0.1),
+                          labelStyle: const TextStyle(color: context.xText, fontSize: 12),
                           onPressed: () {},
                         ),
                       )).toList(),

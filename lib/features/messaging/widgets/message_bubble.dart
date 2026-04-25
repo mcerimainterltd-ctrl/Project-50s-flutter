@@ -105,10 +105,10 @@ class MessageBubble extends ConsumerWidget {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 4),
                           child: Row(children: const [
-                            Icon(Icons.forward, size: 12, color: Colors.white38),
+                            Icon(Icons.forward, size: 12, color: context.xMuted),
                             SizedBox(width: 4),
                             Text('Forwarded',
-                                style: TextStyle(color: Colors.white38,
+                                style: TextStyle(color: context.xMuted,
                                     fontSize: 11, fontStyle: FontStyle.italic)),
                           ]),
                         ),
@@ -281,7 +281,7 @@ class _StatusTick extends StatelessWidget {
     if (status == 'uploading')
       return const SizedBox(
           width: 14, height: 14,
-          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white54));
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: context.xText.withValues(alpha: 0.54)));
     if (status == 'failed')
       return Tooltip(
         message: 'Upload failed — long press to retry',
@@ -289,8 +289,8 @@ class _StatusTick extends StatelessWidget {
     if (status == 'seen')
       return Icon(Icons.done_all, size: 14, color: context.xPrimary);
     if (status == 'delivered')
-      return const Icon(Icons.done_all, size: 14, color: Colors.white38);
-    return const Icon(Icons.done, size: 14, color: Colors.white38);
+      return const Icon(Icons.done_all, size: 14, color: context.xMuted);
+    return const Icon(Icons.done, size: 14, color: context.xMuted);
   }
 }
 
@@ -338,10 +338,10 @@ class _ImageBubble extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           child: const Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.visibility_outlined, color: Colors.white54, size: 18),
+            Icon(Icons.visibility_outlined, color: context.xText.withValues(alpha: 0.54), size: 18),
             SizedBox(width: 8),
             Text('Tap to view',
-                style: TextStyle(color: Colors.white54, fontSize: 13)),
+                style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13)),
           ]),
         ),
       );
@@ -361,7 +361,7 @@ class _ImageBubble extends StatelessWidget {
                   width: double.infinity, height: 180),
               errorWidget: (_, __, ___) => const SizedBox(height: 80,
                   child: Center(
-                      child: Icon(Icons.broken_image, color: Colors.white24))),
+                      child: Icon(Icons.broken_image, color: context.xMuted.withValues(alpha: 0.5)))),
             ),
           ),
         ),
@@ -369,7 +369,7 @@ class _ImageBubble extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
             child: Text(caption,
-                style: const TextStyle(color: Colors.white, fontSize: 13))),
+                style: const TextStyle(color: context.xText, fontSize: 13))),
       ]),
     );
   }
@@ -593,7 +593,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
                 ),
                 child: const Center(
                   child: Icon(Icons.movie_outlined,
-                      color: Colors.white24, size: 48)),
+                      color: context.xMuted.withValues(alpha: 0.5), size: 48)),
               ),
 
             // ── Dark overlay ─────────────────────────────────────────
@@ -614,13 +614,13 @@ class _VideoBubbleState extends State<_VideoBubble> {
                       child: Stack(alignment: Alignment.center, children: [
                         CircularProgressIndicator(
                           value: _progress > 0 ? _progress : null,
-                          color: Colors.white, strokeWidth: 3),
+                          color: context.xText, strokeWidth: 3),
                         Text(
                           _progress > 0
                               ? '${(_progress * 100).toInt()}%'
                               : '',
                           style: const TextStyle(
-                              color: Colors.white, fontSize: 10)),
+                              color: context.xText, fontSize: 10)),
                       ]))
                   : Container(
                       width: 52, height: 52,
@@ -628,11 +628,11 @@ class _VideoBubbleState extends State<_VideoBubble> {
                         color: Colors.black.withValues(alpha: 0.55),
                         shape: BoxShape.circle,
                         border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: context.xText.withValues(alpha: 0.8),
                             width: 2),
                       ),
                       child: const Icon(Icons.play_arrow_rounded,
-                          color: Colors.white, size: 32),
+                          color: context.xText, size: 32),
                     ),
             ),
 
@@ -643,19 +643,19 @@ class _VideoBubbleState extends State<_VideoBubble> {
                 padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
                 child: Row(children: [
                   const Icon(Icons.videocam_outlined,
-                      color: Colors.white70, size: 14),
+                      color: context.xText.withValues(alpha: 0.7), size: 14),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(widget.fileName,
                         style: const TextStyle(
-                            color: Colors.white70, fontSize: 11),
+                            color: context.xText.withValues(alpha: 0.7), fontSize: 11),
                         maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                   if (widget.fileSize != null) ...[
                     const SizedBox(width: 6),
                     Text(_fmtSize(widget.fileSize),
                         style: const TextStyle(
-                            color: Colors.white54, fontSize: 10)),
+                            color: context.xText.withValues(alpha: 0.54), fontSize: 10)),
                   ],
                 ]),
               ),
@@ -944,13 +944,13 @@ class _FileBubbleState extends State<_FileBubble> {
                       children: [
                     Text(widget.fileName,
                         style: const TextStyle(
-                            color: Colors.white, fontSize: 12,
+                            color: context.xText, fontSize: 12,
                             fontWeight: FontWeight.w500),
                         maxLines: 1, overflow: TextOverflow.ellipsis),
                     if (widget.fileSize != null)
                       Text(_fmtSize(widget.fileSize),
                           style: const TextStyle(
-                              color: Colors.white38, fontSize: 10)),
+                              color: context.xMuted, fontSize: 10)),
                   ]),
                 ),
                 const SizedBox(width: 6),
@@ -1067,7 +1067,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
                   isPlaying: _playing)),
             const SizedBox(height: 4),
             Text(_playing ? _fmt(_position) : _fmt(_duration),
-                style: TextStyle(color: Colors.white38, fontSize: 10)),
+                style: TextStyle(color: context.xMuted, fontSize: 10)),
           ])),
         ]),
         SliderTheme(
@@ -1076,7 +1076,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
             thumbShape:         const RoundSliderThumbShape(enabledThumbRadius: 5),
             overlayShape:       const RoundSliderOverlayShape(overlayRadius: 10),
             activeTrackColor:   context.xPrimary,
-            inactiveTrackColor: Colors.white12,
+            inactiveTrackColor: context.xMuted.withValues(alpha: 0.25),
             thumbColor:         context.xPrimary,
             overlayColor:       context.xPrimary.withValues(alpha: 0.2),
           ),

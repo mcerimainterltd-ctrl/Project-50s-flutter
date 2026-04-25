@@ -21,9 +21,9 @@ class TVEntryButton extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: context.xText.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: context.xText10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -33,7 +33,7 @@ class TVEntryButton extends StatelessWidget {
                     const Text(
                       "TV",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.xText,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.5,

@@ -95,10 +95,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 28),
                 Text('Account Created!',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  style: TextStyle(color: context.xText, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 Text('Your Xame-ID is:',
-                  style: TextStyle(color: Colors.white54, fontSize: 14)),
+                  style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 14)),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -114,7 +114,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 12),
                 Text('Save this ID — you need it to log in.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white38, fontSize: 13)),
+                  style: TextStyle(color: context.xMuted, fontSize: 13)),
                 const SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity, height: 52,
@@ -141,11 +141,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: context.xBg,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: context.xText),
           onPressed: () => context.go('/login'),
         ),
         title: const Text('Create Account',
-          style: TextStyle(color: Colors.white, fontSize: 18)),
+          style: TextStyle(color: context.xText, fontSize: 18)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -176,14 +176,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 obscure: _obscure,
                 suffix: IconButton(
                   icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.white38, size: 20),
+                    color: context.xMuted, size: 20),
                   onPressed: () => setState(() => _obscure = !_obscure)))),
               const SizedBox(height: 16),
               _section('Confirm Password', _field(_confirmCtrl, 'Re-enter password', Icons.lock_outline,
                 obscure: _obscure2,
                 suffix: IconButton(
                   icon: Icon(_obscure2 ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.white38, size: 20),
+                    color: context.xMuted, size: 20),
                   onPressed: () => setState(() => _obscure2 = !_obscure2)))),
               const SizedBox(height: 12),
               Container(
@@ -191,11 +191,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 decoration: BoxDecoration(
                   color: context.xCard, borderRadius: BorderRadius.circular(10)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Password must contain:', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  Text('Password must contain:', style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12)),
                   SizedBox(height: 4),
-                  Text('· At least 8 characters  · One uppercase letter', style: TextStyle(color: Colors.white38, fontSize: 11)),
-                  Text('· One lowercase letter   · One number',           style: TextStyle(color: Colors.white38, fontSize: 11)),
-                  Text('· One special character',                          style: TextStyle(color: Colors.white38, fontSize: 11)),
+                  Text('· At least 8 characters  · One uppercase letter', style: TextStyle(color: context.xMuted, fontSize: 11)),
+                  Text('· One lowercase letter   · One number',           style: TextStyle(color: context.xMuted, fontSize: 11)),
+                  Text('· One special character',                          style: TextStyle(color: context.xMuted, fontSize: 11)),
                 ]),
               ),
               const SizedBox(height: 16),
@@ -237,7 +237,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   onTap: () => context.go('/login'),
                   child: RichText(text: TextSpan(
                     text: 'Already have an account? ',
-                    style: TextStyle(color: Colors.white38, fontSize: 14),
+                    style: TextStyle(color: context.xMuted, fontSize: 14),
                     children: [TextSpan(text: 'Sign In',
                       style: TextStyle(color: context.xPrimary, fontWeight: FontWeight.w600))],
                   )),

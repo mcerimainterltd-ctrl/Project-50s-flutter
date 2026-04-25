@@ -327,7 +327,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
               Center(child: Container(
                 width: 36, height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: Colors.white24,
+                decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2)),
               )),
               Row(children: [
@@ -346,15 +346,15 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                 const SizedBox(width: 12),
                 const Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text('Avatar Builder', style: TextStyle(color: Colors.white,
+                  Text('Avatar Builder', style: TextStyle(color: context.xText,
                       fontSize: 16, fontWeight: FontWeight.w700)),
                   Text('Design your unique avatar',
-                      style: TextStyle(color: Colors.white38, fontSize: 12)),
+                      style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: Icon(Icons.close, color: Colors.white38)),
+                  child: Icon(Icons.close, color: context.xMuted)),
               ]),
             ]),
           ),
@@ -387,7 +387,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                           color: context.xSurface, width: 2),
                     ),
                     child: const Icon(Icons.casino_outlined,
-                        color: Colors.white70, size: 14),
+                        color: context.xText.withValues(alpha: 0.7), size: 14),
                   ),
                 ),
               ],

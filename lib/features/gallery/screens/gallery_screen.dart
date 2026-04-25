@@ -146,7 +146,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white70, size: 18),
+                  color: context.xText.withValues(alpha: 0.7), size: 18),
               onPressed: () {
                 if (Navigator.canPop(context)) Navigator.pop(context);
                 else context.go('/contacts');
@@ -155,7 +155,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
               IconButton(
                 icon: Icon(_layout == 'grid'
                     ? Icons.dashboard_outlined : Icons.grid_view_rounded,
-                    color: Colors.white38, size: 20),
+                    color: context.xMuted, size: 20),
                 onPressed: () => setState(() =>
                     _layout = _layout == 'grid' ? 'masonry' : 'grid')),
               if (widget.isOwner)
@@ -172,11 +172,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Xame Gallery',
-                      style: TextStyle(color: Colors.white, fontSize: 22,
+                      style: TextStyle(color: context.xText, fontSize: 22,
                           fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                   if (!widget.isOwner)
                     Text('Viewing profile',
-                        style: TextStyle(color: Colors.white38, fontSize: 10)),
+                        style: TextStyle(color: context.xMuted, fontSize: 10)),
                 ],
               ),
               background: Container(
@@ -195,7 +195,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                   controller: _tabs,
                   indicatorColor: _kTeal, indicatorWeight: 2,
                   labelColor: _kTeal,
-                  unselectedLabelColor: Colors.white38,
+                  unselectedLabelColor: context.xMuted,
                   labelStyle: const TextStyle(
                       fontSize: 13, fontWeight: FontWeight.w700),
                   dividerColor: Colors.transparent,
@@ -211,10 +211,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
           error: (_, __) => Center(child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.wifi_off_rounded, color: Colors.white24, size: 48),
+              const Icon(Icons.wifi_off_rounded, color: context.xMuted.withValues(alpha: 0.5), size: 48),
               const SizedBox(height: 12),
               const Text('Failed to load gallery',
-                  style: TextStyle(color: Colors.white38)),
+                  style: TextStyle(color: context.xMuted)),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () => ref.refresh(_galleryProvider(widget.userId)),
@@ -357,7 +357,7 @@ class _Stat extends StatelessWidget {
 class _SDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      Container(width: 1, height: 28, color: Colors.white10);
+      Container(width: 1, height: 28, color: context.xText10);
 }
 
 // ── Grid Cell ─────────────────────────────────────────────────────────────────
@@ -598,7 +598,7 @@ class _LightboxState extends State<_Lightbox> {
                               color: _kTeal, strokeWidth: 1.5)),
                   errorBuilder: (_, __, ___) => const Icon(
                       Icons.broken_image_outlined,
-                      color: Colors.white24, size: 64),
+                      color: context.xMuted.withValues(alpha: 0.5), size: 64),
                 ),
               );
             },
@@ -619,7 +619,7 @@ class _LightboxState extends State<_Lightbox> {
                 child: Row(children: [
                   IconButton(
                     icon: const Icon(Icons.close_rounded,
-                        color: Colors.white, size: 22),
+                        color: context.xText, size: 22),
                     onPressed: () => Navigator.pop(context)),
                   const Spacer(),
                   Container(
@@ -628,7 +628,7 @@ class _LightboxState extends State<_Lightbox> {
                     decoration: BoxDecoration(color: Colors.black54,
                         borderRadius: BorderRadius.circular(20)),
                     child: Text('${_idx + 1} / ${widget.items.length}',
-                        style: const TextStyle(color: Colors.white70,
+                        style: const TextStyle(color: context.xText.withValues(alpha: 0.7),
                             fontSize: 12, fontWeight: FontWeight.w600))),
                 ]),
               )),
@@ -653,12 +653,12 @@ class _LightboxState extends State<_Lightbox> {
                     children: [
                       if (item.caption.isNotEmpty)
                         Text(item.caption, style: TextStyle(
-                            color: Colors.white, fontSize: 16,
+                            color: context.xText, fontSize: 16,
                             fontWeight: FontWeight.w700)),
                       if (item.description.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(item.description, style: TextStyle(
-                            color: Colors.white70, fontSize: 13)),
+                            color: context.xText.withValues(alpha: 0.7), fontSize: 13)),
                       ],
                       const SizedBox(height: 10),
                       Wrap(spacing: 8, runSpacing: 8, children: [
@@ -785,7 +785,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
         children: [
           const SizedBox(height: 12),
           Center(child: Container(width: 36, height: 4,
-              decoration: BoxDecoration(color: Colors.white24,
+              decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 16),
           Container(
@@ -797,7 +797,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
                 color: _kTeal.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10)),
               labelColor: _kTeal,
-              unselectedLabelColor: Colors.white38,
+              unselectedLabelColor: context.xMuted,
               dividerColor: Colors.transparent,
               labelStyle: const TextStyle(
                   fontSize: 13, fontWeight: FontWeight.w700),
@@ -824,7 +824,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
                             color: _kTeal, size: 40),
                         SizedBox(height: 8),
                         Text('Tap to select photo or video',
-                            style: TextStyle(color: Colors.white38,
+                            style: TextStyle(color: context.xMuted,
                                 fontSize: 13)),
                       ]),
             ),
@@ -851,7 +851,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
           const SizedBox(height: 10),
           Row(children: [
             const Text('Visibility', style: TextStyle(
-                color: Colors.white54, fontSize: 13)),
+                color: context.xText.withValues(alpha: 0.54), fontSize: 13)),
             const SizedBox(width: 12),
             Expanded(child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -871,7 +871,7 @@ class _UploadSheetState extends ConsumerState<_UploadSheet>
                   color: _kTeal, backgroundColor: _kCard, minHeight: 6)),
             const SizedBox(height: 8),
             Center(child: Text('${(_progress * 100).toInt()}% uploaded',
-                style: const TextStyle(color: Colors.white54, fontSize: 12))),
+                style: const TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12))),
           ] else
             SizedBox(width: double.infinity,
               child: ElevatedButton.icon(

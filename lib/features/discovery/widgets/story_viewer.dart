@@ -201,21 +201,21 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                         borderRadius: BorderRadius.circular(2),
                         child: i < _storyIndex
                           // Fully watched
-                          ? Container(color: Colors.white)
+                          ? Container(color: context.xText)
                           : i == _storyIndex
                             // Currently playing
                             ? AnimatedBuilder(
                                 animation: _progressCtrl,
                                 builder: (_, __) => LinearProgressIndicator(
                                   value:            _progressCtrl.value,
-                                  backgroundColor:  Colors.white30,
+                                  backgroundColor:  context.xText30,
                                   valueColor: const AlwaysStoppedAnimation(
-                                      Colors.white),
+                                      context.xText),
                                   minHeight: 2.5,
                                 ),
                               )
                             // Not yet watched
-                            : Container(color: Colors.white30),
+                            : Container(color: context.xText30),
                       ),
                     ),
                   );
@@ -233,7 +233,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                   width: 38, height: 38,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2)),
+                    border: Border.all(color: context.xText, width: 2)),
                   child: ClipOval(
                     child: _currentGroup.authorAvatar.isNotEmpty
                       ? CachedNetworkImage(
@@ -242,10 +242,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           errorWidget: (_, __, ___) =>
                             Container(color: context.xSurface,
                               child: Icon(Icons.person,
-                                  color: Colors.white38, size: 20)))
+                                  color: context.xMuted, size: 20)))
                       : Container(color: context.xSurface,
                           child: const Icon(Icons.person,
-                              color: Colors.white38, size: 20)),
+                              color: context.xMuted, size: 20)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -255,12 +255,12 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                   children: [
                     Text(_currentGroup.authorName,
                       style: const TextStyle(
-                        color:      Colors.white,
+                        color:      context.xText,
                         fontSize:   14,
                         fontWeight: FontWeight.w700)),
                     Text(_timeAgo(_currentStory.ts),
                       style: const TextStyle(
-                          color: Colors.white60, fontSize: 11)),
+                          color: context.xText.withValues(alpha: 0.6), fontSize: 11)),
                   ],
                 )),
                 // Pause indicator
@@ -272,7 +272,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                       color:        Colors.black45,
                       borderRadius: BorderRadius.circular(8)),
                     child: const Text('PAUSED',
-                      style: TextStyle(color: Colors.white60,
+                      style: TextStyle(color: context.xText.withValues(alpha: 0.6),
                           fontSize: 9, letterSpacing: 1)),
                   ),
                 const SizedBox(width: 8),
@@ -285,7 +285,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                       shape: BoxShape.circle,
                       color: Colors.black38),
                     child: const Icon(Icons.close,
-                        color: Colors.white, size: 18)),
+                        color: context.xText, size: 18)),
                 ),
               ]),
             ),
@@ -306,7 +306,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(3),
                         color: i == _groupIndex
-                          ? Colors.white : Colors.white30),
+                          ? context.xText : context.xText30),
                     )
                   ),
                 ),
@@ -355,11 +355,11 @@ class _StoryMedia extends StatelessWidget {
             placeholder: (_, __) => Container(
               color: context.xBg,
               child: Center(child: CircularProgressIndicator(
-                  color: Colors.white30, strokeWidth: 1.5))),
+                  color: context.xText30, strokeWidth: 1.5))),
             errorWidget: (_, __, ___) => Container(
               color: context.xBg,
               child: const Icon(Icons.broken_image,
-                  color: Colors.white24, size: 48)),
+                  color: context.xMuted.withValues(alpha: 0.5), size: 48)),
           ),
     );
   }

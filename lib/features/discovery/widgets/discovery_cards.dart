@@ -145,7 +145,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                   errorWidget: (_, __, ___) => Container(
                     color: context.xSurface,
                     child: const Icon(Icons.image_outlined,
-                        color: Colors.white12, size: 48)),
+                        color: context.xMuted.withValues(alpha: 0.25), size: 48)),
                 ),
 
                 // Gradient
@@ -179,7 +179,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                     decoration: BoxDecoration(
                       color:        Colors.black.withOpacity(0.55),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white12)),
+                      border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
                     child: Text(widget.category.toUpperCase(),
                       style: TextStyle(
                         color:       context.xPrimary,
@@ -208,7 +208,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: Colors.white30, width: 1)),
+                                      color: context.xText30, width: 1)),
                                 child: ClipOval(
                                   child: CachedNetworkImage(
                                     imageUrl:    widget.authorAvatar!,
@@ -220,7 +220,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                               ),
                             Text(widget.authorName!,
                               style: const TextStyle(
-                                  color:      Colors.white60,
+                                  color:      context.xText.withValues(alpha: 0.6),
                                   fontSize:   12,
                                   fontWeight: FontWeight.w500)),
                           ]),
@@ -229,7 +229,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                         // Title
                         Text(widget.title,
                           style: const TextStyle(
-                            color:      Colors.white,
+                            color:      context.xText,
                             fontSize:   20,
                             fontWeight: FontWeight.w800,
                             height:     1.2)),
@@ -240,11 +240,11 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                           // Views
                           Row(children: [
                             const Icon(Icons.remove_red_eye_outlined,
-                                color: Colors.white38, size: 14),
+                                color: context.xMuted, size: 14),
                             const SizedBox(width: 4),
                             Text(_fmt(widget.viewCount),
                               style: const TextStyle(
-                                  color: Colors.white38, fontSize: 12)),
+                                  color: context.xMuted, fontSize: 12)),
                           ]),
                           const SizedBox(width: 14),
 
@@ -260,14 +260,14 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                     : Icons.favorite_border_rounded,
                                   color: _liked
                                     ? context.xDanger
-                                    : Colors.white38,
+                                    : context.xMuted,
                                   size: 16),
                                 const SizedBox(width: 4),
                                 Text(_fmt(likeCount),
                                   style: TextStyle(
                                     color: _liked
                                       ? context.xDanger
-                                      : Colors.white38,
+                                      : context.xMuted,
                                     fontSize:   12,
                                     fontWeight: _liked
                                       ? FontWeight.w700 : FontWeight.normal)),
@@ -285,18 +285,18 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                   horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(18),
-                                color: Colors.white.withOpacity(0.1),
+                                color: context.xText.withOpacity(0.1),
                                 border: Border.all(
-                                    color: Colors.white24, width: 0.5)),
+                                    color: context.xMuted.withValues(alpha: 0.5), width: 0.5)),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.share_outlined,
-                                      color: Colors.white60, size: 13),
+                                      color: context.xText.withValues(alpha: 0.6), size: 13),
                                   SizedBox(width: 4),
                                   Text('Share',
                                     style: TextStyle(
-                                        color:      Colors.white60,
+                                        color:      context.xText.withValues(alpha: 0.6),
                                         fontSize:   11,
                                         fontWeight: FontWeight.w600)),
                                 ]),

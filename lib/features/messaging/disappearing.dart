@@ -206,7 +206,7 @@ class _DisappearingTimerDialogState
               width: 36, height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: context.xMuted.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(2)),
             ),
           ),

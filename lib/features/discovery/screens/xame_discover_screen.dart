@@ -301,7 +301,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     colors: [context.xPrimary, context.xSecondary],
                   ).createShader(b),
                   child: const Text('DISCOVERY',
-                    style: TextStyle(color: Colors.white, fontSize: 22,
+                    style: TextStyle(color: context.xText, fontSize: 22,
                         fontWeight: FontWeight.w900, letterSpacing: 2.5)),
                 ),
                 const SizedBox(width: 8),
@@ -314,13 +314,13 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       _searchOpen ? Icons.close : Icons.search,
-                      key: ValueKey(_searchOpen), color: Colors.white70)),
+                      key: ValueKey(_searchOpen), color: context.xText.withValues(alpha: 0.7))),
                   onPressed: _searchOpen ? _closeSearch : _openSearch),
                 IconButton(
-                  icon: const Icon(Icons.tune_rounded, color: Colors.white70),
+                  icon: const Icon(Icons.tune_rounded, color: context.xText.withValues(alpha: 0.7)),
                   onPressed: () => _showFilterSheet(context)),
                 IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
+                  icon: const Icon(Icons.refresh_rounded, color: context.xText.withValues(alpha: 0.7)),
                   onPressed: () => _loadData(refresh: true)),
                 const SizedBox(width: 4),
               ],
@@ -387,7 +387,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     _searchQuery.isNotEmpty
                       ? 'RESULTS FOR "${_searchQuery.toUpperCase()}"'
                       : 'TRENDING IN ${_regionName.toUpperCase()}',
-                    style: TextStyle(color: Colors.white38,
+                    style: TextStyle(color: context.xMuted,
                         fontSize: 11, fontWeight: FontWeight.w800,
                         letterSpacing: 1.2)),
                   const Spacer(),
@@ -1263,7 +1263,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
             decoration: BoxDecoration(shape: BoxShape.circle,
                 color: Colors.black.withOpacity(0.5)),
             child: Icon(Icons.arrow_back_ios_new,
-                color: Colors.white, size: 16)),
+                color: context.xText, size: 16)),
           onPressed: () => Navigator.pop(context)),
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(fit: StackFit.expand, children: [
@@ -1303,15 +1303,15 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
               const Spacer(),
               Text('${_fmt(item.viewCount)} views',
                 style: const TextStyle(
-                    color: Colors.white38, fontSize: 12)),
+                    color: context.xMuted, fontSize: 12)),
             ]),
             const SizedBox(height: 12),
-            Text(item.title, style: TextStyle(color: Colors.white,
+            Text(item.title, style: TextStyle(color: context.xText,
                 fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
             const SizedBox(height: 8),
             if (item.subtitle.isNotEmpty)
               Text(item.subtitle, style: TextStyle(
-                  color: Colors.white54, fontSize: 14, height: 1.5)),
+                  color: context.xText.withValues(alpha: 0.54), fontSize: 14, height: 1.5)),
             const SizedBox(height: 16),
             Row(children: [
               CircleAvatar(radius: 20,
@@ -1319,14 +1319,14 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                   ? NetworkImage(item.authorAvatar) : null,
                 backgroundColor: context.xSurface,
                 child: item.authorAvatar.isEmpty
-                  ? const Icon(Icons.person, color: Colors.white38) : null),
+                  ? const Icon(Icons.person, color: context.xMuted) : null),
               const SizedBox(width: 10),
               Column(crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                 Text(item.authorName, style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w600)),
+                    color: context.xText, fontWeight: FontWeight.w600)),
                 Text(item.region, style: TextStyle(
-                    color: Colors.white38, fontSize: 12)),
+                    color: context.xMuted, fontSize: 12)),
               ]),
               const Spacer(),
               GestureDetector(
@@ -1338,15 +1338,15 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     gradient: LinearGradient(colors: _following
-                        ? [Colors.white24, Colors.white24]
+                        ? [context.xMuted.withValues(alpha: 0.5), context.xMuted.withValues(alpha: 0.5)]
                         : [context.xPrimary, context.xSecondary]),
                   ),
                   child: _followLoading
                       ? const SizedBox(width: 14, height: 14,
                           child: CircularProgressIndicator(
-                              strokeWidth: 1.5, color: Colors.white))
+                              strokeWidth: 1.5, color: context.xText))
                       : Text(_following ? 'Following' : 'Follow',
-                          style: const TextStyle(color: Colors.white,
+                          style: const TextStyle(color: context.xText,
                               fontSize: 13, fontWeight: FontWeight.w700)),
                 ),
               ),

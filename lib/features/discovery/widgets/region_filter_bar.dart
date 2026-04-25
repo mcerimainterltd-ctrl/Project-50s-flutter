@@ -89,16 +89,16 @@ class _CurrencyHint extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
               horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.04),
+            color: context.xText.withOpacity(0.04),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white10)),
+            border: Border.all(color: context.xText10)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Text(region.flag,
                 style: const TextStyle(fontSize: 11)),
             const SizedBox(width: 5),
             Text('${region.currencySymbol} ${region.currency}',
               style: const TextStyle(
-                  color: Colors.white38, fontSize: 11,
+                  color: context.xMuted, fontSize: 11,
                   fontWeight: FontWeight.w500)),
           ]),
         ),
@@ -112,11 +112,11 @@ class _CurrencyHint extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
+                color: context.xText.withOpacity(0.03),
                 borderRadius: BorderRadius.circular(6)),
               child: Text(region.categories[i],
                 style: const TextStyle(
-                    color: Colors.white24, fontSize: 10)),
+                    color: context.xMuted.withValues(alpha: 0.5), fontSize: 10)),
             ),
           ),
         )),

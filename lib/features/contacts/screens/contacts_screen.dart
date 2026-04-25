@@ -465,7 +465,7 @@ class _ChatsTab extends ConsumerWidget {
         child: CircularProgressIndicator(color: context.xPrimary)),
       error: (e, _) => Center(
         child: Text('Error: $e',
-          style: const TextStyle(color: Colors.white38))),
+          style: const TextStyle(color: context.xMuted))),
       data: (list) {
         var filtered = list.where((c) =>
           filter.isEmpty ||
@@ -582,7 +582,7 @@ class _ContactTile extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(child: Text(contact.name,
-                style: TextStyle(color: Colors.white, fontSize: 15,
+                style: TextStyle(color: context.xText, fontSize: 15,
                   fontWeight: contact.unreadCount > 0
                     ? FontWeight.w700 : FontWeight.w500),
                 maxLines: 1, overflow: TextOverflow.ellipsis)),
@@ -590,7 +590,7 @@ class _ContactTile extends ConsumerWidget {
                 Text(_fmtTime(contact.lastInteractionTs),
                   style: TextStyle(
                     color: contact.unreadCount > 0
-                      ? context.xPrimary : Colors.white30,
+                      ? context.xPrimary : context.xText30,
                     fontSize: 11)),
             ]),
             const SizedBox(height: 3),
@@ -600,7 +600,7 @@ class _ContactTile extends ConsumerWidget {
                   ? contact.lastInteractionPreview
                   : "Hey there I'm on XamePage",
               style: TextStyle(
-                color: isTyping ? context.xAccent : Colors.white38,
+                color: isTyping ? context.xAccent : context.xMuted,
                 fontSize: 13,
                 fontStyle: isTyping
                   ? FontStyle.italic : FontStyle.normal),

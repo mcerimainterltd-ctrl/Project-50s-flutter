@@ -105,7 +105,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
+                      border: Border.all(color: context.xText.withOpacity(0.15), width: 1.5),
                     ),
                     child: CircleAvatar(
                       radius: 75,
@@ -113,7 +113,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                       backgroundImage: profilePic != null ? CachedNetworkImageProvider(profilePic) : null,
                       child: profilePic == null
                           ? Text(displayName.isNotEmpty ? displayName[0].toUpperCase() : "?",
-                              style: const TextStyle(fontSize: 45, color: Colors.white, fontWeight: FontWeight.bold))
+                              style: const TextStyle(fontSize: 45, color: context.xText, fontWeight: FontWeight.bold))
                           : null,
                     ),
                   ),
@@ -124,12 +124,12 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                 // Caller Name / ID
                 Text(
                   displayName,
-                  style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                  style: const TextStyle(color: context.xText, fontSize: 36, fontWeight: FontWeight.w900, letterSpacing: -0.5),
                 ),
                 if (displayName != userId && userId.isNotEmpty)
                   Text(
                     "@$userId",
-                    style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 16, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: context.xText.withOpacity(0.4), fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 
                 const SizedBox(height: 16),
@@ -233,7 +233,7 @@ class _PulsingCallTypeState extends State<_PulsingCallType> with SingleTickerPro
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: Tween(begin: 0.2, end: 0.7).animate(_ctrl),
-      child: Text(widget.text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 3)),
+      child: Text(widget.text, style: const TextStyle(color: context.xText, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 3)),
     );
   }
 }
@@ -278,7 +278,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
               Center(child: Container(
                 width: 36, height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: Colors.white24,
+                decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2)),
               )),
               Row(children: [
@@ -294,10 +294,10 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text('Add to Call', style: TextStyle(color: Colors.white,
+                  Text('Add to Call', style: TextStyle(color: context.xText,
                       fontSize: 16, fontWeight: FontWeight.w700)),
                   Text('Select a contact to add',
-                      style: TextStyle(color: Colors.white38, fontSize: 12)),
+                      style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
               ]),
               const SizedBox(height: 12),
@@ -305,16 +305,16 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                 decoration: BoxDecoration(
                   color: context.xCard,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: context.xText10),
                 ),
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: context.xText, fontSize: 14),
                   decoration: const InputDecoration(
                     hintText: 'Search contacts...',
-                    hintStyle: TextStyle(color: Colors.white30),
+                    hintStyle: TextStyle(color: context.xText30),
                     prefixIcon: Icon(Icons.search,
-                        color: Colors.white30, size: 18),
+                        color: context.xText30, size: 18),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                         horizontal: 14, vertical: 11),
@@ -340,7 +340,7 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                     decoration: BoxDecoration(
                       color: context.xCard,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: context.xText10),
                     ),
                     child: Row(children: [
                       Container(
@@ -361,10 +361,10 @@ class _AddCallSheetState extends State<_AddCallSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(c.name, style: TextStyle(
-                              color: Colors.white, fontSize: 14,
+                              color: context.xText, fontSize: 14,
                               fontWeight: FontWeight.w600)),
                           Text(c.id, style: TextStyle(
-                              color: Colors.white38, fontSize: 12)),
+                              color: context.xMuted, fontSize: 12)),
                         ],
                       )),
                       Container(

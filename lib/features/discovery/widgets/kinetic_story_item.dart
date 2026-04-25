@@ -96,7 +96,7 @@ class _KineticStoryItemState extends State<KineticStoryItem> with SingleTickerPr
             const SizedBox(height: 8),
             Text(
               widget.username,
-              style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500),
+              style: const TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w500),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

@@ -53,7 +53,7 @@ class ThemePickerScreen extends ConsumerWidget {
                     border: Border.all(
                       color: isActive
                           ? theme.primary
-                          : Colors.white.withValues(alpha: 0.08),
+                          : context.xText.withValues(alpha: 0.08),
                       width: isActive ? 2.5 : 1,
                     ),
                     boxShadow: isActive ? [
@@ -122,7 +122,7 @@ class ThemePickerScreen extends ConsumerWidget {
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.check,
-                                    color: Colors.white, size: 14),
+                                    color: context.xText, size: 14),
                               ),
                             ),
                         ]),

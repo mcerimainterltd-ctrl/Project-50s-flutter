@@ -244,7 +244,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white, size: 18),
+                  color: context.xText, size: 18),
               onPressed: () => context.go('/contacts')),
             actions: [
               TextButton(
@@ -308,7 +308,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     ),
                     const SizedBox(height: 10),
                     Text('@${user.xameId}',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5),
+                      style: TextStyle(color: context.xText.withValues(alpha: 0.5),
                           fontSize: 13)),
                   ],
                 ),
@@ -346,17 +346,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     decoration: BoxDecoration(
                       color: context.xSurface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: context.xText10),
                     ),
                     child: Row(children: [
                       Icon(Icons.tag, color: context.xPrimary, size: 18),
                       const SizedBox(width: 12),
                       Text(user.xameId,
-                        style: const TextStyle(color: Colors.white,
+                        style: const TextStyle(color: context.xText,
                             fontSize: 15, fontWeight: FontWeight.w500)),
                       const Spacer(),
                       const Icon(Icons.copy_outlined,
-                          color: Colors.white38, size: 16),
+                          color: context.xMuted, size: 16),
                     ]),
                   ),
                 ),
@@ -768,21 +768,21 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
             Center(child: Container(
               width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(color: Colors.white24,
+              decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2)))),
 
             const Row(children: [
               Text('🛡️', style: TextStyle(fontSize: 20)),
               SizedBox(width: 10),
               Text('Extra Security',
-                style: TextStyle(color: Colors.white, fontSize: 18,
+                style: TextStyle(color: context.xText, fontSize: 18,
                     fontWeight: FontWeight.w700)),
             ]),
             const SizedBox(height: 8),
             const Text(
               'When enabled, a one-time code will be sent to your '
               'email or phone every time you log in from an unrecognised device.',
-              style: TextStyle(color: Colors.white54, fontSize: 13, height: 1.6)),
+              style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13, height: 1.6)),
 
             const SizedBox(height: 24),
 
@@ -790,12 +790,12 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: context.xText.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(children: [
                 Text('Enable Extra Security',
-                  style: TextStyle(color: Colors.white, fontSize: 14,
+                  style: TextStyle(color: context.xText, fontSize: 14,
                       fontWeight: FontWeight.w600)),
                 const Spacer(),
                 Switch(
@@ -810,7 +810,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
 
             // Email
             const Text('📧 Email for OTP',
-              style: TextStyle(color: Colors.white54, fontSize: 12,
+              style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12,
                   fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             _field(_emailCtrl, 'your@email.com', TextInputType.emailAddress),
@@ -819,7 +819,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
 
             // Phone
             Text('📱 Phone for OTP (with country code)',
-              style: TextStyle(color: Colors.white54, fontSize: 12,
+              style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 12,
                   fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             _field(_phoneCtrl, '+2348012345678', TextInputType.phone),

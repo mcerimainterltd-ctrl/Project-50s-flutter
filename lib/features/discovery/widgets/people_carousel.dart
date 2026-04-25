@@ -111,10 +111,10 @@ class _PersonCardState extends State<_PersonCard>
         gradient: LinearGradient(
           begin: Alignment.topLeft, end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.08),
-            Colors.white.withOpacity(0.03),
+            context.xText.withOpacity(0.08),
+            context.xText.withOpacity(0.03),
           ]),
-        border: Border.all(color: Colors.white.withOpacity(0.08))),
+        border: Border.all(color: context.xText.withOpacity(0.08))),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -137,7 +137,7 @@ class _PersonCardState extends State<_PersonCard>
                   errorWidget: (_, __, ___) => Container(
                     color: context.xSurface,
                     child: const Icon(Icons.person,
-                        color: Colors.white24, size: 32)),
+                        color: context.xMuted.withValues(alpha: 0.5), size: 32)),
                 ),
               ),
             ),
@@ -147,7 +147,7 @@ class _PersonCardState extends State<_PersonCard>
           ]),
           const SizedBox(height: 10),
           Text(user.name,
-            style: const TextStyle(color: Colors.white,
+            style: const TextStyle(color: context.xText,
                 fontSize: 14, fontWeight: FontWeight.w700),
             maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 3),
@@ -156,7 +156,7 @@ class _PersonCardState extends State<_PersonCard>
               ? '${user.mutualCount} mutual${user.mutualCount > 1 ? "s" : ""}'
               : user.tagline ?? 'New to XamePage',
             style: TextStyle(
-                color: Colors.white38, fontSize: 11)),
+                color: context.xMuted, fontSize: 11)),
           const SizedBox(height: 12),
           ScaleTransition(
             scale: _scale,
@@ -189,7 +189,7 @@ class _PersonCardState extends State<_PersonCard>
                         context.xPrimary, context.xSecondary,
                       ])),
                     child: const Text('Add',
-                      style: TextStyle(color: Colors.white,
+                      style: TextStyle(color: context.xText,
                           fontSize: 12, fontWeight: FontWeight.w700)),
                   ),
                 ),

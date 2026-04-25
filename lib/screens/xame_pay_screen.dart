@@ -57,13 +57,13 @@ class _NetIcon extends StatelessWidget {
     final lum = (0.299 * ((bg.red) / 255) +
                  0.587 * ((bg.green) / 255) +
                  0.114 * ((bg.blue) / 255));
-    final fg = lum > 0.55 ? Colors.black : Colors.white;
+    final fg = lum > 0.55 ? Colors.black : context.xText;
     return Container(
       decoration: BoxDecoration(
         color: _kCard,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: selected ? _kTeal : Colors.white12, width: 2)),
+            color: selected ? _kTeal : context.xMuted.withValues(alpha: 0.25), width: 2)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Container(
           width: 36, height: 36,
@@ -77,7 +77,7 @@ class _NetIcon extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(net.label,
-            style: const TextStyle(color: Colors.white,
+            style: const TextStyle(color: context.xText,
                 fontSize: 10, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
@@ -466,14 +466,14 @@ class _XamePayScreenState extends State<XamePayScreen>
           backgroundColor: _kCard,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+            icon: const Icon(Icons.chevron_left, color: context.xText, size: 28),
             onPressed: _goBack,
           ),
           title: Row(mainAxisSize: MainAxisSize.min, children: [
             Text(_ri.flag, style: const TextStyle(fontSize: 18)),
             const SizedBox(width: 6),
             const Text('XamePay',
-                style: TextStyle(color: Colors.white,
+                style: TextStyle(color: context.xText,
                     fontSize: 17, fontWeight: FontWeight.w700)),
           ]),
           centerTitle: true,
@@ -2473,7 +2473,7 @@ class _HistoryTab extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16), itemCount: txs.length,
       separatorBuilder: (_, __) =>
-          const Divider(color: Colors.white10, height: 1),
+          const Divider(color: context.xText10, height: 1),
       itemBuilder: (_, i) {
         final tx = txs[i]; final cr = tx.type == 'credit';
         return Padding(
@@ -2488,7 +2488,7 @@ class _HistoryTab extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(tx.label, style: TextStyle(color: Colors.white,
+              Text(tx.label, style: TextStyle(color: context.xText,
                   fontSize: 14, fontWeight: FontWeight.w600)),
               Text('${tx.ts.substring(0, 10)} • ${tx.status}',
                   style: TextStyle(color: _kMuted, fontSize: 11)),

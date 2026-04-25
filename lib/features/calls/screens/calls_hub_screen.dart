@@ -25,7 +25,7 @@ class _CallsHubScreenState extends ConsumerState<CallsHubScreen> {
         decoration: BoxDecoration(
           color: context.xSurface,
           border: Border(top: BorderSide(
-              color: Colors.white.withValues(alpha: 0.06)))),
+              color: context.xText.withValues(alpha: 0.06)))),
         child: SafeArea(
           child: Row(children: [
             _NavItem(

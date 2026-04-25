@@ -134,7 +134,7 @@ class ScreenShareBanner extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.xSurface,
             border: const Border(
-                bottom: BorderSide(color: Colors.white10)),
+                bottom: BorderSide(color: context.xText10)),
           ),
           child: SafeArea(
             bottom: false,
@@ -158,7 +158,7 @@ class ScreenShareBanner extends StatelessWidget {
                   state == ScreenShareState.paused
                       ? 'Screen share paused'
                       : 'You are presenting',
-                  style: const TextStyle(color: Colors.white, fontSize: 13,
+                  style: const TextStyle(color: context.xText, fontSize: 13,
                       fontWeight: FontWeight.w500),
                 ),
               ),
@@ -170,13 +170,13 @@ class ScreenShareBanner extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: context.xText.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: context.xText10),
                   ),
                   child: Text(
                     state == ScreenShareState.paused ? 'Resume' : 'Pause',
-                    style: TextStyle(color: Colors.white70,
+                    style: TextStyle(color: context.xText.withValues(alpha: 0.7),
                         fontSize: 12, fontWeight: FontWeight.w600)),
                 ),
               ),

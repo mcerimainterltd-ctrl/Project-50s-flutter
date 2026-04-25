@@ -414,7 +414,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       fontWeight: FontWeight.w500)),
               const Spacer(),
               const Text('Release to send · Slide to cancel',
-                  style: TextStyle(color: Colors.white38, fontSize: 11)),
+                  style: TextStyle(color: context.xMuted, fontSize: 11)),
             ]),
           );
         }),
