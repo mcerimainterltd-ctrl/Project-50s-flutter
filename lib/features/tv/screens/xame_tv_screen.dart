@@ -1,7 +1,5 @@
 // lib/features/tv/screens/xame_tv_screen.dart
-// XameTV — Ultramodern multi-channel live TV for XamePage 2.1
-// Features: channel guide, HLS streaming, vertical swipe, overlay info,
-//           channel list sheet, error recovery, volume/fullscreen controls
+// XameTV 2.1 — 11,000+ live channels, dynamic fetch, search, swipe
 
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -9,14 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import '../data/tv_channels.dart';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-final List<TvChannel> kTvChannels = [];
-
-List<TvChannel> channelsForCategory(String category) {
-  if (category == 'All') return kTvChannels;
-  return kTvChannels.where((c) => c.category == category).toList();
-}
 
 class XameTvScreen extends StatefulWidget {
   const XameTvScreen({Key? key}) : super(key: key);
@@ -27,57 +17,49 @@ class XameTvScreen extends StatefulWidget {
 class _XameTvScreenState extends State<XameTvScreen>
     with TickerProviderStateMixin {
 
-  // ── State ──────────────────────────────────────────────────────────────
-  String        _category        = kTvCategories.first;
-  int           _channelIndex    = 0;
-  bool          _showOverlay     = true;
-  bool          _showChannelList = false;
-  bool          _isMuted         = false;
-  bool          _isFullscreen    = false;
-  Timer?        _overlayTimer;
+  List<TvChannel> _all=[], _filtered=[];
+  bool    _loading=true;
+  String? _loadError;
+  String  _category='All';
+  int     _index=0;
+  bool    _showOverlay=true, _showList=false, _showSearch=false;
+  bool    _isMuted=false, _isFullscreen=false;
+  String  _searchQuery='';
+  Timer?  _overlayTimer;
+  final   _searchCtrl=TextEditingController();
+  final   _listCtrl=ScrollController();
 
-  // ── Player ─────────────────────────────────────────────────────────────
   VideoPlayerController? _ctrl;
-  bool _playerReady   = false;
-  bool _playerError   = false;
-  bool _playerLoading = true;
-  int  _retryCount    = 0;
+  bool _ready=false, _error=false, _buffering=true;
+  int  _retries=0;
 
-  // ── Animations ─────────────────────────────────────────────────────────
-  late AnimationController _overlayAnim;
-  late AnimationController _channelSwitchAnim;
-  late Animation<double>   _overlayFade;
-  late Animation<Offset>   _channelSlide;
+  late AnimationController _oAnim, _sAnim;
+  late Animation<double>   _oFade;
+  late Animation<Offset>   _sSlide;
 
-  List<TvChannel> get _channels => channelsForCategory(_category);
-  TvChannel get _current =>
-      _channels.isNotEmpty ? _channels[_channelIndex % _channels.length]
-                           : kTvChannels.first;
+  TvChannel? get _cur =>
+      _filtered.isNotEmpty && _index < _filtered.length
+          ? _filtered[_index] : null;
 
   @override
   void initState() {
     super.initState();
-    _overlayAnim = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 300));
-    _channelSwitchAnim = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 250));
-    _overlayFade = CurvedAnimation(
-        parent: _overlayAnim, curve: Curves.easeInOut);
-    _channelSlide = Tween<Offset>(
-        begin: const Offset(0, 0.05), end: Offset.zero)
-        .animate(CurvedAnimation(
-            parent: _channelSwitchAnim, curve: Curves.easeOut));
-    _overlayAnim.forward();
-    _initPlayer(_current.streamUrl);
-    _startOverlayTimer();
+    _oAnim = AnimationController(vsync:this, duration:const Duration(milliseconds:300));
+    _oFade = CurvedAnimation(parent:_oAnim, curve:Curves.easeInOut);
+    _sAnim = AnimationController(vsync:this, duration:const Duration(milliseconds:200));
+    _sSlide = Tween<Offset>(begin:const Offset(0,0.04), end:Offset.zero)
+        .animate(CurvedAnimation(parent:_sAnim, curve:Curves.easeOut));
+    _oAnim.forward();
+    _fetch();
+    _startTimer();
   }
 
   @override
   void dispose() {
     _overlayTimer?.cancel();
-    _overlayAnim.dispose();
-    _channelSwitchAnim.dispose();
+    _oAnim.dispose(); _sAnim.dispose();
     _ctrl?.dispose();
+    _searchCtrl.dispose(); _listCtrl.dispose();
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -85,659 +67,554 @@ class _XameTvScreenState extends State<XameTvScreen>
     super.dispose();
   }
 
-  // ── Player lifecycle ───────────────────────────────────────────────────
+  // ── Data ─────────────────────────────────────────────────────────────
+  Future<void> _fetch({bool force=false}) async {
+    setState(() { _loading=true; _loadError=null; });
+    try {
+      final ch = await TvChannelService.fetchChannels(force:force);
+      if (!mounted) return;
+      setState(() { _all=ch; _loading=false; });
+      _applyFilter();
+      if (_filtered.isNotEmpty) _initPlayer(_filtered.first.streamUrl);
+    } catch(e) {
+      if (!mounted) return;
+      setState(() { _loading=false; _loadError=e.toString(); });
+    }
+  }
+
+  void _applyFilter() {
+    var list = TvChannelService.filterByCategory(_all, _category);
+    if (_searchQuery.isNotEmpty) list = TvChannelService.search(list, _searchQuery);
+    setState(() { _filtered=list; _index=0; });
+  }
+
+  // ── Player ────────────────────────────────────────────────────────────
   Future<void> _initPlayer(String url) async {
     await _ctrl?.dispose();
     if (!mounted) return;
-    setState(() {
-      _playerReady   = false;
-      _playerError   = false;
-      _playerLoading = true;
-    });
-
-    if (url.isEmpty) {
-      setState(() { _playerError = true; _playerLoading = false; });
-      return;
-    }
-
-    final ctrl = VideoPlayerController.networkUrl(Uri.parse(url));
-    _ctrl = ctrl;
-
+    setState(() { _ready=false; _error=false; _buffering=true; });
+    if (url.isEmpty) { setState(() { _error=true; _buffering=false; }); return; }
+    final c = VideoPlayerController.networkUrl(Uri.parse(url));
+    _ctrl = c;
     try {
-      await ctrl.initialize();
-      if (!mounted || _ctrl != ctrl) return;
-      ctrl.setLooping(true);
-      ctrl.setVolume(_isMuted ? 0 : 1);
-      ctrl.play();
-      _channelSwitchAnim.forward(from: 0);
-      setState(() {
-        _playerReady   = true;
-        _playerLoading = false;
-        _retryCount    = 0;
-      });
-    } catch (e) {
-      if (!mounted || _ctrl != ctrl) return;
-      setState(() { _playerError = true; _playerLoading = false; });
+      await c.initialize();
+      if (!mounted || _ctrl!=c) return;
+      c.setLooping(true);
+      c.setVolume(_isMuted ? 0 : 1);
+      c.play();
+      _sAnim.forward(from:0);
+      setState(() { _ready=true; _buffering=false; _retries=0; });
+    } catch(_) {
+      if (!mounted || _ctrl!=c) return;
+      setState(() { _error=true; _buffering=false; });
     }
   }
 
-  void _retryPlayer() {
-    if (_retryCount >= 3) return;
-    _retryCount++;
-    _initPlayer(_current.streamUrl);
-  }
-
-  void _switchChannel(TvChannel ch) {
-    final idx = _channels.indexOf(ch);
-    if (idx == _channelIndex) return;
-    setState(() { _channelIndex = idx; });
-    _initPlayer(ch.streamUrl);
-    _showOverlayBriefly();
-  }
-
-  void _changeCategory(String cat) {
-    if (cat == _category) return;
-    setState(() {
-      _category     = cat;
-      _channelIndex = 0;
+  void _switchTo(int i) {
+    if (i==_index || i>=_filtered.length) return;
+    setState(() => _index=i);
+    _initPlayer(_filtered[i].streamUrl);
+    _showBriefly();
+    Future.delayed(const Duration(milliseconds:100), () {
+      if (_listCtrl.hasClients)
+        _listCtrl.animateTo((i*68.0).clamp(0,_listCtrl.position.maxScrollExtent),
+            duration:const Duration(milliseconds:300), curve:Curves.easeOut);
     });
-    _initPlayer(_channels.isNotEmpty ? _channels.first.streamUrl : '');
-    _showOverlayBriefly();
   }
 
-  void _nextChannel() {
-    if (_channels.isEmpty) return;
-    setState(() { _channelIndex = (_channelIndex + 1) % _channels.length; });
-    _initPlayer(_current.streamUrl);
-    _showOverlayBriefly();
-  }
+  void _next() { if (_filtered.isEmpty) return; _switchTo((_index+1)%_filtered.length); }
+  void _prev() { if (_filtered.isEmpty) return; _switchTo((_index-1+_filtered.length)%_filtered.length); }
+  void _retry() { if (_retries>=3){_next();return;} _retries++; if(_cur!=null) _initPlayer(_cur!.streamUrl); }
 
-  void _prevChannel() {
-    if (_channels.isEmpty) return;
-    setState(() {
-      _channelIndex = (_channelIndex - 1 + _channels.length) % _channels.length;
-    });
-    _initPlayer(_current.streamUrl);
-    _showOverlayBriefly();
-  }
-
-  // ── Overlay management ─────────────────────────────────────────────────
-  void _startOverlayTimer() {
+  // ── Overlay ───────────────────────────────────────────────────────────
+  void _startTimer() {
     _overlayTimer?.cancel();
-    _overlayTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        _overlayAnim.reverse();
-        setState(() => _showOverlay = false);
+    _overlayTimer = Timer(const Duration(seconds:5), () {
+      if (mounted && !_showList && !_showSearch) {
+        _oAnim.reverse(); setState(() => _showOverlay=false);
       }
     });
   }
 
-  void _showOverlayBriefly() {
-    setState(() => _showOverlay = true);
-    _overlayAnim.forward();
-    _startOverlayTimer();
-  }
+  void _showBriefly() { setState(() => _showOverlay=true); _oAnim.forward(); _startTimer(); }
 
   void _toggleOverlay() {
-    if (_showOverlay) {
-      _overlayTimer?.cancel();
-      _overlayAnim.reverse();
-      setState(() => _showOverlay = false);
-    } else {
-      _showOverlayBriefly();
-    }
+    if (_showList || _showSearch) return;
+    if (_showOverlay) { _overlayTimer?.cancel(); _oAnim.reverse(); setState(() => _showOverlay=false); }
+    else _showBriefly();
   }
 
-  // ── Fullscreen ─────────────────────────────────────────────────────────
   void _toggleFullscreen() {
-    setState(() => _isFullscreen = !_isFullscreen);
+    setState(() => _isFullscreen=!_isFullscreen);
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+      SystemChrome.setPreferredOrientations(
+          [DeviceOrientation.landscapeLeft,DeviceOrientation.landscapeRight]);
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
   }
 
-  // ── Volume ─────────────────────────────────────────────────────────────
-  void _toggleMute() {
-    setState(() => _isMuted = !_isMuted);
-    _ctrl?.setVolume(_isMuted ? 0 : 1);
-  }
-
-  // ── Build ──────────────────────────────────────────────────────────────
+  // ── Build ─────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    if (_loading && _all.isEmpty) return _splashScreen();
+    if (_loadError!=null && _all.isEmpty) return _errorScreen();
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
-        onTap: _toggleOverlay,
+        onTap: () {
+          if (_showSearch) { setState(() { _showSearch=false; _searchQuery=''; }); _applyFilter(); }
+          else if (_showList) setState(() => _showList=false);
+          else _toggleOverlay();
+        },
         onVerticalDragEnd: (d) {
-          if (d.primaryVelocity == null) return;
-          if (d.primaryVelocity! < -300) _nextChannel();
-          if (d.primaryVelocity! >  300) _prevChannel();
+          if (_showList || _showSearch) return;
+          if ((d.primaryVelocity??0) < -400) _next();
+          if ((d.primaryVelocity??0) >  400) _prev();
         },
         onHorizontalDragEnd: (d) {
-          if (d.primaryVelocity == null) return;
-          // Horizontal swipe opens channel list
-          if (d.primaryVelocity! > 300) {
-            setState(() => _showChannelList = true);
-            _showOverlayBriefly();
-          }
+          if ((d.primaryVelocity??0) > 400) { setState(() => _showList=true); _showBriefly(); }
         },
-        onLongPress: () {
-          setState(() => _showChannelList = true);
-          _showOverlayBriefly();
-        },
-        child: Stack(fit: StackFit.expand, children: [
-
-          // ── Video layer ──────────────────────────────────────────────
-          _buildVideoLayer(),
-
-          // ── Loading / Error state ────────────────────────────────────
-          if (_playerLoading) _buildLoadingState(),
-          if (_playerError && !_playerLoading) _buildErrorState(),
-
-          // ── Gradient overlay ─────────────────────────────────────────
-          _buildGradient(),
-
-          // ── Top bar (category selector + channel info) ───────────────
-          FadeTransition(
-            opacity: _overlayFade,
-            child: Column(children: [
-              _buildTopBar(),
-              _buildCategoryStrip(),
-            ]),
-          ),
-
-          // ── Bottom bar (channel info + controls) ─────────────────────
-          FadeTransition(
-            opacity: _overlayFade,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: _buildBottomBar(),
-            ),
-          ),
-
-          // ── Channel swipe hint ───────────────────────────────────────
-          if (_showOverlay) _buildSwipeHint(),
-
-          // ── Channel list panel ───────────────────────────────────────
-          if (_showChannelList) _buildChannelListPanel(),
+        onLongPress: () { setState(() => _showList=true); _showBriefly(); },
+        child: Stack(fit:StackFit.expand, children: [
+          _videoLayer(),
+          if (_buffering && !_error) _bufferingOverlay(),
+          if (_error)                _errorOverlay(),
+          _gradientLayer(),
+          FadeTransition(opacity:_oFade, child:Column(children:[
+            _topBar(), _catStrip(), const Spacer(), _bottomBar(),
+          ])),
+          if (_showOverlay && !_showList) _swipeHint(),
+          if (_showList)   _listPanel(),
+          if (_showSearch) _searchPanel(),
         ]),
       ),
     );
   }
 
-  // ── Video layer ─────────────────────────────────────────────────────────
-  Widget _buildVideoLayer() {
-    if (!_playerReady || _ctrl == null) {
-      // Poster image while loading
-      return CachedNetworkImage(
-        imageUrl: _current.logo,
-        fit: BoxFit.contain,
-        color: Colors.black54,
-        colorBlendMode: BlendMode.darken,
-        errorWidget: (_, __, ___) => Container(color: Colors.black),
-      );
+  // ── Screens ───────────────────────────────────────────────────────────
+  Widget _splashScreen() => Scaffold(backgroundColor:Colors.black,
+    body:Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
+      const Icon(Icons.live_tv_rounded, color:Colors.white24, size:64),
+      const SizedBox(height:20),
+      const CircularProgressIndicator(color:Colors.white54, strokeWidth:1.5),
+      const SizedBox(height:14),
+      const Text('Loading XameTV', style:TextStyle(color:Colors.white54,fontSize:14,fontWeight:FontWeight.w600)),
+      const SizedBox(height:6),
+      const Text('Fetching 11,000+ live channels', style:TextStyle(color:Colors.white24,fontSize:11)),
+    ])),
+  );
+
+  Widget _errorScreen() => Scaffold(backgroundColor:Colors.black,
+    body:Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
+      const Icon(Icons.wifi_off_rounded, color:Colors.white24, size:56),
+      const SizedBox(height:14),
+      const Text('No connection', style:TextStyle(color:Colors.white60,fontSize:16,fontWeight:FontWeight.w600)),
+      const SizedBox(height:6),
+      const Text('Check your internet and retry', style:TextStyle(color:Colors.white38,fontSize:12)),
+      const SizedBox(height:22),
+      _pill('Retry', ()=>_fetch(force:true), Colors.white12),
+    ])),
+  );
+
+  // ── Video layer ───────────────────────────────────────────────────────
+  Widget _videoLayer() {
+    if (!_ready || _ctrl==null) {
+      return _cur?.logo.isNotEmpty==true
+          ? CachedNetworkImage(imageUrl:_cur!.logo, fit:BoxFit.contain,
+              color:Colors.black54, colorBlendMode:BlendMode.darken,
+              errorWidget:(_,__,___)=>const ColoredBox(color:Color(0xFF050505)))
+          : const ColoredBox(color:Color(0xFF050505));
     }
-    return SlideTransition(
-      position: _channelSlide,
-      child: Center(
-        child: AspectRatio(
-          aspectRatio: _ctrl!.value.aspectRatio > 0
-              ? _ctrl!.value.aspectRatio : 16 / 9,
-          child: VideoPlayer(_ctrl!),
-        ),
-      ),
+    return SlideTransition(position:_sSlide,
+      child:Center(child:AspectRatio(
+        aspectRatio: _ctrl!.value.aspectRatio>0 ? _ctrl!.value.aspectRatio : 16/9,
+        child:VideoPlayer(_ctrl!),
+      )),
     );
   }
 
-  // ── Loading state ────────────────────────────────────────────────────────
-  Widget _buildLoadingState() => Center(
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      SizedBox(
-        width: 48, height: 48,
-        child: CircularProgressIndicator(
-          color: kCategoryColors[_category] ?? Colors.white,
-          strokeWidth: 2,
-        ),
-      ),
-      const SizedBox(height: 12),
-      Text('Loading ${_current.name}...',
-          style: const TextStyle(color: Colors.white60, fontSize: 13)),
-    ]),
-  );
+  Widget _bufferingOverlay() => Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
+    SizedBox(width:40,height:40,
+      child:CircularProgressIndicator(
+          color:kCategoryColors[_category]??Colors.white54, strokeWidth:2)),
+    const SizedBox(height:10),
+    if (_cur!=null) Text('Loading ${_cur!.name}...',
+        style:const TextStyle(color:Colors.white54,fontSize:11)),
+  ]));
 
-  // ── Error state ──────────────────────────────────────────────────────────
-  Widget _buildErrorState() => Center(
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.signal_wifi_connected_no_internet_4_rounded,
-          color: Colors.white30, size: 56),
-      const SizedBox(height: 12),
-      Text('Stream unavailable', style: const TextStyle(
-          color: Colors.white60, fontSize: 15, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 6),
-      Text(_current.name, style: const TextStyle(
-          color: Colors.white38, fontSize: 12)),
-      const SizedBox(height: 20),
-      if (_retryCount < 3)
-        GestureDetector(
-          onTap: _retryPlayer,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white12,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white24),
-            ),
-            child: const Text('Retry', style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
-          ),
-        ),
-      if (_retryCount >= 3) ...[
-        const Text('Try another channel', style: TextStyle(
-            color: Colors.white38, fontSize: 12)),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: _nextChannel,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: (kCategoryColors[_category] ?? Colors.blue).withOpacity(0.3),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text('Next Channel', style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
-          ),
-        ),
-      ],
+  Widget _errorOverlay() => Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
+    const Icon(Icons.signal_cellular_connected_no_internet_4_bar_rounded,
+        color:Colors.white24, size:44),
+    const SizedBox(height:8),
+    const Text('Stream unavailable',
+        style:TextStyle(color:Colors.white54,fontSize:13,fontWeight:FontWeight.w600)),
+    if (_cur!=null) Text(_cur!.name, style:const TextStyle(color:Colors.white30,fontSize:10)),
+    const SizedBox(height:14),
+    Row(mainAxisSize:MainAxisSize.min, children:[
+      _pill(_retries>=3?'Next':'Retry', _retry, Colors.white10),
+      const SizedBox(width:8),
+      _pill('Skip', _next, (kCategoryColors[_category]??Colors.blue).withOpacity(0.3)),
     ]),
-  );
+  ]));
 
-  // ── Gradient ─────────────────────────────────────────────────────────────
-  Widget _buildGradient() => Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        stops: [0.0, 0.25, 0.65, 1.0],
-        colors: [
-          Color(0xCC000000),
-          Colors.transparent,
-          Colors.transparent,
-          Color(0xDD000000),
-        ],
-      ),
+  Widget _gradientLayer() => Container(decoration:const BoxDecoration(
+    gradient:LinearGradient(
+      begin:Alignment.topCenter, end:Alignment.bottomCenter,
+      stops:[0.0,0.3,0.7,1.0],
+      colors:[Color(0xCC000000),Colors.transparent,Colors.transparent,Color(0xDD000000)],
     ),
+  ));
+
+  // ── Top bar ───────────────────────────────────────────────────────────
+  Widget _topBar() => SafeArea(child:Padding(
+    padding:const EdgeInsets.fromLTRB(12,8,12,0),
+    child:Row(children:[
+      _ib(Icons.arrow_back_ios_new_rounded, ()=>Navigator.pop(context)),
+      const SizedBox(width:7),
+      Container(
+        padding:const EdgeInsets.symmetric(horizontal:9,vertical:4),
+        decoration:BoxDecoration(
+          gradient:LinearGradient(colors:[
+            kCategoryColors[_category]??Colors.blue,
+            (kCategoryColors[_category]??Colors.blue).withOpacity(0.6),
+          ]),
+          borderRadius:BorderRadius.circular(7),
+        ),
+        child:const Row(mainAxisSize:MainAxisSize.min, children:[
+          Icon(Icons.live_tv_rounded, color:Colors.white, size:12),
+          SizedBox(width:4),
+          Text('XAME TV', style:TextStyle(color:Colors.white,fontSize:9,
+              fontWeight:FontWeight.w900,letterSpacing:1)),
+        ]),
+      ),
+      const SizedBox(width:5),
+      Container(
+        padding:const EdgeInsets.symmetric(horizontal:4,vertical:2),
+        decoration:BoxDecoration(color:Colors.red,borderRadius:BorderRadius.circular(3)),
+        child:const Text('LIVE',style:TextStyle(color:Colors.white,fontSize:7,
+            fontWeight:FontWeight.w900,letterSpacing:1)),
+      ),
+      if (_all.isNotEmpty) ...[
+        const SizedBox(width:5),
+        Text('${_all.length}+ ch',style:const TextStyle(color:Colors.white30,fontSize:9)),
+      ],
+      const Spacer(),
+      _ib(Icons.search_rounded, (){setState((){_showSearch=true;_showList=false;});_showBriefly();}),
+      const SizedBox(width:5),
+      _ib(_isMuted?Icons.volume_off_rounded:Icons.volume_up_rounded, (){
+        setState(()=>_isMuted=!_isMuted); _ctrl?.setVolume(_isMuted?0:1); _showBriefly();
+      }),
+      const SizedBox(width:5),
+      _ib(_isFullscreen?Icons.fullscreen_exit_rounded:Icons.fullscreen_rounded,
+          (){_toggleFullscreen();_showBriefly();}),
+      const SizedBox(width:5),
+      _ib(Icons.refresh_rounded, (){TvChannelService.clearCache();_fetch(force:true);}),
+    ]),
+  ));
+
+  Widget _ib(IconData icon, VoidCallback onTap) => GestureDetector(onTap:onTap,
+    child:Container(width:32,height:32,
+      decoration:BoxDecoration(color:Colors.black45,shape:BoxShape.circle,
+          border:Border.all(color:Colors.white12)),
+      child:Icon(icon,color:Colors.white,size:15)),
   );
 
-  // ── Top bar ───────────────────────────────────────────────────────────────
-  Widget _buildTopBar() => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Row(children: [
-        // Back button
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-              color: Colors.black45,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white24),
+  // ── Category strip ────────────────────────────────────────────────────
+  Widget _catStrip() => Padding(
+    padding:const EdgeInsets.only(top:10),
+    child:SizedBox(height:32, child:ListView.builder(
+      scrollDirection:Axis.horizontal,
+      padding:const EdgeInsets.symmetric(horizontal:12),
+      itemCount:kTvCategories.length,
+      itemBuilder:(_,i) {
+        final cat   = kTvCategories[i];
+        final active= cat==_category;
+        final color = kCategoryColors[cat]??Colors.blue;
+        final count = TvChannelService.filterByCategory(_all,cat).length;
+        return GestureDetector(
+          onTap:(){
+            setState((){_category=cat;_index=0;}); _applyFilter();
+            if(_filtered.isNotEmpty) _initPlayer(_filtered.first.streamUrl);
+            _showBriefly();
+          },
+          child:AnimatedContainer(
+            duration:const Duration(milliseconds:180),
+            margin:const EdgeInsets.only(right:6),
+            padding:const EdgeInsets.symmetric(horizontal:12,vertical:5),
+            decoration:BoxDecoration(
+              color:active?color:Colors.black45,
+              borderRadius:BorderRadius.circular(16),
+              border:Border.all(color:active?color:Colors.white18),
             ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white, size: 16),
-          ),
-        ),
-        const SizedBox(width: 12),
-
-        // XameTV logo
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [
-                kCategoryColors[_category] ?? Colors.blue,
-                (kCategoryColors[_category] ?? Colors.blue).withOpacity(0.6),
-              ]),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.live_tv_rounded, color: Colors.white, size: 14),
-              SizedBox(width: 4),
-              Text('XAME TV', style: TextStyle(
-                  color: Colors.white, fontSize: 11,
-                  fontWeight: FontWeight.w900, letterSpacing: 1)),
+            child:Row(mainAxisSize:MainAxisSize.min, children:[
+              Text(cat,style:TextStyle(color:Colors.white,fontSize:11,
+                  fontWeight:active?FontWeight.w700:FontWeight.w400)),
+              if(active && count>0)...[
+                const SizedBox(width:4),
+                Text('$count',style:const TextStyle(color:Colors.white60,fontSize:9)),
+              ],
             ]),
           ),
-          const SizedBox(width: 8),
-          // LIVE badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text('LIVE', style: TextStyle(
-                color: Colors.white, fontSize: 9,
-                fontWeight: FontWeight.w800, letterSpacing: 1)),
-          ),
+        );
+      },
+    )),
+  );
+
+  // ── Bottom bar ────────────────────────────────────────────────────────
+  Widget _bottomBar() => SafeArea(top:false, child:Padding(
+    padding:const EdgeInsets.fromLTRB(14,0,14,20),
+    child:Row(crossAxisAlignment:CrossAxisAlignment.end, children:[
+      Container(width:48,height:48,
+        decoration:BoxDecoration(color:Colors.black54,borderRadius:BorderRadius.circular(10),
+            border:Border.all(color:Colors.white12)),
+        child:ClipRRect(borderRadius:BorderRadius.circular(9),
+          child:_cur?.logo.isNotEmpty==true
+              ? CachedNetworkImage(imageUrl:_cur!.logo,fit:BoxFit.contain,
+                  errorWidget:(_,__,___)=>_logoFb())
+              : _logoFb(),
+        ),
+      ),
+      const SizedBox(width:10),
+      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,
+          mainAxisSize:MainAxisSize.min, children:[
+        Text(_cur?.name??'—',style:const TextStyle(color:Colors.white,fontSize:15,
+            fontWeight:FontWeight.w700),maxLines:1,overflow:TextOverflow.ellipsis),
+        const SizedBox(height:2),
+        Row(children:[
+          if(_cur?.country.isNotEmpty==true)
+            Text(_cur!.country,style:const TextStyle(color:Colors.white38,fontSize:10)),
+          if(_cur?.country.isNotEmpty==true && _cur?.language.isNotEmpty==true)
+            const Text(' · ',style:TextStyle(color:Colors.white24,fontSize:10)),
+          if(_cur?.language.isNotEmpty==true)
+            Flexible(child:Text(_cur!.language,style:const TextStyle(color:Colors.white38,fontSize:10),
+                maxLines:1,overflow:TextOverflow.ellipsis)),
         ]),
-
-        const Spacer(),
-
-        // Mute button
-        GestureDetector(
-          onTap: () { _toggleMute(); _showOverlayBriefly(); },
-          child: Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-                color: Colors.black45, shape: BoxShape.circle,
-                border: Border.all(color: Colors.white24)),
-            child: Icon(
-              _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-              color: Colors.white, size: 18),
-          ),
+        const SizedBox(height:2),
+        Text(_cur?.category??'',style:TextStyle(
+            color:(kCategoryColors[_cur?.category]??Colors.blue).withOpacity(0.8),
+            fontSize:10,fontWeight:FontWeight.w500)),
+      ])),
+      GestureDetector(
+        onTap:(){setState(()=>_showList=true);_showBriefly();},
+        child:Container(
+          padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),
+          decoration:BoxDecoration(color:Colors.white12,borderRadius:BorderRadius.circular(18),
+              border:Border.all(color:Colors.white18)),
+          child:Row(mainAxisSize:MainAxisSize.min, children:[
+            const Icon(Icons.list_rounded,color:Colors.white,size:14),
+            const SizedBox(width:4),
+            Text('${_index+1}/${_filtered.length}',
+                style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.w600)),
+          ]),
         ),
-        const SizedBox(width: 8),
+      ),
+    ]),
+  ));
 
-        // Fullscreen button
-        GestureDetector(
-          onTap: () { _toggleFullscreen(); _showOverlayBriefly(); },
-          child: Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-                color: Colors.black45, shape: BoxShape.circle,
-                border: Border.all(color: Colors.white24)),
-            child: Icon(
-              _isFullscreen ? Icons.fullscreen_exit_rounded
-                            : Icons.fullscreen_rounded,
-              color: Colors.white, size: 20),
-          ),
-        ),
+  Widget _logoFb() => Center(child:Text(
+    _cur?.name.isNotEmpty==true?_cur!.name[0].toUpperCase():'TV',
+    style:const TextStyle(color:Colors.white54,fontSize:18,fontWeight:FontWeight.w800)));
+
+  Widget _swipeHint() => Align(alignment:Alignment.centerRight,
+    child:Padding(padding:const EdgeInsets.only(right:10),
+      child:Column(mainAxisSize:MainAxisSize.min, children:const[
+        Icon(Icons.keyboard_arrow_up_rounded,color:Colors.white30,size:16),
+        SizedBox(height:2),
+        Text('Swipe',style:TextStyle(color:Colors.white24,fontSize:8)),
+        SizedBox(height:2),
+        Icon(Icons.keyboard_arrow_down_rounded,color:Colors.white30,size:16),
       ]),
     ),
   );
 
-  // ── Category strip ────────────────────────────────────────────────────────
-  Widget _buildCategoryStrip() => Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: SizedBox(
-      height: 36,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: kTvCategories.length,
-        itemBuilder: (_, i) {
-          final cat   = kTvCategories[i];
-          final isActive = cat == _category;
-          final color = kCategoryColors[cat] ?? Colors.blue;
-          return GestureDetector(
-            onTap: () => _changeCategory(cat),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: isActive ? color : Colors.black45,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                    color: isActive ? color : Colors.white24,
-                    width: isActive ? 0 : 1),
+  // ── Channel list panel ────────────────────────────────────────────────
+  Widget _listPanel() => GestureDetector(
+    onTap:()=>setState(()=>_showList=false),
+    child:Container(color:Colors.black54,
+      child:Align(alignment:Alignment.centerRight,
+        child:GestureDetector(onTap:(){},
+          child:Container(
+            width:MediaQuery.of(context).size.width*0.78,
+            color:const Color(0xFF0A0A0F),
+            child:Column(children:[
+              SafeArea(bottom:false,child:Padding(
+                padding:const EdgeInsets.fromLTRB(14,14,14,8),
+                child:Row(children:[
+                  Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+                    Text(_category,style:TextStyle(
+                        color:kCategoryColors[_category]??Colors.blue,
+                        fontSize:16,fontWeight:FontWeight.w800)),
+                    Text('${_filtered.length} channels',
+                        style:const TextStyle(color:Colors.white38,fontSize:10)),
+                  ])),
+                  GestureDetector(onTap:()=>setState(()=>_showList=false),
+                      child:const Icon(Icons.close_rounded,color:Colors.white38,size:18)),
+                ]),
+              )),
+              const Divider(color:Colors.white10,height:1),
+              Expanded(child:ListView.builder(
+                controller:_listCtrl,
+                padding:const EdgeInsets.symmetric(vertical:6),
+                itemCount:_filtered.length,
+                itemBuilder:(_,i) {
+                  final ch    = _filtered[i];
+                  final active= i==_index;
+                  final color = kCategoryColors[_category]??Colors.blue;
+                  return GestureDetector(
+                    onTap:(){setState(()=>_showList=false);_switchTo(i);},
+                    child:AnimatedContainer(
+                      duration:const Duration(milliseconds:150),
+                      margin:const EdgeInsets.symmetric(horizontal:8,vertical:2),
+                      padding:const EdgeInsets.all(10),
+                      decoration:BoxDecoration(
+                        color:active?color.withOpacity(0.18):Colors.transparent,
+                        borderRadius:BorderRadius.circular(10),
+                        border:Border.all(color:active?color.withOpacity(0.4):Colors.transparent),
+                      ),
+                      child:Row(children:[
+                        Container(width:38,height:38,
+                          decoration:BoxDecoration(color:Colors.white10,
+                              borderRadius:BorderRadius.circular(7)),
+                          child:ClipRRect(borderRadius:BorderRadius.circular(7),
+                            child:ch.logo.isNotEmpty
+                                ?CachedNetworkImage(imageUrl:ch.logo,fit:BoxFit.contain,
+                                    errorWidget:(_,__,___)=>Center(child:Text(
+                                        ch.name.isNotEmpty?ch.name[0]:'T',
+                                        style:const TextStyle(color:Colors.white54,
+                                            fontWeight:FontWeight.w700))))
+                                :Center(child:Text(ch.name.isNotEmpty?ch.name[0]:'T',
+                                    style:const TextStyle(color:Colors.white54,
+                                        fontWeight:FontWeight.w700))),
+                          ),
+                        ),
+                        const SizedBox(width:9),
+                        Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,
+                            mainAxisSize:MainAxisSize.min, children:[
+                          Text(ch.name,style:TextStyle(color:active?Colors.white:Colors.white70,
+                              fontSize:12,fontWeight:active?FontWeight.w700:FontWeight.w400),
+                              maxLines:1,overflow:TextOverflow.ellipsis),
+                          Text([if(ch.country.isNotEmpty)ch.country,
+                                if(ch.language.isNotEmpty)ch.language].join(' · '),
+                              style:const TextStyle(color:Colors.white30,fontSize:9),
+                              maxLines:1,overflow:TextOverflow.ellipsis),
+                        ])),
+                        if(active) Container(width:6,height:6,
+                            decoration:BoxDecoration(color:color,shape:BoxShape.circle)),
+                      ]),
+                    ),
+                  );
+                },
+              )),
+            ]),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // ── Search panel ──────────────────────────────────────────────────────
+  Widget _searchPanel() => Container(
+    color:Colors.black87,
+    child:SafeArea(child:Column(children:[
+      Padding(
+        padding:const EdgeInsets.fromLTRB(12,12,12,0),
+        child:Row(children:[
+          Expanded(child:Container(
+            height:42,
+            decoration:BoxDecoration(color:Colors.white12,
+                borderRadius:BorderRadius.circular(22),
+                border:Border.all(color:Colors.white18)),
+            child:TextField(
+              controller:_searchCtrl, autofocus:true,
+              style:const TextStyle(color:Colors.white,fontSize:14),
+              decoration:const InputDecoration(
+                hintText:'Search channels, country, language...',
+                hintStyle:TextStyle(color:Colors.white30,fontSize:12),
+                prefixIcon:Icon(Icons.search_rounded,color:Colors.white38,size:18),
+                border:InputBorder.none,
+                contentPadding:EdgeInsets.symmetric(vertical:12),
               ),
-              child: Text(cat, style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400)),
+              onChanged:(q){setState(()=>_searchQuery=q);_applyFilter();},
+            ),
+          )),
+          const SizedBox(width:8),
+          GestureDetector(
+            onTap:(){setState((){_showSearch=false;_searchQuery='';_searchCtrl.clear();});
+                _applyFilter();},
+            child:const Text('Cancel',style:TextStyle(color:Colors.white60,fontSize:13)),
+          ),
+        ]),
+      ),
+      Padding(
+        padding:const EdgeInsets.fromLTRB(12,8,12,4),
+        child:Row(children:[
+          Text('${_filtered.length} results',
+              style:const TextStyle(color:Colors.white38,fontSize:11)),
+        ]),
+      ),
+      const Divider(color:Colors.white10,height:1),
+      Expanded(child:ListView.builder(
+        padding:const EdgeInsets.symmetric(vertical:6),
+        itemCount:_filtered.length.clamp(0,200),
+        itemBuilder:(_,i){
+          final ch=_filtered[i];
+          return GestureDetector(
+            onTap:(){
+              setState((){_showSearch=false;_searchQuery='';_searchCtrl.clear();});
+              _switchTo(i);
+            },
+            child:Padding(
+              padding:const EdgeInsets.symmetric(horizontal:12,vertical:6),
+              child:Row(children:[
+                Container(width:36,height:36,
+                  decoration:BoxDecoration(color:Colors.white10,
+                      borderRadius:BorderRadius.circular(6)),
+                  child:ch.logo.isNotEmpty
+                      ?ClipRRect(borderRadius:BorderRadius.circular(6),
+                          child:CachedNetworkImage(imageUrl:ch.logo,fit:BoxFit.contain,
+                              errorWidget:(_,__,___)=>Center(child:Text(
+                                  ch.name.isNotEmpty?ch.name[0]:'T',
+                                  style:const TextStyle(color:Colors.white54)))))
+                      :Center(child:Text(ch.name.isNotEmpty?ch.name[0]:'T',
+                          style:const TextStyle(color:Colors.white54))),
+                ),
+                const SizedBox(width:10),
+                Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+                  Text(ch.name,style:const TextStyle(color:Colors.white,fontSize:13),
+                      maxLines:1,overflow:TextOverflow.ellipsis),
+                  Text([ch.category,if(ch.country.isNotEmpty)ch.country,
+                        if(ch.language.isNotEmpty)ch.language].join(' · '),
+                      style:const TextStyle(color:Colors.white38,fontSize:10),
+                      maxLines:1,overflow:TextOverflow.ellipsis),
+                ])),
+                Container(
+                  padding:const EdgeInsets.symmetric(horizontal:6,vertical:2),
+                  decoration:BoxDecoration(
+                      color:(kCategoryColors[ch.category]??Colors.blue).withOpacity(0.25),
+                      borderRadius:BorderRadius.circular(4)),
+                  child:Text(ch.category,style:TextStyle(
+                      color:kCategoryColors[ch.category]??Colors.blue,
+                      fontSize:8,fontWeight:FontWeight.w700)),
+                ),
+              ]),
             ),
           );
         },
-      ),
-    ),
+      )),
+    ])),
   );
 
-  // ── Bottom bar ────────────────────────────────────────────────────────────
-  Widget _buildBottomBar() => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-    child: SafeArea(
-      top: false,
-      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        // Channel logo
-        Container(
-          width: 48, height: 48,
-          decoration: BoxDecoration(
-            color: Colors.black54,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white24),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(11),
-            child: CachedNetworkImage(
-              imageUrl: _current.logo, fit: BoxFit.contain,
-              errorWidget: (_, __, ___) => Center(
-                child: Text(
-                  _current.name.substring(0, 1).toUpperCase(),
-                  style: const TextStyle(color: Colors.white,
-                      fontSize: 20, fontWeight: FontWeight.w800)),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-
-        // Channel info
-        Expanded(child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(children: [
-              if (_current.isHD) Container(
-                margin: const EdgeInsets.only(right: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: const Text('HD', style: TextStyle(
-                    color: Colors.white, fontSize: 8,
-                    fontWeight: FontWeight.w800)),
-              ),
-              Text(_current.name, style: const TextStyle(
-                  color: Colors.white, fontSize: 16,
-                  fontWeight: FontWeight.w800)),
-            ]),
-            const SizedBox(height: 2),
-            Text(_current.description, style: const TextStyle(
-                color: Colors.white60, fontSize: 11)),
-            const SizedBox(height: 2),
-            Text('${_current.country} · ${_current.language}',
-                style: const TextStyle(color: Colors.white38, fontSize: 10)),
-          ],
-        )),
-
-        // Channel counter + list button
-        Column(mainAxisSize: MainAxisSize.min, children: [
-          GestureDetector(
-            onTap: () {
-              setState(() => _showChannelList = true);
-              _showOverlayBriefly();
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white12,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.list_rounded, color: Colors.white, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  '${_channelIndex + 1}/${_channels.length}',
-                  style: const TextStyle(color: Colors.white,
-                      fontSize: 11, fontWeight: FontWeight.w600)),
-              ]),
-            ),
-          ),
-        ]),
-      ]),
-    ),
-  );
-
-  // ── Swipe hint ────────────────────────────────────────────────────────────
-  Widget _buildSwipeHint() => Align(
-    alignment: Alignment.centerRight,
-    child: Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.keyboard_arrow_up_rounded,
-            color: Colors.white38, size: 18),
-        const SizedBox(height: 2),
-        const Text('Swipe', style: TextStyle(
-            color: Colors.white30, fontSize: 9)),
-        const SizedBox(height: 2),
-        const Icon(Icons.keyboard_arrow_down_rounded,
-            color: Colors.white38, size: 18),
-      ]),
-    ),
-  );
-
-  // ── Channel list panel ────────────────────────────────────────────────────
-  Widget _buildChannelListPanel() => GestureDetector(
-    onTap: () => setState(() => _showChannelList = false),
-    child: Container(
-      color: Colors.black54,
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: GestureDetector(
-          onTap: () {}, // prevent close on panel tap
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.72,
-            color: const Color(0xFF0D0D0D),
-            child: Column(children: [
-              SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Row(children: [
-                    Text(_category, style: TextStyle(
-                        color: kCategoryColors[_category] ?? Colors.blue,
-                        fontSize: 18, fontWeight: FontWeight.w800)),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => setState(() => _showChannelList = false),
-                      child: const Icon(Icons.close_rounded,
-                          color: Colors.white54, size: 20),
-                    ),
-                  ]),
-                ),
-              ),
-              const Divider(color: Colors.white12, height: 1),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: _channels.length,
-                  itemBuilder: (_, i) {
-                    final ch = _channels[i];
-                    final isActive = i == _channelIndex;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() => _showChannelList = false);
-                        _switchChannel(ch);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? (kCategoryColors[_category] ?? Colors.blue)
-                                  .withOpacity(0.2)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isActive
-                                ? (kCategoryColors[_category] ?? Colors.blue)
-                                    .withOpacity(0.5)
-                                : Colors.transparent,
-                          ),
-                        ),
-                        child: Row(children: [
-                          // Channel logo
-                          Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white10,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: CachedNetworkImage(
-                                imageUrl: ch.logo, fit: BoxFit.contain,
-                                errorWidget: (_, __, ___) => Center(
-                                  child: Text(ch.name[0],
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w800)),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(children: [
-                                Expanded(
-                                  child: Text(ch.name,
-                                      style: TextStyle(
-                                          color: isActive ? Colors.white : Colors.white70,
-                                          fontSize: 13,
-                                          fontWeight: isActive
-                                              ? FontWeight.w700
-                                              : FontWeight.w400),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis),
-                                ),
-                                if (ch.isHD) Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white12,
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  child: const Text('HD', style: TextStyle(
-                                      color: Colors.white60, fontSize: 7,
-                                      fontWeight: FontWeight.w700)),
-                                ),
-                              ]),
-                              Text(ch.country, style: const TextStyle(
-                                  color: Colors.white30, fontSize: 10)),
-                            ],
-                          )),
-                          if (isActive)
-                            Container(
-                              width: 6, height: 6,
-                              decoration: BoxDecoration(
-                                color: kCategoryColors[_category] ?? Colors.blue,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                        ]),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ]),
-          ),
-        ),
-      ),
+  Widget _pill(String label, VoidCallback onTap, Color color) => GestureDetector(
+    onTap:onTap,
+    child:Container(
+      padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),
+      decoration:BoxDecoration(color:color,borderRadius:BorderRadius.circular(20),
+          border:Border.all(color:Colors.white18)),
+      child:Text(label,style:const TextStyle(color:Colors.white,
+          fontWeight:FontWeight.w600,fontSize:12)),
     ),
   );
 }

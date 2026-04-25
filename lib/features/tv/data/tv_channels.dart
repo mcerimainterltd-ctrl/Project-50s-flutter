@@ -1,28 +1,22 @@
 // lib/features/tv/data/tv_channels.dart
 // XameTV — Dynamic channel system powered by iptv-org/iptv
-// Fetches 11,000+ channels live, cached 24h, all categories
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-// ── Model ─────────────────────────────────────────────────────────────────
 class TvChannel {
-  final String name, category, streamUrl, logo, country, language, description;
-  final bool isHD;
+  final String name, category, streamUrl, logo, country, language;
   const TvChannel({
-    required this.name, required this.category, required this.streamUrl,
-    required this.logo,  required this.country,  required this.language,
-    this.description = '', this.isHD = false,
+    required this.name,      required this.category,
+    required this.streamUrl, required this.logo,
+    required this.country,   required this.language,
   });
-
   Map<String, dynamic> toJson() => {
     'name': name, 'category': category, 'streamUrl': streamUrl,
     'logo': logo,  'country': country,  'language': language,
-    'description': description, 'isHD': isHD,
   };
-
   factory TvChannel.fromJson(Map<String, dynamic> j) => TvChannel(
     name:      j['name']      ?? '',
     category:  j['category']  ?? 'General',
@@ -30,15 +24,12 @@ class TvChannel {
     logo:      j['logo']      ?? '',
     country:   j['country']   ?? '',
     language:  j['language']  ?? '',
-    description: j['description'] ?? '',
-    isHD:      j['isHD']      ?? false,
   );
 }
 
-// ── Categories ────────────────────────────────────────────────────────────
 const kTvCategories = [
-  'All', 'Africa', 'News', 'Sports', 'Movies', 'Entertainment',
-  'Music', 'Kids', 'Series', 'Documentary', 'General',
+  'All','Africa','News','Sports','Movies','Entertainment',
+  'Music','Kids','Series','Documentary','General',
 ];
 
 const kCategoryColors = {
@@ -52,24 +43,9 @@ const kCategoryColors = {
   'Kids':          Color(0xFFE65100),
   'Series':        Color(0xFF37474F),
   'Documentary':   Color(0xFF558B2F),
-  'General':       Color(0xFF37474F),
+  'General':       Color(0xFF263238),
 };
 
-const kCategoryEmoji = {
-  'All':           '📺',
-  'Africa':        '🌍',
-  'News':          '📰',
-  'Sports':        '⚽',
-  'Movies':        '🎬',
-  'Entertainment': '🎭',
-  'Music':         '🎵',
-  'Kids':          '🧸',
-  'Series':        '📺',
-  'Documentary':   '🔭',
-  'General':       '📡',
-};
-
-// African country codes
 const kAfricanCountries = {
   'NG','GH','ZA','KE','ET','TZ','UG','CM','SN','CI','EG','MA','TN',
   'DZ','LY','SD','AO','MZ','ZM','ZW','RW','BJ','BF','ML','NE','TD',
@@ -77,153 +53,100 @@ const kAfricanCountries = {
   'MG','KM','BI','DJ','SS','CF','CG','CD','NA','BW','LS','SZ','GM',
 };
 
-// ── M3U Parser ────────────────────────────────────────────────────────────
 List<TvChannel> parseM3u(String content) {
   final channels = <TvChannel>[];
   final lines    = content.split('\n');
-
   for (int i = 0; i < lines.length - 1; i++) {
     final line = lines[i].trim();
     if (!line.startsWith('#EXTINF')) continue;
-
-    // Extract attributes
-    final nameMatch    = RegExp(r',(.+)$').firstMatch(line);
-    final logoMatch    = RegExp(r'tvg-logo="([^"]*)"').firstMatch(line);
-    final groupMatch   = RegExp(r'group-title="([^"]*)"').firstMatch(line);
-    final langMatch    = RegExp(r'tvg-language="([^"]*)"').firstMatch(line);
-    final countryMatch = RegExp(r'tvg-country="([^"]*)"').firstMatch(line);
-
-    final name     = nameMatch?.group(1)?.trim()   ?? '';
-    final logo     = logoMatch?.group(1)            ?? '';
-    final group    = groupMatch?.group(1)           ?? 'General';
-    final lang     = langMatch?.group(1)            ?? '';
-    final country  = countryMatch?.group(1)?.toUpperCase() ?? '';
-
-    // Get stream URL
-    final url = lines[i + 1].trim();
-    if (url.isEmpty || url.startsWith('#')) continue;
-    if (!url.startsWith('http')) continue;
-
-    // Map iptv-org group to XameTV category
-    final primary = group.split(';').first.trim();
-    String category;
-    switch (primary) {
-      case 'News':          category = 'News';          break;
-      case 'Sports':        category = 'Sports';        break;
-      case 'Movies':        category = 'Movies';        break;
-      case 'Entertainment': category = 'Entertainment'; break;
-      case 'Music':         category = 'Music';         break;
-      case 'Kids':
-      case 'Animation':     category = 'Kids';          break;
-      case 'Series':        category = 'Series';        break;
-      case 'Documentary':   category = 'Documentary';   break;
-      default:              category = 'General';
+    String _attr(String key) {
+      final m = RegExp('$key="([^"]*)"').firstMatch(line);
+      return m?.group(1) ?? '';
     }
-
-    channels.add(TvChannel(
-      name: name, category: category, streamUrl: url,
-      logo: logo, country: country,   language: lang,
-    ));
+    final nameM = RegExp(r',(.+)$').firstMatch(line);
+    final name    = nameM?.group(1)?.trim() ?? '';
+    final logo    = _attr('tvg-logo');
+    final group   = _attr('group-title').isEmpty ? 'General' : _attr('group-title');
+    final lang    = _attr('tvg-language');
+    final country = _attr('tvg-country').toUpperCase();
+    final url     = lines[i + 1].trim();
+    if (url.isEmpty || url.startsWith('#') || !url.startsWith('http')) continue;
+    final primary = group.split(';').first.trim();
+    final category = const {
+      'News':'News','Sports':'Sports','Movies':'Movies',
+      'Entertainment':'Entertainment','Music':'Music',
+      'Kids':'Kids','Animation':'Kids','Series':'Series',
+      'Documentary':'Documentary',
+    }[primary] ?? 'General';
+    channels.add(TvChannel(name:name,category:category,streamUrl:url,
+        logo:logo,country:country,language:lang));
   }
   return channels;
 }
 
-// ── Channel Service ───────────────────────────────────────────────────────
 class TvChannelService {
-  static const _cacheKey     = 'xametv_channels_v2';
-  static const _cacheTimeKey = 'xametv_channels_time_v2';
-  static const _cacheTtl     = Duration(hours: 24);
-  static const _m3uUrl       =
-      'https://iptv-org.github.io/iptv/index.m3u';
+  static const _key     = 'xametv_v4';
+  static const _timeKey = 'xametv_time_v4';
+  static const _ttl     = Duration(hours: 24);
+  static const _url     = 'https://iptv-org.github.io/iptv/index.m3u';
+  static List<TvChannel>? _mem;
 
-  static List<TvChannel>? _cache;
-
-  static Future<List<TvChannel>> fetchChannels({bool force = false}) async {
-    // Return in-memory cache
-    if (_cache != null && !force) return _cache!;
-
+  static Future<List<TvChannel>> fetchChannels({bool force=false}) async {
+    if (_mem != null && !force) return _mem!;
     final prefs = await SharedPreferences.getInstance();
-
-    // Check disk cache
     if (!force) {
-      final cacheTime = prefs.getInt(_cacheTimeKey) ?? 0;
-      final age       = DateTime.now().millisecondsSinceEpoch - cacheTime;
-      if (age < _cacheTtl.inMilliseconds) {
-        final raw = prefs.getString(_cacheKey);
+      final age = DateTime.now().millisecondsSinceEpoch-(prefs.getInt(_timeKey)??0);
+      if (age < _ttl.inMilliseconds) {
+        final raw = prefs.getString(_key);
         if (raw != null) {
           try {
-            final list = (jsonDecode(raw) as List)
-                .map((j) => TvChannel.fromJson(j as Map<String, dynamic>))
-                .toList();
-            _cache = list;
-            return list;
+            _mem = (jsonDecode(raw) as List)
+                .map((j) => TvChannel.fromJson(j as Map<String,dynamic>)).toList();
+            return _mem!;
           } catch (_) {}
         }
       }
     }
-
-    // Fetch fresh
     try {
-      final res = await http.get(
-        Uri.parse(_m3uUrl),
-        headers: {'User-Agent': 'XamePage/2.1 IPTV'},
-      ).timeout(const Duration(seconds: 30));
-
+      final res = await http.get(Uri.parse(_url),
+          headers: {'User-Agent':'XamePage/2.1'}).timeout(const Duration(seconds:30));
       if (res.statusCode == 200) {
-        final channels = parseM3u(res.body);
-        _cache = channels;
-
-        // Save to disk cache
-        await prefs.setString(
-            _cacheKey,
-            jsonEncode(channels.map((c) => c.toJson()).toList()));
-        await prefs.setInt(
-            _cacheTimeKey,
-            DateTime.now().millisecondsSinceEpoch);
-
-        return channels;
+        _mem = parseM3u(res.body);
+        await prefs.setString(_key, jsonEncode(_mem!.map((c)=>c.toJson()).toList()));
+        await prefs.setInt(_timeKey, DateTime.now().millisecondsSinceEpoch);
+        return _mem!;
       }
     } catch (_) {}
-
-    // Return stale cache on error
-    final raw = prefs.getString(_cacheKey);
+    final raw = prefs.getString(_key);
     if (raw != null) {
       try {
-        return (jsonDecode(raw) as List)
-            .map((j) => TvChannel.fromJson(j as Map<String, dynamic>))
-            .toList();
+        _mem = (jsonDecode(raw) as List)
+            .map((j) => TvChannel.fromJson(j as Map<String,dynamic>)).toList();
+        return _mem!;
       } catch (_) {}
     }
     return [];
   }
 
-  // Filter channels by category
-  static List<TvChannel> filterByCategory(
-      List<TvChannel> all, String category) {
-    if (category == 'All') return all;
-    if (category == 'Africa') {
-      return all
-          .where((c) => kAfricanCountries.contains(c.country.toUpperCase()))
-          .toList();
-    }
-    return all.where((c) => c.category == category).toList();
+  static List<TvChannel> filterByCategory(List<TvChannel> all, String cat) {
+    if (cat == 'All') return all;
+    if (cat == 'Africa')
+      return all.where((c) => kAfricanCountries.contains(c.country)).toList();
+    return all.where((c) => c.category == cat).toList();
   }
 
-  // Search channels
-  static List<TvChannel> search(List<TvChannel> all, String query) {
-    if (query.isEmpty) return all;
-    final q = query.toLowerCase();
-    return all
-        .where((c) =>
-            c.name.toLowerCase().contains(q) ||
-            c.country.toLowerCase().contains(q) ||
-            c.language.toLowerCase().contains(q))
-        .toList();
+  static List<TvChannel> search(List<TvChannel> all, String q) {
+    if (q.isEmpty) return all;
+    final s = q.toLowerCase();
+    return all.where((c) =>
+        c.name.toLowerCase().contains(s) ||
+        c.country.toLowerCase().contains(s) ||
+        c.language.toLowerCase().contains(s)).toList();
   }
 
   static void clearCache() {
-    _cache = null;
+    _mem = null;
     SharedPreferences.getInstance()
-        .then((p) => p..remove(_cacheKey)..remove(_cacheTimeKey));
+        .then((p) => p..remove(_key)..remove(_timeKey));
   }
 }
