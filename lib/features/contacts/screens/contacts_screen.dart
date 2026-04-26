@@ -92,7 +92,20 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                             ))
                         .toList(),
                   ); }),
-          Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return XamePayScreen(userId: u?.xameId ?? '', serverUrl: AppConstants.serverUrl); }),
+          Consumer(builder: (_, ref, __) {
+              final u = ref.read(currentUserProvider);
+              return XamePayScreen(
+                userId:       u?.xameId ?? '',
+                serverUrl:    AppConstants.serverUrl,
+                xameContacts: (ref.read(contactsProvider).valueOrNull ?? [])
+                    .map((c) => XameContact(
+                          id:         c.id,
+                          name:       c.name,
+                          profilePic: c.profilePic,
+                        ))
+                    .toList(),
+              );
+            }),
         ])),
       ])),
       bottomNavigationBar: _buildBottomNav(),
