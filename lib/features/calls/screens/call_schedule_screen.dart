@@ -183,14 +183,6 @@ class _CallScheduleScreenState extends ConsumerState<CallScheduleScreen> {
                   );
                 },
               )),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showScheduleSheet(context),
-        backgroundColor: context.xPrimary,
-        foregroundColor: Colors.black,
-        icon: const Icon(Icons.add),
-        label: const Text('Schedule Call',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
     );
   }
 
