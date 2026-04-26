@@ -259,12 +259,12 @@ class ComposeScheduledSheet extends ConsumerStatefulWidget {
   final String? preselectedId, preselectedName;
   const ComposeScheduledSheet({this.preselectedId, this.preselectedName});
   @override
-  ConsumerState<_ComposeScheduledSheet> createState() =>
-      _ComposeScheduledSheetState();
+  ConsumerState<ComposeScheduledSheet> createState() =>
+      ComposeScheduledSheetState();
 }
 
 class ComposeScheduledSheetState
-    extends ConsumerState<_ComposeScheduledSheet> {
+    extends ConsumerState<ComposeScheduledSheet> {
   final _textCtrl = TextEditingController();
   String?  _recipientId, _recipientName;
   String?  _fileUrl, _fileName, _fileMime;
