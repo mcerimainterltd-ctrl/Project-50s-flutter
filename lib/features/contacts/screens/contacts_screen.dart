@@ -98,11 +98,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 userId:       u?.xameId ?? '',
                 serverUrl:    AppConstants.serverUrl,
                 xameContacts: (ref.read(contactsProvider).valueOrNull ?? [])
-                    .map((c) => XameContact(
-                          id:         c.id,
-                          name:       c.name,
-                          profilePic: c.profilePic,
-                        ))
+                    .map((c) => {'id': c.id, 'name': c.name})
                     .toList(),
               );
             }),
