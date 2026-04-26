@@ -164,12 +164,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Row(children: [
           SizedBox(width: 16, height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: XameColors.darkBg)),
+            child: CircularProgressIndicator(strokeWidth: 2, color: context.xText)),
           SizedBox(width: 12),
           Text('Compressing video...'),
         ]),
         duration: Duration(seconds: 60),
-        backgroundColor: XameColors.darkCard,
+        backgroundColor: context.xCard,
       ));
       try {
         final info = await VideoCompress.compressVideo(
@@ -235,7 +235,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Could not pick file: $e'),
-          backgroundColor: XameColors.darkCard,
+          backgroundColor: context.xCard,
         ));
       }
     }
@@ -294,7 +294,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .join('\n\n');
     Clipboard.setData(ClipboardData(text: texts));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Messages copied!'), backgroundColor: XameColors.darkCard));
+      content: Text('Messages copied!'), backgroundColor: context.xCard));
     _exitSelectMode();
   }
 
@@ -302,22 +302,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final hasSent = messages.any(
         (m) => _selected.contains(m.id) && m.direction == MessageDirection.sent);
     showModalBottomSheet(
-      context: context, backgroundColor: XameColors.darkCard,
+      context: context, backgroundColor: context.xCard,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         SizedBox(height: 8),
         Container(width: 36, height: 4,
-            decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
+            decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 8),
         ListTile(
-            leading: Icon(Icons.copy, color: XameColors.darkBg.withValues(alpha: 0.7)),
-            title: Text('Copy', style: TextStyle(color: XameColors.darkBg)),
+            leading: Icon(Icons.copy, color: context.xMuted),
+            title: Text('Copy', style: TextStyle(color: context.xText)),
             onTap: () { Navigator.pop(context); _copySelected(messages); }),
         ListTile(
-            leading: Icon(Icons.delete_outline, color: XameColors.darkBg.withValues(alpha: 0.7)),
+            leading: Icon(Icons.delete_outline, color: context.xMuted),
             title: Text('Delete for me (${_selected.length})',
-                style: TextStyle(color: XameColors.darkBg)),
+                style: TextStyle(color: context.xText)),
             onTap: () { Navigator.pop(context); _deleteSelected(); }),
         if (hasSent)
           ListTile(
@@ -435,29 +435,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ContactModel? contact, bool isTyping, List<XameMessage> messages) {
     if (_selectMode) {
       return AppBar(
-        backgroundColor: XameColors.darkSurface,
+        backgroundColor: context.xSurface,
         leading: IconButton(
-            icon: Icon(Icons.close, color: XameColors.darkBg),
+            icon: Icon(Icons.close, color: context.xText),
             onPressed: _exitSelectMode),
         title: Text('${_selected.length} selected',
-            style: TextStyle(color: XameColors.darkBg, fontSize: 16)),
+            style: TextStyle(color: context.xText, fontSize: 16)),
         actions: [
           IconButton(
-              icon: Icon(Icons.copy, color: XameColors.darkBg.withValues(alpha: 0.7)),
+              icon: Icon(Icons.copy, color: context.xMuted),
               onPressed: () => _copySelected(messages)),
           IconButton(
-              icon: Icon(Icons.delete_outline, color: XameColors.darkBg.withValues(alpha: 0.7)),
+              icon: Icon(Icons.delete_outline, color: context.xMuted),
               onPressed: () => _showDeleteMenu(messages)),
         ],
       );
     }
 
     return AppBar(
-      backgroundColor: XameColors.darkBg,
+      backgroundColor: context.xBg,
       elevation: 0,
       leadingWidth: 40,
       leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: XameColors.darkBg, size: 20),
+          icon: Icon(Icons.arrow_back_ios, color: context.xText, size: 20),
           onPressed: () => context.go('/contacts')),
       title: GestureDetector(
         onTap: () => Navigator.push(context,
@@ -490,7 +490,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(contact?.name ?? widget.userId,
-                style: TextStyle(color: XameColors.darkBg, fontSize: 15,
+                style: TextStyle(color: context.xText, fontSize: 15,
                     fontWeight: FontWeight.w600),
                 maxLines: 1, overflow: TextOverflow.ellipsis),
             Text(
@@ -498,7 +498,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   : contact?.isOnline == true ? 'online' : 'offline',
               style: TextStyle(
                   color: isTyping ? XameColors.accent
-                      : (contact?.isOnline == true ? XameColors.accent : XameColors.darkSurface),
+                      : (contact?.isOnline == true ? XameColors.accent : context.xMuted),
                   fontSize: 12,
                   fontStyle: isTyping ? FontStyle.italic : FontStyle.normal),
             ),
@@ -507,13 +507,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       actions: [
         IconButton(
-            icon: Icon(Icons.call_outlined, color: XameColors.darkBg.withValues(alpha: 0.7)),
+            icon: Icon(Icons.call_outlined, color: context.xMuted),
             onPressed: () => context.go('/call/${widget.userId}?video=false')),
         IconButton(
-            icon: Icon(Icons.videocam_outlined, color: XameColors.darkBg.withValues(alpha: 0.7)),
+            icon: Icon(Icons.videocam_outlined, color: context.xMuted),
             onPressed: () => context.go('/call/${widget.userId}?video=true')),
         IconButton(
-            icon: Icon(Icons.more_vert, color: XameColors.darkBg.withValues(alpha: 0.7)),
+            icon: Icon(Icons.more_vert, color: context.xMuted),
             onPressed: _showChatMenu),
       ],
     );
@@ -521,25 +521,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _showChatMenu() {
     showModalBottomSheet(
-      context: context, backgroundColor: XameColors.darkCard,
+      context: context, backgroundColor: context.xCard,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         SizedBox(height: 8),
         Container(width: 36, height: 4,
-            decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
+            decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 8),
-        ListTile(leading: Icon(Icons.search, color: XameColors.darkBg.withValues(alpha: 0.7)),
-            title: Text('Search', style: TextStyle(color: XameColors.darkBg)),
+        ListTile(leading: Icon(Icons.search, color: context.xMuted),
+            title: Text('Search', style: TextStyle(color: context.xText)),
             onTap: () => Navigator.pop(context)),
-        ListTile(leading: Icon(Icons.edit_outlined, color: XameColors.darkBg.withValues(alpha: 0.7)),
-            title: Text('Edit Contact', style: TextStyle(color: XameColors.darkBg)),
+        ListTile(leading: Icon(Icons.edit_outlined, color: context.xMuted),
+            title: Text('Edit Contact', style: TextStyle(color: context.xText)),
             onTap: () { Navigator.pop(context); _showEditContact(); }),
         ListTile(leading: Icon(Icons.person_remove_outlined, color: Colors.redAccent),
             title: Text('Delete Contact', style: TextStyle(color: Colors.redAccent)),
             onTap: () { Navigator.pop(context); _showDeleteContact(); }),
-        ListTile(leading: Icon(Icons.block, color: XameColors.darkBg.withValues(alpha: 0.7)),
-            title: Text('Block Contact', style: TextStyle(color: XameColors.darkBg)),
+        ListTile(leading: Icon(Icons.block, color: context.xMuted),
+            title: Text('Block Contact', style: TextStyle(color: context.xText)),
             onTap: () => Navigator.pop(context)),
         ListTile(leading: Icon(Icons.delete_outline, color: XameColors.danger),
             title: Text('Clear Chat', style: TextStyle(color: XameColors.danger)),
@@ -561,17 +561,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: XameColors.darkSurface,
+        backgroundColor: context.xSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Edit Contact',
-            style: TextStyle(color: XameColors.darkBg, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: context.xText, fontWeight: FontWeight.w700)),
         content: TextField(
           controller: ctrl,
-          style: TextStyle(color: XameColors.darkBg),
+          style: TextStyle(color: context.xText),
           decoration: InputDecoration(
             hintText: 'Display name',
-            hintStyle: TextStyle(color: XameColors.darkSurface),
-            filled: true, fillColor: XameColors.darkBg,
+            hintStyle: TextStyle(color: context.xMuted),
+            filled: true, fillColor: context.xSurface,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
@@ -579,7 +579,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: XameColors.darkSurface))),
+              child: Text('Cancel', style: TextStyle(color: context.xMuted))),
           TextButton(
               onPressed: () async {
                 final newName = ctrl.text.trim();
@@ -601,16 +601,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: XameColors.darkSurface,
+        backgroundColor: context.xSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Delete Contact',
-            style: TextStyle(color: XameColors.darkBg, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: context.xText, fontWeight: FontWeight.w700)),
         content: Text('Remove this contact? Chat history will remain.',
-            style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54))),
+            style: TextStyle(color: context.xText.withValues(alpha: 0.54))),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: XameColors.darkSurface))),
+              child: Text('Cancel', style: TextStyle(color: context.xMuted))),
           TextButton(
               onPressed: () async {
                 final self = ref.read(currentUserProvider);
@@ -631,37 +631,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _showBubbleMenu(XameMessage msg, List<XameMessage> messages) {
     showModalBottomSheet(
-      context: context, backgroundColor: XameColors.darkCard,
+      context: context, backgroundColor: context.xCard,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         SizedBox(height: 8),
         Container(width: 36, height: 4,
-            decoration: BoxDecoration(color: XameColors.darkSurface.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
+            decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 8),
         if (msg.text.isNotEmpty)
-          ListTile(leading: Icon(Icons.reply, color: XameColors.darkBg.withValues(alpha: 0.7)),
-              title: Text('Reply', style: TextStyle(color: XameColors.darkBg)),
+          ListTile(leading: Icon(Icons.reply, color: context.xMuted),
+              title: Text('Reply', style: TextStyle(color: context.xText)),
               onTap: () { Navigator.pop(context); setState(() => _replyTo = msg); }),
         if (msg.text.isNotEmpty)
-          ListTile(leading: Icon(Icons.copy, color: XameColors.darkBg.withValues(alpha: 0.7)),
-              title: Text('Copy', style: TextStyle(color: XameColors.darkBg)),
+          ListTile(leading: Icon(Icons.copy, color: context.xMuted),
+              title: Text('Copy', style: TextStyle(color: context.xText)),
               onTap: () {
                 Navigator.pop(context);
                 Clipboard.setData(ClipboardData(text: msg.text));
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Copied!'), backgroundColor: XameColors.darkCard));
+                    content: Text('Copied!'), backgroundColor: context.xCard));
               }),
         if (msg.text.isNotEmpty)
           ListTile(
               leading: Text('🌍', style: TextStyle(fontSize: 18)),
-              title: Text('Translate', style: TextStyle(color: XameColors.darkBg)),
+              title: Text('Translate', style: TextStyle(color: context.xText)),
               onTap: () {
                 Navigator.pop(context);
                 showTranslateSheet(context, ref, msg.text);
               }),
-        ListTile(leading: Icon(Icons.select_all, color: XameColors.darkBg.withValues(alpha: 0.7)),
-            title: Text('Select', style: TextStyle(color: XameColors.darkBg)),
+        ListTile(leading: Icon(Icons.select_all, color: context.xMuted),
+            title: Text('Select', style: TextStyle(color: context.xText)),
             onTap: () { Navigator.pop(context); _enterSelectMode(msg.id); }),
         ListTile(leading: const Icon(Icons.delete_outline, color: XameColors.danger),
             title: const Text('Delete', style: TextStyle(color: XameColors.danger)),
@@ -742,9 +742,9 @@ class _DaySeparator extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-          color: XameColors.darkCard, borderRadius: BorderRadius.circular(12)),
+          color: context.xCard, borderRadius: BorderRadius.circular(12)),
       child: Text(_label,
-          style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
+          style: TextStyle(color: context.xMuted, fontSize: 11)),
     ),
   );
 }
@@ -765,7 +765,7 @@ class _EmptyChat extends StatelessWidget {
             color: XameColors.primary, size: 40)),
       SizedBox(height: 16),
       Text('Start a conversation with $name',
-          style: TextStyle(color: XameColors.darkSurface, fontSize: 14),
+          style: TextStyle(color: context.xMuted, fontSize: 14),
           textAlign: TextAlign.center),
     ]),
   );
@@ -781,7 +781,7 @@ class _ReplyPreview extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
     decoration: BoxDecoration(
-      color: XameColors.darkCard,
+      color: context.xCard,
       border: Border(left: BorderSide(color: XameColors.primary, width: 3))),
     child: Row(children: [
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -789,11 +789,11 @@ class _ReplyPreview extends StatelessWidget {
             style: TextStyle(color: XameColors.primary, fontSize: 11)),
         SizedBox(height: 2),
         Text(message.text.isNotEmpty ? message.text : '📎 Attachment',
-            style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 13),
+            style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13),
             maxLines: 1, overflow: TextOverflow.ellipsis),
       ])),
       IconButton(
-          icon: Icon(Icons.close, color: XameColors.darkSurface, size: 18),
+          icon: Icon(Icons.close, color: context.xMuted, size: 18),
           onPressed: onCancel),
     ]),
   );
@@ -818,7 +818,7 @@ class _AttachPanel extends StatelessWidget {
       _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
           onTap: onVideo,  color: XameColors.secondary),
       _AttachBtn(icon: Icons.camera_alt_outlined,         label: 'Camera',
-          onTap: onCamera, color: XameColors.darkSurface),
+          onTap: onCamera, color: context.xMuted),
       _AttachBtn(icon: Icons.insert_drive_file_outlined,  label: 'File',
           onTap: onFile,   color: XameColors.accent),
     ]),
@@ -844,7 +844,7 @@ class _AttachBtn extends StatelessWidget {
             borderRadius: BorderRadius.circular(16)),
         child: Icon(icon, color: color, size: 24)),
       SizedBox(height: 6),
-      Text(label, style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 11)),
+      Text(label, style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 11)),
     ]),
   );
 }
@@ -883,15 +883,15 @@ class _ComposerState extends State<_Composer> {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
     decoration: BoxDecoration(
-      color: XameColors.darkSurface,
-      border: Border(top: BorderSide(color: XameColors.darkBg.withValues(alpha: 0.06))),
+      color: context.xMuted,
+      border: Border(top: BorderSide(color: context.xText.withValues(alpha: 0.06))),
     ),
     child: SafeArea(top: false, child: Row(children: [
       IconButton(
-          icon: Icon(Icons.attach_file_rounded, color: XameColors.darkBg.withValues(alpha: 0.54)),
+          icon: Icon(Icons.attach_file_rounded, color: context.xText.withValues(alpha: 0.54)),
           onPressed: widget.onAttach),
       IconButton(
-          icon: Icon(Icons.timer_outlined, color: XameColors.darkBg.withValues(alpha: 0.54)),
+          icon: Icon(Icons.timer_outlined, color: context.xText.withValues(alpha: 0.54)),
           onPressed: widget.onDisappearing),
       Expanded(
         child: TextField(
@@ -901,12 +901,12 @@ class _ComposerState extends State<_Composer> {
           onSubmitted: (_) => widget.onSend(),
           maxLines:    5,
           minLines:    1,
-          style: TextStyle(color: XameColors.darkBg, fontSize: 15),
+          style: TextStyle(color: context.xText, fontSize: 15),
           decoration: InputDecoration(
             hintText:  'Message...',
-            hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
+            hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
             filled:    true,
-            fillColor: XameColors.darkCard,
+            fillColor: context.xCard,
             border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(22),
                 borderSide: BorderSide.none),
@@ -943,7 +943,7 @@ class _ComposerState extends State<_Composer> {
             ),
             child: Icon(
               voice.isSpeechListening ? Icons.mic : Icons.mic_none_rounded,
-              color: voice.isSpeechListening ? Colors.red : XameColors.darkSurface,
+              color: voice.isSpeechListening ? Colors.red : context.xMuted,
               size: 22),
           ),
         );
