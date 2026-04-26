@@ -226,16 +226,20 @@ class _PhoneScreenState extends State<PhoneScreen>
 
   Future<void> _loadContacts() async {
     if (_contactsLoading) return;
-    setState(() => _contactsLoading = true);
-    final status = await Permission.contacts.request();
+    // Check current status first — only request if not yet determined
+    PermissionStatus status = await Permission.contacts.status;
+    if (status.isDenied) {
+      status = await Permission.contacts.request();
+    }
     if (status.isDenied || status.isPermanentlyDenied) {
       if (mounted) {
-        setState(() => _contactsLoading = false);
         _snack('Contacts permission denied');
         if (status.isPermanentlyDenied) openAppSettings();
       }
       return;
     }
+    // Only show spinner if no cached contacts yet
+    if (_contacts.isEmpty) setState(() => _contactsLoading = true);
     try {
       final raw = await FlutterContacts.getContacts(withProperties: true);
       final Map<String, _DevContact> byName = {};
