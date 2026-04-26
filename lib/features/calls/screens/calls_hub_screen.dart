@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'call_history_screen.dart';
 import '../../../core/theme/app_theme.dart';
+import 'call_schedule_screen.dart';
+import 'conference_screen.dart';
 
 class CallsHubScreen extends ConsumerStatefulWidget {
   CallsHubScreen({super.key});
@@ -85,87 +87,15 @@ class _NavItem extends StatelessWidget {
 // ── Call Schedule Tab ─────────────────────────────────────────────────────────
 class _CallScheduleTab extends StatelessWidget {
   _CallScheduleTab();
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: context.xBg,
-    body: Center(child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: context.xCard, shape: BoxShape.circle,
-            border: Border.all(
-                color: context.xPrimary.withValues(alpha: 0.3))),
-          child: Icon(Icons.schedule_outlined,
-              color: context.xPrimary, size: 56)),
-        SizedBox(height: 24),
-        Text('Call Schedule',
-            style: TextStyle(color: context.xText,
-                fontSize: 22, fontWeight: FontWeight.w700)),
-        SizedBox(height: 8),
-        Text('Schedule calls with your contacts',
-            style: TextStyle(color: context.xMuted, fontSize: 14),
-            textAlign: TextAlign.center),
-        SizedBox(height: 32),
-        ElevatedButton.icon(
-          onPressed: () {},
-          icon: Icon(Icons.add),
-          label: Text('Schedule a Call',
-              style: TextStyle(fontWeight: FontWeight.w700)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: XameColors.primary,
-            foregroundColor: Colors.black,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14))),
-        ),
-      ],
-    )),
-  );
+  Widget build(BuildContext context) => const CallScheduleScreen();
 }
 
 // ── Conference Tab ────────────────────────────────────────────────────────────
 class _ConferenceTab extends StatelessWidget {
   _ConferenceTab();
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: context.xBg,
-    body: Center(child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: context.xCard, shape: BoxShape.circle,
-            border: Border.all(
-                color: context.xPrimary.withValues(alpha: 0.3))),
-          child: Icon(Icons.groups_rounded,
-              color: context.xPrimary, size: 56)),
-        SizedBox(height: 24),
-        Text('Conference Call',
-            style: TextStyle(color: context.xText,
-                fontSize: 22, fontWeight: FontWeight.w700)),
-        SizedBox(height: 8),
-        Text('Start a call with multiple contacts at once',
-            style: TextStyle(color: context.xMuted, fontSize: 14),
-            textAlign: TextAlign.center),
-        const SizedBox(height: 32),
-        ElevatedButton.icon(
-          onPressed: () {},
-          icon: const Icon(Icons.add_call),
-          label: const Text('Start Conference',
-              style: TextStyle(fontWeight: FontWeight.w700)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: XameColors.primary,
-            foregroundColor: Colors.black,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14))),
-        ),
-      ],
-    )),
-  );
+  Widget build(BuildContext context) => const ConferenceScreen();
 }
+
+

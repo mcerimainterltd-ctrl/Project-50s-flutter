@@ -21,6 +21,7 @@ import '../../contacts/screens/contacts_screen.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import 'chat_wallpaper.dart';
+import 'message_schedule_screen.dart';
 import '../disappearing.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -561,6 +562,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 8),
         ListTile(
+            leading: Icon(Icons.schedule_send_rounded, color: context.xMuted),
+            title: Text('Schedule Message',
+                style: TextStyle(color: context.xText)),
+            onTap: () {
+              Navigator.pop(context);
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => _ComposeScheduledSheet(
+                  preselectedId:   widget.userId,
+                  preselectedName: contact?.name,
+                ));
+            }),
+          ListTile(
             leading: Icon(Icons.wallpaper_outlined, color: context.xMuted),
             title: Text('Wallpaper', style: TextStyle(color: context.xText)),
             onTap: () {

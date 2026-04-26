@@ -96,6 +96,7 @@ class SocketService {
   Stream<void>                      get confRoomClosed    => _confRoomClosedCtrl.stream;
 
   bool get isConnected => _socket?.connected ?? false;
+  IO.Socket? get rawSocket => _socket;
 
   void connect(String xameId, {bool stealth = false}) { currentUserId = xameId;
     if (_socket?.connected == true) {
