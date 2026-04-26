@@ -588,11 +588,20 @@ class _ContactTile extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(children: [
           Stack(children: [
-            XameAvatar(
-              name: contact.name,
-              profilePic: contact.isProfilePicHidden
-                ? null : contact.profilePic,
-              size: 50, isOnline: contact.isOnline,            ),
+            GestureDetector(
+              onTap: contact.hasNewDiscoveryPost ? () {
+                ref.read(contactsProvider.notifier).clearDiscoveryDot(contact.id);
+                ref.read(socketServiceProvider).emitMarkDiscoverySeen(contact.id);
+                context.go('/discover?authorId=\${contact.id}');
+              } : null,
+              child: XameAvatar(
+                name: contact.name,
+                profilePic: contact.isProfilePicHidden
+                  ? null : contact.profilePic,
+                size: 50, isOnline: contact.isOnline,
+                hasNewDiscoveryPost: contact.hasNewDiscoveryPost,
+              ),
+            ),
             if (contact.unreadCount > 0)
               Positioned(right: 0, top: 0,
                 child: Container(
@@ -661,9 +670,11 @@ class XameAvatar extends StatelessWidget {
   final String? profilePic;
   final double  size;
   final bool    isOnline;
+  final bool    hasNewDiscoveryPost;
   const XameAvatar({
     super.key, required this.name,
-    this.profilePic, this.size = 44, this.isOnline = false,  });
+    this.profilePic, this.size = 44, this.isOnline = false,
+    this.hasNewDiscoveryPost = false,  });
 
   String get _initials {
     final parts = name.trim().split(' ')
@@ -680,8 +691,11 @@ class XameAvatar extends StatelessWidget {
       width: size, height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: isOnline
-          ? Border.all(color: XameColors.primary, width: 2) : null),
+        border: hasNewDiscoveryPost
+          ? Border.all(color: XameColors.accent, width: 2.5)
+          : isOnline
+            ? Border.all(color: XameColors.primary, width: 2)
+            : null),
       child: ClipOval(
         child: profilePic != null && profilePic!.isNotEmpty
           ? CachedNetworkImage(

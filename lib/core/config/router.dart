@@ -43,7 +43,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: "/discovery", name: "discovery", builder: (context, state) => const DiscoveryAuraFeed()),
+      GoRoute(path: "/discovery", name: "discovery", builder: (context, state) {
+          final authorId = state.uri.queryParameters['authorId'];
+          return DiscoveryAuraFeed(authorId: authorId);
+        }),
       GoRoute(path: "/tv", name: "tv", builder: (context, state) => const XameTVPage()),
       GoRoute(path: "/people", name: "people", builder: (c, s) => const PeopleDiscoveryScreen()),
       GoRoute(path: '/login',    builder: (c, s) => const LoginScreen()),

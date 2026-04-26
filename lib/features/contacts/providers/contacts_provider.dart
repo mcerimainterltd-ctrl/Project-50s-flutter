@@ -12,13 +12,14 @@ final activeContactIdProvider = StateProvider<String?>((ref) => null);
 class ContactModel {
   final String id, name;
   final String? profilePic, personalStatusEmoji, personalStatusMessage;
-  final bool   isOnline, isProfilePicHidden;
+  final bool   isOnline, isProfilePicHidden, hasNewDiscoveryPost;
   final int    unreadCount, missedCallsCount, lastInteractionTs;  final String lastInteractionPreview;
 
   const ContactModel({
     required this.id, required this.name,
     this.profilePic, this.personalStatusEmoji, this.personalStatusMessage,
     this.isOnline = false, this.isProfilePicHidden = false,
+    this.hasNewDiscoveryPost = false,
     this.unreadCount = 0, this.missedCallsCount = 0,
     this.lastInteractionTs = 0, this.lastInteractionPreview = '',  });
 
@@ -40,12 +41,14 @@ class ContactModel {
   ContactModel copyWith({
     bool? isOnline, int? unreadCount, int? missedCallsCount,
     String? lastInteractionPreview, int? lastInteractionTs,
-    String? name, String? profilePic, bool? isProfilePicHidden,  }) => ContactModel(
+    String? name, String? profilePic, bool? isProfilePicHidden,
+    bool? hasNewDiscoveryPost,  }) => ContactModel(
     id: id,
     name:                   name                   ?? this.name,
     profilePic:             profilePic             ?? this.profilePic,
     isOnline:               isOnline               ?? this.isOnline,
     isProfilePicHidden:     isProfilePicHidden     ?? this.isProfilePicHidden,
+    hasNewDiscoveryPost:    hasNewDiscoveryPost    ?? this.hasNewDiscoveryPost,
     unreadCount:            unreadCount            ?? this.unreadCount,
     missedCallsCount:       missedCallsCount       ?? this.missedCallsCount,
     lastInteractionTs:      lastInteractionTs      ?? this.lastInteractionTs,
@@ -65,6 +68,13 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
   ));
 
   @override
+  void clearDiscoveryDot(String contactId) {
+    final current = state.valueOrNull ?? [];
+    state = AsyncData(current.map((c) =>
+      c.id == contactId ? c.copyWith(hasNewDiscoveryPost: false) : c
+    ).toList());
+  }
+
   Future<List<ContactModel>> build() async {
     _listenToSocket();
     ref.onDispose(() { for (final s in _subs) s.cancel(); });
@@ -196,6 +206,14 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     }));
 
     // missed call count
+    _subs.add(socket.newDiscoveryPost.listen((authorId) {
+      final current = state.valueOrNull ?? [];
+      final updated = current.map((c) =>
+        c.id == authorId ? c.copyWith(hasNewDiscoveryPost: true) : c
+      ).toList();
+      state = AsyncData(updated);
+    }));
+
     _subs.add(socket.missedCallCount.listen((senderId) {
       final current = state.valueOrNull ?? [];
       state = AsyncData(current.map((c) =>

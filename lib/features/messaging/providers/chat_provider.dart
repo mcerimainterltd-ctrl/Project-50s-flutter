@@ -239,25 +239,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         'caption': caption ?? '',
       });
 
-      // Server: POST /api/gallery/upload
-      // Response: { success: true, item: { url: 'https://res.cloudinary.com/...' } }
-      // Track upload progress — updates the pending bubble status text
-      int _lastPct = 0;
-      final res = await _dio.post(
-        '/api/gallery/upload',
-        data: formData,
-        onSendProgress: (sent, total) {
-          if (total <= 0) return;
-          final pct = (sent / total * 100).round();
-          if (pct != _lastPct && pct % 10 == 0) {
-            _lastPct = pct;
-            // Update pending message text to show progress
-            state = state.map((m) => m.id == msgId
-                ? m.copyWith(status: 'uploading')
-                : m).toList();
-          }
-        },
-      );
+
       final data       = res.data as Map<String, dynamic>?;
       final fileUrl    = (data?['item'] as Map?)?['url'] as String?;
 

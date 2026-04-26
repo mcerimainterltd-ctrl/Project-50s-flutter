@@ -44,6 +44,7 @@ class SocketService {
   final _contactStatusCtrl    = StreamController<ContactStatusData>.broadcast();
   final _forceLogoutCtrl      = StreamController<String>.broadcast();
   final _missedCallCountCtrl  = StreamController<String>.broadcast();
+  final _newDiscoveryPostCtrl = StreamController<String>.broadcast();
 
   Stream<SocketState>               get connectionState  => _connectionStateCtrl.stream;
   Stream<Map<String, dynamic>>      get receiveMessage   => _receiveMessageCtrl.stream;
@@ -54,6 +55,7 @@ class SocketService {
   Stream<List<String>>              get onlineUsers      => _onlineUsersCtrl.stream;
   Stream<List<Map<String,dynamic>>> get contactsList     => _contactsListCtrl.stream;
   Stream<dynamic>                   get chatHistory      => _chatHistoryCtrl.stream;
+  Stream<String>                    get newDiscoveryPost  => _newDiscoveryPostCtrl.stream;
   Stream<IncomingCallData>          get incomingCall     => _incomingCallCtrl.stream;
   Stream<CallAnswerData>            get callAnswer       => _callAnswerCtrl.stream;
   Stream<IceCandidateData>          get iceCandidate     => _iceCandidateCtrl.stream;
@@ -328,6 +330,11 @@ class SocketService {
     });
 
     // ── Force logout ──────────────────────────────────────────────────────
+    socket.on('new_discovery_post', (d) {
+      final authorId = d?['authorId'] as String? ?? '';
+      if (authorId.isNotEmpty) _newDiscoveryPostCtrl.add(authorId);
+    });
+
     socket.on('force-logout', (d) =>
       _forceLogoutCtrl.add(d?['reason'] ?? 'Logged out remotely.'));
 
@@ -396,6 +403,7 @@ class SocketService {
   void emitCallRejected(String r, String reason)   => emit('call-rejected',      {'recipientId': r, 'reason': reason});
   void emitCallEnded(String r)                     => emit('call-ended',         {'recipientId': r});
   void emitGroupTyping(String g, String u, String n)=> emit('group:typing',      {'groupId': g, 'userId': u, 'name': n});
+  void emitMarkDiscoverySeen(String authorId) => emit('mark_discovery_seen', {'authorId': authorId});
   void emitDisappearingTimer(String contactId, String userId, String value) => emit("disappearing:timer-set", {"contactId": contactId, "userId": userId, "value": value});
 
   void startHeartbeat(String xameId, {bool stealth = false}) {

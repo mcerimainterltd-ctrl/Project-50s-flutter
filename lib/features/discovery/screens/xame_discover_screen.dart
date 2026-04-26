@@ -162,7 +162,8 @@ class DiscoveryApiService {
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 class XameDiscoverScreen extends ConsumerStatefulWidget {
-  const XameDiscoverScreen({Key? key}) : super(key: key);
+  final String? authorId;
+  const XameDiscoverScreen({Key? key, this.authorId}) : super(key: key);
   @override
   ConsumerState<XameDiscoverScreen> createState() => _XameDiscoverScreenState();
 }
@@ -177,6 +178,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   String _regionCode = 'global';
   String _regionName = 'Global';
   String _searchQuery = '';
+  String? _authorFilter;
   int    _page        = 1;
   bool   _hasMore     = true;
 
@@ -195,6 +197,9 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     _searchFade = CurvedAnimation(
         parent: _searchAnim, curve: Curves.easeOut);
     _scrollCtrl.addListener(_onScroll);
+    if (widget.authorId != null && widget.authorId!.isNotEmpty) {
+      _authorFilter = widget.authorId;
+    }
     // Show cached data instantly
     _loadCached();
     // Then refresh from network
@@ -257,7 +262,9 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
         people.map((p) => p.toJson()).toList());
 
     setState(() {
-      _feed    = feed;
+      _feed    = _authorFilter != null
+          ? feed.where((i) => i.authorId == _authorFilter).toList()
+          : feed;
       _people  = people;
       _stories = stories;
       _loading = false;
