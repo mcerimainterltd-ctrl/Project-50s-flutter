@@ -142,16 +142,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      floatingActionButton: hasRemote
-          ? AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 200),
-              child: FloatingActionButton.small(
-                onPressed: _openAddCall,
-                backgroundColor: XameColors.darkSurface.withValues(alpha: 0.5),
-                child: Icon(Icons.person_add_outlined,
-                    color: Colors.white, size: 20)))
-          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: GestureDetector(
         onTap: () => setState(() => _showControls = !_showControls),
@@ -254,6 +244,31 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             ),
 
+            // ── Add Call button ─────────────────────────────────────
+            if (hasRemote)
+              Positioned(
+                bottom: botPad + 140, right: 16,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 250),
+                  child: GestureDetector(
+                    onTap: _openAddCall,
+                    child: Container(
+                      width: 44, height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                        boxShadow: [BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 8)],
+                      ),
+                      child: const Icon(Icons.person_add_outlined,
+                          color: Colors.white, size: 20),
+                    ),
+                  ),
+                ),
+              ),
             // ── Bottom controls ─────────────────────────────────────
             Positioned(
               bottom: 0, left: 0, right: 0,
@@ -290,7 +305,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         Helper.setSpeakerphoneOn(_isSpeakerOn);
                       }),
                       _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
-                      _vBtn(Icons.person_add_outlined, false, "Add Call", _openAddCall),
                       _endBtn(webrtc),
                     ],
                   ),
@@ -422,6 +436,34 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
               // ── Controls ──────────────────────────────────────────
               Padding(
+                padding: EdgeInsets.only(left: 40, right: 40, bottom: botPad + 48),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.topRight,
+                  children: [
+                alignment: Alignment.topRight,
+                children: [
+                  // Add Call button — top right, fades with controls
+                  if (isActive)
+                    Positioned(
+                      top: -40, right: 0,
+                      child: GestureDetector(
+                        onTap: _openAddCall,
+                        child: Container(
+                          width: 42, height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(13),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                            boxShadow: [BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 8)],
+                          ),
+                          child: const Icon(Icons.person_add_outlined,
+                              color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ),
                 padding: EdgeInsets.only(
                     left: 40, right: 40, bottom: botPad + 48),
                 child: Row(
@@ -436,12 +478,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         webrtc.localStream?.getAudioTracks()
                             .forEach((t) => t.enabled = !_isMicMuted);
                       },
-                    ),
-                    _voiceBtn(
-                      icon: Icons.person_add_outlined,
-                      label: "Add Call",
-                      active: false,
-                      onTap: _openAddCall,
                     ),
                     _endBtn(webrtc, size: 76),
                     _voiceBtn(
