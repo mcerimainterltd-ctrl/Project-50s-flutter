@@ -528,8 +528,6 @@ class _ChatsTab extends ConsumerWidget {
           itemCount: items.length,
           itemBuilder: (_, i) => items[i],
         );
-      },
-    );
   }
 }
 
