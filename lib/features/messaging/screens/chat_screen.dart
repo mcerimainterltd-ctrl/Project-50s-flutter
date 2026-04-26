@@ -21,7 +21,6 @@ import '../../contacts/screens/contacts_screen.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import 'chat_wallpaper.dart';
-import '../../calling/call_schedule.dart';
 import 'message_schedule_screen.dart';
 import '../disappearing.dart';
 
@@ -572,10 +571,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
-                builder: (_) => ScheduleCallDialog(
-                  recipientId:   widget.userId,
-                  recipientName: widget.userId,
-                  service:       CallScheduleService(ref.read(socketServiceProvider), ref.read(currentUserProvider)?.xameId ?? ""),
+                builder: (_) => _ComposeScheduledSheet(
+                  preselectedId:   widget.userId,
+                  preselectedName: ref.read(contactsProvider).valueOrNull
+                      ?.firstWhere((c) => c.id == widget.userId,
+                          orElse: () => ContactModel(id: widget.userId, name: widget.userId))
+                      .name,
+                ));
                 ));
             }),
           ListTile(
