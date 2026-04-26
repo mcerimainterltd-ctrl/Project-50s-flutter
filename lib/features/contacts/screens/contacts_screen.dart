@@ -483,12 +483,24 @@ class _ChatsTab extends ConsumerWidget {
     final self     = ref.watch(currentUserProvider);
 
     return contacts.when(
-      loading: () => Center(
-        child: CircularProgressIndicator(color: context.xPrimary)),
+      loading: () {
+        final cached = contacts.valueOrNull;
+        if (cached != null && cached.isNotEmpty) {
+          // Cache already loaded — skip spinner and render directly
+          return _buildChatList(context, ref, cached, filter);
+        }
+        return Center(
+          child: CircularProgressIndicator(color: context.xPrimary));
+      },
       error: (e, _) => Center(
         child: Text('Error: $e',
           style: TextStyle(color: context.xMuted))),
-      data: (list) {
+      data: (list) => _buildChatList(context, ref, list, filter),
+    );
+  }
+
+  Widget _buildChatList(BuildContext context, WidgetRef ref,
+      List<ContactModel> list, String filter) {
         var filtered = list.where((c) =>
           filter.isEmpty ||
           c.name.toLowerCase().contains(filter.toLowerCase()) ||

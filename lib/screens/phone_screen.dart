@@ -160,10 +160,19 @@ class _PhoneScreenState extends State<PhoneScreen>
     if (cachedRecents.isNotEmpty) {
       _recents = cachedRecents.map((r) => _CallRecord.fromJson(r)).toList();
     }
+    // Load cached device contacts instantly before permission request
+    final cachedContacts = CacheService.loadDevContacts();
+    if (cachedContacts.isNotEmpty) {
+      _contacts = cachedContacts.map((m) => _DevContact(
+        name:   m['name']   as String? ?? '',
+        phones: List<String>.from(m['phones'] as List? ?? []),
+      )).toList();
+      _contactsLoaded = true;
+    }
     _loadCredits();
     _loadRates();
     _loadRecents();
-    _loadContacts(); // Eager load contacts immediately
+    _loadContacts(); // Refresh from device in background
   }
 
   @override
@@ -245,6 +254,11 @@ class _PhoneScreenState extends State<PhoneScreen>
       }
       final sorted = byName.values.toList()
         ..sort((a, b) => a.name.compareTo(b.name));
+      // Persist to cache for instant load next time
+      await CacheService.saveDevContacts(sorted.map((c) => {
+        'name':   c.name,
+        'phones': c.phones,
+      }).toList());
       if (mounted) setState(() {
         _contacts       = sorted;
         _contactsLoaded = true;

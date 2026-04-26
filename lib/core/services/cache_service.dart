@@ -14,6 +14,9 @@ class CacheService {
     await Hive.openBox<String>(_boxChats);
     await Hive.openBox<String>(_boxCallHistory);
     await Hive.openBox<bool>('xame_discovery_likes');
+    await Hive.openBox<String>(_boxDiscovery);
+    await Hive.openBox<String>(_boxPhoneRecents);
+    await Hive.openBox<String>(_boxDevContacts);
   }
 
   // ── Contacts ──────────────────────────────────────────────────────────
@@ -184,6 +187,26 @@ class CacheService {
     await initPhoneRecents();
     final trimmed = recents.length > 100 ? recents.sublist(0, 100) : recents;
     await _phoneRecents.put('list', jsonEncode(trimmed));
+  }
+
+
+  // ── Device contacts cache ─────────────────────────────────────────────────
+  static const _boxDevContacts = 'xame_device_contacts';
+
+  static Future<void> saveDevContacts(List<Map<String,dynamic>> contacts) async {
+    final box = Hive.box<String>(_boxDevContacts);
+    await box.put('list', jsonEncode(contacts));
+  }
+
+  static List<Map<String,dynamic>> loadDevContacts() {
+    if (!Hive.isBoxOpen(_boxDevContacts)) return [];
+    final box = Hive.box<String>(_boxDevContacts);
+    final raw = box.get('list');
+    if (raw == null) return [];
+    try {
+      return List<Map<String,dynamic>>.from(
+        (jsonDecode(raw) as List).map((e) => Map<String,dynamic>.from(e)));
+    } catch (_) { return []; }
   }
 
   static List<Map<String,dynamic>> loadPhoneRecents() {

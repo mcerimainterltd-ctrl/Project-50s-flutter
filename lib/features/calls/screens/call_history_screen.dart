@@ -155,16 +155,35 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
           ),
         ],
         body: history.when(
-          loading: () => Center(
-            child: CircularProgressIndicator(
-                color: context.xAccent, strokeWidth: 1.5)),
-          error: (e, _) => Center(
-            child: Text('Failed to load calls',
-              style: TextStyle(color: context.xMuted))),
-          data: (calls) {
-            final filtered = _filterCalls(calls, user?.xameId ?? '');
-            if (filtered.isEmpty) return _emptyState();
-            return RefreshIndicator(
+          loading: () {
+            final cached = history.valueOrNull;
+            if (cached != null && cached.isNotEmpty) {
+              return _buildList(cached, user?.xameId ?? '', contacts);
+            }
+            return Center(
+              child: CircularProgressIndicator(
+                  color: context.xAccent, strokeWidth: 1.5));
+          },
+          error: (e, _) {
+            final cached = history.valueOrNull;
+            if (cached != null && cached.isNotEmpty) {
+              return _buildList(cached, user?.xameId ?? '', contacts);
+            }
+            return Center(
+              child: Text('Failed to load calls',
+                style: TextStyle(color: context.xMuted)));
+          },
+          data: (calls) => _buildList(calls, user?.xameId ?? '', contacts),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildList(List<CallRecord> calls, String userId,
+      List<ContactModel> contacts) {
+    final filtered = _filterCalls(calls, userId);
+    if (filtered.isEmpty) return _emptyState();
+    return RefreshIndicator(
               color: context.xAccent,
               backgroundColor: context.xSurface,
               onRefresh: () => ref.refresh(
@@ -202,10 +221,6 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
                 },
               ),
             );
-          },
-        ),
-      ),
-    );
   }
 
   List<CallRecord> _filterCalls(List<CallRecord> calls, String userId) {
