@@ -392,7 +392,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   return _actionTile(
                     icon:    Icons.palette_outlined,
                     title:   'Theme',
-                    subtitle: '\${theme.emoji} \${theme.name}',
+                    subtitle: '${theme.emoji} ${theme.name}',
                     color:   theme.primary,
                     onTap:   () => Navigator.push(context,
                         MaterialPageRoute(
@@ -586,7 +586,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   // ── Widgets ──────────────────────────────────────────────────────────────
   Widget _initialsWidget(String initials) => Container(
-    color: context.xMuted,
+    color: context.xSurface,
     child: Center(child: Text(initials,
       style: TextStyle(color: context.xText, fontSize: 32,
           fontWeight: FontWeight.w600))));
@@ -600,9 +600,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     required String hint, required IconData icon,
   }) => Container(
     decoration: BoxDecoration(
-      color: context.xMuted,
+      color: context.xCard,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: context.xMuted),
+      border: Border.all(color: context.xMuted.withValues(alpha: 0.2)),
     ),
     child: TextField(
       controller: controller,
@@ -625,9 +625,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     decoration: BoxDecoration(
-      color: context.xMuted,
+      color: context.xCard,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: context.xMuted),
+      border: Border.all(color: context.xMuted.withValues(alpha: 0.2)),
     ),
     child: Row(children: [
       Icon(icon, color: context.xMuted, size: 20),
@@ -860,9 +860,9 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
   Widget _field(TextEditingController ctrl, String hint,
       TextInputType type) => Container(
     decoration: BoxDecoration(
-      color: context.xMuted,
+      color: context.xCard,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: context.xMuted),
+      border: Border.all(color: context.xMuted.withValues(alpha: 0.2)),
     ),
     child: TextField(
       controller: ctrl, keyboardType: type,
