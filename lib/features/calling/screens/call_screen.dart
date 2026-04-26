@@ -486,8 +486,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             ]),
           ),
-        ),
-      );
+        ],
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
