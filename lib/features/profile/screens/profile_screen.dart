@@ -844,11 +844,6 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
                             fontWeight: FontWeight.w700)),
               ),
             ),
-
-            SizedBox(height: 400, child: ProfilePortfolioGrid(
-              items: List.generate(6, (i) => "item"),
-              onShowLightbox: (index) {},),
-            ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
           ],
         ),

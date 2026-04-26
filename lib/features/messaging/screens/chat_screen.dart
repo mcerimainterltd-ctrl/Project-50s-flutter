@@ -492,7 +492,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           icon: Icon(Icons.arrow_back_ios, color: context.xText, size: 20),
           onPressed: () => context.go('/contacts')),
       title: GestureDetector(
-        onTap: () => Navigator.push(context,        child: Row(children: [
+        onTap: () {},
+      child: Row(children: [
           GestureDetector(
             onTap: () {
               final pic = contact?.isProfilePicHidden == true ? null : contact?.profilePic;

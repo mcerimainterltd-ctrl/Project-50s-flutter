@@ -695,8 +695,10 @@ class XameAvatar extends StatelessWidget {
       Positioned(right: 0, bottom: 0,
         child: Container(
           width: size * 0.26, height: size * 0.26,
-          decoration: BoxDecoration(            shape: BoxShape.circle,                ? Border.all(color: XameColors.darkBg, width: 1.5)
-                : null),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: XameColors.accent,
+            border: Border.all(color: XameColors.darkBg, width: 1.5)),
         )),
   ]);
 }
