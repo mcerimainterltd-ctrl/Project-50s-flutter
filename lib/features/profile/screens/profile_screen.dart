@@ -515,9 +515,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: context.xMuted,
+                        color: context.xCard,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: context.xMuted),
+                        border: Border.all(color: context.xMuted.withValues(alpha: 0.2)),
                       ),
                       child: Row(children: [
                         Icon(Icons.phone_android,
@@ -659,9 +659,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: context.xMuted,
+        color: context.xCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.xMuted),
+        border: Border.all(color: context.xMuted.withValues(alpha: 0.2)),
       ),
       child: Row(children: [
         Icon(icon, color: color, size: 20),
