@@ -150,7 +150,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this)
+    _tab = TabController(length: 3, vsync: this, initialIndex: 1)
       ..addListener(() {
         if (_tab.index == 0 && _recents.isEmpty) _loadRecents();
         if (_tab.index == 1 && !_contactsLoaded) _loadContacts();
