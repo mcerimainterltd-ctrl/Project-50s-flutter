@@ -246,7 +246,7 @@ class MessageScheduleScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _ComposeScheduledSheet(
+      builder: (_) => ComposeScheduledSheet(
         preselectedId:   recipientId,
         preselectedName: recipientName,
       ),
@@ -255,15 +255,15 @@ class MessageScheduleScreen extends ConsumerWidget {
 }
 
 // ── Compose Sheet ─────────────────────────────────────────────────────────────
-class _ComposeScheduledSheet extends ConsumerStatefulWidget {
+class ComposeScheduledSheet extends ConsumerStatefulWidget {
   final String? preselectedId, preselectedName;
-  const _ComposeScheduledSheet({this.preselectedId, this.preselectedName});
+  const ComposeScheduledSheet({this.preselectedId, this.preselectedName});
   @override
   ConsumerState<_ComposeScheduledSheet> createState() =>
       _ComposeScheduledSheetState();
 }
 
-class _ComposeScheduledSheetState
+class ComposeScheduledSheetState
     extends ConsumerState<_ComposeScheduledSheet> {
   final _textCtrl = TextEditingController();
   String?  _recipientId, _recipientName;

@@ -571,7 +571,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
-                builder: (_) => _ComposeScheduledSheet(
+                builder: (_) => ComposeScheduledSheet(
                   preselectedId:   widget.userId,
                   preselectedName: ref.read(contactsProvider).valueOrNull
                       ?.firstWhere((c) => c.id == widget.userId,
