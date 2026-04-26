@@ -157,6 +157,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     _loadCredits();
     _loadRates();
     _loadRecents();
+    _loadContacts(); // Eager load contacts immediately
   }
 
   @override

@@ -6,6 +6,9 @@ import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
 import 'package:xamepage/shared/models/xame_user.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
+import 'package:xamepage/features/contacts/providers/contacts_provider.dart';
+import 'package:xamepage/features/calls/screens/call_history_screen.dart';
+import 'package:xamepage/core/services/cache_service.dart';
 
 class XamePageApp extends ConsumerStatefulWidget {
   const XamePageApp({super.key});
@@ -18,6 +21,12 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   void initState() {
     super.initState();
     // Listen for calls in a dedicated listener, not the build method
+    // Eager load all data immediately
+    Future.microtask(() async {
+      // Load contacts immediately
+      try { ref.read(contactsProvider); } catch (_) {}
+    });
+
     Future.microtask(() {
       ref.read(webRTCServiceProvider).onIncomingCall.listen((incoming) {
         if (!incoming) return;
@@ -35,6 +44,16 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     final user = ref.watch(currentUserProvider);
     if (user != null) {
       ref.read(socketServiceProvider).connect(user.xameId);
+    }
+
+    // Pre-warm providers when user is logged in
+    if (user != null) {
+      Future.microtask(() {
+        try {
+          ref.read(contactsProvider);
+          ref.read(callHistoryProvider(user.xameId));
+        } catch (_) {}
+      });
     }
 
     final theme = ref.watch(themeProvider);
