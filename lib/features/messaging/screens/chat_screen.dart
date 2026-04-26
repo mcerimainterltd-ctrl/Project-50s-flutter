@@ -42,6 +42,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   XameMessage? _replyTo;
   final Set<String> _selected = {};
   bool _selectMode = false;
+  int  _wallpaperVersion = 0;
 
 
   @override
@@ -910,7 +911,6 @@ class _Composer extends StatefulWidget {
 
 class _ComposerState extends State<_Composer> {
   bool _hasText = false;
-  int _wallpaperVersion = 0;
 
   @override
   void initState() {
