@@ -245,20 +245,43 @@ class _XameTvScreenState extends State<XameTvScreen>
         style:const TextStyle(color:Colors.white54,fontSize:11)),
   ]));
 
-  Widget _errorOverlay() => Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
-    const Icon(Icons.signal_cellular_connected_no_internet_4_bar_rounded,
-        color:Colors.white24, size:44),
-    const SizedBox(height:8),
-    const Text('Stream unavailable',
-        style:TextStyle(color:Colors.white54,fontSize:13,fontWeight:FontWeight.w600)),
-    if (_cur!=null) Text(_cur!.name, style:const TextStyle(color:Colors.white30,fontSize:10)),
-    const SizedBox(height:14),
-    Row(mainAxisSize:MainAxisSize.min, children:[
-      _pill(_retries>=3?'Next':'Retry', _retry, Colors.white10),
-      const SizedBox(width:8),
-      _pill('Skip', _next, (kCategoryColors[_category]??Colors.blue).withOpacity(0.3)),
-    ]),
-  ]));
+  Widget _errorOverlay() => Stack(fit:StackFit.expand, children:[
+    // Subtle scrim — logo still visible
+    Container(decoration:BoxDecoration(
+      gradient:LinearGradient(
+        begin:Alignment.topCenter, end:Alignment.bottomCenter,
+        colors:[Colors.black.withOpacity(0.4), Colors.black.withOpacity(0.7)],
+      ),
+    )),
+    // Frosted card with buttons always on top
+    Center(child:Container(
+      margin:const EdgeInsets.symmetric(horizontal:40),
+      padding:const EdgeInsets.symmetric(vertical:22,horizontal:20),
+      decoration:BoxDecoration(
+        color:Colors.black.withOpacity(0.6),
+        borderRadius:BorderRadius.circular(20),
+        border:Border.all(color:Colors.white12),
+      ),
+      child:Column(mainAxisSize:MainAxisSize.min, children:[
+        const Icon(Icons.signal_cellular_connected_no_internet_4_bar_rounded,
+            color:Colors.white54, size:38),
+        const SizedBox(height:8),
+        const Text('Stream unavailable',
+            style:TextStyle(color:Colors.white,fontSize:14,fontWeight:FontWeight.w700)),
+        if (_cur!=null) Padding(
+          padding:const EdgeInsets.only(top:4),
+          child:Text(_cur!.name,
+              style:const TextStyle(color:Colors.white54,fontSize:11),
+              maxLines:1,overflow:TextOverflow.ellipsis)),
+        const SizedBox(height:18),
+        Row(mainAxisSize:MainAxisSize.min, children:[
+          _pill(_retries>=3?'Next':'Retry', _retry, Colors.white.withOpacity(0.15)),
+          const SizedBox(width:10),
+          _pill('Skip', _next, (kCategoryColors[_category]??Colors.blue).withOpacity(0.5)),
+        ]),
+      ]),
+    )),
+  ]);
 
   Widget _gradientLayer() => Container(decoration:const BoxDecoration(
     gradient:LinearGradient(
