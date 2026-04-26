@@ -150,7 +150,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 onPressed: _openAddCall,
                 backgroundColor: XameColors.darkSurface.withValues(alpha: 0.5),
                 child: Icon(Icons.person_add_outlined,
-                    color: XameColors.darkBg, size: 20)))
+                    color: Colors.white, size: 20)))
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: GestureDetector(
@@ -180,7 +180,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                           : webrtc.isRinging
                               ? 'Ringing...'
                               : 'Calling $name...',
-                      style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.6), fontSize: 15)),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 15)),
                 ]),
               ),
 
@@ -229,7 +229,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   ),
                   child: Row(children: [
                     Expanded(child: Text(name,
-                      style: TextStyle(color: XameColors.darkBg,
+                      style: TextStyle(color: Colors.white,
                           fontSize: 18, fontWeight: FontWeight.w600,
                           shadows: [Shadow(color: Colors.black, blurRadius: 8)]))),
                     Container(
@@ -246,7 +246,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         SizedBox(width: 6),
                         Text(_fmt(_seconds),
                           style: TextStyle(
-                              color: XameColors.darkBg, fontSize: 13)),
+                              color: Colors.white, fontSize: 13)),
                       ]),
                     ),
                   ]),
@@ -290,6 +290,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         Helper.setSpeakerphoneOn(_isSpeakerOn);
                       }),
                       _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
+                      _vBtn(Icons.person_add_outlined, false, "Add Call", _openAddCall),
                       _endBtn(webrtc),
                     ],
                   ),
@@ -318,6 +319,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
+      floatingActionButton: isActive
+          ? FloatingActionButton.small(
+              onPressed: _openAddCall,
+              backgroundColor: Colors.white.withValues(alpha: 0.15),
+              child: const Icon(Icons.person_add_outlined,
+                  color: Colors.white, size: 20))
+          : null,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -364,7 +372,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: XameColors.darkBg.withOpacity(0.15), width: 1.5),
+                        color: Colors.white.withOpacity(0.3), width: 1.5),
                   ),
                   child: CircleAvatar(
                     radius: 75,
@@ -374,7 +382,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                     child: photoUrl == null
                         ? Text(initials,
                             style: TextStyle(fontSize: 45,
-                                color: XameColors.darkBg,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold))
                         : null,
                   ),
@@ -389,7 +397,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 child: Text(name,
                   textAlign: TextAlign.center,
                   maxLines: 2,
-                  style: TextStyle(color: XameColors.darkBg, fontSize: 34,
+                  style: TextStyle(color: Colors.white, fontSize: 34,
                       fontWeight: FontWeight.w900, letterSpacing: -0.5)),
               ),
 
@@ -402,7 +410,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   key: ValueKey(statusText),
                   style: TextStyle(
                     color: isActive
-                        ? XameColors.accent : XameColors.darkBg.withValues(alpha: 0.54),
+                        ? XameColors.accent : Colors.white.withValues(alpha: 0.7),
                     fontSize: 18,
                     fontWeight: isActive
                         ? FontWeight.w600 : FontWeight.w400,
@@ -428,6 +436,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         webrtc.localStream?.getAudioTracks()
                             .forEach((t) => t.enabled = !_isMicMuted);
                       },
+                    ),
+                    _voiceBtn(
+                      icon: Icons.person_add_outlined,
+                      label: "Add Call",
+                      active: false,
+                      onTap: _openAddCall,
                     ),
                     _endBtn(webrtc, size: 76),
                     _voiceBtn(
@@ -476,12 +490,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 ? CachedNetworkImageProvider(photoUrl) : null,
             child: photoUrl == null
                 ? Text(initials, style: TextStyle(
-                    fontSize: 32, color: XameColors.darkBg,
+                    fontSize: 32, color: Colors.white,
                     fontWeight: FontWeight.w600))
                 : null,
           ),
           SizedBox(height: 24),
-          Text(name, style: TextStyle(color: XameColors.darkBg,
+          Text(name, style: TextStyle(color: Colors.white,
               fontSize: 22, fontWeight: FontWeight.w700)),
           SizedBox(height: 16),
           Container(
@@ -489,7 +503,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             decoration: BoxDecoration(
               color: isDeclined
                   ? Colors.red.withOpacity(0.15)
-                  : XameColors.darkBg.withOpacity(0.08),
+                  : Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
                 color: isDeclined
@@ -499,7 +513,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
             child: Text(reason,
               style: TextStyle(
                 color: isDeclined
-                    ? XameColors.danger : XameColors.darkBg.withValues(alpha: 0.7),
+                    ? XameColors.danger : Colors.white.withValues(alpha: 0.7),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -565,15 +579,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         Container(
           width: 54, height: 54,
           decoration: BoxDecoration(
-            color: active ? XameColors.darkBg : XameColors.darkSurface,
+            color: active ? XameColors.primary.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
           child: Icon(icon,
-              color: active ? Colors.black : XameColors.darkBg, size: 22),
+              color: active ? XameColors.primary : Colors.white, size: 22),
         ),
         SizedBox(height: 6),
         Text(label, style: TextStyle(
-            color: XameColors.darkBg.withValues(alpha: 0.6), fontSize: 10)),
+            color: Colors.white.withValues(alpha: 0.7), fontSize: 10)),
       ]),
     );
   }
@@ -590,18 +604,18 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         Container(
           width: 62, height: 62,
           decoration: BoxDecoration(
-            color: active ? XameColors.darkBg : XameColors.darkSurface,
+            color: active ? XameColors.primary.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.12),
             shape: BoxShape.circle,
             boxShadow: active ? [BoxShadow(
-                color: XameColors.darkBg.withOpacity(0.2),
+                color: XameColors.primary.withOpacity(0.3),
                 blurRadius: 12, spreadRadius: 2)] : [],
           ),
           child: Icon(icon,
-              color: active ? Colors.black : XameColors.darkBg, size: 26),
+              color: active ? XameColors.primary : Colors.white, size: 26),
         ),
         SizedBox(height: 8),
         Text(label, style: TextStyle(
-            color: XameColors.darkBg.withValues(alpha: 0.6), fontSize: 12)),
+            color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
       ]),
     );
   }
@@ -619,12 +633,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 color: Colors.red.withOpacity(0.45),
                 blurRadius: 20, spreadRadius: 3)],
           ),
-          child: Icon(Icons.call_end, color: XameColors.darkBg,
+          child: Icon(Icons.call_end, color: Colors.white,
               size: size * 0.48),
         ),
         SizedBox(height: 8),
         Text('End', style: TextStyle(
-            color: XameColors.darkBg.withValues(alpha: 0.6), fontSize: 12)),
+            color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
       ]),
     );
   }
