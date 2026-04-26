@@ -158,7 +158,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
           loading: () {
             final cached = history.valueOrNull;
             if (cached != null && cached.isNotEmpty) {
-              return _buildList(cached, user?.xameId ?? '', contacts);
+              return _buildList(cached, user?.xameId ?? '', contacts, user);
             }
             return Center(
               child: CircularProgressIndicator(
@@ -167,33 +167,33 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
           error: (e, _) {
             final cached = history.valueOrNull;
             if (cached != null && cached.isNotEmpty) {
-              return _buildList(cached, user?.xameId ?? '', contacts);
+              return _buildList(cached, user?.xameId ?? '', contacts, user);
             }
             return Center(
               child: Text('Failed to load calls',
                 style: TextStyle(color: context.xMuted)));
           },
-          data: (calls) => _buildList(calls, user?.xameId ?? '', contacts),
+          data: (calls) => _buildList(calls, user?.xameId ?? '', contacts, user),
         ),
       ),
     );
   }
 
   Widget _buildList(List<CallRecord> calls, String userId,
-      List<ContactModel> contacts) {
+      List<ContactModel> contacts, dynamic user) {
     final filtered = _filterCalls(calls, userId);
     if (filtered.isEmpty) return _emptyState();
     return RefreshIndicator(
               color: context.xAccent,
               backgroundColor: context.xSurface,
               onRefresh: () => ref.refresh(
-                  callHistoryProvider(user?.xameId ?? '').future),
+                  callHistoryProvider(userId).future),
               child: ListView.builder(
                 padding: const EdgeInsets.only(top: 8, bottom: 32),
                 itemCount: filtered.length,
                 itemBuilder: (_, i) {
                   final call    = filtered[i];
-                  final isMe    = call.callerId == user?.xameId;
+                  final isMe    = call.callerId == userId;
                   final peerId  = isMe ? call.recipientId : call.callerId;
                   final contact = contacts.where((c) => c.id == peerId).firstOrNull;
                   final name    = contact?.name ?? peerId;
