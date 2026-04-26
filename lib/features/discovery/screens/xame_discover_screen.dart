@@ -12,6 +12,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/cache_service.dart';
+import '../../../core/services/cache_service.dart';
 import '../widgets/discovery_cards.dart';
 import '../widgets/people_carousel.dart';
 import '../widgets/stories_bar.dart';
@@ -230,6 +231,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       });
     }
   }
+
 
   Future<void> _loadData({bool refresh = false}) async {
     if (refresh) setState(() { _page = 1; _hasMore = true; _feed = []; });

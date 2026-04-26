@@ -45,6 +45,52 @@ class DiscoveryItem {
     required this.ts,
     this.accentColor,
   });
+
+  factory DiscoveryItem.fromJson(Map<String, dynamic> json) {
+    return DiscoveryItem(
+      id:             json['id'] as String,
+      title:          json['title'] as String,
+      subtitle:       json['subtitle'] as String,
+      mediaUrl:       json['mediaUrl'] as String,
+      thumbnailUrl:   json['thumbnailUrl'] as String?,
+      authorName:     json['authorName'] as String,
+      authorAvatar:   json['authorAvatar'] as String,
+      authorId:       json['authorId'] as String,
+      region:         json['region'] as String,
+      category:       json['category'] as String,
+      type:           DiscoveryType.values.byName(json['type'] as String),
+      mediaType:      DiscoveryMediaType.values.byName(json['mediaType'] as String),
+      isLive:         json['isLive'] as bool,
+      isAuthorOnline: json['isAuthorOnline'] as bool,
+      viewCount:      json['viewCount'] as int,
+      likeCount:      json['likeCount'] as int,
+      commentCount:   json['commentCount'] as int,
+      ts:             DateTime.parse(json['ts'] as String),
+      accentColor:    json['accentColor'] != null ? Color(json['accentColor'] as int) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id':             id,
+    'title':          title,
+    'subtitle':       subtitle,
+    'mediaUrl':       mediaUrl,
+    'thumbnailUrl':   thumbnailUrl,
+    'authorName':     authorName,
+    'authorAvatar':   authorAvatar,
+    'authorId':       authorId,
+    'region':         region,
+    'category':       category,
+    'type':           type.name,
+    'mediaType':      mediaType.name,
+    'isLive':         isLive,
+    'isAuthorOnline': isAuthorOnline,
+    'viewCount':      viewCount,
+    'likeCount':      likeCount,
+    'commentCount':   commentCount,
+    'ts':             ts.toIso8601String(),
+    'accentColor':    accentColor?.value,
+  };
 }
 
 class DiscoveryUser {
@@ -67,6 +113,30 @@ class DiscoveryUser {
     this.tagline,
     this.isAdded     = false,
   });
+
+  factory DiscoveryUser.fromJson(Map<String, dynamic> json) {
+    return DiscoveryUser(
+      id:          json['id'] as String,
+      name:        json['name'] as String,
+      avatarUrl:   json['avatarUrl'] as String,
+      mutualCount: json['mutualCount'] as int,
+      isOnline:    json['isOnline'] as bool? ?? false,
+      statusEmoji: json['statusEmoji'] as String?,
+      tagline:     json['tagline'] as String?,
+      isAdded:     json['isAdded'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id':          id,
+    'name':        name,
+    'avatarUrl':   avatarUrl,
+    'mutualCount': mutualCount,
+    'isOnline':    isOnline,
+    'statusEmoji': statusEmoji,
+    'tagline':     tagline,
+    'isAdded':     isAdded,
+  };
 }
 
 class DiscoveryRegion {
