@@ -20,6 +20,7 @@ import '../../contacts/providers/contacts_provider.dart';
 import '../../contacts/screens/contacts_screen.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
+import 'chat_wallpaper.dart';
 import '../disappearing.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -350,7 +351,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // shrinks when the keyboard appears, keeping composer always visible
       resizeToAvoidBottomInset: true,
       appBar: _buildAppBar(contact, isTyping, messages),
-      body: Column(children: [
+      body: FutureBuilder<Map<String, dynamic>>(
+        key: ValueKey(_wallpaperVersion),
+        future: WallpaperService.getWallpaper(widget.userId),
+        builder: (context, snap) {
+          final wallpaper  = snap.data ?? {'type': 'preset', 'id': 'none'};
+          final presetId   = wallpaper['type'] == 'preset' ? wallpaper['id'] as String? : null;
+          final preset     = (presetId != null && presetId != 'none')
+              ? kWallpaperPresets.firstWhere((p) => p.id == presetId,
+                  orElse: () => kWallpaperPresets.first)
+              : null;
+          final customPath = wallpaper['type'] == 'custom'
+              ? wallpaper['path'] as String? : null;
+
+          return Stack(children: [
+            // Wallpaper background
+            if (preset != null)
+              Positioned.fill(child: Container(
+                  decoration: BoxDecoration(gradient: preset.gradient))),
+            if (customPath != null)
+              Positioned.fill(child: Image.file(File(customPath), fit: BoxFit.cover)),
+            if (preset != null || customPath != null)
+              Positioned.fill(child: Container(
+                  color: Colors.black.withValues(alpha: 0.3))),
+
+            // Chat UI
+            Column(children: [
         Expanded(
           child: GestureDetector(
             onTap: () {
@@ -428,6 +454,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           onDisappearing: _openDisappearingTimer,
         ),
       ]),
+          ],
+        );
+        },
+      ),
     );
   }
 
@@ -529,7 +559,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         Container(width: 36, height: 4,
             decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 8),
-        ListTile(leading: Icon(Icons.search, color: context.xMuted),
+        ListTile(
+            leading: Icon(Icons.wallpaper_outlined, color: context.xMuted),
+            title: Text('Wallpaper', style: TextStyle(color: context.xText)),
+            onTap: () {
+              Navigator.pop(context);
+              WallpaperPickerSheet.show(context,
+                contactId:   widget.userId,
+                contactName: 'Chat',
+                onChanged:   () => setState(() => _wallpaperVersion++),
+              );
+            }),
+          ListTile(leading: Icon(Icons.search, color: context.xMuted),
             title: Text('Search', style: TextStyle(color: context.xText)),
             onTap: () => Navigator.pop(context)),
         ListTile(leading: Icon(Icons.edit_outlined, color: context.xMuted),
@@ -869,6 +910,7 @@ class _Composer extends StatefulWidget {
 
 class _ComposerState extends State<_Composer> {
   bool _hasText = false;
+  int _wallpaperVersion = 0;
 
   @override
   void initState() {
