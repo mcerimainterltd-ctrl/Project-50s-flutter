@@ -246,13 +246,13 @@ class _XameTvScreenState extends State<XameTvScreen>
   ]));
 
   Widget _errorOverlay() => Stack(fit:StackFit.expand, children:[
-    // Subtle scrim — logo still visible
-    Container(decoration:BoxDecoration(
+    // Subtle scrim — logo still visible, pointer events ignored
+    IgnorePointer(child:Container(decoration:BoxDecoration(
       gradient:LinearGradient(
         begin:Alignment.topCenter, end:Alignment.bottomCenter,
         colors:[Colors.black.withOpacity(0.4), Colors.black.withOpacity(0.7)],
       ),
-    )),
+    ))),
     // Frosted card with buttons always on top
     Center(child:Container(
       margin:const EdgeInsets.symmetric(horizontal:40),
