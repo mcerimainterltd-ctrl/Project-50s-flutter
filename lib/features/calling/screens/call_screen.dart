@@ -333,13 +333,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      floatingActionButton: isActive
-          ? FloatingActionButton.small(
-              onPressed: _openAddCall,
-              backgroundColor: Colors.white.withValues(alpha: 0.15),
-              child: const Icon(Icons.person_add_outlined,
-                  color: Colors.white, size: 20))
-          : null,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -439,8 +432,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 opacity: _showControls ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 250),
                 child: Padding(
-                padding: EdgeInsets.only(left: 40, right: 40, bottom: botPad + 48),
-                child: Stack(
+                  padding: EdgeInsets.only(left: 40, right: 40, bottom: botPad + 48),
+                  child: Stack(
                   clipBehavior: Clip.none,
                   children: [
                     Row(
@@ -492,10 +485,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                 ),
               ),
               ),
+            ]),
           ),
-        ],
-      ),
-    );
+      );
   }
 
   // ═══════════════════════════════════════════════════════════
