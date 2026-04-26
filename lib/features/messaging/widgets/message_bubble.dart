@@ -11,6 +11,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../settings/screens/settings_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../features/settings/screens/settings_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -165,7 +169,7 @@ class MessageBubble extends ConsumerWidget {
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(time, style: TextStyle(color: XameColors.darkSurface, fontSize: 10)),
+        Text(time, style: TextStyle(color: context.xMuted, fontSize: 10)),
         if (isSelf) ...[
           const SizedBox(width: 4),
           _StatusTick(status: message.status),
@@ -267,7 +271,9 @@ class _TextContent extends StatelessWidget {
       ? Text(text.trim(), style: TextStyle(fontSize: 36))
       : Text(text,
             style: TextStyle(
-                color: context.xBubbleSentText, fontSize: 15, height: 1.4));
+                color: context.xBubbleSentText,
+                fontSize: _fontSize(ref),
+                height: 1.4));
 }
 
 // ─── Status ticks ─────────────────────────────────────────────────────────

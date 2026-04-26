@@ -15,6 +15,7 @@ import 'package:video_compress/video_compress.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../settings/screens/settings_screen.dart';
 import '../../../shared/models/message.dart';
 import '../../contacts/providers/contacts_provider.dart';
 import '../../contacts/screens/contacts_screen.dart';
@@ -959,7 +960,8 @@ class _ComposerState extends State<_Composer> {
           controller:  widget.controller,
           focusNode:   widget.focusNode,
           onChanged:   widget.onChanged,
-          onSubmitted: (_) => widget.onSend(),
+          textInputAction: ref.read(settingsProvider).enterToSend ? TextInputAction.send : TextInputAction.newline,
+          onSubmitted: (_) { if (ref.read(settingsProvider).enterToSend) widget.onSend(); },
           maxLines:    5,
           minLines:    1,
           style: TextStyle(color: context.xText, fontSize: 15),

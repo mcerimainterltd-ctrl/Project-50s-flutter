@@ -3,13 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/config/constants.dart';
+import 'package:dio/dio.dart';
+import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import 'theme_picker_screen.dart';
 import '../../messaging/screens/chat_wallpaper.dart';
 import '../../calling/call_settings.dart';
 
 // ── Settings state ────────────────────────────────────────────────────────────
-class _SettingsData {
+class SettingsData {
   // Privacy
   final String lastSeen;        // 'everyone' | 'contacts' | 'nobody'
   final String profilePhoto;    // 'everyone' | 'contacts' | 'nobody'
@@ -40,7 +45,7 @@ class _SettingsData {
   final bool   reducedMotion;
   final bool   highContrast;
 
-  const _SettingsData({
+  const SettingsData({
     this.lastSeen        = 'contacts',
     this.profilePhoto    = 'contacts',
     this.readReceipts    = true,
@@ -73,7 +78,7 @@ class _SettingsData {
     bool? noiseSuppression, bool? echoCancellation,
     String? fontSize, String? bubbleStyle,
     bool? reducedMotion, bool? highContrast,
-  }) => _SettingsData(
+  }) => SettingsData(
     lastSeen:         lastSeen         ?? this.lastSeen,
     profilePhoto:     profilePhoto     ?? this.profilePhoto,
     readReceipts:     readReceipts     ?? this.readReceipts,
@@ -108,7 +113,7 @@ class _SettingsData {
     'reducedMotion': reducedMotion, 'highContrast': highContrast,
   };
 
-  factory _SettingsData.fromMap(Map m) => _SettingsData(
+  factory SettingsData.fromMap(Map m) => SettingsData(
     lastSeen:         m['lastSeen']         ?? 'contacts',
     profilePhoto:     m['profilePhoto']     ?? 'contacts',
     readReceipts:     m['readReceipts']     ?? true,
@@ -133,16 +138,16 @@ class _SettingsData {
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
-class _SettingsNotifier extends StateNotifier<_SettingsData> {
+class SettingsNotifier extends StateNotifier<SettingsData> {
   static const _box = 'xame_prefs';
   static const _key = 'settings_data';
 
-  _SettingsNotifier() : super(const _SettingsData()) { _load(); }
+  SettingsNotifier() : super(const SettingsData()) { _load(); }
 
   Future<void> _load() async {
     final box  = await Hive.openBox(_box);
     final raw  = box.get(_key);
-    if (raw != null) state = _SettingsData.fromMap(Map.from(raw));
+    if (raw != null) state = SettingsData.fromMap(Map.from(raw));
   }
 
   Future<void> update(_SettingsData s) async {
@@ -152,9 +157,9 @@ class _SettingsNotifier extends StateNotifier<_SettingsData> {
   }
 }
 
-final _settingsProvider =
-    StateNotifierProvider<_SettingsNotifier, _SettingsData>(
-        (_) => _SettingsNotifier());
+final settingsProvider =
+    StateNotifierProvider<SettingsNotifier, SettingsData>(
+        (_) => SettingsNotifier());
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -177,8 +182,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme    = ref.watch(themeProvider);
-    final settings = ref.watch(_settingsProvider);
-    final notifier = ref.read(_settingsProvider.notifier);
+    final settings = ref.watch(settingsProvider);
+    final notifier = ref.read(settingsProvider.notifier);
 
     void save(_SettingsData s) => notifier.update(s);
 
@@ -206,7 +211,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value:   settings.lastSeen,
               options: const ['everyone', 'contacts', 'nobody'],
               labels:  const ['Everyone', 'My Contacts', 'Nobody'],
-              onChanged: (v) => save(settings.copyWith(lastSeen: v)),
+              onChanged: (v) async {
+                save(settings.copyWith(lastSeen: v));
+                final user = ref.read(currentUserProvider);
+                if (user != null) await ref.read(settingsProvider.notifier).syncPrivacyToServer(user.xameId);
+              },
             ),
             _SelectTile(
               theme:   theme,
@@ -215,7 +224,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value:   settings.profilePhoto,
               options: const ['everyone', 'contacts', 'nobody'],
               labels:  const ['Everyone', 'My Contacts', 'Nobody'],
-              onChanged: (v) => save(settings.copyWith(profilePhoto: v)),
+              onChanged: (v) async {
+                save(settings.copyWith(profilePhoto: v));
+                final user = ref.read(currentUserProvider);
+                if (user != null) await ref.read(settingsProvider.notifier).syncPrivacyToServer(user.xameId);
+              },
             ),
             _ToggleTile(
               theme:     theme,
@@ -223,7 +236,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title:     'Read Receipts',
               subtitle:  'Show when messages are read',
               value:     settings.readReceipts,
-              onChanged: (v) => save(settings.copyWith(readReceipts: v)),
+              onChanged: (v) async {
+                save(settings.copyWith(readReceipts: v));
+                final user = ref.read(currentUserProvider);
+                if (user != null) await ref.read(settingsProvider.notifier).syncPrivacyToServer(user.xameId);
+              },
             ),
             _ToggleTile(
               theme:     theme,
@@ -231,7 +248,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title:     'Typing Indicators',
               subtitle:  'Show when you are typing',
               value:     settings.typingIndicators,
-              onChanged: (v) => save(settings.copyWith(typingIndicators: v)),
+              onChanged: (v) async {
+                save(settings.copyWith(typingIndicators: v));
+                final user = ref.read(currentUserProvider);
+                if (user != null) await ref.read(settingsProvider.notifier).syncPrivacyToServer(user.xameId);
+              },
             ),
           ]),
 
@@ -288,7 +309,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon:     Icons.block_outlined,
               title:    "Blocked Numbers",
               subtitle: "Manage blocked contacts",
-              onTap:    () => BlockedNumbersDialog.show(context, contacts: const []),
+              onTap: () {
+                final contacts = ref.read(contactsProvider).valueOrNull ?? [];
+                BlockedNumbersDialog.show(context,
+                  contacts: contacts.map((c) => {'id': c.id, 'name': c.name}).toList());
+              },
             ),
           ]),
 
@@ -412,25 +437,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               theme:    theme,
               icon:     Icons.help_outline_rounded,
               title:    'FAQ',
-              onTap:    () {},
+              onTap:    () => launchUrl(Uri.parse('https://xamepage.com/faq'),
+                  mode: LaunchMode.externalApplication),
             ),
             _NavTile(
               theme:    theme,
               icon:     Icons.support_agent_rounded,
               title:    'Contact Support',
-              onTap:    () {},
+              onTap:    () => launchUrl(
+                Uri(scheme: 'mailto', path: 'support@xamepage.com',
+                  queryParameters: {'subject': 'XamePage Support'}),
+                mode: LaunchMode.externalApplication),
             ),
             _NavTile(
               theme:    theme,
               icon:     Icons.description_outlined,
               title:    'Terms of Service',
-              onTap:    () {},
+              onTap:    () => launchUrl(Uri.parse('https://xamepage.com/terms'),
+                  mode: LaunchMode.externalApplication),
             ),
             _NavTile(
               theme:    theme,
               icon:     Icons.privacy_tip_outlined,
               title:    'Privacy Policy',
-              onTap:    () {},
+              onTap:    () => launchUrl(Uri.parse('https://xamepage.com/privacy'),
+                  mode: LaunchMode.externalApplication),
             ),
             if (_version.isNotEmpty)
               Padding(
