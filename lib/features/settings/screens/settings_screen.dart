@@ -155,26 +155,25 @@ class SettingsNotifier extends StateNotifier<SettingsData> {
     final box = await Hive.openBox(_box);
     await box.put(_key, s.toMap());
   }
-}
-
 
   Future<void> syncPrivacyToServer(String xameId) async {
-    final s = state;
     try {
       final dio = Dio();
       await dio.post(
-        '${AppConstants.apiBase}/users/$xameId/privacy',
+        '${AppConstants.serverUrl}/api/users/$xameId/privacy',
         data: {
-          'lastSeen':         s.lastSeen,
-          'profilePhoto':     s.profilePhoto,
-          'readReceipts':     s.readReceipts,
-          'typingIndicators': s.typingIndicators,
+          'lastSeen':         state.lastSeen,
+          'profilePhoto':     state.profilePhoto,
+          'readReceipts':     state.readReceipts,
+          'typingIndicators': state.typingIndicators,
         },
       );
     } catch (e) {
       debugPrint('syncPrivacyToServer error: $e');
     }
   }
+}
+
 
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, SettingsData>(

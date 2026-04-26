@@ -912,7 +912,7 @@ class _AttachBtn extends StatelessWidget {
 }
 
 // ── Composer ──────────────────────────────────────────────────────────────
-class _Composer extends StatefulWidget {
+class _Composer extends ConsumerStatefulWidget {
   final TextEditingController controller;
   final FocusNode             focusNode;
   final Function(String) onChanged;
@@ -926,10 +926,10 @@ class _Composer extends StatefulWidget {
   });
 
   @override
-  State<_Composer> createState() => _ComposerState();
+  ConsumerState<_Composer> createState() => _ComposerState();
 }
 
-class _ComposerState extends State<_Composer> {
+class _ComposerState extends ConsumerState<_Composer> {
   bool _hasText = false;
 
   @override
