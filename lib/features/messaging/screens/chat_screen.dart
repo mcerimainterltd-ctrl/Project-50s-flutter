@@ -578,7 +578,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           orElse: () => ContactModel(id: widget.userId, name: widget.userId))
                       .name,
                 ));
-                ));
             }),
           ListTile(
             leading: Icon(Icons.wallpaper_outlined, color: context.xMuted),
