@@ -15,7 +15,6 @@ import '../../features/calling/screens/incoming_call_screen.dart';
 import '../../features/calls/screens/call_history_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
-import '../../features/gallery/screens/gallery_screen.dart';
 import '../../screens/xame_pay_screen.dart';
 import '../../features/contacts/providers/contacts_provider.dart';
 import '../../screens/phone_screen.dart';
@@ -78,8 +77,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         );
       }),
       GoRoute(path: '/settings',      builder: (c, s) => const SettingsScreen()),
-      GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
-      GoRoute(path: '/gallery', builder: (c, s) => GalleryScreen(userId: user?.xameId ?? '', isOwner: true)),
-    ],
+      GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),    ],
   );
 });

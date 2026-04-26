@@ -1,7 +1,6 @@
 import 'dart:io' as dart_io;
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../gallery/screens/gallery_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
@@ -493,9 +492,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           icon: Icon(Icons.arrow_back_ios, color: context.xText, size: 20),
           onPressed: () => context.go('/contacts')),
       title: GestureDetector(
-        onTap: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => GalleryScreen(userId: widget.userId, isOwner: false))),
-        child: Row(children: [
+        onTap: () => Navigator.push(context,        child: Row(children: [
           GestureDetector(
             onTap: () {
               final pic = contact?.isProfilePicHidden == true ? null : contact?.profilePic;
@@ -874,10 +871,7 @@ class _AttachPanel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     color: context.xSurface,
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-      _AttachBtn(icon: Icons.photo_library_outlined,     label: 'Gallery',
-          onTap: onImage,  color: XameColors.primary),
-      _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [      _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
           onTap: onVideo,  color: XameColors.secondary),
       _AttachBtn(icon: Icons.camera_alt_outlined,         label: 'Camera',
           onTap: onCamera, color: context.xMuted),

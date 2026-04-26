@@ -13,18 +13,14 @@ class ContactModel {
   final String id, name;
   final String? profilePic, personalStatusEmoji, personalStatusMessage;
   final bool   isOnline, isProfilePicHidden;
-  final int    unreadCount, missedCallsCount, lastInteractionTs;
-  final bool   hasNewGallery;
-  final String lastInteractionPreview;
+  final int    unreadCount, missedCallsCount, lastInteractionTs;  final String lastInteractionPreview;
 
   const ContactModel({
     required this.id, required this.name,
     this.profilePic, this.personalStatusEmoji, this.personalStatusMessage,
     this.isOnline = false, this.isProfilePicHidden = false,
     this.unreadCount = 0, this.missedCallsCount = 0,
-    this.lastInteractionTs = 0, this.lastInteractionPreview = '',
-    this.hasNewGallery = false,
-  });
+    this.lastInteractionTs = 0, this.lastInteractionPreview = '',  });
 
   factory ContactModel.fromSocketMap(Map<String, dynamic> m,
       {int? existingUnread, int? existingMissed}) =>
@@ -39,16 +35,12 @@ class ContactModel {
       lastInteractionTs:      m['lastInteractionTs']      as int? ?? 0,
       lastInteractionPreview: m['lastInteractionPreview'] as String? ?? '',
       personalStatusEmoji:    m['personalStatus']?['emoji']   as String?,
-      personalStatusMessage:  m['personalStatus']?['message'] as String?,
-      hasNewGallery:          m['hasNewGallery']            as bool? ?? false,
-    );
+      personalStatusMessage:  m['personalStatus']?['message'] as String?,    );
 
   ContactModel copyWith({
     bool? isOnline, int? unreadCount, int? missedCallsCount,
     String? lastInteractionPreview, int? lastInteractionTs,
-    String? name, String? profilePic, bool? isProfilePicHidden,
-    bool? hasNewGallery,
-  }) => ContactModel(
+    String? name, String? profilePic, bool? isProfilePicHidden,  }) => ContactModel(
     id: id,
     name:                   name                   ?? this.name,
     profilePic:             profilePic             ?? this.profilePic,
@@ -59,9 +51,7 @@ class ContactModel {
     lastInteractionTs:      lastInteractionTs      ?? this.lastInteractionTs,
     lastInteractionPreview: lastInteractionPreview ?? this.lastInteractionPreview,
     personalStatusEmoji:    personalStatusEmoji,
-    personalStatusMessage:  personalStatusMessage,
-    hasNewGallery:          hasNewGallery          ?? this.hasNewGallery,
-  );
+    personalStatusMessage:  personalStatusMessage,  );
 }
 
 final typingProvider = StateProvider<Set<String>>((ref) => {});
@@ -233,7 +223,7 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     final current = state.valueOrNull;
     if (current == null) return;
     state = AsyncValue.data(current.map((c) =>
-        c.id == contactId ? c.copyWith(hasNewGallery: false) : c).toList());
+        c.id == contactId ?c : c).toList());
   }
 
 

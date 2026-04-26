@@ -8,7 +8,6 @@ import '../../profile/screens/profile_screen.dart';
 import '../../../screens/phone_screen.dart';
 import '../../../screens/xame_pay_screen.dart';
 import '../../settings/screens/settings_screen.dart';
-import '../../gallery/screens/gallery_screen.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/config/constants.dart';
@@ -593,9 +592,7 @@ class _ContactTile extends ConsumerWidget {
               name: contact.name,
               profilePic: contact.isProfilePicHidden
                 ? null : contact.profilePic,
-              size: 50, isOnline: contact.isOnline,
-              hasNewGallery: contact.hasNewGallery,
-            ),
+              size: 50, isOnline: contact.isOnline,            ),
             if (contact.unreadCount > 0)
               Positioned(right: 0, top: 0,
                 child: Container(
@@ -664,13 +661,9 @@ class XameAvatar extends StatelessWidget {
   final String? profilePic;
   final double  size;
   final bool    isOnline;
-  final bool    hasNewGallery;
-
   const XameAvatar({
     super.key, required this.name,
-    this.profilePic, this.size = 44, this.isOnline = false,
-    this.hasNewGallery = false,
-  });
+    this.profilePic, this.size = 44, this.isOnline = false,  });
 
   String get _initials {
     final parts = name.trim().split(' ')
@@ -702,11 +695,7 @@ class XameAvatar extends StatelessWidget {
       Positioned(right: 0, bottom: 0,
         child: Container(
           width: size * 0.26, height: size * 0.26,
-          decoration: BoxDecoration(
-            color: hasNewGallery ? XameColors.accent : Colors.transparent,
-            shape: BoxShape.circle,
-            border: hasNewGallery
-                ? Border.all(color: XameColors.darkBg, width: 1.5)
+          decoration: BoxDecoration(            shape: BoxShape.circle,                ? Border.all(color: XameColors.darkBg, width: 1.5)
                 : null),
         )),
   ]);
