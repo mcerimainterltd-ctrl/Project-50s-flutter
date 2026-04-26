@@ -124,4 +124,75 @@ class CacheService {
   static Future<void> clearCallHistory() async {
     await _calls.put('list', jsonEncode([]));
   }
+
+  // ── Discovery feed cache ──────────────────────────────────────────────
+  static const _boxDiscovery = 'xame_discovery_cache';
+
+  static Future<void> initDiscovery() async {
+    if (!Hive.isBoxOpen(_boxDiscovery))
+      await Hive.openBox<String>(_boxDiscovery);
+  }
+
+  static Future<void> saveDiscoveryFeed(
+      String region, List<Map<String,dynamic>> items) async {
+    await initDiscovery();
+    final box = Hive.box<String>(_boxDiscovery);
+    final trimmed = items.length > 50 ? items.sublist(0, 50) : items;
+    await box.put('feed_$region', jsonEncode(trimmed));
+  }
+
+  static List<Map<String,dynamic>> loadDiscoveryFeed(String region) {
+    if (!Hive.isBoxOpen(_boxDiscovery)) return [];
+    final box = Hive.box<String>(_boxDiscovery);
+    final raw = box.get('feed_$region');
+    if (raw == null) return [];
+    try {
+      return List<Map<String,dynamic>>.from(
+        (jsonDecode(raw) as List).map((e) => Map<String,dynamic>.from(e)));
+    } catch (_) { return []; }
+  }
+
+  static Future<void> saveDiscoveryPeople(
+      List<Map<String,dynamic>> people) async {
+    await initDiscovery();
+    final box = Hive.box<String>(_boxDiscovery);
+    await box.put('people', jsonEncode(people));
+  }
+
+  static List<Map<String,dynamic>> loadDiscoveryPeople() {
+    if (!Hive.isBoxOpen(_boxDiscovery)) return [];
+    final box = Hive.box<String>(_boxDiscovery);
+    final raw = box.get('people');
+    if (raw == null) return [];
+    try {
+      return List<Map<String,dynamic>>.from(
+        (jsonDecode(raw) as List).map((e) => Map<String,dynamic>.from(e)));
+    } catch (_) { return []; }
+  }
+
+  // ── Phone recents ─────────────────────────────────────────────────────
+  static const _boxPhoneRecents = 'xame_phone_recents';
+  static Box<String> get _phoneRecents => Hive.box<String>(_boxPhoneRecents);
+
+  static Future<void> initPhoneRecents() async {
+    if (!Hive.isBoxOpen(_boxPhoneRecents)) {
+      await Hive.openBox<String>(_boxPhoneRecents);
+    }
+  }
+
+  static Future<void> savePhoneRecents(List<Map<String,dynamic>> recents) async {
+    await initPhoneRecents();
+    final trimmed = recents.length > 100 ? recents.sublist(0, 100) : recents;
+    await _phoneRecents.put('list', jsonEncode(trimmed));
+  }
+
+  static List<Map<String,dynamic>> loadPhoneRecents() {
+    if (!Hive.isBoxOpen(_boxPhoneRecents)) return [];
+    final raw = _phoneRecents.get('list');
+    if (raw == null) return [];
+    try {
+      return List<Map<String,dynamic>>.from(
+        (jsonDecode(raw) as List).map((e) => Map<String,dynamic>.from(e)));
+    } catch (_) { return []; }
+  }
 }

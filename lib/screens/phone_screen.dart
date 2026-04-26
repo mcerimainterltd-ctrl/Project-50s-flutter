@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
+import 'package:xamepage/core/services/cache_service.dart';
 
 // ── Colours ───────────────────────────────────────────────────────────────────
 
@@ -154,6 +155,11 @@ class _PhoneScreenState extends State<PhoneScreen>
         if (_tab.index == 0 && _recents.isEmpty) _loadRecents();
         if (_tab.index == 1 && !_contactsLoaded) _loadContacts();
       });
+    // Load cached recents instantly
+    final cachedRecents = CacheService.loadPhoneRecents();
+    if (cachedRecents.isNotEmpty) {
+      _recents = cachedRecents.map((r) => _CallRecord.fromJson(r)).toList();
+    }
     _loadCredits();
     _loadRates();
     _loadRecents();

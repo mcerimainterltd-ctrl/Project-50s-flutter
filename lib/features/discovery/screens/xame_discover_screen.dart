@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/cache_service.dart';
 import '../widgets/discovery_cards.dart';
 import '../widgets/people_carousel.dart';
 import '../widgets/stories_bar.dart';
@@ -193,6 +194,9 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     _searchFade = CurvedAnimation(
         parent: _searchAnim, curve: Curves.easeOut);
     _scrollCtrl.addListener(_onScroll);
+    // Show cached data instantly
+    _loadCached();
+    // Then refresh from network
     _loadData();
   }
 
@@ -211,6 +215,22 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     }
   }
 
+  void _loadCached() {
+    final cachedFeed = CacheService.loadDiscoveryFeed(_regionCode);
+    final cachedPeople = CacheService.loadDiscoveryPeople();
+    if (cachedFeed.isNotEmpty || cachedPeople.isNotEmpty) {
+      setState(() {
+        if (cachedFeed.isNotEmpty) {
+          _feed = cachedFeed.map((m) => DiscoveryItem.fromJson(m)).toList();
+          _loading = false;
+        }
+        if (cachedPeople.isNotEmpty) {
+          _people = cachedPeople.map((m) => DiscoveryUser.fromJson(m)).toList();
+        }
+      });
+    }
+  }
+
   Future<void> _loadData({bool refresh = false}) async {
     if (refresh) setState(() { _page = 1; _hasMore = true; _feed = []; });
     setState(() => _loading = true);
@@ -224,13 +244,23 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     ]);
 
     if (!mounted) return;
+    final feed    = results[0] as List<DiscoveryItem>;
+    final people  = results[1] as List<DiscoveryUser>;
+    final stories = results[2] as List<Map<String, dynamic>>;
+
+    // Cache for instant load next time
+    CacheService.saveDiscoveryFeed(_regionCode,
+        feed.map((i) => i.toJson()).toList());
+    CacheService.saveDiscoveryPeople(
+        people.map((p) => p.toJson()).toList());
+
     setState(() {
-      _feed    = results[0] as List<DiscoveryItem>;
-      _people  = results[1] as List<DiscoveryUser>;
-      _stories = results[2] as List<Map<String, dynamic>>;
+      _feed    = feed;
+      _people  = people;
+      _stories = stories;
       _loading = false;
       _page    = 1;
-      _hasMore = (_feed.length >= 20);
+      _hasMore = (feed.length >= 20);
     });
   }
 
