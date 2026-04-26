@@ -427,69 +427,67 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
               const Spacer(flex: 3),
 
-              // ── Controls ──────────────────────────────────────────
               AnimatedOpacity(
                 opacity: _showControls ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 250),
                 child: Padding(
                   padding: EdgeInsets.only(left: 40, right: 40, bottom: botPad + 48),
-                  child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _voiceBtn(
-                          icon: _isMicMuted ? Icons.mic_off : Icons.mic,
-                          label: _isMicMuted ? 'Unmute' : 'Mute',
-                          active: _isMicMuted,
-                          onTap: () {
-                            setState(() => _isMicMuted = !_isMicMuted);
-                            webrtc.localStream?.getAudioTracks()
-                                .forEach((t) => t.enabled = !_isMicMuted);
-                          },
-                        ),
-                        _endBtn(webrtc, size: 76),
-                        _voiceBtn(
-                          icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_off,
-                          label: 'Speaker',
-                          active: _isSpeakerOn,
-                          onTap: () {
-                            setState(() => _isSpeakerOn = !_isSpeakerOn);
-                            Helper.setSpeakerphoneOn(_isSpeakerOn);
-                          },
-                        ),
-                      ],
-                    ),
-                    if (isActive)
-                      Positioned(
-                        top: -52, right: 0,
-                        child: GestureDetector(
-                          onTap: _openAddCall,
-                          child: Container(
-                            width: 42, height: 42,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(13),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                              boxShadow: [BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 8)],
+                  child: Column(
+                    children: [
+                      if (isActive)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: _openAddCall,
+                            child: Container(
+                              width: 42, height: 42,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(13),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                                boxShadow: [BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  blurRadius: 8)],
+                              ),
+                              child: const Icon(Icons.person_add_outlined,
+                                  color: Colors.white, size: 20),
                             ),
-                            child: const Icon(Icons.person_add_outlined,
-                                color: Colors.white, size: 20),
                           ),
                         ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _voiceBtn(
+                            icon: _isMicMuted ? Icons.mic_off : Icons.mic,
+                            label: _isMicMuted ? 'Unmute' : 'Mute',
+                            active: _isMicMuted,
+                            onTap: () {
+                              setState(() => _isMicMuted = !_isMicMuted);
+                              webrtc.localStream?.getAudioTracks()
+                                  .forEach((t) => t.enabled = !_isMicMuted);
+                            },
+                          ),
+                          _endBtn(webrtc, size: 76),
+                          _voiceBtn(
+                            icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_off,
+                            label: 'Speaker',
+                            active: _isSpeakerOn,
+                            onTap: () {
+                              setState(() => _isSpeakerOn = !_isSpeakerOn);
+                              Helper.setSpeakerphoneOn(_isSpeakerOn);
+                            },
+                          ),
+                        ],
                       ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               ),
             ]),
           ),
-        ],
-      ),
-    );
+        ),
+      );
   }
 
   // ═══════════════════════════════════════════════════════════
