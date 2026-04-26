@@ -883,8 +883,8 @@ class _ComposerState extends State<_Composer> {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
     decoration: BoxDecoration(
-      color: context.xMuted,
-      border: Border(top: BorderSide(color: context.xText.withValues(alpha: 0.06))),
+      color: context.xSurface,
+      border: Border(top: BorderSide(color: context.xMuted.withValues(alpha: 0.2))),
     ),
     child: SafeArea(top: false, child: Row(children: [
       IconButton(
@@ -904,7 +904,7 @@ class _ComposerState extends State<_Composer> {
           style: TextStyle(color: context.xText, fontSize: 15),
           decoration: InputDecoration(
             hintText:  'Message...',
-            hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+            hintStyle: TextStyle(color: context.xMuted),
             filled:    true,
             fillColor: context.xCard,
             border: OutlineInputBorder(
