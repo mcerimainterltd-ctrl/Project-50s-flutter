@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import 'theme_picker_screen.dart';
+import '../../messaging/screens/chat_wallpaper.dart';
 import '../../calling/call_settings.dart';
 
 // ── Settings state ────────────────────────────────────────────────────────────
@@ -356,6 +357,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color:    theme.primary,
               onTap:    () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const ThemePickerScreen())),
+            ),
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.wallpaper_outlined,
+              title:    'Chat Wallpaper',
+              subtitle: 'Global wallpaper for all chats',
+              color:    theme.accent,
+              onTap:    () => WallpaperPickerSheet.show(context,
+                contactId:   'global',
+                contactName: 'All Chats',
+                isGlobal:    true,
+                onChanged:   () {},
+              ),
             ),
             _SelectTile(
               theme:   theme,
