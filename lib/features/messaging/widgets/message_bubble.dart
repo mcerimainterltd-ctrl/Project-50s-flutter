@@ -115,7 +115,7 @@ class MessageBubble extends ConsumerWidget {
                           ]),
                         ),
                       _buildContent(context),
-                      _buildTimeRow(),
+                      _buildTimeRow(context),
                     ],
                   ),
                 ),
@@ -160,7 +160,7 @@ class MessageBubble extends ConsumerWidget {
     }
   }
 
-  Widget _buildTimeRow() {
+  Widget _buildTimeRow(BuildContext context) {
     final dt   = DateTime.fromMillisecondsSinceEpoch(message.ts);
     final time =
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
@@ -255,7 +255,7 @@ String _fmtSize(int? bytes) {
 }
 
 // ─── Text content ─────────────────────────────────────────────────────────
-class _TextContent extends StatelessWidget {
+class _TextContent extends ConsumerWidget {
   final String text; final bool isSelf;
   _TextContent({required this.text, required this.isSelf});
 
@@ -266,8 +266,15 @@ class _TextContent extends StatelessWidget {
         .hasMatch(c);
   }
 
+  double _fontSize(WidgetRef ref) {
+    final fs = ref.watch(settingsProvider).fontSize;
+    if (fs == 'small') return 13;
+    if (fs == 'large') return 17;
+    return 15;
+  }
+
   @override
-  Widget build(BuildContext context) => _isEmojiOnly
+  Widget build(BuildContext context, WidgetRef ref) => _isEmojiOnly
       ? Text(text.trim(), style: TextStyle(fontSize: 36))
       : Text(text,
             style: TextStyle(

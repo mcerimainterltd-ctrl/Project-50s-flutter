@@ -68,7 +68,7 @@ class SettingsData {
     this.highContrast    = false,
   });
 
-  _SettingsData copyWith({
+  SettingsData copyWith({
     String? lastSeen, String? profilePhoto,
     bool? readReceipts, bool? typingIndicators,
     bool? msgSound, bool? msgVibration, bool? msgPreview,
@@ -150,12 +150,31 @@ class SettingsNotifier extends StateNotifier<SettingsData> {
     if (raw != null) state = SettingsData.fromMap(Map.from(raw));
   }
 
-  Future<void> update(_SettingsData s) async {
+  Future<void> update(SettingsData s) async {
     state = s;
     final box = await Hive.openBox(_box);
     await box.put(_key, s.toMap());
   }
 }
+
+
+  Future<void> syncPrivacyToServer(String xameId) async {
+    final s = state;
+    try {
+      final dio = Dio();
+      await dio.post(
+        '${AppConstants.apiBase}/users/$xameId/privacy',
+        data: {
+          'lastSeen':         s.lastSeen,
+          'profilePhoto':     s.profilePhoto,
+          'readReceipts':     s.readReceipts,
+          'typingIndicators': s.typingIndicators,
+        },
+      );
+    } catch (e) {
+      debugPrint('syncPrivacyToServer error: $e');
+    }
+  }
 
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, SettingsData>(
@@ -185,7 +204,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
 
-    void save(_SettingsData s) => notifier.update(s);
+    void save(SettingsData s) => notifier.update(s);
 
     return Scaffold(
       backgroundColor: theme.bg,
