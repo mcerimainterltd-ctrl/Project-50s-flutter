@@ -592,7 +592,7 @@ class _ContactTile extends ConsumerWidget {
               onTap: contact.hasNewDiscoveryPost ? () {
                 ref.read(contactsProvider.notifier).clearDiscoveryDot(contact.id);
                 ref.read(socketServiceProvider).emitMarkDiscoverySeen(contact.id);
-                context.go('/discover?authorId=\${contact.id}');
+                context.go('/discover?authorId=${contact.id}');
               } : null,
               child: XameAvatar(
                 name: contact.name,
@@ -705,7 +705,7 @@ class XameAvatar extends StatelessWidget {
           : _Initials(_initials, size),
       ),
     ),
-    if (isOnline)
+    if (hasNewDiscoveryPost)
       Positioned(right: 0, bottom: 0,
         child: Container(
           width: size * 0.26, height: size * 0.26,
