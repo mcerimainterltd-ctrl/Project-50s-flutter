@@ -334,14 +334,18 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               backgroundColor:  context.xBg,
               surfaceTintColor: Colors.transparent,
               floating: true, snap: true, elevation: 0,
-              leading: widget.authorId != null
-                ? IconButton(
-                    icon: Icon(Icons.arrow_back_ios_new,
-                        color: context.xText, size: 18),
-                    onPressed: () => context.canPop()
-                        ? context.pop() : context.go('/contacts'))
-                : null,
+              titleSpacing: 0,
               title: Row(children: [
+                if (widget.authorId != null)
+                  GestureDetector(
+                    onTap: () => context.canPop()
+                        ? context.pop() : context.go('/contacts'),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8, right: 4),
+                      child: Icon(Icons.arrow_back_ios_new,
+                          color: context.xText, size: 18),
+                    ),
+                  ),
                 ShaderMask(
                   shaderCallback: (b) => LinearGradient(
                     colors: [context.xPrimary, context.xSecondary],
