@@ -132,7 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Center(
                 child: Image.asset(
                   'assets/icons/xamepage_icon.png',
-                  width: 200, height: 200,
+                  width: 150, height: 150,
                 ),
               ),
               SizedBox(height: 24),
