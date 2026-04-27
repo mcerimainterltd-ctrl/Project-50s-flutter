@@ -582,9 +582,12 @@ class _ContactTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isTyping = ref.watch(typingProvider).contains(contact.id);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(children: [
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.go('/chat/${contact.id}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(children: [
           Stack(children: [
             GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -616,39 +619,38 @@ class _ContactTile extends ConsumerWidget {
                       fontSize: 9, fontWeight: FontWeight.bold)),
                 )),
           ]),
-          SizedBox(width: 12),
-          Expanded(child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => context.go('/chat/${contact.id}'),
-            child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text(contact.name,
-                style: TextStyle(color: context.xText, fontSize: 15,
-                  fontWeight: contact.unreadCount > 0
-                    ? FontWeight.w700 : FontWeight.w500),
-                maxLines: 1, overflow: TextOverflow.ellipsis)),
-              if (contact.lastInteractionTs > 0)
-                Text(_fmtTime(contact.lastInteractionTs),
-                  style: TextStyle(
-                    color: contact.unreadCount > 0
-                      ? context.xPrimary : context.xMuted.withValues(alpha: 0.3),
-                    fontSize: 11)),
-            ]),
-            SizedBox(height: 3),
-            Text(
-              isTyping ? 'typing...'
-                : contact.lastInteractionPreview.isNotEmpty
-                  ? contact.lastInteractionPreview
-                  : "Hey there I'm on XamePage",
-              style: TextStyle(
-                color: isTyping ? context.xAccent : context.xMuted,
-                fontSize: 13,
-                fontStyle: isTyping
-                  ? FontStyle.italic : FontStyle.normal),
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-            ),
-          ]))),  // end Column, GestureDetector, Expanded
+          const SizedBox(width: 12),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Expanded(child: Text(contact.name,
+                  style: TextStyle(color: context.xText, fontSize: 15,
+                    fontWeight: contact.unreadCount > 0
+                      ? FontWeight.w700 : FontWeight.w500),
+                  maxLines: 1, overflow: TextOverflow.ellipsis)),
+                if (contact.lastInteractionTs > 0)
+                  Text(_fmtTime(contact.lastInteractionTs),
+                    style: TextStyle(
+                      color: contact.unreadCount > 0
+                        ? context.xPrimary : context.xMuted.withValues(alpha: 0.3),
+                      fontSize: 11)),
+              ]),
+              const SizedBox(height: 3),
+              Text(
+                isTyping ? 'typing...'
+                  : contact.lastInteractionPreview.isNotEmpty
+                    ? contact.lastInteractionPreview
+                    : "Hey there I'm on XamePage",
+                style: TextStyle(
+                  color: isTyping ? context.xAccent : context.xMuted,
+                  fontSize: 13,
+                  fontStyle: isTyping
+                    ? FontStyle.italic : FontStyle.normal),
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          )),
         ]),
       ),
     );
