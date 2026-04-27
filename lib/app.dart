@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
 import 'package:xamepage/core/services/app_lock_service.dart';
@@ -25,6 +26,13 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   List<SharedMediaFile> _sharedFiles = [];
   DateTime? _hiddenAt;
   bool _showingLock = false;
+  void _showAppLock() {
+    if (_showingLock) return;
+    _showingLock = true;
+    final router = ref.read(routerProvider);
+    router.push('/app-lock');
+  }
+
   @override
   void initState() {
     super.initState();

@@ -1196,3 +1196,41 @@ class _WaveformBarsState extends State<_WaveformBars>
     ),
   );
 }
+// ─── Reaction bar ────────────────────────────────────────────────────────────
+class _ReactionBar extends StatelessWidget {
+  final Map<String, String> reactions;
+  final bool isSelf;
+  const _ReactionBar({required this.reactions, required this.isSelf});
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, int> counts = {};
+    for (final emoji in reactions.values) {
+      counts[emoji] = (counts[emoji] ?? 0) + 1;
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        alignment: isSelf ? WrapAlignment.end : WrapAlignment.start,
+        spacing: 4,
+        children: counts.entries.map((e) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: XameColors.darkSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: XameColors.darkCard, width: 1),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Text(e.key, style: const TextStyle(fontSize: 13)),
+            if (e.value > 1) ...[
+              const SizedBox(width: 3),
+              Text('\${e.value}',
+                style: const TextStyle(fontSize: 11,
+                    color: Colors.white70, fontWeight: FontWeight.w600)),
+            ],
+          ]),
+        )).toList(),
+      ),
+    );
+  }
+}
