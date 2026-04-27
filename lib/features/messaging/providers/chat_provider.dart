@@ -256,7 +256,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       );
 
       final data       = res.data as Map<String, dynamic>?;
-      final fileUrl    = (data?['item'] as Map?)?['url'] as String?;
+      final fileUrl    = data?['url'] as String?;
 
       if (data != null && data['success'] == true && fileUrl != null) {
         // SUCCESS — replace pending with final message
