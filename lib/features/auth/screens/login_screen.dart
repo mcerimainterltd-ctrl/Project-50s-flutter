@@ -130,14 +130,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               SizedBox(height: 40),
               Center(
-                child: Container(
-                  width: 72, height: 72,
-                  decoration: BoxDecoration(
-                    color: context.xPrimary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: context.xPrimary, width: 1.5),
-                  ),
-                  child: Icon(Icons.chat_bubble_rounded, color: context.xPrimary, size: 36),
+                child: Image.asset(
+                  'assets/icons/xamepage_icon.png',
+                  width: 80, height: 80,
                 ),
               ),
               SizedBox(height: 24),
@@ -214,18 +209,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               SizedBox(
                 width: double.infinity, height: 52,
                 child: ElevatedButton(
-                  onPressed: _loading ? null : _login,
+                  onPressed: _loading ? () {} : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.xPrimary,
                     foregroundColor: Colors.black,
+                    disabledBackgroundColor: context.xPrimary,
+                    disabledForegroundColor: Colors.black,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
                   child: _loading
-                    ? SizedBox(width: 20, height: 20,
-                        child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                    ? const SizedBox(width: 22, height: 22,
+                        child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5))
                     : Text(_needsOTP ? 'Verify & Sign In' : 'Sign In',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
               SizedBox(height: 20),
@@ -248,7 +245,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _label(String text) => Text(text,
-    style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w500));
+    style: TextStyle(color: context.xText.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w500));
 
   Widget _field({
     required TextEditingController controller,
@@ -258,10 +255,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }) => TextField(
     controller: controller, obscureText: obscure,
     keyboardType: type, onSubmitted: onSubmitted,
-    style: TextStyle(color: XameColors.darkBg),
+    style: TextStyle(color: Colors.white),
     decoration: InputDecoration(
-      hintText: hint, hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5)),
-      prefixIcon: Icon(icon, color: XameColors.darkSurface, size: 20),
+      hintText: hint, hintStyle: TextStyle(color: Colors.white38),
+      prefixIcon: Icon(icon, color: Colors.white38, size: 20),
       suffixIcon: suffix, filled: true, fillColor: XameColors.darkCard,
       border:        OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
