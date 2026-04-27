@@ -117,7 +117,7 @@ class _StoryRingState extends State<_StoryRing>
         SizedBox(height: 6),
         Text(widget.name,
           style: TextStyle(
-              color: XameColors.darkText.withValues(alpha: 0.85), fontSize: 11,
+              color: context.xText.withValues(alpha: 0.85), fontSize: 11,
               fontWeight: FontWeight.w500),
           maxLines: 1, overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center),
