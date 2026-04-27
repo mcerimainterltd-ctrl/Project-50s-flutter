@@ -171,7 +171,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           SizedBox(width: 16, height: 16,
             child: CircularProgressIndicator(strokeWidth: 2, color: context.xText)),
           SizedBox(width: 12),
-          Text('Compressing video...', style: TextStyle(color: Colors.white70))),
+          Text('Compressing video...', style: TextStyle(color: Colors.white70)),
         ]),
         duration: Duration(seconds: 60),
         backgroundColor: context.xCard,
