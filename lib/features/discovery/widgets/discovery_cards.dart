@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:better_player/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,7 @@ import 'package:xamepage/core/theme/app_theme.dart';
 // ── Media Discover Card ───────────────────────────────────────────────────────
 class MediaDiscoverCard extends StatefulWidget {
   final String  mediaUrl;
+  final String  mediaType;
   final String  title;
   final String  category;
   final bool    isLive;
@@ -25,6 +27,7 @@ class MediaDiscoverCard extends StatefulWidget {
   const MediaDiscoverCard({
     Key? key,
     required this.mediaUrl,
+    this.mediaType   = 'image',
     required this.title,
     required this.category,
     this.isLive      = false,
@@ -48,6 +51,33 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   late AnimationController _likeCtrl;
   late Animation<double>   _likeScale;
   bool _liked = false;
+  bool _playing = false;
+  BetterPlayerController? _playerCtrl;
+
+  void _playVideo() {
+    final ctrl = BetterPlayerController(
+      BetterPlayerConfiguration(
+        autoPlay: true,
+        aspectRatio: 16 / 9,
+        fit: BoxFit.cover,
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          enableFullscreen: true,
+          enableMute: true,
+          enablePlayPause: true,
+          enableProgressBar: true,
+          enableSkips: false,
+          controlBarColor: Colors.black54,
+          iconsColor: Colors.white,
+          progressBarPlayedColor: XameColors.primary,
+          progressBarHandleColor: XameColors.primary,
+          progressBarBackgroundColor: Colors.white24,
+        ),
+      ),
+      betterPlayerDataSource: BetterPlayerDataSource(
+          BetterPlayerDataSourceType.network, widget.mediaUrl),
+    );
+    setState(() { _playerCtrl = ctrl; _playing = true; });
+  }
 
   static const _boxName = 'xame_discovery_likes';
 
@@ -134,19 +164,39 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28),
               child: Stack(fit: StackFit.expand, children: [
-                // Image
-                CachedNetworkImage(
-                  imageUrl: widget.mediaUrl,
-                  fit:      BoxFit.cover,
-                  placeholder: (_, __) => ShimmerBox(
-                      width: double.infinity,
-                      height: 420,
-                      radius: 28),
-                  errorWidget: (_, __, ___) => Container(
-                    color: context.xSurface,
-                    child: Icon(Icons.image_outlined,
-                        color: context.xMuted.withValues(alpha: 0.25), size: 48)),
-                ),
+                // Media
+                if (widget.mediaType == 'video' && _playing && _playerCtrl != null)
+                  BetterPlayer(controller: _playerCtrl!)
+                else if (widget.mediaType == 'video')
+                  GestureDetector(
+                    onTap: _playVideo,
+                    child: Stack(fit: StackFit.expand, children: [
+                      CachedNetworkImage(
+                        imageUrl: widget.mediaUrl.replaceFirst('/upload/', '/upload/so_0/'),
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => Container(
+                          color: context.xSurface,
+                          child: Icon(Icons.movie_outlined,
+                              color: context.xMuted.withValues(alpha: 0.25), size: 48))),
+                      Center(child: Container(
+                        width: 64, height: 64,
+                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black54),
+                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 40))),
+                    ]),
+                  )
+                else
+                  CachedNetworkImage(
+                    imageUrl: widget.mediaUrl,
+                    fit:      BoxFit.cover,
+                    placeholder: (_, __) => ShimmerBox(
+                        width: double.infinity,
+                        height: 420,
+                        radius: 28),
+                    errorWidget: (_, __, ___) => Container(
+                      color: context.xSurface,
+                      child: Icon(Icons.image_outlined,
+                          color: context.xMuted.withValues(alpha: 0.25), size: 48)),
+                  ),
 
                 // Gradient
                 Container(

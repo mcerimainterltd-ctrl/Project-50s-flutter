@@ -462,6 +462,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 (_, i) {
                   final item = _filtered[i];
                   return MediaDiscoverCard(
+                    mediaType: item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
                     mediaUrl:     item.mediaUrl,
                     title:        item.title,
                     category:     item.category,

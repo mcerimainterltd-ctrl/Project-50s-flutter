@@ -20,6 +20,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:better_player/better_player.dart';
 import '../../../core/services/voice_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/message.dart';
@@ -206,6 +207,430 @@ class MessageBubble extends ConsumerWidget {
           _StatusTick(status: message.status),
         ],
       ]),
+    );
+  }
+}
+
+// ─── Shimmer loading placeholder ─────────────────────────────────────────
+class _Shimmer extends StatefulWidget {
+  final double width, height;
+  final double radius;
+  const _Shimmer({required this.width, required this.height, this.radius = 14});
+
+  @override
+  State<_Shimmer> createState() => _ShimmerState();
+}
+
+class _ShimmerState extends State<_Shimmer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double>   _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200))
+      ..repeat();
+    _anim = Tween<double>(begin: -1, end: 2).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _anim,
+    builder: (_, __) => ClipRRect(
+      borderRadius: BorderRadius.circular(widget.radius),
+      child: SizedBox(
+        width: widget.width, height: widget.height,
+        child: CustomPaint(painter: _ShimmerPainter(_anim.value)),
+      ),
+    ),
+  );
+}
+
+class _ShimmerPainter extends CustomPainter {
+  final double position;
+  _ShimmerPainter(this.position);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final base    = XameColors.darkSurface;
+    final highlight = XameColors.darkCard;
+    canvas.drawRect(Offset.zero & size, Paint()..color = base);
+    final gradient = LinearGradient(
+      begin: Alignment(-1 + position * 2, 0),
+      end:   Alignment(position * 2, 0),
+      colors: [base, highlight, base],
+      stops: const [0.0, 0.5, 1.0],
+    );
+    final paint = Paint()
+      ..shader = gradient.createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, paint);
+  }
+
+  @override
+  bool shouldRepaint(_ShimmerPainter old) => old.position != position;
+}
+
+// ─── File size formatter ──────────────────────────────────────────────────
+String _fmtSize(int? bytes) {
+  if (bytes == null || bytes <= 0) return '';
+  if (bytes < 1024) return '${bytes}B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
+  if (bytes < 1024 * 1024 * 1024)
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
+}
+
+// ─── Text content ─────────────────────────────────────────────────────────
+class _TextContent extends ConsumerWidget {
+  final String text; final bool isSelf;
+  _TextContent({required this.text, required this.isSelf});
+
+  bool get _isEmojiOnly {
+    final c = text.trim();
+    if (c.isEmpty) return false;
+    return RegExp(r'^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\s]+$', unicode: true)
+        .hasMatch(c);
+  }
+
+  double _fontSize(WidgetRef ref) {
+    final fs = ref.watch(settingsProvider).fontSize;
+    if (fs == 'small') return 13;
+    if (fs == 'large') return 17;
+    return 15;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _isEmojiOnly
+      ? Text(text.trim(), style: TextStyle(fontSize: 36))
+      : Text(text,
+            style: TextStyle(
+                color: context.xBubbleSentText,
+                fontSize: _fontSize(ref),
+                height: 1.4));
+}
+
+// ─── Status ticks ─────────────────────────────────────────────────────────
+class _StatusTick extends StatelessWidget {
+  final String status;
+  _StatusTick({required this.status});
+  @override
+  Widget build(BuildContext context) {
+    if (status == 'uploading')
+      return SizedBox(
+          width: 14, height: 14,
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: context.xText.withValues(alpha: 0.54)));
+    if (status == 'failed')
+      return Tooltip(
+        message: 'Upload failed — long press to retry',
+        child: Icon(Icons.error_outline, size: 14, color: context.xDanger));
+    if (status == 'seen')
+      return Icon(Icons.done_all, size: 14, color: context.xPrimary);
+    if (status == 'delivered')
+      return Icon(Icons.done_all, size: 14, color: context.xMuted);
+    return Icon(Icons.done, size: 14, color: context.xMuted);
+  }
+}
+
+// ─── Reply quote ──────────────────────────────────────────────────────────
+class _ReplyQuote extends StatelessWidget {
+  final String text;
+  _ReplyQuote({required this.text});
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 6),
+    decoration: BoxDecoration(
+      color: Colors.black.withValues(alpha: 0.25),
+      borderRadius: BorderRadius.circular(10),
+      border: Border(left: BorderSide(color: XameColors.primary, width: 3)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Replied message',
+            style: TextStyle(color: XameColors.primary,
+                fontSize: 11, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(text.isNotEmpty ? text : '📎 Attachment',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12),
+            maxLines: 2, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    ),
+  );
+}
+
+// ─── Image bubble ─────────────────────────────────────────────────────────
+class _ImageBubble extends StatelessWidget {
+  final String url, caption;
+  final bool   viewOnce;
+  _ImageBubble(
+      {required this.url, required this.caption, required this.viewOnce});
+
+  void _openFullScreen(BuildContext context) {
+    Navigator.of(context).push(PageRouteBuilder(
+      opaque: false,
+      barrierColor: Colors.black87,
+      pageBuilder: (_, __, ___) => _FullScreenImageViewer(url: url),
+      transitionsBuilder: (_, anim, __, child) =>
+          FadeTransition(opacity: anim, child: child),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (viewOnce) {
+      return GestureDetector(
+        onTap: () => _openFullScreen(context),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.visibility_outlined, color: context.xText.withValues(alpha: 0.54), size: 18),
+            SizedBox(width: 8),
+            Text('Tap to view',
+                style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13)),
+          ]),
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: () => _openFullScreen(context),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Hero(
+          tag: url,
+          child: ClipRRect(
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(14)),
+            child: CachedNetworkImage(
+              imageUrl: _resolveUrl(url), fit: BoxFit.cover,
+              width: double.infinity,
+              placeholder: (_, __) => _Shimmer(
+                  width: double.infinity, height: 180),
+              errorWidget: (_, __, ___) => SizedBox(height: 80,
+                  child: Center(
+                      child: Icon(Icons.broken_image, color: context.xMuted.withValues(alpha: 0.5)))),
+            ),
+          ),
+        ),
+        if (caption.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+            child: Text(caption,
+                style: TextStyle(color: context.xText, fontSize: 13))),
+      ]),
+    );
+  }
+}
+
+// ─── Full-screen image viewer ─────────────────────────────────────────────
+class _FullScreenImageViewer extends StatefulWidget {
+  final String url;
+  _FullScreenImageViewer({required this.url});
+  @override
+  State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
+  bool   _downloading = false;
+  double _progress    = 0;
+
+  Future<void> _download() async {
+    setState(() { _downloading = true; _progress = 0; });
+    try {
+      final dir  = await getExternalStorageDirectory() ??
+                   await getApplicationDocumentsDirectory();
+      final name = widget.url.split('/').last.split('?').first;
+      final path = '${dir.path}/$name';
+      final cached = File(path);
+      if (cached.existsSync() && cached.lengthSync() == 0) await cached.delete();
+      await Dio(BaseOptions(
+        connectTimeout: Duration(seconds: 30),
+        receiveTimeout: Duration(minutes: 5),
+      )).download(_resolveUrl(widget.url), path,
+          onReceiveProgress: (r, t) {
+        if (t > 0 && mounted) setState(() => _progress = r / t);
+      });
+      if (mounted) {
+        setState(() => _downloading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Saved to $path'),
+            backgroundColor: XameColors.darkCard));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _downloading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Download failed: $e'),
+            backgroundColor: Colors.redAccent));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(
+      backgroundColor: Colors.black54,
+      leading: IconButton(
+          icon: Icon(Icons.close, color: XameColors.darkBg),
+          onPressed: () => Navigator.pop(context)),
+      actions: [
+        if (_downloading)
+          Padding(padding: const EdgeInsets.all(14),
+            child: SizedBox(width: 22, height: 22,
+              child: CircularProgressIndicator(
+                  value: _progress > 0 ? _progress : null,
+                  color: XameColors.darkBg, strokeWidth: 2)))
+        else
+          IconButton(
+              icon: Icon(Icons.download_outlined, color: XameColors.darkBg),
+              onPressed: _download),
+      ],
+    ),
+    body: Hero(
+      tag: widget.url,
+      child: InteractiveViewer(
+        minScale: 0.5, maxScale: 5.0,
+        child: Center(child: CachedNetworkImage(
+          imageUrl: _resolveUrl(widget.url), fit: BoxFit.contain,
+          placeholder: (_, __) =>
+              CircularProgressIndicator(color: XameColors.primary),
+          errorWidget: (_, __, ___) =>
+              Icon(Icons.broken_image, color: XameColors.darkSurface.withValues(alpha: 0.5), size: 60),
+        )),
+      ),
+    ),
+  );
+}
+
+// ─── Video bubble — frame thumbnail ──────────────────────────────────────
+class _VideoBubble extends StatefulWidget {
+  final String  url, fileName;
+  final int?    fileSize;
+  final String? localPath;
+  const _VideoBubble(
+      {required this.url, required this.fileName, this.fileSize,
+       this.localPath});
+  @override
+  State<_VideoBubble> createState() => _VideoBubbleState();
+}
+
+class _VideoBubbleState extends State<_VideoBubble> {
+  Uint8List? _thumb;
+  bool _thumbLoading = true;
+  bool _playing = false;
+  BetterPlayerController? _playerCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThumbnail();
+  }
+
+  @override
+  void dispose() {
+    _playerCtrl?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadThumbnail() async {
+    if (_videoThumbCache.containsKey(widget.url)) {
+      if (mounted) setState(() {
+        _thumb = _videoThumbCache[widget.url];
+        _thumbLoading = false;
+      });
+      return;
+    }
+    try {
+      final source = (widget.localPath != null && File(widget.localPath!).existsSync())
+          ? widget.localPath! : _resolveUrl(widget.url);
+      if (source.isEmpty) {
+        _videoThumbCache[widget.url] = null;
+        if (mounted) setState(() => _thumbLoading = false);
+        return;
+      }
+      final bytes = await VideoThumbnail.thumbnailData(
+        video: source, imageFormat: ImageFormat.JPEG,
+        maxWidth: 480, quality: 72, timeMs: 0);
+      _videoThumbCache[widget.url] = bytes;
+      if (mounted) setState(() { _thumb = bytes; _thumbLoading = false; });
+    } catch (_) {
+      _videoThumbCache[widget.url] = null;
+      if (mounted) setState(() => _thumbLoading = false);
+    }
+  }
+
+  void _playInline() {
+    final source = (widget.localPath != null && File(widget.localPath!).existsSync())
+        ? BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.localPath!)
+        : BetterPlayerDataSource(BetterPlayerDataSourceType.network, _resolveUrl(widget.url));
+
+    _playerCtrl = BetterPlayerController(
+      BetterPlayerConfiguration(
+        autoPlay: true,
+        aspectRatio: 16 / 9,
+        fit: BoxFit.cover,
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          enableFullscreen: true,
+          enableMute: true,
+          enablePlayPause: true,
+          enableProgressBar: true,
+          enableSkips: false,
+          controlBarColor: Colors.black54,
+          iconsColor: Colors.white,
+          progressBarPlayedColor: XameColors.primary,
+          progressBarHandleColor: XameColors.primary,
+          progressBarBackgroundColor: Colors.white24,
+        ),
+        placeholder: _thumb != null ? Image.memory(_thumb!, fit: BoxFit.cover) : null,
+      ),
+      betterPlayerDataSource: source,
+    );
+    setState(() => _playing = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.of(context).size.width * 0.72;
+    final h = w * 9 / 16;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+      child: SizedBox(
+        width: w, height: h,
+        child: _playing && _playerCtrl != null
+          ? BetterPlayer(controller: _playerCtrl!)
+          : GestureDetector(
+              onTap: _playInline,
+              child: Stack(fit: StackFit.expand, children: [
+                if (_thumbLoading)
+                  _Shimmer(width: w, height: h, radius: 0)
+                else if (_thumb != null)
+                  Image.memory(_thumb!, fit: BoxFit.cover)
+                else
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft, end: Alignment.bottomRight,
+                        colors: [context.xBg, context.xSurface, context.xCard])),
+                    child: Center(child: Icon(Icons.movie_outlined,
+                        color: context.xMuted.withValues(alpha: 0.5), size: 48))),
+                Center(child: Container(
+                  width: 52, height: 52,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle, color: Colors.black54),
+                  child: const Icon(Icons.play_arrow_rounded,
+                      color: Colors.white, size: 32))),
+              ]),
+            ),
+      ),
     );
   }
 }
