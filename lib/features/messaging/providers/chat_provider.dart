@@ -232,17 +232,41 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           ? mimeType
           : 'application/octet-stream';
 
-      final formData = FormData.fromMap({
-        'file':    await MultipartFile.fromFile(file.path,
-                       contentType: DioMediaType.parse(effectiveMime)),
-        'userId':  self.xameId,
-        'caption': caption ?? '',
+      // Step 1: Get Cloudinary signature from server
+      final sigRes  = await _dio.get('/api/cloudinary/sign',
+          queryParameters: {'folder': 'xamepage_chat'});
+      final sigData = sigRes.data as Map<String, dynamic>;
+      final signature  = sigData['signature']  as String;
+      final timestamp  = sigData['timestamp']  as int;
+      final folder     = sigData['folder']     as String;
+      final cloudName  = sigData['cloud_name'] as String;
+      final apiKey     = sigData['api_key']    as String;
+
+      // Step 2: Upload directly to Cloudinary
+      final isVideo    = effectiveMime.startsWith('video');
+      final isAudio    = effectiveMime.startsWith('audio');
+      final resourceType = isVideo || isAudio ? 'video' : 'image';
+      final cloudUrl   = 'https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload';
+
+      final cloudForm  = FormData.fromMap({
+        'file':      await MultipartFile.fromFile(file.path,
+                         contentType: DioMediaType.parse(effectiveMime)),
+        'api_key':   apiKey,
+        'timestamp': timestamp.toString(),
+        'signature': signature,
+        'folder':    folder,
       });
 
+      final cloudDio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 30),
+        sendTimeout:    const Duration(minutes: 15),
+        receiveTimeout: const Duration(minutes: 5),
+      ));
+
       int _lastPct = 0;
-      final res = await _dio.post(
-        '/api/upload-file',
-        data: formData,
+      final res = await cloudDio.post(
+        cloudUrl,
+        data: cloudForm,
         onSendProgress: (sent, total) {
           if (total <= 0) return;
           final pct = (sent / total * 100).round();
@@ -255,8 +279,8 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         },
       );
 
-      final data       = res.data as Map<String, dynamic>?;
-      final fileUrl    = data?['url'] as String?;
+      final data    = res.data as Map<String, dynamic>?;
+      final fileUrl = data?['secure_url'] as String?;
 
       if (data != null && data['success'] == true && fileUrl != null) {
         // SUCCESS — replace pending with final message
