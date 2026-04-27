@@ -65,6 +65,40 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/conference',    builder: (c, s) => _Placeholder('Conference')),
       GoRoute(path: '/call-history',  builder: (c, s) => const CallHistoryScreen()),
       GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl)),
+      GoRoute(path: '/app-lock', builder: (c, s) {
+        final notifier = ref.read(appLockProvider.notifier);
+        return PinLockScreen(
+          title:    'XamePage Locked',
+          subtitle: 'Enter your PIN to continue',
+          icon:     '🔐',
+          pinLength: 6,
+          onVerify: (pin) async {
+            final ok = notifier.verify(pin);
+            if (ok) c.pop();
+            return ok;
+          },
+          onForgot: () async {
+            await notifier.disable();
+            c.pop();
+          },
+        );
+      }),
+      GoRoute(path: '/wallet-lock', builder: (c, s) {
+        final notifier = ref.read(walletLockProvider.notifier);
+        return PinLockScreen(
+          title:    'XamePay Wallet',
+          subtitle: 'Enter your wallet PIN',
+          icon:     '💰',
+          pinLength: 4,
+          showCancel: true,
+          onCancel: () => c.go('/contacts'),
+          onVerify: (pin) async {
+            final ok = notifier.verify(pin);
+            if (ok) c.go('/wallet');
+            return ok;
+          },
+        );
+      }),
       GoRoute(path: '/wallet', builder: (c, s) {
         final user     = ref.read(currentUserProvider);
         final contacts = ref.read(contactsProvider).valueOrNull ?? [];

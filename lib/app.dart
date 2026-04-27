@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
+import 'package:xamepage/core/services/app_lock_service.dart';
+import 'package:xamepage/shared/widgets/pin_lock_screen.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
 import 'package:xamepage/core/services/socket_service.dart';
@@ -21,9 +23,28 @@ class XamePageApp extends ConsumerStatefulWidget {
 class _XamePageAppState extends ConsumerState<XamePageApp> {
   StreamSubscription? _shareSub;
   List<SharedMediaFile> _sharedFiles = [];
+  DateTime? _hiddenAt;
+  bool _showingLock = false;
   @override
   void initState() {
     super.initState();
+
+    // App lock — listen to lifecycle
+    SystemChannels.lifecycle.setMessageHandler((msg) async {
+      final lockState = ref.read(appLockProvider);
+      if (!lockState.enabled || lockState.pin.isEmpty) return null;
+      if (msg == 'AppLifecycleState.paused') {
+        _hiddenAt = DateTime.now();
+      } else if (msg == 'AppLifecycleState.resumed') {
+        if (_showingLock) return null;
+        final hidden = _hiddenAt;
+        if (hidden == null) return null;
+        final elapsed = DateTime.now().difference(hidden).inMilliseconds;
+        if (elapsed >= lockState.delayMs) _showAppLock();
+        _hiddenAt = null;
+      }
+      return null;
+    });
 
     // Handle share intent when app is already open
     _shareSub = ReceiveSharingIntent.instance.getMediaStream().listen(

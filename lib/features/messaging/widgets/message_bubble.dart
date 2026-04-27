@@ -53,6 +53,7 @@ class MessageBubble extends ConsumerWidget {
   final bool         isSelected;
   final VoidCallback onLongPress;
   final VoidCallback onTap;
+  final void Function(String emoji)? onReact;
 
   MessageBubble({
     super.key,
@@ -61,13 +62,15 @@ class MessageBubble extends ConsumerWidget {
     required this.isSelected,
     required this.onLongPress,
     required this.onTap,
+    this.onReact,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-      onLongPress: onLongPress,
-      onTap:       onTap,
+      onLongPress:       onLongPress,
+      onTap:             onTap,
+      onDoubleTap:       () => _showReactionPicker(context),
       child: AnimatedContainer(
         duration: Duration(milliseconds: 150),
         color: isSelected
@@ -116,12 +119,40 @@ class MessageBubble extends ConsumerWidget {
                         ),
                       _buildContent(context),
                       _buildTimeRow(context),
+                      if ((message.reactions ?? {}).isNotEmpty)
+                        _ReactionBar(reactions: message.reactions!, isSelf: isSelf),
                     ],
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showReactionPicker(BuildContext context) {
+    const emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '👏'];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: XameColors.darkCard,
+          borderRadius: BorderRadius.circular(32),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: emojis.map((e) => GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              onReact?.call(e);
+            },
+            child: Text(e, style: const TextStyle(fontSize: 28)),
+          )).toList(),
         ),
       ),
     );

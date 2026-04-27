@@ -7,6 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/config/constants.dart';
 import 'package:dio/dio.dart';
+import '../../../core/services/app_lock_service.dart';
+import '../../../core/services/wallet_lock_service.dart';
+import '../../../shared/widgets/pin_lock_screen.dart';
 import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import 'theme_picker_screen.dart';
@@ -449,6 +452,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ]),
 
+          // ── Security ────────────────────────────────────────────────────────────
+          _Section(theme: theme, title: 'Security', children: [
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.lock_outline_rounded,
+              title:    'App Lock',
+              subtitle: ref.watch(appLockProvider).enabled ? 'Enabled' : 'Disabled',
+              onTap: () => _showAppLockSetup(context, ref),
+            ),
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.account_balance_wallet_outlined,
+              title:    'Wallet PIN',
+              subtitle: ref.watch(walletLockProvider).enabled ? 'Enabled' : 'Disabled',
+              onTap: () => _showWalletLockSetup(context, ref),
+            ),
+          ]),
+
           // ── Help & About ─────────────────────────────────────────────────────
           _Section(theme: theme, title: 'Help & About', children: [
             _NavTile(
@@ -690,5 +711,191 @@ class _NavTile extends StatelessWidget {
         Icon(Icons.chevron_right, color: theme.textSecondary, size: 16),
       ]),
     ),
+  );
+}
+
+void _showAppLockSetup(BuildContext context, WidgetRef ref) {
+  final state   = ref.read(appLockProvider);
+  final notifier = ref.read(appLockProvider.notifier);
+  if (state.enabled) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const SizedBox(height: 16),
+        ListTile(
+          leading: const Icon(Icons.lock_open_outlined),
+          title: const Text('Disable App Lock'),
+          onTap: () { Navigator.pop(context); notifier.disable(); }),
+        ListTile(
+          leading: const Icon(Icons.timer_outlined),
+          title: const Text('Lock Delay'),
+          subtitle: Text(_lockDelayLabel(state.delayMs)),
+          onTap: () { Navigator.pop(context); _showDelayPicker(context, ref); }),
+        const SizedBox(height: 8),
+      ])),
+    );
+  } else {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => _SetPinScreen(
+      title: 'Set App Lock PIN',
+      onSet: (pin) { notifier.enable(pin); Navigator.pop(context); },
+    )));
+  }
+}
+
+void _showWalletLockSetup(BuildContext context, WidgetRef ref) {
+  final state    = ref.read(walletLockProvider);
+  final notifier = ref.read(walletLockProvider.notifier);
+  if (state.enabled) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const SizedBox(height: 16),
+        ListTile(
+          leading: const Icon(Icons.lock_open_outlined),
+          title: const Text('Disable Wallet PIN'),
+          onTap: () { Navigator.pop(context); notifier.disable(); }),
+        const SizedBox(height: 8),
+      ])),
+    );
+  } else {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => _SetPinScreen(
+      title: 'Set Wallet PIN',
+      pinLength: 4,
+      onSet: (pin) { notifier.enable(pin); Navigator.pop(context); },
+    )));
+  }
+}
+
+void _showDelayPicker(BuildContext context, WidgetRef ref) {
+  final options = [
+    (0,       'Immediately'),
+    (30000,   '30 seconds'),
+    (60000,   '1 minute'),
+    (300000,  '5 minutes'),
+    (1800000, '30 minutes'),
+    (-1,      'Never'),
+  ];
+  showModalBottomSheet(
+    context: context,
+    builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min,
+      children: options.map((o) => ListTile(
+        title: Text(o.$2),
+        onTap: () {
+          ref.read(appLockProvider.notifier).setDelay(o.$1);
+          Navigator.pop(context);
+        },
+      )).toList())),
+  );
+}
+
+String _lockDelayLabel(int ms) {
+  if (ms == 0)       return 'Immediately';
+  if (ms == 30000)   return '30 seconds';
+  if (ms == 60000)   return '1 minute';
+  if (ms == 300000)  return '5 minutes';
+  if (ms == 1800000) return '30 minutes';
+  if (ms == -1)      return 'Never';
+  return '1 minute';
+}
+
+class _SetPinScreen extends StatefulWidget {
+  final String title;
+  final int    pinLength;
+  final void Function(String pin) onSet;
+  const _SetPinScreen({required this.title, required this.onSet, this.pinLength = 6});
+  @override
+  State<_SetPinScreen> createState() => _SetPinScreenState();
+}
+
+class _SetPinScreenState extends State<_SetPinScreen> {
+  String _pin1 = '', _pin2 = '';
+  bool   _step2 = false;
+  String _error = '';
+
+  void _onKey(String val) {
+    if (_step2) {
+      if (val == '⌫') { setState(() => _pin2 = _pin2.isEmpty ? '' : _pin2.substring(0, _pin2.length-1)); return; }
+      if (_pin2.length >= widget.pinLength) return;
+      final next = _pin2 + val;
+      setState(() => _pin2 = next);
+      if (next.length == widget.pinLength) {
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (_pin1 == _pin2) { widget.onSet(_pin1); }
+          else { setState(() { _pin2 = ''; _error = 'PINs do not match. Try again.'; _step2 = false; _pin1 = ''; }); }
+        });
+      }
+    } else {
+      if (val == '⌫') { setState(() => _pin1 = _pin1.isEmpty ? '' : _pin1.substring(0, _pin1.length-1)); return; }
+      if (_pin1.length >= widget.pinLength) return;
+      final next = _pin1 + val;
+      setState(() => _pin1 = next);
+      if (next.length == widget.pinLength) {
+        Future.delayed(const Duration(milliseconds: 150), () => setState(() { _step2 = true; _error = ''; }));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pin = _step2 ? _pin2 : _pin1;
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.title)),
+      body: SafeArea(child: Column(children: [
+        const Spacer(),
+        Text(_step2 ? 'Confirm PIN' : 'Enter PIN',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 24),
+        Row(mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(widget.pinLength, (i) => Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            width: 14, height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i < pin.length ? Colors.teal : Colors.white24),
+          ))),
+        const SizedBox(height: 16),
+        if (_error.isNotEmpty)
+          Text(_error, style: const TextStyle(color: Colors.redAccent)),
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 48),
+          child: GridView.count(
+            crossAxisCount: 3, shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12, crossAxisSpacing: 12,
+            children: [
+              ...[1,2,3,4,5,6,7,8,9].map((n) => _PinKey(label: '$n', onTap: () => _onKey('$n'))),
+              const SizedBox(),
+              _PinKey(label: '0', onTap: () => _onKey('0')),
+              _PinKey(label: '⌫', onTap: () => _onKey('⌫')),
+            ],
+          ),
+        ),
+        const Spacer(),
+      ])),
+    );
+  }
+}
+
+class _PinKey extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _PinKey({required this.label, required this.onTap});
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12)),
+      child: Center(child: Text(label,
+        style: TextStyle(color: Colors.white,
+            fontSize: label == '⌫' ? 20 : 22, fontWeight: FontWeight.w600)))),
   );
 }

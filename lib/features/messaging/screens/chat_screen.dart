@@ -488,6 +488,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     onTap: (msg) {
                       if (_selectMode) _toggleSelect(msg.id);
                     },
+                    onReact: (msg, emoji) {
+                      ref.read(chatProvider(widget.userId).notifier)
+                          .toggleReaction(msg.id, emoji);
+                    },
                   ),
           ),
         ),
@@ -842,12 +846,14 @@ class _MessageList extends StatelessWidget {
   final Set<String>           selected;
   final bool                  selectMode;
   final Function(XameMessage) onLongPress;
+  final Function(XameMessage, String) onReact;
   final Function(XameMessage) onTap;
 
   const _MessageList({
     required this.messages,   required this.scrollCtrl,
     required this.selfId,     required this.selected,
     required this.selectMode, required this.onLongPress,
+    required this.onReact,
     required this.onTap,
   });
 
@@ -871,6 +877,7 @@ class _MessageList extends StatelessWidget {
             isSelected: selected.contains(msg.id),
             onLongPress: () => onLongPress(msg),
             onTap:       () => onTap(msg),
+            onReact:    (emoji) => onReact(msg, emoji),
           ),
         ]);
       },

@@ -362,6 +362,22 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
   }
 
   // ── Forward messages ──────────────────────────────────────────────────
+  void toggleReaction(String messageId, String emoji) {
+    final selfId = _ref.read(currentUserProvider)?.xameId ?? '';
+    if (selfId.isEmpty) return;
+    state = state.map((m) {
+      if (m.id != messageId) return m;
+      final reactions = Map<String, String>.from(m.reactions ?? {});
+      if (reactions[selfId] == emoji) {
+        reactions.remove(selfId);
+      } else {
+        reactions[selfId] = emoji;
+      }
+      return m.copyWith(reactions: reactions);
+    }).toList();
+    _ref.read(socketServiceProvider).emitReactionToggle(messageId, emoji, selfId);
+  }
+
   void forwardMessages(List<String> ids, List<String> recipientIds) {
     final msgs = state.where((m) => ids.contains(m.id)).toList();
     for (final recipientId in recipientIds) {
