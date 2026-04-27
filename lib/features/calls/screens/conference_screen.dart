@@ -1,133 +1,218 @@
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
-import '../../../core/services/webrtc_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../contacts/providers/contacts_provider.dart';
 
-// ── Conference state ──────────────────────────────────────────────────────────
-enum ConferenceLayout { grid, spotlight, sidebar }
-
-class ConferenceParticipant {
+// ── Peer model ────────────────────────────────────────────────────────────────
+class _ConferencePeer {
   final String peerId, displayName;
+  final RTCPeerConnection pc;
+  final RTCVideoRenderer renderer;
   bool muted, videoMuted, handRaised;
-  ConferenceParticipant({
-    required this.peerId, required this.displayName,
-    this.muted = false, this.videoMuted = false, this.handRaised = false,
+
+  _ConferencePeer({
+    required this.peerId,
+    required this.displayName,
+    required this.pc,
+    required this.renderer,
+    this.muted = false,
+    this.videoMuted = false,
+    this.handRaised = false,
   });
 }
+
+// ── RTC config ────────────────────────────────────────────────────────────────
+const _rtcConfig = {
+  'iceServers': [
+    {'urls': 'stun:stun.l.google.com:19302'},
+    {'urls': 'stun:stun1.l.google.com:19302'},
+  ]
+};
+
+// ── Conference state ──────────────────────────────────────────────────────────
+enum ConferenceLayout { grid, spotlight, sidebar }
 
 class ConferenceState {
   final String?  roomId;
   final bool     isHost, micOn, camOn;
   final ConferenceLayout layout;
-  final List<ConferenceParticipant> participants;
+  final int participantCount;
   const ConferenceState({
     this.roomId, this.isHost = false,
     this.micOn = true, this.camOn = true,
     this.layout = ConferenceLayout.grid,
-    this.participants = const [],
+    this.participantCount = 0,
   });
   bool get inConference => roomId != null;
   ConferenceState copyWith({
     String? roomId, bool? isHost, bool? micOn, bool? camOn,
-    ConferenceLayout? layout, List<ConferenceParticipant>? participants,
-    bool clearRoom = false,
+    ConferenceLayout? layout, int? participantCount, bool clearRoom = false,
   }) => ConferenceState(
-    roomId:       clearRoom ? null : (roomId ?? this.roomId),
-    isHost:       isHost       ?? this.isHost,
-    micOn:        micOn        ?? this.micOn,
-    camOn:        camOn        ?? this.camOn,
-    layout:       layout       ?? this.layout,
-    participants: participants ?? this.participants,
+    roomId:           clearRoom ? null : (roomId ?? this.roomId),
+    isHost:           isHost           ?? this.isHost,
+    micOn:            micOn            ?? this.micOn,
+    camOn:            camOn            ?? this.camOn,
+    layout:           layout           ?? this.layout,
+    participantCount: participantCount ?? this.participantCount,
   );
 }
 
-// ── Provider ──────────────────────────────────────────────────────────────────
+// ── Notifier ──────────────────────────────────────────────────────────────────
 final conferenceProvider =
     StateNotifierProvider<ConferenceNotifier, ConferenceState>(
         ConferenceNotifier.new);
 
 class ConferenceNotifier extends StateNotifier<ConferenceState> {
   final Ref _ref;
-  static const _maxParticipants = 6;
+  static const _maxPeers = 5; // 6 total incl. self
+
+  // Local media
+  MediaStream?      _localStream;
+  RTCVideoRenderer? _localRenderer;
+
+  // Peers: peerId → _ConferencePeer
+  final Map<String, _ConferencePeer> _peers = {};
+
+  // Stream for UI to observe peer list changes
+  final _peersController = StreamController<List<_ConferencePeer>>.broadcast();
+  Stream<List<_ConferencePeer>> get peersStream => _peersController.stream;
+
+  // Local renderer for UI
+  RTCVideoRenderer? get localRenderer => _localRenderer;
 
   ConferenceNotifier(this._ref) : super(const ConferenceState()) {
     _listenSocket();
   }
 
+  List<_ConferencePeer> get peers => List.unmodifiable(_peers.values);
+
   void _listenSocket() {
     final socket = _ref.read(socketServiceProvider);
-    socket.rawSocket?.on('conference:peer-joined', (data) {
-      final map  = Map<String, dynamic>.from(data);
+
+    socket.rawSocket?.on('conference:peer-joined', (data) async {
+      final map  = Map<String, dynamic>.from(data as Map);
       final peer = map['peerId'] as String;
       final name = map['displayName'] as String? ?? peer;
-      if (peer == _ref.read(currentUserProvider)?.xameId) return;
-      if (state.participants.length >= _maxParticipants - 1) return;
-      state = state.copyWith(participants: [
-        ...state.participants,
-        ConferenceParticipant(peerId: peer, displayName: name),
-      ]);
+      final me   = _ref.read(currentUserProvider)?.xameId;
+      if (peer == me || _peers.containsKey(peer)) return;
+      if (_peers.length >= _maxPeers) return;
+      await _createPeer(peer, name, isInitiator: true);
     });
 
-    socket.rawSocket?.on('conference:peer-left', (data) {
-      final map  = Map<String, dynamic>.from(data);
+    socket.rawSocket?.on('conference:offer', (data) async {
+      if (!state.inConference) return;
+      final map  = Map<String, dynamic>.from(data as Map);
+      final from = map['from'] as String;
+      final name = map['displayName'] as String? ?? from;
+      final offer = RTCSessionDescription(
+        map['offer']['sdp'] as String, map['offer']['type'] as String);
+      if (!_peers.containsKey(from)) {
+        await _createPeer(from, name, isInitiator: false);
+      }
+      final peer = _peers[from]!;
+      await peer.pc.setRemoteDescription(offer);
+      final answer = await peer.pc.createAnswer();
+      await peer.pc.setLocalDescription(answer);
+      socket.rawSocket?.emit('conference:answer', {
+        'roomId': state.roomId, 'to': from,
+        'from': _ref.read(currentUserProvider)?.xameId,
+        'answer': {'sdp': answer.sdp, 'type': answer.type},
+      });
+    });
+
+    socket.rawSocket?.on('conference:answer', (data) async {
+      final map  = Map<String, dynamic>.from(data as Map);
+      final from = map['from'] as String;
+      final peer = _peers[from];
+      if (peer == null) return;
+      final answer = RTCSessionDescription(
+        map['answer']['sdp'] as String, map['answer']['type'] as String);
+      await peer.pc.setRemoteDescription(answer);
+    });
+
+    socket.rawSocket?.on('conference:ice', (data) async {
+      final map  = Map<String, dynamic>.from(data as Map);
+      final from = map['from'] as String;
+      final peer = _peers[from];
+      if (peer == null) return;
+      final ice = RTCIceCandidate(
+        map['candidate']['candidate'] as String,
+        map['candidate']['sdpMid'] as String?,
+        map['candidate']['sdpMLineIndex'] as int?);
+      await peer.pc.addCandidate(ice);
+    });
+
+    socket.rawSocket?.on('conference:peer-left', (data) async {
+      final map  = Map<String, dynamic>.from(data as Map);
       final peer = map['peerId'] as String;
-      state = state.copyWith(participants:
-          state.participants.where((p) => p.peerId != peer).toList());
-    });
-
-    socket.rawSocket?.on('conference:mic-toggle', (data) {
-      final map   = Map<String, dynamic>.from(data);
-      final peer  = map['userId'] as String;
-      final muted = map['muted'] as bool? ?? false;
-      state = state.copyWith(participants: state.participants.map((p) =>
-          p.peerId == peer ? (p..muted = muted) : p).toList());
-    });
-
-    socket.rawSocket?.on('conference:raise-hand', (data) {
-      final map    = Map<String, dynamic>.from(data);
-      final peer   = map['userId'] as String;
-      final raised = map['raised'] as bool? ?? false;
-      state = state.copyWith(participants: state.participants.map((p) =>
-          p.peerId == peer ? (p..handRaised = raised) : p).toList());
+      await _removePeer(peer);
     });
 
     socket.rawSocket?.on('conference:muted-by-host', (_) {
       state = state.copyWith(micOn: false);
+      _localStream?.getAudioTracks().forEach((t) => t.enabled = false);
     });
 
-    socket.rawSocket?.on('conference:removed-by-host', (_) {
-      leave();
+    socket.rawSocket?.on('conference:removed-by-host', (_) => leave());
+    socket.rawSocket?.on('conference:room-closed', (_) => leave());
+
+    socket.rawSocket?.on('conference:mic-toggle', (data) {
+      final map   = Map<String, dynamic>.from(data as Map);
+      final peer  = map['userId'] as String;
+      final muted = map['muted'] as bool? ?? false;
+      if (_peers.containsKey(peer)) {
+        _peers[peer]!.muted = muted;
+        _notifyPeers();
+      }
     });
 
-    socket.rawSocket?.on('conference:room-closed', (_) {
-      state = state.copyWith(clearRoom: true, participants: []);
+    socket.rawSocket?.on('conference:raise-hand', (data) {
+      final map    = Map<String, dynamic>.from(data as Map);
+      final peer   = map['userId'] as String;
+      final raised = map['raised'] as bool? ?? false;
+      if (_peers.containsKey(peer)) {
+        _peers[peer]!.handRaised = raised;
+        _notifyPeers();
+      }
     });
   }
 
   Future<void> create() async {
-    final user = _ref.read(currentUserProvider);
-    if (user == null || state.inConference) return;
+    if (state.inConference) return;
     final roomId = 'room-${DateTime.now().millisecondsSinceEpoch}';
-    await _join(roomId, true);
+    await _joinRoom(roomId, true);
   }
 
   Future<void> join(String roomId) async {
     if (state.inConference) return;
-    await _join(roomId, false);
+    await _joinRoom(roomId, false);
   }
 
-  Future<void> _join(String roomId, bool isHost) async {
+  Future<void> _joinRoom(String roomId, bool isHost) async {
     final user   = _ref.read(currentUserProvider);
     final socket = _ref.read(socketServiceProvider);
     if (user == null) return;
-    state = state.copyWith(roomId: roomId, isHost: isHost, participants: []);
+
+    // Init local renderer
+    _localRenderer = RTCVideoRenderer();
+    await _localRenderer!.initialize();
+
+    // Get camera + mic
+    _localStream = await navigator.mediaDevices.getUserMedia({
+      'audio': true,
+      'video': {'facingMode': 'user', 'width': 640, 'height': 480},
+    });
+    _localRenderer!.srcObject = _localStream;
+
+    state = state.copyWith(roomId: roomId, isHost: isHost);
+
     socket.rawSocket?.emit('conference:join', {
       'roomId':      roomId,
       'userId':      user.xameId,
@@ -136,28 +221,115 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     });
   }
 
-  void leave() {
-    final user   = _ref.read(currentUserProvider);
+  Future<void> _createPeer(String peerId, String displayName,
+      {required bool isInitiator}) async {
     final socket = _ref.read(socketServiceProvider);
-    if (state.roomId != null) {
-      socket.rawSocket?.emit('conference:leave', {
-        'roomId': state.roomId, 'userId': user?.xameId,
+    final me     = _ref.read(currentUserProvider)?.xameId;
+
+    final pc       = await createPeerConnection(_rtcConfig);
+    final renderer = RTCVideoRenderer();
+    await renderer.initialize();
+
+    final peer = _ConferencePeer(
+        peerId: peerId, displayName: displayName, pc: pc, renderer: renderer);
+    _peers[peerId] = peer;
+
+    // Add local tracks
+    _localStream?.getTracks().forEach((track) {
+      pc.addTrack(track, _localStream!);
+    });
+
+    // Remote track → renderer
+    pc.onTrack = (event) {
+      if (event.streams.isNotEmpty) {
+        renderer.srcObject = event.streams[0];
+        _notifyPeers();
+      }
+    };
+
+    // ICE candidates
+    pc.onIceCandidate = (candidate) {
+      socket.rawSocket?.emit('conference:ice', {
+        'roomId': state.roomId, 'to': peerId, 'from': me,
+        'candidate': {
+          'candidate':     candidate.candidate,
+          'sdpMid':        candidate.sdpMid,
+          'sdpMLineIndex': candidate.sdpMLineIndex,
+        },
+      });
+    };
+
+    pc.onIceConnectionState = (s) {
+      if (s == RTCIceConnectionState.RTCIceConnectionStateFailed ||
+          s == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
+        _removePeer(peerId);
+      }
+    };
+
+    if (isInitiator) {
+      final offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.rawSocket?.emit('conference:offer', {
+        'roomId': state.roomId, 'to': peerId, 'from': me,
+        'displayName': _ref.read(currentUserProvider)?.firstName,
+        'offer': {'sdp': offer.sdp, 'type': offer.type},
       });
     }
-    state = state.copyWith(clearRoom: true, participants: []);
+
+    state = state.copyWith(participantCount: _peers.length);
+    _notifyPeers();
+  }
+
+  Future<void> _removePeer(String peerId) async {
+    final peer = _peers.remove(peerId);
+    if (peer != null) {
+      await peer.pc.close();
+      await peer.renderer.dispose();
+    }
+    state = state.copyWith(participantCount: _peers.length);
+    _notifyPeers();
+  }
+
+  void _notifyPeers() {
+    _peersController.add(List.unmodifiable(_peers.values));
+  }
+
+  Future<void> leave() async {
+    final socket = _ref.read(socketServiceProvider);
+    final me     = _ref.read(currentUserProvider)?.xameId;
+    if (state.roomId != null) {
+      socket.rawSocket?.emit('conference:leave',
+          {'roomId': state.roomId, 'userId': me});
+    }
+    for (final peer in _peers.values) {
+      await peer.pc.close();
+      await peer.renderer.dispose();
+    }
+    _peers.clear();
+    _localStream?.getTracks().forEach((t) => t.stop());
+    _localStream = null;
+    await _localRenderer?.dispose();
+    _localRenderer = null;
+    state = state.copyWith(clearRoom: true, participantCount: 0);
+    _notifyPeers();
   }
 
   void toggleMic() {
-    final user   = _ref.read(currentUserProvider);
-    final socket = _ref.read(socketServiceProvider);
     final newVal = !state.micOn;
+    _localStream?.getAudioTracks().forEach((t) => t.enabled = newVal);
     state = state.copyWith(micOn: newVal);
+    final socket = _ref.read(socketServiceProvider);
+    final me     = _ref.read(currentUserProvider)?.xameId;
     socket.rawSocket?.emit('conference:mic-toggle', {
-      'roomId': state.roomId, 'userId': user?.xameId, 'muted': !newVal,
+      'roomId': state.roomId, 'userId': me, 'muted': !newVal,
     });
   }
 
-  void toggleCam() => state = state.copyWith(camOn: !state.camOn);
+  void toggleCam() {
+    final newVal = !state.camOn;
+    _localStream?.getVideoTracks().forEach((t) => t.enabled = newVal);
+    state = state.copyWith(camOn: newVal);
+  }
 
   void cycleLayout() {
     final layouts = ConferenceLayout.values;
@@ -166,36 +338,38 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
   }
 
   void raiseHand() {
-    final user   = _ref.read(currentUserProvider);
     final socket = _ref.read(socketServiceProvider);
-    socket.rawSocket?.emit('conference:raise-hand', {
-      'roomId': state.roomId, 'userId': user?.xameId, 'raised': true,
-    });
+    final me     = _ref.read(currentUserProvider)?.xameId;
+    socket.rawSocket?.emit('conference:raise-hand',
+        {'roomId': state.roomId, 'userId': me, 'raised': true});
   }
 
   void muteParticipant(String peerId) {
-    final user   = _ref.read(currentUserProvider);
-    final socket = _ref.read(socketServiceProvider);
     if (!state.isHost) return;
-    socket.rawSocket?.emit('conference:mute-peer', {
-      'roomId': state.roomId, 'hostId': user?.xameId, 'peerId': peerId,
-    });
+    final socket = _ref.read(socketServiceProvider);
+    final me     = _ref.read(currentUserProvider)?.xameId;
+    socket.rawSocket?.emit('conference:mute-peer',
+        {'roomId': state.roomId, 'hostId': me, 'peerId': peerId});
   }
 
   void removeParticipant(String peerId) {
-    final user   = _ref.read(currentUserProvider);
-    final socket = _ref.read(socketServiceProvider);
     if (!state.isHost) return;
-    socket.rawSocket?.emit('conference:remove-peer', {
-      'roomId': state.roomId, 'hostId': user?.xameId, 'peerId': peerId,
-    });
+    final socket = _ref.read(socketServiceProvider);
+    final me     = _ref.read(currentUserProvider)?.xameId;
+    socket.rawSocket?.emit('conference:remove-peer',
+        {'roomId': state.roomId, 'hostId': me, 'peerId': peerId});
+  }
+
+  @override
+  void dispose() {
+    _peersController.close();
+    super.dispose();
   }
 }
 
 // ── Conference Screen ─────────────────────────────────────────────────────────
 class ConferenceScreen extends ConsumerWidget {
   const ConferenceScreen({super.key});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conf = ref.watch(conferenceProvider);
@@ -207,7 +381,6 @@ class ConferenceScreen extends ConsumerWidget {
 // ── Lobby ─────────────────────────────────────────────────────────────────────
 class _ConferenceLobby extends ConsumerWidget {
   const _ConferenceLobby();
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ctrl = TextEditingController();
@@ -233,8 +406,6 @@ class _ConferenceLobby extends ConsumerWidget {
               style: TextStyle(color: context.xMuted, fontSize: 14),
               textAlign: TextAlign.center),
           const SizedBox(height: 40),
-
-          // Start button
           SizedBox(width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () =>
@@ -250,8 +421,6 @@ class _ConferenceLobby extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(14))),
             )),
           const SizedBox(height: 16),
-
-          // Join by room ID
           Row(children: [
             Expanded(child: TextField(
               controller: ctrl,
@@ -289,87 +458,114 @@ class _ConferenceLobby extends ConsumerWidget {
 }
 
 // ── Active conference view ────────────────────────────────────────────────────
-class _ActiveConferenceView extends ConsumerWidget {
+class _ActiveConferenceView extends ConsumerStatefulWidget {
   const _ActiveConferenceView();
+  @override
+  ConsumerState<_ActiveConferenceView> createState() =>
+      _ActiveConferenceViewState();
+}
+
+class _ActiveConferenceViewState
+    extends ConsumerState<_ActiveConferenceView> {
+  List<_ConferencePeer> _peers = [];
+  StreamSubscription? _peersSub;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final conf = ref.watch(conferenceProvider);
-    final total = conf.participants.length + 1;
+  void initState() {
+    super.initState();
+    _peersSub = ref
+        .read(conferenceProvider.notifier)
+        .peersStream
+        .listen((peers) {
+      if (mounted) setState(() => _peers = peers);
+    });
+  }
+
+  @override
+  void dispose() {
+    _peersSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final conf      = ref.watch(conferenceProvider);
+    final notifier  = ref.read(conferenceProvider.notifier);
+    final user      = ref.watch(currentUserProvider);
+    final total     = _peers.length + 1;
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(child: Column(children: [
         // Header
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(children: [
-            Text('Room: ${conf.roomId}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12)),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.white12,
-                borderRadius: BorderRadius.circular(20)),
-              child: Text('$total participant${total != 1 ? 's' : ''}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11))),
-            const Spacer(),
-            // Copy room ID
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Room: ${conf.roomId}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
+              Text('$total participant${total != 1 ? "s" : ""}',
+                  style: const TextStyle(color: Colors.white38, fontSize: 10)),
+            ])),
             IconButton(
               icon: const Icon(Icons.link_rounded, color: Colors.white54),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: conf.roomId!));
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Room ID copied!'),
-                  duration: Duration(seconds: 2)));
+                    content: Text('Room ID copied!')));
               }),
-            // Layout toggle
             IconButton(
               icon: Icon(
                 conf.layout == ConferenceLayout.grid
                     ? Icons.grid_view_rounded
-                    : conf.layout == ConferenceLayout.spotlight
-                        ? Icons.personal_video_rounded
-                        : Icons.view_sidebar_rounded,
+                    : Icons.view_sidebar_rounded,
                 color: Colors.white54),
-              onPressed: () =>
-                  ref.read(conferenceProvider.notifier).cycleLayout()),
+              onPressed: () => notifier.cycleLayout()),
           ]),
         ),
 
-        // Participant grid
-        Expanded(child: _ParticipantGrid(conf: conf)),
+        // Video grid
+        Expanded(child: _VideoGrid(
+          peers:         _peers,
+          localRenderer: notifier.localRenderer,
+          localName:     user?.firstName ?? 'You',
+          conf:          conf,
+          notifier:      notifier,
+        )),
 
         // Controls
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            border: Border(top: BorderSide(color: Colors.white12))),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _CtrlBtn(
                 icon: conf.micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
                 label: conf.micOn ? 'Mute' : 'Unmute',
-                color: conf.micOn ? Colors.white : Colors.red,
-                onTap: () => ref.read(conferenceProvider.notifier).toggleMic()),
+                active: conf.micOn,
+                onTap: () => notifier.toggleMic()),
               _CtrlBtn(
                 icon: conf.camOn
                     ? Icons.videocam_rounded
                     : Icons.videocam_off_rounded,
                 label: conf.camOn ? 'Camera' : 'Cam Off',
-                color: conf.camOn ? Colors.white : Colors.red,
-                onTap: () => ref.read(conferenceProvider.notifier).toggleCam()),
+                active: conf.camOn,
+                onTap: () => notifier.toggleCam()),
               _CtrlBtn(
                 icon: Icons.pan_tool_rounded,
-                label: 'Raise Hand',
-                color: Colors.white,
-                onTap: () => ref.read(conferenceProvider.notifier).raiseHand()),
+                label: 'Hand',
+                active: true,
+                onTap: () => notifier.raiseHand()),
               _CtrlBtn(
                 icon: Icons.call_end_rounded,
                 label: 'Leave',
-                color: Colors.white,
-                bg: Colors.red,
-                onTap: () => ref.read(conferenceProvider.notifier).leave()),
+                active: false,
+                danger: true,
+                onTap: () => notifier.leave()),
             ]),
         ),
       ])),
@@ -377,102 +573,147 @@ class _ActiveConferenceView extends ConsumerWidget {
   }
 }
 
-class _ParticipantGrid extends ConsumerWidget {
-  final ConferenceState conf;
-  const _ParticipantGrid({required this.conf});
+// ── Video grid ────────────────────────────────────────────────────────────────
+class _VideoGrid extends StatelessWidget {
+  final List<_ConferencePeer> peers;
+  final RTCVideoRenderer?     localRenderer;
+  final String                localName;
+  final ConferenceState       conf;
+  final ConferenceNotifier    notifier;
+
+  const _VideoGrid({
+    required this.peers, required this.localRenderer,
+    required this.localName, required this.conf, required this.notifier,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user  = ref.watch(currentUserProvider);
-    final peers = conf.participants;
-    final all   = [
-      ConferenceParticipant(
-          peerId: user?.xameId ?? 'me',
-          displayName: '${user?.firstName ?? 'You'} (You)'),
-      ...peers,
-    ];
+  Widget build(BuildContext context) {
+    final total = peers.length + 1;
+    final cols  = total <= 1 ? 1 : total <= 4 ? 2 : 3;
 
     return GridView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(4),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: all.length <= 2 ? 1 : 2,
-        crossAxisSpacing: 8, mainAxisSpacing: 8,
-        childAspectRatio: all.length <= 2 ? 16 / 9 : 1),
-      itemCount: all.length,
+        crossAxisCount:  cols,
+        crossAxisSpacing: 4, mainAxisSpacing: 4,
+        childAspectRatio: total == 1 ? 9/16 : 1),
+      itemCount: total,
       itemBuilder: (_, i) {
-        final p    = all[i];
-        final isMe = p.peerId == (user?.xameId ?? 'me');
-        return Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1A2E),
-            borderRadius: BorderRadius.circular(16)),
-          child: Stack(children: [
-            // Avatar
-            Center(child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: isMe
-                      ? context.xPrimary.withValues(alpha: 0.3)
-                      : context.xAccent.withValues(alpha: 0.3),
-                  child: Text(
-                    p.displayName.isNotEmpty
-                        ? p.displayName[0].toUpperCase() : '?',
-                    style: TextStyle(
-                      color: isMe ? context.xPrimary : context.xAccent,
-                      fontSize: 24, fontWeight: FontWeight.w700))),
-                const SizedBox(height: 8),
-                Text(p.displayName,
-                    style: const TextStyle(color: Colors.white,
-                        fontSize: 12, fontWeight: FontWeight.w600),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-              ])),
-
-            // Muted indicator
-            if (p.muted)
-              Positioned(top: 8, left: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red, shape: BoxShape.circle),
-                  child: const Icon(Icons.mic_off_rounded,
-                      color: Colors.white, size: 12))),
-
-            // Hand raised
-            if (p.handRaised)
-              const Positioned(top: 8, right: 8,
-                child: Text('✋', style: TextStyle(fontSize: 20))),
-
-            // Host controls
-            if (ref.watch(conferenceProvider).isHost && !isMe)
-              Positioned(bottom: 8, right: 8,
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  _MiniBtn(
-                    icon: Icons.mic_off_rounded,
-                    onTap: () => ref.read(conferenceProvider.notifier)
-                        .muteParticipant(p.peerId)),
-                  const SizedBox(width: 4),
-                  _MiniBtn(
-                    icon: Icons.person_remove_rounded,
-                    color: Colors.red,
-                    onTap: () => ref.read(conferenceProvider.notifier)
-                        .removeParticipant(p.peerId)),
-                ])),
-          ]),
+        // First tile = local video
+        if (i == 0) {
+          return _VideoTile(
+            renderer:    localRenderer,
+            displayName: '$localName (You)',
+            muted:       !conf.micOn,
+            handRaised:  false,
+            isLocal:     true,
+          );
+        }
+        final peer = peers[i - 1];
+        return _VideoTile(
+          renderer:    peer.renderer,
+          displayName: peer.displayName,
+          muted:       peer.muted,
+          handRaised:  peer.handRaised,
+          isLocal:     false,
+          isHost:      conf.isHost,
+          onMute:      () => notifier.muteParticipant(peer.peerId),
+          onRemove:    () => notifier.removeParticipant(peer.peerId),
         );
       });
   }
 }
 
+// ── Single video tile ─────────────────────────────────────────────────────────
+class _VideoTile extends StatelessWidget {
+  final RTCVideoRenderer? renderer;
+  final String            displayName;
+  final bool              muted, handRaised, isLocal;
+  final bool              isHost;
+  final VoidCallback?     onMute, onRemove;
+
+  const _VideoTile({
+    required this.renderer, required this.displayName,
+    required this.muted, required this.handRaised, required this.isLocal,
+    this.isHost = false, this.onMute, this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: const Color(0xFF1A1A2E),
+      borderRadius: BorderRadius.circular(12)),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(children: [
+        // Video feed
+        if (renderer != null)
+          Positioned.fill(child: RTCVideoView(
+            renderer!,
+            mirror: isLocal,
+            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+          ))
+        else
+          Center(child: CircleAvatar(
+            radius: 28,
+            backgroundColor: Colors.white12,
+            child: Text(
+              displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+              style: const TextStyle(color: Colors.white,
+                  fontSize: 22, fontWeight: FontWeight.w700)))),
+
+        // Name bar
+        Positioned(bottom: 0, left: 0, right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 8, vertical: 6),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [Colors.black87, Colors.transparent])),
+            child: Row(children: [
+              Expanded(child: Text(displayName,
+                  style: const TextStyle(color: Colors.white,
+                      fontSize: 11, fontWeight: FontWeight.w600),
+                  maxLines: 1, overflow: TextOverflow.ellipsis)),
+              if (muted)
+                const Icon(Icons.mic_off_rounded,
+                    color: Colors.red, size: 12),
+            ]))),
+
+        // Hand raised
+        if (handRaised)
+          const Positioned(top: 6, right: 6,
+            child: Text('✋', style: TextStyle(fontSize: 18))),
+
+        // Host controls
+        if (isHost && !isLocal)
+          Positioned(top: 6, left: 6,
+            child: Row(children: [
+              if (onMute != null)
+                _MiniIconBtn(
+                    icon: Icons.mic_off_rounded, onTap: onMute!),
+              const SizedBox(width: 4),
+              if (onRemove != null)
+                _MiniIconBtn(
+                    icon: Icons.person_remove_rounded,
+                    onTap: onRemove!, danger: true),
+            ])),
+      ])));
+}
+
+// ── Control button ────────────────────────────────────────────────────────────
 class _CtrlBtn extends StatelessWidget {
   final IconData icon;
   final String   label;
-  final Color    color;
-  final Color?   bg;
+  final bool     active, danger;
   final VoidCallback onTap;
-  const _CtrlBtn({required this.icon, required this.label,
-      required this.color, required this.onTap, this.bg});
+  const _CtrlBtn({
+    required this.icon, required this.label,
+    required this.active, required this.onTap,
+    this.danger = false,
+  });
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -481,25 +722,32 @@ class _CtrlBtn extends StatelessWidget {
       Container(
         width: 52, height: 52,
         decoration: BoxDecoration(
-          color: bg ?? Colors.white12, shape: BoxShape.circle),
-        child: Icon(icon, color: color, size: 22)),
+          color: danger
+              ? Colors.red
+              : active ? Colors.white12 : Colors.red.withValues(alpha: 0.3),
+          shape: BoxShape.circle),
+        child: Icon(icon,
+            color: active ? Colors.white : Colors.red, size: 22)),
       const SizedBox(height: 6),
-      Text(label, style: const TextStyle(color: Colors.white60, fontSize: 10)),
+      Text(label,
+          style: const TextStyle(color: Colors.white60, fontSize: 10)),
     ]));
 }
 
-class _MiniBtn extends StatelessWidget {
+class _MiniIconBtn extends StatelessWidget {
   final IconData icon;
-  final Color?   color;
+  final bool     danger;
   final VoidCallback onTap;
-  const _MiniBtn({required this.icon, required this.onTap, this.color});
+  const _MiniIconBtn({
+    required this.icon, required this.onTap, this.danger = false});
 
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Container(
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-      child: Icon(icon, color: color ?? Colors.white70, size: 14)));
+        color: danger ? Colors.red.withValues(alpha: 0.8) : Colors.black54,
+        borderRadius: BorderRadius.circular(6)),
+      child: Icon(icon, color: Colors.white, size: 13)));
 }
