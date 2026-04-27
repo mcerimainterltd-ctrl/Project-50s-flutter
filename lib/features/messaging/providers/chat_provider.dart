@@ -314,11 +314,15 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         _markFailed(msgId);
       }
     } on DioException catch (e) {
+      debugPrint('DioException during upload: ${e.type} — ${e.message}');
+      debugPrint('Response: ${e.response?.data}');
       _markFailed(msgId,
           hint: e.response?.data?['message'] as String? ??
                 e.message ??
                 'Upload failed — check connection');
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Upload error: $e');
+      debugPrint('Stack: $st');
       _markFailed(msgId, hint: e.toString());
     }
   }
