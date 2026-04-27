@@ -727,7 +727,7 @@ class _CtrlBtn extends StatelessWidget {
               : active ? Colors.white12 : Colors.red.withValues(alpha: 0.3),
           shape: BoxShape.circle),
         child: Icon(icon,
-            color: active ? Colors.white : Colors.red, size: 22)),
+            color: danger ? Colors.white : (active ? Colors.white : Colors.red), size: 22)),
       const SizedBox(height: 6),
       Text(label,
           style: const TextStyle(color: Colors.white60, fontSize: 10)),
