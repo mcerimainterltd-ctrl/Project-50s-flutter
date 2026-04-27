@@ -162,53 +162,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     dart_io.File videoFile = dart_io.File(picked.path);
     final originalSize = await videoFile.length();
-    const maxBytes = 5 * 1024 * 1024 + 500 * 1024; // 5.5MB safe limit
-
+    // Compression bypassed — direct Cloudinary upload handles any size
+    const maxBytes = 50 * 1024 * 1024; // 50MB hard limit
     if (originalSize > maxBytes) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          SizedBox(width: 16, height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: context.xText)),
-          SizedBox(width: 12),
-          Text('Compressing video...', style: TextStyle(color: Colors.white70)),
-        ]),
-        duration: Duration(seconds: 60),
-        backgroundColor: context.xCard,
-      ));
-      try {
-        final info = await VideoCompress.compressVideo(
-          picked.path,
-          quality: VideoQuality.MediumQuality,
-          deleteOrigin: false,
-          includeAudio: true,
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).clearSnackBars();
-        if (info?.file == null) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Compression failed — try a shorter clip'),
-            backgroundColor: Colors.redAccent));
-          return;
-        }
-        final compressedSize = await info!.file!.length();
-        if (compressedSize > maxBytes) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Video still too large after compression '
-                '(${(compressedSize / 1024 / 1024).toStringAsFixed(1)}MB). '
-                'Try a shorter clip.'),
-            backgroundColor: Colors.redAccent));
-          return;
-        }
-        videoFile = info.file!;
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Compression error: $e'),
-          backgroundColor: Colors.redAccent));
-        return;
-      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Video too large. Max 50MB.'),
+        backgroundColor: Colors.redAccent));
+      return;
     }
 
     await ref.read(chatProvider(widget.userId).notifier)
