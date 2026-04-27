@@ -1,7 +1,7 @@
 name: xamepage
 description: XamePage - Ultramodern calling & messaging app
 publish_to: 'none'
-version: 2.1.0+446
+version: 2.1.0+447
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -9,7 +9,7 @@ environment:
 dependencies:
   cloud_firestore: ^5.4.4
   video_player: ^2.5.0
-  better_player: ^0.0.87
+  better_player_enhanced: ^0.0.3
   flutter:
     sdk: flutter
   flutter_riverpod: ^2.5.1

@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:better_player/better_player.dart';
+import 'package:better_player_enhanced/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

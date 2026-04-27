@@ -20,7 +20,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
-import 'package:better_player/better_player.dart';
+import 'package:better_player_enhanced/better_player.dart';
 import '../../../core/services/voice_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/message.dart';
