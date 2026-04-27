@@ -522,14 +522,12 @@ class _VideoBubble extends StatefulWidget {
   State<_VideoBubble> createState() => _VideoBubbleState();
 }
 
-// ─── Shimmer loading placeholder ─────────────────────────────────────────
+
 class _VideoBubbleState extends State<_VideoBubble> {
   Uint8List? _thumb;
   bool _thumbLoading = true;
-
-  // Download + open state
-  bool   _opening  = false;
-  double _progress = 0;
+  bool _playing = false;
+  BetterPlayerController? _playerCtrl;
 
   @override
   void initState() {
@@ -537,8 +535,13 @@ class _VideoBubbleState extends State<_VideoBubble> {
     _loadThumbnail();
   }
 
+  @override
+  void dispose() {
+    _playerCtrl?.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadThumbnail() async {
-    // Return cached result immediately
     if (_videoThumbCache.containsKey(widget.url)) {
       if (mounted) setState(() {
         _thumb = _videoThumbCache[widget.url];
@@ -546,27 +549,17 @@ class _VideoBubbleState extends State<_VideoBubble> {
       });
       return;
     }
-
     try {
-      // Use localPath for local files, resolved URL for remote ones
-      final source = (widget.localPath != null &&
-              File(widget.localPath!).existsSync())
-          ? widget.localPath!
-          : _resolveUrl(widget.url);
-
+      final source = (widget.localPath != null && File(widget.localPath!).existsSync())
+          ? widget.localPath! : _resolveUrl(widget.url);
       if (source.isEmpty) {
         _videoThumbCache[widget.url] = null;
         if (mounted) setState(() => _thumbLoading = false);
         return;
       }
-
       final bytes = await VideoThumbnail.thumbnailData(
-        video:       source,
-        imageFormat: ImageFormat.JPEG,
-        maxWidth:    480,
-        quality:     72,
-        timeMs:      0,
-      );
+        video: source, imageFormat: ImageFormat.JPEG,
+        maxWidth: 480, quality: 72, timeMs: 0);
       _videoThumbCache[widget.url] = bytes;
       if (mounted) setState(() { _thumb = bytes; _thumbLoading = false; });
     } catch (_) {
@@ -575,148 +568,69 @@ class _VideoBubbleState extends State<_VideoBubble> {
     }
   }
 
-  Future<void> _open() async {
-    setState(() { _opening = true; _progress = 0; });
-    try {
-      // 1. Use local path directly if file still exists on device
-      if (widget.localPath != null && File(widget.localPath!).existsSync()) {
-        if (mounted) setState(() => _opening = false);
-        await OpenFilex.open(widget.localPath!, type: 'video/*');
-        return;
-      }
+  void _playInline() {
+    final source = (widget.localPath != null && File(widget.localPath!).existsSync())
+        ? BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.localPath!)
+        : BetterPlayerDataSource(BetterPlayerDataSourceType.network, _resolveUrl(widget.url));
 
-      // 2. Download from remote
-      if (widget.url.isEmpty) {
-        if (mounted) setState(() => _opening = false);
-        return;
-      }
-      final dir  = await getTemporaryDirectory();
-      final name = widget.url.split('/').last.split('?').first
-          .replaceAll(RegExp(r'[^\w.\-]'), '_');
-      final path = '${dir.path}/$name';
-      final cached = File(path);
-      if (!cached.existsSync() || cached.lengthSync() == 0) {
-        if (cached.existsSync()) await cached.delete();
-        await Dio(BaseOptions(
-          connectTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(minutes: 5),
-        )).download(_resolveUrl(widget.url), path,
-            onReceiveProgress: (r, t) {
-          if (t > 0 && mounted) setState(() => _progress = r / t);
-        });
-      }
-      if (mounted) setState(() => _opening = false);
-      await OpenFilex.open(path);
-    } catch (e) {
-      if (mounted) {
-        setState(() => _opening = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Could not open video: $e'),
-            backgroundColor: Colors.redAccent));
-      }
-    }
+    _playerCtrl = BetterPlayerController(
+      BetterPlayerConfiguration(
+        autoPlay: true,
+        aspectRatio: 16 / 9,
+        fit: BoxFit.cover,
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          enableFullscreen: true,
+          enableMute: true,
+          enablePlayPause: true,
+          enableProgressBar: true,
+          enableSkips: false,
+          controlBarColor: Colors.black54,
+          iconsColor: Colors.white,
+          progressBarPlayedColor: XameColors.primary,
+          progressBarHandleColor: XameColors.primary,
+          progressBarBackgroundColor: Colors.white24,
+        ),
+        placeholder: _thumb != null ? Image.memory(_thumb!, fit: BoxFit.cover) : null,
+      ),
+      betterPlayerDataSource: source,
+    );
+    setState(() => _playing = true);
   }
 
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width * 0.72;
-    final h = w * 9 / 16; // 16:9
+    final h = w * 9 / 16;
 
-    return GestureDetector(
-      onTap: _opening ? null : _open,
-      child: ClipRRect(
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(14)),
-        child: SizedBox(
-          width: w, height: h,
-          child: Stack(fit: StackFit.expand, children: [
-
-            // ── Thumbnail / shimmer ──────────────────────────────────
-            if (_thumbLoading)
-              _Shimmer(width: w, height: h, radius: 0)
-            else if (_thumb != null)
-              Image.memory(_thumb!, fit: BoxFit.cover)
-            else
-              // Fallback gradient when no frame could be extracted
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end:   Alignment.bottomRight,
-                    colors: [context.xBg, context.xSurface, context.xCard],
-                  ),
-                ),
-                child: Center(
-                  child: Icon(Icons.movie_outlined,
-                      color: context.xMuted.withValues(alpha: 0.5), size: 48)),
-              ),
-
-            // ── Dark overlay ─────────────────────────────────────────
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end:   Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
-                ),
-              ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+      child: SizedBox(
+        width: w, height: h,
+        child: _playing && _playerCtrl != null
+          ? BetterPlayer(controller: _playerCtrl!)
+          : GestureDetector(
+              onTap: _playInline,
+              child: Stack(fit: StackFit.expand, children: [
+                if (_thumbLoading)
+                  _Shimmer(width: w, height: h, radius: 0)
+                else if (_thumb != null)
+                  Image.memory(_thumb!, fit: BoxFit.cover)
+                else
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft, end: Alignment.bottomRight,
+                        colors: [context.xBg, context.xSurface, context.xCard])),
+                    child: Center(child: Icon(Icons.movie_outlined,
+                        color: context.xMuted.withValues(alpha: 0.5), size: 48))),
+                Center(child: Container(
+                  width: 52, height: 52,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle, color: Colors.black54),
+                  child: const Icon(Icons.play_arrow_rounded,
+                      color: Colors.white, size: 32))),
+              ]),
             ),
-
-            // ── Centre play / progress button ────────────────────────
-            Center(
-              child: _opening
-                  ? SizedBox(width: 52, height: 52,
-                      child: Stack(alignment: Alignment.center, children: [
-                        CircularProgressIndicator(
-                          value: _progress > 0 ? _progress : null,
-                          color: context.xText, strokeWidth: 3),
-                        Text(
-                          _progress > 0
-                              ? '${(_progress * 100).toInt()}%'
-                              : '',
-                          style: TextStyle(
-                              color: context.xText, fontSize: 10)),
-                      ]))
-                  : Container(
-                      width: 52, height: 52,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: context.xText.withValues(alpha: 0.8),
-                            width: 2),
-                      ),
-                      child: Icon(Icons.play_arrow_rounded,
-                          color: context.xText, size: 32),
-                    ),
-            ),
-
-            // ── Bottom metadata bar ──────────────────────────────────
-            Positioned(
-              left: 0, right: 0, bottom: 0,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
-                child: Row(children: [
-                  Icon(Icons.videocam_outlined,
-                      color: context.xText.withValues(alpha: 0.7), size: 14),
-                  SizedBox(width: 4),
-                  Expanded(
-                    child: Text(widget.fileName,
-                        style: TextStyle(
-                            color: context.xText.withValues(alpha: 0.7), fontSize: 11),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                  if (widget.fileSize != null) ...[
-                    SizedBox(width: 6),
-                    Text(_fmtSize(widget.fileSize),
-                        style: TextStyle(
-                            color: context.xText.withValues(alpha: 0.54), fontSize: 10)),
-                  ],
-                ]),
-              ),
-            ),
-          ]),
-        ),
       ),
     );
   }
