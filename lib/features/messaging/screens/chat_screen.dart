@@ -388,7 +388,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     onTap: () => setModal(() {
                       if (step2) {
                         if (pin2.length < 4) {
-                          pin2 += '\$n';
+                          pin2 += n.toString();
                           if (pin2.length == 4) {
                             Future.delayed(const Duration(milliseconds: 150), () {
                               if (pin1 == pin2) {
@@ -405,7 +405,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         }
                       } else {
                         if (pin1.length < 4) {
-                          pin1 += '\$n';
+                          pin1 += n.toString();
                           if (pin1.length == 4) {
                             Future.delayed(const Duration(milliseconds: 150),
                               () => setModal(() { step2 = true; error = ''; }));
@@ -417,7 +417,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       decoration: BoxDecoration(
                         color: context.xSurface,
                         borderRadius: BorderRadius.circular(12)),
-                      child: Center(child: Text('\$n',
+                      child: Center(child: Text(n.toString(),
                         style: TextStyle(color: context.xText,
                             fontSize: 22, fontWeight: FontWeight.w600)))))),
                   const SizedBox(),

@@ -822,12 +822,12 @@ class _ChatPinPromptState extends ConsumerState<_ChatPinPrompt> {
           mainAxisSpacing: 10, crossAxisSpacing: 10,
           children: [
             ...[1,2,3,4,5,6,7,8,9].map((n) => GestureDetector(
-              onTap: () => _onKey('\$n'),
+              onTap: () => _onKey(n.toString()),
               child: Container(
                 decoration: BoxDecoration(
                   color: context.xSurface,
                   borderRadius: BorderRadius.circular(12)),
-                child: Center(child: Text('\$n',
+                child: Center(child: Text(n.toString(),
                   style: TextStyle(color: context.xText,
                       fontSize: 22, fontWeight: FontWeight.w600)))))),
             const SizedBox(),
