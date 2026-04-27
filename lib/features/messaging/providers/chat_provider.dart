@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 // Mirrors: CHAT_HISTORY, getChat(), setChat(), sendMessage(), markAllSeen()
 // intelligentMerge(), deleteMessages(), forwardMessages()
 
