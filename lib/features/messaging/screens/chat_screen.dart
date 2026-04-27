@@ -566,6 +566,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               icon: Icon(Icons.copy, color: context.xMuted),
               onPressed: () => _copySelected(messages)),
           IconButton(
+              icon: Icon(Icons.forward, color: context.xMuted),
+              onPressed: () => _showForwardPicker(messages)),
+          IconButton(
               icon: Icon(Icons.delete_outline, color: context.xMuted),
               onPressed: () => _showDeleteMenu(messages)),
         ],
@@ -811,6 +814,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ListTile(leading: Icon(Icons.select_all, color: context.xMuted),
             title: Text('Select', style: TextStyle(color: context.xText)),
             onTap: () { Navigator.pop(context); _enterSelectMode(msg.id); }),
+        ListTile(leading: Icon(Icons.forward, color: context.xMuted),
+            title: Text('Forward', style: TextStyle(color: context.xText)),
+            onTap: () {
+              Navigator.pop(context);
+              setState(() { _selected.add(msg.id); _selectMode = true; });
+              _showForwardPicker(messages);
+            }),
         ListTile(leading: const Icon(Icons.delete_outline, color: XameColors.danger),
             title: const Text('Delete', style: TextStyle(color: XameColors.danger)),
             onTap: () {
