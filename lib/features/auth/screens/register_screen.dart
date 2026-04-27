@@ -256,13 +256,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     children: [_label(label), SizedBox(height: 8), child]);
 
   Widget _label(String text) => Text(text,
-    style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.7), fontSize: 13, fontWeight: FontWeight.w500));
+    style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500));
 
   Widget _field(TextEditingController ctrl, String hint, IconData icon,
       {bool obscure = false, Widget? suffix, TextInputType? type}) =>
     TextField(
       controller: ctrl, obscureText: obscure, keyboardType: type,
-      style: TextStyle(color: XameColors.darkBg),
+      style: TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint, hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5)),
         prefixIcon: Icon(icon, color: XameColors.darkSurface, size: 20),
@@ -279,7 +279,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     TextField(
       controller: ctrl, focusNode: focus,
       keyboardType: TextInputType.number, maxLength: maxLen,
-      style: TextStyle(color: XameColors.darkBg), textAlign: TextAlign.center,
+      style: TextStyle(color: Colors.white), textAlign: TextAlign.center,
       onChanged: (v) {
         final clean = v.replaceAll(RegExp(r'[^0-9]'), '');
         if (clean != v) ctrl.text = clean;

@@ -1046,7 +1046,7 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               controller: widget.ctrl,
               autofocus:  true,
               onChanged:  _search,
-              style: TextStyle(color: context.xBg),
+              style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText:  'Search people, topics, moments...',
                 hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3), fontSize: 14),

@@ -614,7 +614,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('Name this list', style: TextStyle(color: XameColors.darkBg,
+            Text('Name this list', style: TextStyle(color: Colors.white,
                 fontSize: 15, fontWeight: FontWeight.w700)),
             SizedBox(height: 14),
             Container(
@@ -645,7 +645,7 @@ class _NewBroadcastSheetState extends State<_NewBroadcastSheet> {
                     borderRadius: BorderRadius.circular(12)),
                   alignment: Alignment.center,
                   child: Text('Cancel',
-                      style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54)))),
+                      style: TextStyle(color: Colors.white60))),
               )),
               const SizedBox(width: 10),
               Expanded(child: GestureDetector(

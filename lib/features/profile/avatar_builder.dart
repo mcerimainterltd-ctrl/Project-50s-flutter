@@ -448,7 +448,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54),
+          Text(label, style: TextStyle(color: Colors.white60,
               fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8,
@@ -481,7 +481,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54),
+          Text(label, style: TextStyle(color: Colors.white60,
               fontSize: 12, fontWeight: FontWeight.w600)),
           SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8,

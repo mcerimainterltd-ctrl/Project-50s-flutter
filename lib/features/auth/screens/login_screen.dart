@@ -66,10 +66,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       builder: (ctx) => StatefulBuilder(builder: (ctx, setS) => AlertDialog(
         backgroundColor: XameColors.darkCard,
         title: Text('Set Your Password',
-          style: TextStyle(color: XameColors.darkBg, fontSize: 18)),
+          style: TextStyle(color: Colors.white, fontSize: 18)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           Text('Welcome back, ${user.firstName}! Please set a password.',
-            style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 13)),
+            style: TextStyle(color: Colors.white60, fontSize: 13)),
           SizedBox(height: 16),
           _dialogField(pwCtrl,  'New password',     true),
           SizedBox(height: 12),
@@ -107,7 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _dialogField(TextEditingController ctrl, String hint, bool obscure) =>
     TextField(
       controller: ctrl, obscureText: obscure,
-      style: TextStyle(color: XameColors.darkBg),
+      style: TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint, hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5)),
         filled: true, fillColor: XameColors.darkBg,
