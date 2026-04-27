@@ -596,7 +596,7 @@ class _ContactTile extends ConsumerWidget {
                   ref.read(contactsProvider.notifier).clearDiscoveryDot(contact.id);
                   ref.read(socketServiceProvider).emitMarkDiscoverySeen(contact.id);
                 }
-                context.go('/discover?authorId=${contact.id}');
+                context.go('/discovery?authorId=${contact.id}');
               },
               child: XameAvatar(
                 name: contact.name,
