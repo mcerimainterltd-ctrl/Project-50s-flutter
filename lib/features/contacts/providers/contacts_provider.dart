@@ -6,6 +6,7 @@ import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../core/services/cache_service.dart';
+import '../../discovery/screens/xame_discover_screen.dart';
 
 final activeContactIdProvider = StateProvider<String?>((ref) => null);
 
@@ -68,6 +69,26 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
   ));
 
   @override
+
+  Future<void> seedDiscoveryDots() async {
+    try {
+      final current = state.valueOrNull ?? [];
+      if (current.isEmpty) return;
+      final contactIds = current.map((c) => c.id).toSet();
+      final feed = await DiscoveryApiService.fetchFeed(limit: 50);
+      final authorsWithPosts = feed.map((i) => i.authorId).toSet()
+          .intersection(contactIds);
+      if (authorsWithPosts.isEmpty) return;
+      state = AsyncData(current.map((c) =>
+        authorsWithPosts.contains(c.id)
+          ? c.copyWith(hasNewDiscoveryPost: true)
+          : c
+      ).toList());
+    } catch (e) {
+      debugPrint('seedDiscoveryDots error: \$e');
+    }
+  }
+
   void clearDiscoveryDot(String contactId) {
     final current = state.valueOrNull ?? [];
     state = AsyncData(current.map((c) =>
@@ -206,6 +227,9 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     }));
 
     // missed call count
+    // Seed discovery dots once on startup
+    Future.delayed(const Duration(seconds: 2), () => seedDiscoveryDots());
+
     _subs.add(socket.newDiscoveryPost.listen((authorId) {
       final current = state.valueOrNull ?? [];
       final updated = current.map((c) =>
