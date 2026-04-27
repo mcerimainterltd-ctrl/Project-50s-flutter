@@ -342,16 +342,27 @@ class _ReplyQuote extends StatelessWidget {
   _ReplyQuote({required this.text});
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 4),
-    padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+    margin: const EdgeInsets.only(bottom: 6),
     decoration: BoxDecoration(
-      color: XameColors.darkSurface,
+      color: Colors.black.withValues(alpha: 0.25),
       borderRadius: BorderRadius.circular(10),
       border: Border(left: BorderSide(color: XameColors.primary, width: 3)),
     ),
-    child: Text(text.isNotEmpty ? text : '📎 Attachment',
-        style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54), fontSize: 12),
-        maxLines: 2, overflow: TextOverflow.ellipsis),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Replied message',
+            style: TextStyle(color: XameColors.primary,
+                fontSize: 11, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(text.isNotEmpty ? text : '📎 Attachment',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12),
+            maxLines: 2, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    ),
   );
 }
 
