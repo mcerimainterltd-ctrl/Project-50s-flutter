@@ -648,7 +648,7 @@ class _ContactTile extends ConsumerWidget {
                   ? FontStyle.italic : FontStyle.normal),
               maxLines: 1, overflow: TextOverflow.ellipsis,
             ),
-          ])),
+          ]))),  // end Column, GestureDetector, Expanded
         ]),
       ),
     );
