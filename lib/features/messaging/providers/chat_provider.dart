@@ -241,7 +241,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
       int _lastPct = 0;
       final res = await _dio.post(
-        '/api/upload',
+        '/api/upload-file',
         data: formData,
         onSendProgress: (sent, total) {
           if (total <= 0) return;
