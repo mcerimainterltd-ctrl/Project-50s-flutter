@@ -1,3 +1,6 @@
+import '../../shared/widgets/pin_lock_screen.dart';
+import '../../core/services/wallet_lock_service.dart';
+import '../../core/services/app_lock_service.dart';
 import "../../features/discovery/screens/people_discovery_screen.dart";
 import "../../features/discovery/screens/discovery_aura_feed.dart";
 import "../../features/tv/screens/xame_tv_page.dart";
@@ -117,3 +120,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),    ],
   );
 });
+// ignore: unused_import
+import '../../core/services/app_lock_service.dart';
+// ignore: unused_import  
+import '../../core/services/wallet_lock_service.dart';
+// ignore: unused_import
+import '../../shared/widgets/pin_lock_screen.dart';
