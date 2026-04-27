@@ -121,8 +121,3 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 // ignore: unused_import
-import '../../core/services/app_lock_service.dart';
-// ignore: unused_import  
-import '../../core/services/wallet_lock_service.dart';
-// ignore: unused_import
-import '../../shared/widgets/pin_lock_screen.dart';
