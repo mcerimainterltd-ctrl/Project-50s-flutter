@@ -697,11 +697,9 @@ class XameAvatar extends StatelessWidget {
       width: size, height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: hasNewDiscoveryPost
-          ? Border.all(color: XameColors.accent, width: 2.5)
-          : isOnline
-            ? Border.all(color: XameColors.primary, width: 2)
-            : null),
+        border: isOnline
+          ? Border.all(color: XameColors.primary, width: 2)
+          : null),
       child: ClipOval(
         child: profilePic != null && profilePic!.isNotEmpty
           ? CachedNetworkImage(
