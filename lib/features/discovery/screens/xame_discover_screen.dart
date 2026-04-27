@@ -26,8 +26,9 @@ import 'package:xamepage/core/theme/app_theme.dart';
 class DiscoveryApiService {
   static final _dio = Dio(BaseOptions(
     baseUrl:        AppConstants.serverUrl,
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 15),
+    connectTimeout: const Duration(seconds: 30),
+    sendTimeout:    const Duration(minutes: 10),
+    receiveTimeout: const Duration(minutes: 10),
   ));
 
   static Future<List<DiscoveryItem>> fetchFeed({
