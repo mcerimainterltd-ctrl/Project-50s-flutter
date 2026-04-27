@@ -322,6 +322,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             title: Text('Delete for me (${_selected.length})',
                 style: TextStyle(color: context.xText)),
             onTap: () { Navigator.pop(context); _deleteSelected(); }),
+        ListTile(
+            leading: Icon(Icons.forward, color: context.xMuted),
+            title: Text('Forward (${_selected.length})',
+                style: TextStyle(color: context.xText)),
+            onTap: () { Navigator.pop(context); _showForwardPicker(messages); }),
         if (hasSent)
           ListTile(
               leading: Icon(Icons.delete_forever, color: XameColors.danger),
@@ -330,6 +335,89 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               onTap: () { Navigator.pop(context); _deleteSelected(forEveryone: true); }),
         SizedBox(height: 8),
       ])),
+    );
+  }
+
+  void _showForwardPicker(List<XameMessage> messages) {
+    final contacts = ref.read(contactsProvider).valueOrNull ?? [];
+    final selected = <String>{};
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.xCard,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            SizedBox(height: 8),
+            Container(width: 36, height: 4,
+                decoration: BoxDecoration(
+                    color: context.xMuted.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(2))),
+            SizedBox(height: 12),
+            Text('Forward to...',
+                style: TextStyle(color: context.xText,
+                    fontSize: 16, fontWeight: FontWeight.w600)),
+            SizedBox(height: 8),
+            SizedBox(
+              height: 320,
+              child: ListView.builder(
+                itemCount: contacts.length,
+                itemBuilder: (_, i) {
+                  final c = contacts[i];
+                  final isSelected = selected.contains(c.id);
+                  return ListTile(
+                    leading: Stack(children: [
+                      XameAvatar(name: c.name,
+                          profilePic: c.isProfilePicHidden ? null : c.profilePic,
+                          size: 40, isOnline: c.isOnline),
+                      if (isSelected)
+                        Positioned.fill(child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: context.xPrimary.withValues(alpha: 0.6)),
+                          child: Icon(Icons.check,
+                              color: Colors.white, size: 20))),
+                    ]),
+                    title: Text(c.name,
+                        style: TextStyle(color: context.xText,
+                            fontWeight: FontWeight.w500)),
+                    onTap: () => setModalState(() {
+                      if (isSelected) selected.remove(c.id);
+                      else selected.add(c.id);
+                    }),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: SizedBox(width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.xPrimary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: EdgeInsets.symmetric(vertical: 14)),
+                  onPressed: selected.isEmpty ? null : () {
+                    Navigator.pop(ctx);
+                    ref.read(chatProvider(widget.userId).notifier)
+                        .forwardMessages(_selected.toList(), selected.toList());
+                    _exitSelectMode();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Forwarded to ${selected.length} contact(s)'),
+                      backgroundColor: context.xPrimary));
+                  },
+                  child: Text('Forward',
+                      style: TextStyle(color: Colors.white,
+                          fontWeight: FontWeight.w600, fontSize: 15)),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 
