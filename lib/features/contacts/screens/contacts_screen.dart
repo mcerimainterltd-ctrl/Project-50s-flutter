@@ -1,5 +1,6 @@
 import '../../discovery/screens/discovery_aura_feed.dart';
 import '../../../core/services/wallet_lock_service.dart';
+import '../../../core/services/chat_lock_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -746,6 +747,114 @@ class _PlaceholderTab extends StatelessWidget {
       SizedBox(height: 4),
       Text('Coming soon',
         style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+    ]),
+  );
+}
+
+
+class _ChatPinPrompt extends ConsumerStatefulWidget {
+  final String contactId;
+  final VoidCallback onUnlocked;
+  const _ChatPinPrompt({required this.contactId, required this.onUnlocked});
+  @override
+  ConsumerState<_ChatPinPrompt> createState() => _ChatPinPromptState();
+}
+
+class _ChatPinPromptState extends ConsumerState<_ChatPinPrompt> {
+  String _pin   = '';
+  String _error = '';
+
+  void _onKey(String val) {
+    if (val == '⌫') {
+      setState(() { _pin = _pin.isEmpty ? '' : _pin.substring(0, _pin.length-1); _error = ''; });
+    } else if (_pin.length < 4) {
+      final next = _pin + val;
+      setState(() => _pin = next);
+      if (next.length == 4) {
+        Future.delayed(const Duration(milliseconds: 100), () => _verify(next));
+      }
+    }
+  }
+
+  void _verify(String pin) {
+    final ok = ref.read(chatLockProvider.notifier).verify(widget.contactId, pin);
+    if (ok) {
+      Navigator.pop(context);
+      widget.onUnlocked();
+    } else {
+      setState(() { _pin = ''; _error = 'Incorrect PIN. Try again.'; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: context.xCard,
+      borderRadius: BorderRadius.circular(24)),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const Text('🔒', style: TextStyle(fontSize: 40)),
+      const SizedBox(height: 12),
+      Text('Chat Locked', style: TextStyle(color: context.xText,
+          fontSize: 18, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 6),
+      Text('Enter PIN to open', style: TextStyle(color: context.xMuted, fontSize: 13)),
+      const SizedBox(height: 20),
+      Row(mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(4, (i) => Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: 14, height: 14,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: i < _pin.length
+              ? context.xPrimary
+              : context.xMuted.withValues(alpha: 0.3))))),
+      const SizedBox(height: 12),
+      if (_error.isNotEmpty)
+        Text(_error, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+      const SizedBox(height: 16),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: GridView.count(
+          crossAxisCount: 3, shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 10, crossAxisSpacing: 10,
+          children: [
+            ...[1,2,3,4,5,6,7,8,9].map((n) => GestureDetector(
+              onTap: () => _onKey('\$n'),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.xSurface,
+                  borderRadius: BorderRadius.circular(12)),
+                child: Center(child: Text('\$n',
+                  style: TextStyle(color: context.xText,
+                      fontSize: 22, fontWeight: FontWeight.w600)))))),
+            const SizedBox(),
+            GestureDetector(
+              onTap: () => _onKey('0'),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.xSurface,
+                  borderRadius: BorderRadius.circular(12)),
+                child: Center(child: Text('0',
+                  style: TextStyle(color: context.xText,
+                      fontSize: 22, fontWeight: FontWeight.w600))))),
+            GestureDetector(
+              onTap: () => _onKey('⌫'),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.xSurface,
+                  borderRadius: BorderRadius.circular(12)),
+                child: Center(child: Text('⌫',
+                  style: TextStyle(color: context.xText, fontSize: 20))))),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: Text('Cancel', style: TextStyle(color: context.xMuted))),
     ]),
   );
 }

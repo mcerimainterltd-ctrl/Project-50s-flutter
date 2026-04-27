@@ -12,6 +12,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_compress/video_compress.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/chat_lock_service.dart';
+import '../../../shared/widgets/pin_lock_screen.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../settings/screens/settings_screen.dart';
@@ -299,6 +301,157 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('Messages copied!'), backgroundColor: context.xCard));
     _exitSelectMode();
+  }
+
+  void _showChatLockSetup() {
+    final locks   = ref.read(chatLockProvider);
+    final notifier = ref.read(chatLockProvider.notifier);
+    final hasLock  = locks.containsKey(widget.userId);
+
+    if (hasLock) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: context.xCard,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 16),
+          ListTile(
+            leading: Icon(Icons.lock_open_outlined, color: context.xMuted),
+            title: Text('Remove Chat Lock', style: TextStyle(color: context.xText)),
+            onTap: () { Navigator.pop(context); notifier.removePin(widget.userId); }),
+          ListTile(
+            leading: Icon(Icons.lock_reset_outlined, color: context.xMuted),
+            title: Text('Change PIN', style: TextStyle(color: context.xText)),
+            onTap: () {
+              Navigator.pop(context);
+              _showSetChatPin();
+            }),
+          const SizedBox(height: 8),
+        ])),
+      );
+    } else {
+      _showSetChatPin();
+    }
+  }
+
+  void _showSetChatPin() {
+    String pin1 = '';
+    String pin2 = '';
+    bool step2  = false;
+    String error = '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.xCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModal) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(height: 16),
+            Container(width: 36, height: 4,
+                decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            Text(step2 ? 'Confirm PIN' : 'Set Chat Lock PIN',
+                style: TextStyle(color: context.xText,
+                    fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 20),
+            Row(mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (i) {
+                final pin = step2 ? pin2 : pin1;
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  width: 14, height: 14,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: i < pin.length
+                      ? context.xPrimary
+                      : context.xMuted.withValues(alpha: 0.3)));
+              })),
+            const SizedBox(height: 12),
+            if (error.isNotEmpty)
+              Text(error, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: GridView.count(
+                crossAxisCount: 3, shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 10, crossAxisSpacing: 10,
+                children: [
+                  ...[1,2,3,4,5,6,7,8,9].map((n) => GestureDetector(
+                    onTap: () => setModal(() {
+                      if (step2) {
+                        if (pin2.length < 4) {
+                          pin2 += '\$n';
+                          if (pin2.length == 4) {
+                            Future.delayed(const Duration(milliseconds: 150), () {
+                              if (pin1 == pin2) {
+                                ref.read(chatLockProvider.notifier).setPin(widget.userId, pin1);
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: const Text('Chat locked!'),
+                                  backgroundColor: context.xPrimary));
+                              } else {
+                                setModal(() { pin1=''; pin2=''; step2=false; error='PINs do not match.'; });
+                              }
+                            });
+                          }
+                        }
+                      } else {
+                        if (pin1.length < 4) {
+                          pin1 += '\$n';
+                          if (pin1.length == 4) {
+                            Future.delayed(const Duration(milliseconds: 150),
+                              () => setModal(() { step2 = true; error = ''; }));
+                          }
+                        }
+                      }
+                    }),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: context.xSurface,
+                        borderRadius: BorderRadius.circular(12)),
+                      child: Center(child: Text('\$n',
+                        style: TextStyle(color: context.xText,
+                            fontSize: 22, fontWeight: FontWeight.w600)))))),
+                  const SizedBox(),
+                  GestureDetector(
+                    onTap: () => setModal(() {
+                      if (step2) { if (pin2.length < 4) { pin2 += '0'; } }
+                      else { if (pin1.length < 4) pin1 += '0'; }
+                    }),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: context.xSurface,
+                        borderRadius: BorderRadius.circular(12)),
+                      child: Center(child: Text('0',
+                        style: TextStyle(color: context.xText,
+                            fontSize: 22, fontWeight: FontWeight.w600))))),
+                  GestureDetector(
+                    onTap: () => setModal(() {
+                      if (step2) { if (pin2.isNotEmpty) pin2 = pin2.substring(0, pin2.length-1); }
+                      else { if (pin1.isNotEmpty) pin1 = pin1.substring(0, pin1.length-1); }
+                    }),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: context.xSurface,
+                        borderRadius: BorderRadius.circular(12)),
+                      child: Center(child: Text('⌫',
+                        style: TextStyle(color: context.xText, fontSize: 20))))),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ])),
+        ),
+      ),
+    );
   }
 
   void _showDeleteMenu(List<XameMessage> messages) {
@@ -687,6 +840,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ListTile(leading: Icon(Icons.search, color: context.xMuted),
             title: Text('Search', style: TextStyle(color: context.xText)),
             onTap: () => Navigator.pop(context)),
+        ListTile(
+            leading: Icon(Icons.lock_outline_rounded, color: context.xMuted),
+            title: Text(
+              ref.read(chatLockProvider).containsKey(widget.userId)
+                ? 'Change/Remove Chat Lock'
+                : 'Lock This Chat',
+              style: TextStyle(color: context.xText)),
+            onTap: () {
+              Navigator.pop(context);
+              _showChatLockSetup();
+            }),
         ListTile(leading: Icon(Icons.edit_outlined, color: context.xMuted),
             title: Text('Edit Contact', style: TextStyle(color: context.xText)),
             onTap: () { Navigator.pop(context); _showEditContact(); }),
