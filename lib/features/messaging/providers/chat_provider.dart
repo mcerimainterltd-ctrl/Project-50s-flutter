@@ -324,7 +324,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     } catch (e, st) {
       debugPrint('Upload error: $e');
       debugPrint('Stack: $st');
-      _markFailed(msgId, hint: e.toString());
+      _markFailed(msgId, hint: 'Error: ${e.toString().substring(0, e.toString().length.clamp(0, 100))}');
     }
   }
 
