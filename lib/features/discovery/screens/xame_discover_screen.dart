@@ -788,7 +788,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       // Title
       TextField(
         controller: _titleCtrl,
-        style: TextStyle(color: context.xBg),
+        style: TextStyle(color: context.xText),
         decoration: InputDecoration(
           hintText:  'Title',
           hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
@@ -806,7 +806,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       // Caption
       TextField(
         controller: _captionCtrl,
-        style: TextStyle(color: context.xBg),
+        style: TextStyle(color: context.xText),
         maxLines: 2,
         decoration: InputDecoration(
           hintText:  'Caption (optional)',
