@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'dart:async';
 import 'package:xamepage/core/services/socket_service.dart';
 import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
@@ -17,9 +19,30 @@ class XamePageApp extends ConsumerStatefulWidget {
 }
 
 class _XamePageAppState extends ConsumerState<XamePageApp> {
+  StreamSubscription? _shareSub;
+  List<SharedMediaFile> _sharedFiles = [];
   @override
   void initState() {
     super.initState();
+
+    // Handle share intent when app is already open
+    _shareSub = ReceiveSharingIntent.instance.getMediaStream().listen(
+      (files) {
+        if (files.isNotEmpty) {
+          setState(() => _sharedFiles = files);
+          final router = ref.read(routerProvider);
+          router.push('/contacts'); // navigate to contacts to pick recipient
+        }
+      },
+    );
+
+    // Handle share intent when app is launched from share
+    ReceiveSharingIntent.instance.getInitialMedia().then((files) {
+      if (files.isNotEmpty) {
+        setState(() => _sharedFiles = files);
+        ReceiveSharingIntent.instance.reset();
+      }
+    });
     // Listen for calls in a dedicated listener, not the build method
     // Eager load all data immediately
     Future.microtask(() async {
