@@ -80,6 +80,18 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
   // Peers: peerId → _ConferencePeer
   final Map<String, _ConferencePeer> _peers = {};
 
+  // Debug logs
+  final List<String> debugLogs = [];
+  final _logsController = StreamController<List<String>>.broadcast();
+  Stream<List<String>> get logsStream => _logsController.stream;
+
+  void _log(String msg) {
+    final ts = DateTime.now().toIso8601String().substring(11, 19);
+    debugLogs.add('[$ts] $msg');
+    if (debugLogs.length > 50) debugLogs.removeAt(0);
+    _logsController.add(List.from(debugLogs));
+  }
+
   // Stream for UI to observe peer list changes
   final _peersController = StreamController<List<_ConferencePeer>>.broadcast();
   Stream<List<_ConferencePeer>> get peersStream => _peersController.stream;
@@ -245,6 +257,7 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
 
     // Remote track → renderer
     pc.onTrack = (event) {
+      _log('onTrack peer=$peerId streams=\${event.streams.length} kind=\${event.track?.kind}');
       if (event.streams.isNotEmpty) {
         renderer.srcObject = event.streams[0];
         _notifyPeers();
@@ -264,6 +277,7 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     };
 
     pc.onIceConnectionState = (s) {
+      _log('ICE peer=$peerId state=\$s');
       if (s == RTCIceConnectionState.RTCIceConnectionStateFailed ||
           s == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
         _removePeer(peerId);
@@ -485,6 +499,35 @@ class _ActiveConferenceViewState
     });
   }
 
+  void _showDebugPanel(BuildContext context, WidgetRef ref) {
+    final logs = ref.read(conferenceProvider.notifier).debugLogs;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0A0A0F),
+      builder: (_) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(children: [
+            const Text('WebRTC Debug Logs',
+                style: TextStyle(color: Colors.white,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Expanded(child: logs.isEmpty
+              ? const Center(child: Text('No logs yet',
+                  style: TextStyle(color: Colors.white38)))
+              : ListView.builder(
+                  itemCount: logs.length,
+                  reverse: true,
+                  itemBuilder: (_, i) => Text(
+                    logs[logs.length - 1 - i],
+                    style: const TextStyle(color: Colors.greenAccent,
+                        fontSize: 10, fontFamily: 'monospace')),
+                )),
+          ]))));
+  }
+
   @override
   void dispose() {
     _peersSub?.cancel();
@@ -512,6 +555,9 @@ class _ActiveConferenceViewState
               Text('$total participant${total != 1 ? "s" : ""}',
                   style: const TextStyle(color: Colors.white38, fontSize: 10)),
             ])),
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined, color: Colors.white38),
+              onPressed: () => _showDebugPanel(context, ref)),
             IconButton(
               icon: const Icon(Icons.link_rounded, color: Colors.white54),
               onPressed: () {
