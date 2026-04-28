@@ -463,7 +463,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: ref.watch(appLockProvider).enabled ? 'Enabled' : 'Disabled',
               onTap: () => _showAppLockSetup(context, ref),
             ),
-            _SettingsTile(
+            _NavTile(
+              theme:    theme,
               icon: Icons.admin_panel_settings_outlined,
               title: 'Settings Lock',
               subtitle: ref.watch(settingsLockProvider).enabled ? 'Enabled' : 'Disabled',
