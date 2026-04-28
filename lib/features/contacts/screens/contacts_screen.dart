@@ -119,7 +119,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     .toList(),
               );
             }),
-            }),
         ])),
       ])),
       bottomNavigationBar: _buildBottomNav(),
