@@ -8,6 +8,8 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/config/constants.dart';
 import 'package:dio/dio.dart';
 import '../../../core/services/app_lock_service.dart';
+import '../../../core/services/settings_lock_service.dart';
+import 'settings_lock_screen.dart';
 import '../../../core/services/wallet_lock_service.dart';
 import '../../../shared/widgets/pin_lock_screen.dart';
 import '../../contacts/providers/contacts_provider.dart';
@@ -460,6 +462,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title:    'App Lock',
               subtitle: ref.watch(appLockProvider).enabled ? 'Enabled' : 'Disabled',
               onTap: () => _showAppLockSetup(context, ref),
+            _SettingsTile(
+              icon: Icons.admin_panel_settings_outlined,
+              title: 'Settings Lock',
+              subtitle: ref.watch(settingsLockProvider).enabled ? 'Enabled' : 'Disabled',
+              onTap: () => _showSettingsLockSetup(context, ref),
+            ),
             ),
             _NavTile(
               theme:    theme,
@@ -712,6 +720,60 @@ class _NavTile extends StatelessWidget {
       ]),
     ),
   );
+}
+
+void _showSettingsLockSetup(BuildContext context, WidgetRef ref) {
+  final state    = ref.read(settingsLockProvider);
+  final notifier = ref.read(settingsLockProvider.notifier);
+  if (state.enabled) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const SizedBox(height: 16),
+        ListTile(
+          leading: const Icon(Icons.lock_open_outlined),
+          title: const Text('Disable Settings Lock'),
+          subtitle: const Text('Requires current PIN'),
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (_) => _VerifyThenDisableSettings(notifier: notifier)));
+          }),
+        const SizedBox(height: 8),
+      ])),
+    );
+  } else {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => _SetPinScreen(
+      title: 'Set Settings Lock PIN',
+      pinLength: 6,
+      onSet: (pin) { notifier.enable(pin); Navigator.pop(context); },
+    )));
+  }
+}
+
+class _VerifyThenDisableSettings extends ConsumerStatefulWidget {
+  final SettingsLockNotifier notifier;
+  const _VerifyThenDisableSettings({required this.notifier});
+  @override
+  ConsumerState<_VerifyThenDisableSettings> createState() => _VTDSState();
+}
+class _VTDSState extends ConsumerState<_VerifyThenDisableSettings> {
+  @override
+  Widget build(BuildContext context) {
+    return SettingsLockScreen(
+      pinLength: 6,
+      onVerify: (pin) async {
+        final ok = widget.notifier.verify(pin);
+        if (ok) {
+          await widget.notifier.disable();
+          if (mounted) Navigator.pop(context);
+        }
+        return ok;
+      },
+    );
+  }
 }
 
 void _showAppLockSetup(BuildContext context, WidgetRef ref) {

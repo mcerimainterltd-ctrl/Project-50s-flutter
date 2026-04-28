@@ -18,6 +18,8 @@ import '../../features/calling/screens/incoming_call_screen.dart';
 import '../../features/calls/screens/call_history_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/settings/screens/settings_lock_screen.dart';
+import '../../core/services/settings_lock_service.dart';
 import '../../screens/xame_pay_screen.dart';
 import '../../features/contacts/providers/contacts_provider.dart';
 import '../../screens/phone_screen.dart';
@@ -120,7 +122,23 @@ final routerProvider = Provider<GoRouter>((ref) {
           xameContacts: xameContacts,
         );
       }),
-      GoRoute(path: '/settings',      builder: (c, s) => const SettingsScreen()),
+      GoRoute(path: '/settings', builder: (c, s) {
+        final lockState = ref.read(settingsLockProvider);
+        if (!lockState.enabled || lockState.pin.isEmpty) return const SettingsScreen();
+        return SettingsLockScreen(
+          pinLength: 6,
+          onVerify: (pin) async {
+            final ok = ref.read(settingsLockProvider.notifier).verify(pin);
+            if (ok) c.go('/settings-unlocked');
+            return ok;
+          },
+          onForgot: () async {
+            await ref.read(settingsLockProvider.notifier).disable();
+            c.go('/settings-unlocked');
+          },
+        );
+      }),
+      GoRoute(path: '/settings-unlocked', builder: (c, s) => const SettingsScreen()),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),    ],
   );
 });
