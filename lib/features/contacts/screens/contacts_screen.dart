@@ -99,7 +99,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           Consumer(builder: (ctx, ref, __) {
               final u        = ref.read(currentUserProvider);
               final lockState = ref.watch(walletLockProvider);
-              if (lockState.enabled) {
+              if (lockState.enabled && !_walletUnlocked) {
                 return PinLockScreen(
                   title:      'XamePay Wallet',
                   subtitle:   'Enter your wallet PIN',
@@ -115,7 +115,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                   },
                 );
               }
-              if (!_walletUnlocked) return const SizedBox.shrink();
               return XamePayScreen(
                 userId:       u?.xameId ?? '',
                 serverUrl:    AppConstants.serverUrl,

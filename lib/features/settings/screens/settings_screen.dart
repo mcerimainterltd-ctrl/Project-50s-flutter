@@ -740,6 +740,7 @@ void _showAppLockSetup(BuildContext context, WidgetRef ref) {
   } else {
     Navigator.push(context, MaterialPageRoute(builder: (_) => _SetPinScreen(
       title: 'Set App Lock PIN',
+      pinLength: 6,
       onSet: (pin) { notifier.enable(pin); Navigator.pop(context); },
     )));
   }
