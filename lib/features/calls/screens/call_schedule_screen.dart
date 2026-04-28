@@ -367,6 +367,18 @@ class _ScheduleCallSheetState extends ConsumerState<_ScheduleCallSheet> {
             const SizedBox(width: 10),
             Expanded(child: _timeTile(context)),
           ]),
+          const SizedBox(height: 16),
+
+          // Recurrence
+          Text('Repeat', style: TextStyle(color: Colors.white60, fontSize: 12)),
+          const SizedBox(height: 8),
+          Row(children: [
+            _recBtn('once',   '🔂 Once'),
+            const SizedBox(width: 8),
+            _recBtn('daily',  '📅 Daily'),
+            const SizedBox(width: 8),
+            _recBtn('weekly', '🗓️ Weekly'),
+          ]),
           const SizedBox(height: 24),
 
           // Schedule button
@@ -418,6 +430,29 @@ class _ScheduleCallSheetState extends ConsumerState<_ScheduleCallSheet> {
       )),
     );
   }
+
+  Widget _recBtn(String type, String label) => Expanded(
+    child: GestureDetector(
+      onTap: () => setState(() => _recurrence = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: _recurrence == type
+              ? context.xPrimary.withValues(alpha: 0.15)
+              : const Color(0xFF1E1E2E),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+              color: _recurrence == type ? context.xPrimary : Colors.white12)),
+        child: Text(label,
+            style: TextStyle(
+                color: _recurrence == type ? context.xPrimary : Colors.white54,
+                fontWeight: _recurrence == type ? FontWeight.w700 : FontWeight.normal,
+                fontSize: 12)),
+      ),
+    ),
+  );
 
   Widget _typeBtn(String type, String label, BuildContext context) =>
     Expanded(child: GestureDetector(
