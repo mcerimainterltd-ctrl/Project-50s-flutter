@@ -748,7 +748,7 @@ void _showSettingsLockSetup(BuildContext context, WidgetRef ref) {
   } else {
     Navigator.push(context, MaterialPageRoute(builder: (_) => _SetPinScreen(
       title: 'Set Settings Lock PIN',
-      pinLength: 6,
+      pinLength: 4,
       onSet: (pin) { notifier.enable(pin); Navigator.pop(context); },
     )));
   }
@@ -764,7 +764,7 @@ class _VTDSState extends ConsumerState<_VerifyThenDisableSettings> {
   @override
   Widget build(BuildContext context) {
     return SettingsLockScreen(
-      pinLength: 6,
+      pinLength: 4,
       onVerify: (pin) async {
         final ok = widget.notifier.verify(pin);
         if (ok) {

@@ -126,7 +126,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         final lockState = ref.read(settingsLockProvider);
         if (!lockState.enabled || lockState.pin.isEmpty) return const SettingsScreen();
         return SettingsLockScreen(
-          pinLength: 6,
+          pinLength: 4,
+          onBack: () => c.go('/contacts'),
           onVerify: (pin) async {
             final ok = ref.read(settingsLockProvider.notifier).verify(pin);
             if (ok) c.go('/settings-unlocked');
