@@ -829,50 +829,52 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _showBubbleMenu(XameMessage msg, List<XameMessage> messages) {
+    final outerContext = context;
+    final outerRef = ref;
     showModalBottomSheet(
-      context: context, backgroundColor: context.xCard,
+      context: outerContext, backgroundColor: outerContext.xCard,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      builder: (sheetCtx) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         SizedBox(height: 8),
         Container(width: 36, height: 4,
-            decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
+            decoration: BoxDecoration(color: outerContext.xMuted.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 8),
         if (msg.text.isNotEmpty)
-          ListTile(leading: Icon(Icons.reply, color: context.xMuted),
-              title: Text('Reply', style: TextStyle(color: context.xText)),
-              onTap: () { Navigator.pop(context); setState(() => _replyTo = msg); }),
+          ListTile(leading: Icon(Icons.reply, color: outerContext.xMuted),
+              title: Text('Reply', style: TextStyle(color: outerContext.xText)),
+              onTap: () { Navigator.pop(sheetCtx); setState(() => _replyTo = msg); }),
         if (msg.text.isNotEmpty)
-          ListTile(leading: Icon(Icons.copy, color: context.xMuted),
-              title: Text('Copy', style: TextStyle(color: context.xText)),
+          ListTile(leading: Icon(Icons.copy, color: outerContext.xMuted),
+              title: Text('Copy', style: TextStyle(color: outerContext.xText)),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(sheetCtx);
                 Clipboard.setData(ClipboardData(text: msg.text));
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Copied!'), backgroundColor: context.xCard));
+                ScaffoldMessenger.of(outerContext).showSnackBar(SnackBar(
+                    content: Text('Copied!'), backgroundColor: outerContext.xCard));
               }),
         if (msg.text.isNotEmpty)
           ListTile(
               leading: Text('🌍', style: TextStyle(fontSize: 18)),
-              title: Text('Translate', style: TextStyle(color: context.xText)),
+              title: Text('Translate', style: TextStyle(color: outerContext.xText)),
               onTap: () {
-                Navigator.pop(context);
-                showTranslateSheet(context, ref, msg.text);
+                Navigator.pop(sheetCtx);
+                showTranslateSheet(outerContext, outerRef, msg.text);
               }),
-        ListTile(leading: Icon(Icons.select_all, color: context.xMuted),
-            title: Text('Select', style: TextStyle(color: context.xText)),
-            onTap: () { Navigator.pop(context); _enterSelectMode(msg.id); }),
-        ListTile(leading: Icon(Icons.forward, color: context.xMuted),
-            title: Text('Forward', style: TextStyle(color: context.xText)),
+        ListTile(leading: Icon(Icons.select_all, color: outerContext.xMuted),
+            title: Text('Select', style: TextStyle(color: outerContext.xText)),
+            onTap: () { Navigator.pop(sheetCtx); _enterSelectMode(msg.id); }),
+        ListTile(leading: Icon(Icons.forward, color: outerContext.xMuted),
+            title: Text('Forward', style: TextStyle(color: outerContext.xText)),
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pop(sheetCtx);
               _enterSelectMode(msg.id);
               _showForwardPicker(messages);
             }),
-        ListTile(leading: Icon(Icons.delete_outline, color: context.xDanger),
-            title: Text('Delete', style: TextStyle(color: context.xDanger)),
+        ListTile(leading: Icon(Icons.delete_outline, color: outerContext.xDanger),
+            title: Text('Delete', style: TextStyle(color: outerContext.xDanger)),
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pop(sheetCtx);
               _enterSelectMode(msg.id);
               _showDeleteMenu(messages);
             }),
