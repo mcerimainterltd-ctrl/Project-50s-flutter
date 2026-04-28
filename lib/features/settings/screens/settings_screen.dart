@@ -469,7 +469,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: ref.watch(settingsLockProvider).enabled ? 'Enabled' : 'Disabled',
               onTap: () => _showSettingsLockSetup(context, ref),
             ),
-            ),
             _NavTile(
               theme:    theme,
               icon:     Icons.account_balance_wallet_outlined,
