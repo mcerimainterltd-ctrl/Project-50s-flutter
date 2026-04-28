@@ -1,24 +1,26 @@
-
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
+import '../../../core/services/webrtc_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../contacts/providers/contacts_provider.dart';
 
 // ── Model ─────────────────────────────────────────────────────────────────────
 class ScheduledCall {
-  final String scheduleId, callerId, recipientId, callType;
+  final String scheduleId, callerId, recipientId, callType, recurrence;
   final int    callAt;
   ScheduledCall({
     required this.scheduleId, required this.callerId,
     required this.recipientId, required this.callType,
-    required this.callAt,
+    required this.callAt, this.recurrence = 'once',
   });
   factory ScheduledCall.fromJson(Map<String, dynamic> j) => ScheduledCall(
     scheduleId:  j['scheduleId']  as String,
@@ -26,7 +28,41 @@ class ScheduledCall {
     recipientId: j['recipientId'] as String,
     callType:    j['callType']    as String? ?? 'voice',
     callAt:      (j['callAt'] as num).toInt(),
+    recurrence:  j['recurrence'] as String? ?? 'once',
   );
+}
+
+// ── Notification helpers ───────────────────────────────────────────────────────
+final _notifs     = FlutterLocalNotificationsPlugin();
+bool  _notifsInit = false;
+
+Future<void> _ensureNotifsInit() async {
+  if (_notifsInit) return;
+  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const ios     = DarwinInitializationSettings();
+  await _notifs.initialize(
+      const InitializationSettings(android: android, iOS: ios));
+  _notifsInit = true;
+}
+
+Future<void> _showCallNotif(ScheduledCall call, String contactName) async {
+  await _ensureNotifsInit();
+  final id        = call.scheduleId.hashCode.abs() % 100000;
+  final typeLabel = call.callType == 'video' ? '📹 Video' : '🎙️ Voice';
+  await _notifs.show(
+    id, '$typeLabel Call — $contactName', 'Starting now...',
+    const NotificationDetails(
+      android: AndroidNotificationDetails('scheduled_calls', 'Scheduled Calls',
+          channelDescription: 'Scheduled call reminders',
+          importance: Importance.max, priority: Priority.high),
+      iOS: DarwinNotificationDetails(),
+    ),
+  );
+}
+
+Future<void> _cancelNotif(String scheduleId) async {
+  await _ensureNotifsInit();
+  await _notifs.cancel(scheduleId.hashCode.abs() % 100000);
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -35,12 +71,19 @@ final scheduledCallsProvider =
         ScheduledCallsNotifier.new);
 
 class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
-  final Ref _ref;
-  final _dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+  final Ref                  _ref;
+  final _dio   = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+  final _timers = <String, Timer>{};
 
   ScheduledCallsNotifier(this._ref) : super([]) {
     _load();
     _listenSocket();
+  }
+
+  @override
+  void dispose() {
+    for (final t in _timers.values) t.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -58,14 +101,6 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
     } catch (_) {}
   }
 
-  final Map<String, Timer> _timers = {};
-
-  @override
-  void dispose() {
-    for (final t in _timers.values) t.cancel();
-    super.dispose();
-  }
-
   void _listenSocket() {
     Future.doWhile(() async {
       if (!mounted) return false;
@@ -77,20 +112,17 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
           final recipientId = map['recipientId'] as String?;
           final callType    = map['callType']    as String? ?? 'voice';
           if (scheduleId == null || recipientId == null) return;
-          final call = state.where((c) => c.scheduleId == scheduleId).firstOrNull;
-          if (call != null) {
-            final contacts = _ref.read(contactsProvider).valueOrNull ?? [];
-            final contact  = contacts.where((c) => c.id == recipientId).firstOrNull;
-            await _showCallNotif(call, contact?.name ?? recipientId);
-          }
+          // cancel local timer since server fired first
+          _timers[scheduleId]?.cancel();
+          _timers.remove(scheduleId);
+          final call     = state.where((c) => c.scheduleId == scheduleId).firstOrNull;
+          final contacts = _ref.read(contactsProvider).valueOrNull ?? [];
+          final contact  = contacts.where((c) => c.id == recipientId).firstOrNull;
+          if (call != null) await _showCallNotif(call, contact?.name ?? recipientId);
           try {
-            final webrtc = _ref.read(webrtcServiceProvider);
-            await webrtc.startCall(recipientId, callType == 'video');
-          } catch (e) {
-            debugPrint('[CallSchedule] Auto-dial error: \$e');
-          }
+            await _ref.read(webrtcServiceProvider).startCall(recipientId, callType == 'video');
+          } catch (e) { debugPrint('[CallSchedule] socket auto-dial error: $e'); }
           if (call == null || call.recurrence == 'once') {
-            _timers.remove(scheduleId)?.cancel();
             state = state.where((c) => c.scheduleId != scheduleId).toList();
           }
         });
@@ -114,11 +146,8 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
     final contact  = contacts.where((c) => c.id == call.recipientId).firstOrNull;
     await _showCallNotif(call, contact?.name ?? call.recipientId);
     try {
-      final webrtc = _ref.read(webrtcServiceProvider);
-      await webrtc.startCall(call.recipientId, call.callType == 'video');
-    } catch (e) {
-      debugPrint('[CallSchedule] Local auto-dial error: \$e');
-    }
+      await _ref.read(webrtcServiceProvider).startCall(call.recipientId, call.callType == 'video');
+    } catch (e) { debugPrint('[CallSchedule] local auto-dial error: $e'); }
     if (call.recurrence == 'daily') {
       final next = ScheduledCall(
         scheduleId: call.scheduleId, callerId: call.callerId,
@@ -152,10 +181,8 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
   }) async {
     try {
       final res = await _dio.post('/api/schedule-call/create', data: {
-        'callerId':    callerId,
-        'recipientId': recipientId,
-        'callType':    callType,
-        'callAt':      callAt,
+        'callerId':    callerId,   'recipientId': recipientId,
+        'callType':    callType,   'callAt':      callAt,
         'recurrence':  recurrence,
       });
       if (res.data['success'] == true) {
