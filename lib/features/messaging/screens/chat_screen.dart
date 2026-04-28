@@ -313,7 +313,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
     ));
   }
-  }
 
   void _showDeleteMenu(List<XameMessage> messages) {
     final hasSent = messages.any(
