@@ -866,14 +866,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             title: Text('Forward', style: TextStyle(color: context.xText)),
             onTap: () {
               Navigator.pop(context);
-              setState(() { _selected.add(msg.id); _selectMode = true; });
+              _enterSelectMode(msg.id);
               _showForwardPicker(messages);
             }),
-        ListTile(leading: const Icon(Icons.delete_outline, color: XameColors.danger),
-            title: const Text('Delete', style: TextStyle(color: XameColors.danger)),
+        ListTile(leading: Icon(Icons.delete_outline, color: context.xDanger),
+            title: Text('Delete', style: TextStyle(color: context.xDanger)),
             onTap: () {
               Navigator.pop(context);
-              setState(() { _selected.add(msg.id); _selectMode = true; });
+              _enterSelectMode(msg.id);
               _showDeleteMenu(messages);
             }),
         const SizedBox(height: 8),
