@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:local_auth/local_auth.dart';
 import '../../core/theme/app_theme.dart';
 
 class PinLockScreen extends StatefulWidget {
@@ -29,11 +30,13 @@ class PinLockScreen extends StatefulWidget {
 
 class _PinLockScreenState extends State<PinLockScreen>
     with SingleTickerProviderStateMixin {
+  final _auth      = LocalAuthentication();
   String _pin      = '';
   String _error    = '';
   int    _attempts = 0;
   bool   _locked   = false;
   int    _countdown = 0;
+  bool   _biometricAvailable = false;
   late AnimationController _shakeCtrl;
   late Animation<double>   _shake;
 
@@ -44,16 +47,45 @@ class _PinLockScreenState extends State<PinLockScreen>
         duration: const Duration(milliseconds: 400));
     _shake = Tween(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(parent: _shakeCtrl, curve: Curves.elasticIn));
+    _checkBiometric();
+    if (widget.autoBiometric) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _biometricAuth());
+    }
   }
 
   @override
   void dispose() { _shakeCtrl.dispose(); super.dispose(); }
 
+  Future<void> _checkBiometric() async {
+    try {
+      final available = await _auth.canCheckBiometrics;
+      final enrolled  = await _auth.isDeviceSupported();
+      if (mounted) setState(() => _biometricAvailable = available && enrolled);
+    } catch (_) {}
+  }
+
+  Future<void> _biometricAuth() async {
+    if (!_biometricAvailable) return;
+    try {
+      final ok = await _auth.authenticate(
+        localizedReason: widget.subtitle,
+        options: const AuthenticationOptions(
+          biometricOnly: false,
+          stickyAuth:    true,
+        ),
+      );
+      if (ok && mounted) {
+        // Biometric success — call onVerify with special token
+        await widget.onVerify('__biometric__');
+      }
+    } catch (_) {}
+  }
+
   void _onKey(String val) {
     if (_locked) return;
     if (val == '⌫') {
       setState(() {
-        _pin  = _pin.isEmpty ? '' : _pin.substring(0, _pin.length - 1);
+        _pin   = _pin.isEmpty ? '' : _pin.substring(0, _pin.length - 1);
         _error = '';
       });
       HapticFeedback.selectionClick();
@@ -99,49 +131,41 @@ class _PinLockScreenState extends State<PinLockScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: XameColors.darkBg,
       body: SafeArea(
         child: Column(children: [
-          // Cancel
           if (widget.showCancel && widget.onCancel != null)
             Align(
               alignment: Alignment.topLeft,
               child: TextButton(
                 onPressed: widget.onCancel,
                 child: const Text('Cancel',
-                    style: TextStyle(color: Colors.white54)),
-              ),
+                    style: TextStyle(color: Colors.white54))),
             )
           else
             const SizedBox(height: 16),
 
           const Spacer(),
 
-          // Icon
           Text(widget.icon, style: const TextStyle(fontSize: 48)),
           const SizedBox(height: 14),
-
-          // Title
           Text(widget.title,
               style: const TextStyle(color: Colors.white, fontSize: 20,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
-
-          // Subtitle
           Text(widget.subtitle,
               style: TextStyle(color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 13)),
           const SizedBox(height: 28),
 
-          // PIN dots with shake
+          // PIN dots
           AnimatedBuilder(
             animation: _shake,
             builder: (_, child) => Transform.translate(
               offset: Offset(
-                  _shake.value * 8 * ((_shake.value * 10).round().isEven ? 1 : -1),
-                  0),
+                  _shake.value * 8 *
+                      ((_shake.value * 10).round().isEven ? 1 : -1), 0),
               child: child),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -157,10 +181,9 @@ class _PinLockScreenState extends State<PinLockScreen>
                     color: filled
                         ? XameColors.primary
                         : Colors.white.withValues(alpha: 0.2),
-                    boxShadow: filled ? [
-                      BoxShadow(color: XameColors.primary.withValues(alpha: 0.5),
-                          blurRadius: 8)
-                    ] : null,
+                    boxShadow: filled ? [BoxShadow(
+                        color: XameColors.primary.withValues(alpha: 0.5),
+                        blurRadius: 8)] : null,
                   ),
                 );
               }),
@@ -168,40 +191,58 @@ class _PinLockScreenState extends State<PinLockScreen>
           ),
           const SizedBox(height: 14),
 
-          // Error / lockout
           SizedBox(height: 20,
             child: _locked
                 ? Text('Try again in $_countdown s',
-                    style: const TextStyle(color: Colors.redAccent,
-                        fontSize: 12))
+                    style: const TextStyle(color: Colors.redAccent, fontSize: 12))
                 : _error.isNotEmpty
-                    ? Text(_error,
-                        style: const TextStyle(color: Colors.redAccent,
-                            fontSize: 12))
-                    : null,
-          ),
+                    ? Text(_error, style: const TextStyle(
+                        color: Colors.redAccent, fontSize: 12))
+                    : null),
 
           const SizedBox(height: 24),
 
           // Keypad
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 64),
-            child: Column(
-              children: [
-                _keyRow(['1', '2', '3']),
-                const SizedBox(height: 14),
-                _keyRow(['4', '5', '6']),
-                const SizedBox(height: 14),
-                _keyRow(['7', '8', '9']),
-                const SizedBox(height: 14),
-                _keyRow(['', '0', '⌫']),
-              ],
-            ),
+            child: Column(children: [
+              _keyRow(['1', '2', '3']),
+              const SizedBox(height: 14),
+              _keyRow(['4', '5', '6']),
+              const SizedBox(height: 14),
+              _keyRow(['7', '8', '9']),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Biometric button
+                  _biometricAvailable
+                      ? GestureDetector(
+                          onTap: _biometricAuth,
+                          child: Container(
+                            width: 72, height: 72,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.06)),
+                            ),
+                            child: Icon(Icons.fingerprint,
+                                color: Colors.white.withValues(alpha: 0.7),
+                                size: 28),
+                          ),
+                        )
+                      : const SizedBox(width: 72, height: 72),
+                  _PinKey(label: '0', onTap: () => _onKey('0'),
+                      locked: _locked),
+                  _PinKey(label: '⌫', onTap: () => _onKey('⌫'),
+                      locked: _locked),
+                ],
+              ),
+            ]),
           ),
 
           const SizedBox(height: 20),
 
-          // Forgot PIN
           if (widget.onForgot != null)
             TextButton(
               onPressed: widget.onForgot,
@@ -218,13 +259,8 @@ class _PinLockScreenState extends State<PinLockScreen>
 
   Widget _keyRow(List<String> keys) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: keys.map((k) => k.isEmpty
-        ? const SizedBox(width: 72, height: 72)
-        : _PinKey(
-            label: k,
-            onTap: () => _onKey(k),
-            locked: _locked,
-          )).toList(),
+    children: keys.map((k) => _PinKey(
+        label: k, onTap: () => _onKey(k), locked: _locked)).toList(),
   );
 }
 

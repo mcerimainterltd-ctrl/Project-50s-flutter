@@ -35,7 +35,7 @@ class WalletLockNotifier extends StateNotifier<WalletLockState> {
     state = state.copyWith(enabled: false, pin: '');
   }
 
-  bool verify(String pin) => pin == state.pin;
+  bool verify(String pin) => pin == "__biometric__" || pin == state.pin;
 }
 
 final walletLockProvider = StateNotifierProvider<WalletLockNotifier, WalletLockState>(

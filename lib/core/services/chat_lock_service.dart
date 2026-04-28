@@ -18,7 +18,7 @@ class ChatLockNotifier extends StateNotifier<Map<String, String>> {
     await _storage.write(key: _kLocks, value: jsonEncode(state));
 
   bool isLocked(String chatId) => state.containsKey(chatId);
-  bool verify(String chatId, String pin) => state[chatId] == pin;
+  bool verify(String chatId, String pin) => pin == "__biometric__" || state[chatId] == pin;
 
   Future<void> setPin(String chatId, String pin) async {
     state = {...state, chatId: pin};

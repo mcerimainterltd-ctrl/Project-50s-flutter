@@ -46,7 +46,7 @@ class AppLockNotifier extends StateNotifier<AppLockState> {
     state = state.copyWith(delayMs: ms);
   }
 
-  bool verify(String pin) => pin == state.pin;
+  bool verify(String pin) => pin == "__biometric__" || pin == state.pin;
 }
 
 final appLockProvider = StateNotifierProvider<AppLockNotifier, AppLockState>(
