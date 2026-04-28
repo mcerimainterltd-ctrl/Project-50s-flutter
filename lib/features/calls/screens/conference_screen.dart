@@ -206,7 +206,11 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
 
     // Get camera + mic
     _localStream = await navigator.mediaDevices.getUserMedia({
-      'audio': true,
+      'audio': {
+        'echoCancellation': true,
+        'noiseSuppression': true,
+        'autoGainControl': true,
+      },
       'video': {'facingMode': 'user', 'width': 640, 'height': 480},
     });
     _localRenderer!.srcObject = _localStream;
@@ -243,8 +247,13 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     pc.onTrack = (event) {
       if (event.streams.isNotEmpty) {
         renderer.srcObject = event.streams[0];
-        _notifyPeers();
+      } else if (event.track != null) {
+        // Handle trackless stream case
+        final ms = MediaStream(event.track!.id!);
+        ms.addTrack(event.track!);
+        renderer.srcObject = ms;
       }
+      _notifyPeers();
     };
 
     // ICE candidates
@@ -519,8 +528,11 @@ class _ActiveConferenceViewState
               icon: Icon(
                 conf.layout == ConferenceLayout.grid
                     ? Icons.grid_view_rounded
-                    : Icons.view_sidebar_rounded,
-                color: Colors.white54),
+                    : conf.layout == ConferenceLayout.spotlight
+                        ? Icons.personal_video_rounded
+                        : Icons.view_sidebar_rounded,
+                color: Colors.white70),
+              tooltip: conf.layout.name,
               onPressed: () => notifier.cycleLayout()),
           ]),
         ),
@@ -589,14 +601,25 @@ class _VideoGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = peers.length + 1;
-    final cols  = total <= 1 ? 1 : total <= 4 ? 2 : 3;
+    int cols;
+    double ratio;
+    switch (conf.layout) {
+      case ConferenceLayout.spotlight:
+        cols  = 1; ratio = 9/16; break;
+      case ConferenceLayout.sidebar:
+        cols  = 1; ratio = 16/9; break;
+      case ConferenceLayout.grid:
+      default:
+        cols  = total <= 1 ? 1 : total <= 4 ? 2 : 3;
+        ratio = total == 1 ? 9/16 : 1; break;
+    }
 
     return GridView.builder(
       padding: const EdgeInsets.all(4),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount:  cols,
         crossAxisSpacing: 4, mainAxisSpacing: 4,
-        childAspectRatio: total == 1 ? 9/16 : 1),
+        childAspectRatio: ratio),
       itemCount: total,
       itemBuilder: (_, i) {
         // First tile = local video
