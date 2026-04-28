@@ -808,35 +808,63 @@ class _SetPinScreen extends StatefulWidget {
   final String title;
   final int    pinLength;
   final void Function(String pin) onSet;
-  const _SetPinScreen({required this.title, required this.onSet, this.pinLength = 6});
+  const _SetPinScreen({required this.title, required this.onSet,
+      this.pinLength = 4});
   @override
   State<_SetPinScreen> createState() => _SetPinScreenState();
 }
 
-class _SetPinScreenState extends State<_SetPinScreen> {
+class _SetPinScreenState extends State<_SetPinScreen>
+    with SingleTickerProviderStateMixin {
   String _pin1 = '', _pin2 = '';
   bool   _step2 = false;
   String _error = '';
+  late AnimationController _shakeCtrl;
+  late Animation<double>   _shake;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeCtrl = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 400));
+    _shake = Tween(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: _shakeCtrl, curve: Curves.elasticIn));
+  }
+
+  @override
+  void dispose() { _shakeCtrl.dispose(); super.dispose(); }
 
   void _onKey(String val) {
     if (_step2) {
-      if (val == '⌫') { setState(() => _pin2 = _pin2.isEmpty ? '' : _pin2.substring(0, _pin2.length-1)); return; }
+      if (val == '⌫') {
+        setState(() { _pin2 = _pin2.isEmpty ? '' : _pin2.substring(0, _pin2.length-1); });
+        return;
+      }
       if (_pin2.length >= widget.pinLength) return;
       final next = _pin2 + val;
       setState(() => _pin2 = next);
       if (next.length == widget.pinLength) {
         Future.delayed(const Duration(milliseconds: 150), () {
-          if (_pin1 == _pin2) { widget.onSet(_pin1); }
-          else { setState(() { _pin2 = ''; _error = 'PINs do not match. Try again.'; _step2 = false; _pin1 = ''; }); }
+          if (_pin1 == _pin2) {
+            widget.onSet(_pin1);
+          } else {
+            _shakeCtrl.forward(from: 0);
+            setState(() { _pin2 = ''; _error = 'PINs do not match. Try again.';
+                _step2 = false; _pin1 = ''; });
+          }
         });
       }
     } else {
-      if (val == '⌫') { setState(() => _pin1 = _pin1.isEmpty ? '' : _pin1.substring(0, _pin1.length-1)); return; }
+      if (val == '⌫') {
+        setState(() { _pin1 = _pin1.isEmpty ? '' : _pin1.substring(0, _pin1.length-1); });
+        return;
+      }
       if (_pin1.length >= widget.pinLength) return;
       final next = _pin1 + val;
       setState(() => _pin1 = next);
       if (next.length == widget.pinLength) {
-        Future.delayed(const Duration(milliseconds: 150), () => setState(() { _step2 = true; _error = ''; }));
+        Future.delayed(const Duration(milliseconds: 150), () =>
+            setState(() { _step2 = true; _error = ''; }));
       }
     }
   }
@@ -845,57 +873,143 @@ class _SetPinScreenState extends State<_SetPinScreen> {
   Widget build(BuildContext context) {
     final pin = _step2 ? _pin2 : _pin1;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: SafeArea(child: Column(children: [
-        const Spacer(),
-        Text(_step2 ? 'Confirm PIN' : 'Enter PIN',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 24),
-        Row(mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.pinLength, (i) => Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            width: 14, height: 14,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: i < pin.length ? Colors.teal : Colors.white24),
-          ))),
-        const SizedBox(height: 16),
-        if (_error.isNotEmpty)
-          Text(_error, style: const TextStyle(color: Colors.redAccent)),
-        const SizedBox(height: 24),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 48),
-          child: GridView.count(
-            crossAxisCount: 3, shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12, crossAxisSpacing: 12,
-            children: [
-              ...[1,2,3,4,5,6,7,8,9].map((n) => _PinKey(label: '$n', onTap: () => _onKey('$n'))),
-              const SizedBox(),
-              _PinKey(label: '0', onTap: () => _onKey('0')),
-              _PinKey(label: '⌫', onTap: () => _onKey('⌫')),
-            ],
+      backgroundColor: XameColors.darkBg,
+      appBar: AppBar(
+        backgroundColor: XameColors.darkBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white70, size: 18),
+          onPressed: () => Navigator.pop(context)),
+        title: Text(widget.title,
+            style: const TextStyle(color: Colors.white, fontSize: 16,
+                fontWeight: FontWeight.w600)),
+      ),
+      body: SafeArea(
+        child: Column(children: [
+          const Spacer(),
+          // Step indicator
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            _stepDot(active: !_step2, done: _step2),
+            const SizedBox(width: 8),
+            _stepDot(active: _step2, done: false),
+          ]),
+          const SizedBox(height: 20),
+          Text(_step2 ? 'Confirm PIN' : 'Enter PIN',
+              style: const TextStyle(color: Colors.white, fontSize: 20,
+                  fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Text(_step2
+              ? 'Re-enter your PIN to confirm'
+              : 'Choose a ${widget.pinLength}-digit PIN',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.45),
+                  fontSize: 13)),
+          const SizedBox(height: 28),
+          // PIN dots
+          AnimatedBuilder(
+            animation: _shake,
+            builder: (_, child) => Transform.translate(
+              offset: Offset(
+                  _shake.value * 8 * ((_shake.value * 10).round().isEven ? 1 : -1),
+                  0),
+              child: child),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(widget.pinLength, (i) {
+                final filled = i < pin.length;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  width: filled ? 16 : 14,
+                  height: filled ? 16 : 14,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: filled
+                        ? XameColors.primary
+                        : Colors.white.withValues(alpha: 0.2),
+                    boxShadow: filled ? [BoxShadow(
+                        color: XameColors.primary.withValues(alpha: 0.5),
+                        blurRadius: 8)] : null,
+                  ),
+                );
+              }),
+            ),
           ),
-        ),
-        const Spacer(),
-      ])),
+          const SizedBox(height: 14),
+          SizedBox(height: 20,
+            child: _error.isNotEmpty
+                ? Text(_error, style: const TextStyle(
+                    color: Colors.redAccent, fontSize: 12))
+                : null),
+          const SizedBox(height: 24),
+          // Keypad
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 64),
+            child: Column(children: [
+              _keyRow(['1','2','3']),
+              const SizedBox(height: 14),
+              _keyRow(['4','5','6']),
+              const SizedBox(height: 14),
+              _keyRow(['7','8','9']),
+              const SizedBox(height: 14),
+              _keyRow(['','0','⌫']),
+            ]),
+          ),
+          const Spacer(),
+        ]),
+      ),
     );
   }
+
+  Widget _stepDot({required bool active, required bool done}) =>
+      AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: active ? 24 : 8, height: 8,
+        decoration: BoxDecoration(
+          color: done || active
+              ? XameColors.primary
+              : Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      );
+
+  Widget _keyRow(List<String> keys) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: keys.map((k) => k.isEmpty
+        ? const SizedBox(width: 72, height: 72)
+        : _PinKey(label: k, onTap: () => _onKey(k))).toList(),
+  );
 }
 
 class _PinKey extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   const _PinKey({required this.label, required this.onTap});
+
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12)),
-      child: Center(child: Text(label,
-        style: TextStyle(color: Colors.white,
-            fontSize: label == '⌫' ? 20 : 22, fontWeight: FontWeight.w600)))),
-  );
+  Widget build(BuildContext context) {
+    final isBack = label == '⌫';
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 72, height: 72,
+        decoration: BoxDecoration(
+          color: isBack
+              ? Colors.transparent
+              : Colors.white.withValues(alpha: 0.08),
+          shape: BoxShape.circle,
+          border: isBack ? null : Border.all(
+              color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Center(
+          child: isBack
+              ? Icon(Icons.backspace_outlined,
+                  color: Colors.white.withValues(alpha: 0.7), size: 22)
+              : Text(label,
+                  style: const TextStyle(color: Colors.white,
+                      fontSize: 24, fontWeight: FontWeight.w400)),
+        ),
+      ),
+    );
+  }
 }
