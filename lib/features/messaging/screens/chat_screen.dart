@@ -448,7 +448,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         pinLength: 4,
         showCancel: true,
         autoBiometric: true,
-        onCancel: () => context.pop(),
+        onCancel: () {
+          if (context.canPop()) context.pop();
+          else context.go('/contacts');
+        },
         onVerify: (pin) async {
           final ok = ref.read(chatLockProvider.notifier).verify(widget.userId, pin);
           if (ok) setState(() => _chatUnlocked = true);

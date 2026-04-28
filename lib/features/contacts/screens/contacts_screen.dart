@@ -35,6 +35,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   late TabController _tabCtrl;
   String _filter = '';
   int _tab = 0;
+  bool _walletUnlocked = false;
 
   @override
   void initState() {
@@ -105,12 +106,16 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                   icon:       '💰',
                   pinLength:  4,
                   autoBiometric: true,
+                  showCancel: true,
+                  onCancel: () => setState(() => _tab = 0),
                   onVerify: (pin) async {
                     final ok = ref.read(walletLockProvider.notifier).verify(pin);
+                    if (ok) setState(() => _walletUnlocked = true);
                     return ok;
                   },
                 );
               }
+              if (!_walletUnlocked) return const SizedBox.shrink();
               return XamePayScreen(
                 userId:       u?.xameId ?? '',
                 serverUrl:    AppConstants.serverUrl,

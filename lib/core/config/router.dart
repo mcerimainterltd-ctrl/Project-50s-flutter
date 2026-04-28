@@ -75,6 +75,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           subtitle: 'Enter your PIN to continue',
           icon:     '🔐',
           pinLength: 6,
+          showCancel: true,
+          onCancel: () => c.pop(),
           onVerify: (pin) async {
             final ok = notifier.verify(pin);
             if (ok) c.pop();

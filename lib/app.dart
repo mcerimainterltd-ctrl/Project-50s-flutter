@@ -24,11 +24,24 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   StreamSubscription? _shareSub;
   DateTime? _hiddenAt;
   bool _showingLock = false;
+  Timer? _inactivityTimer;
+
   void _showAppLock() {
     if (_showingLock) return;
     _showingLock = true;
+    _inactivityTimer?.cancel();
     final router = ref.read(routerProvider);
-    router.push('/app-lock').then((_) => _showingLock = false);
+    router.push('/app-lock').then((_) {
+      _showingLock = false;
+      _resetInactivityTimer();
+    });
+  }
+
+  void _resetInactivityTimer() {
+    _inactivityTimer?.cancel();
+    final lockState = ref.read(appLockProvider);
+    if (!lockState.enabled || lockState.pin.isEmpty) return;
+    _inactivityTimer = Timer(Duration(milliseconds: lockState.delayMs), _showAppLock);
   }
 
   @override
@@ -41,16 +54,23 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       if (!lockState.enabled || lockState.pin.isEmpty) return null;
       if (msg == 'AppLifecycleState.paused') {
         _hiddenAt = DateTime.now();
+        _inactivityTimer?.cancel();
       } else if (msg == 'AppLifecycleState.resumed') {
         if (_showingLock) return null;
         final hidden = _hiddenAt;
-        if (hidden == null) return null;
-        final elapsed = DateTime.now().difference(hidden).inMilliseconds;
-        if (elapsed >= lockState.delayMs) _showAppLock();
         _hiddenAt = null;
+        if (hidden != null) {
+          final elapsed = DateTime.now().difference(hidden).inMilliseconds;
+          if (elapsed >= lockState.delayMs) {
+            _showAppLock();
+            return null;
+          }
+        }
+        _resetInactivityTimer();
       }
       return null;
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _resetInactivityTimer());
 
 
     // Listen for calls in a dedicated listener, not the build method
