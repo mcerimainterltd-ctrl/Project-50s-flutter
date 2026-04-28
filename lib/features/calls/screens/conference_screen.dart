@@ -247,13 +247,8 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     pc.onTrack = (event) {
       if (event.streams.isNotEmpty) {
         renderer.srcObject = event.streams[0];
-      } else if (event.track != null) {
-        // Handle trackless stream case
-        final ms = MediaStream(event.track!.id!);
-        ms.addTrack(event.track!);
-        renderer.srcObject = ms;
+        _notifyPeers();
       }
-      _notifyPeers();
     };
 
     // ICE candidates
