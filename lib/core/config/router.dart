@@ -70,22 +70,24 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl)),
       GoRoute(path: '/app-lock', builder: (c, s) {
         final notifier = ref.read(appLockProvider.notifier);
-        return PinLockScreen(
-          title:    'XamePage Locked',
-          subtitle: 'Enter your PIN to continue',
-          icon:     '🔐',
-          pinLength: 6,
-          showCancel: true,
-          onCancel: () => c.pop(),
-          onVerify: (pin) async {
-            final ok = notifier.verify(pin);
-            if (ok) c.pop();
-            return ok;
-          },
-          onForgot: () async {
-            await notifier.disable();
-            c.pop();
-          },
+        return PopScope(
+          canPop: false,
+          child: PinLockScreen(
+            title:    'XamePage Locked',
+            subtitle: 'Enter your PIN to continue',
+            icon:     '🔐',
+            pinLength: 6,
+            showCancel: false,
+            onVerify: (pin) async {
+              final ok = notifier.verify(pin);
+              if (ok) c.pop();
+              return ok;
+            },
+            onForgot: () async {
+              await notifier.disable();
+              c.pop();
+            },
+          ),
         );
       }),
       GoRoute(path: '/wallet-lock', builder: (c, s) {
