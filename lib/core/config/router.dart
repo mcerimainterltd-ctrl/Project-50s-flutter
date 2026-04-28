@@ -125,21 +125,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings', builder: (c, s) {
         final lockState = ref.read(settingsLockProvider);
         if (!lockState.enabled || lockState.pin.isEmpty) return const SettingsScreen();
+        // Always show lock screen on every visit — unlocks via push so
+        // navigating away re-locks automatically next visit.
         return SettingsLockScreen(
           pinLength: 4,
           onBack: () => c.go('/contacts'),
           onVerify: (pin) async {
             final ok = ref.read(settingsLockProvider.notifier).verify(pin);
-            if (ok) c.go('/settings-unlocked');
+            if (ok) {
+              // Replace lock screen with settings in the same route slot
+              Navigator.of(c).pushReplacement(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()));
+            }
             return ok;
           },
           onForgot: () async {
             await ref.read(settingsLockProvider.notifier).disable();
-            c.go('/settings-unlocked');
+            Navigator.of(c).pushReplacement(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()));
           },
         );
       }),
-      GoRoute(path: '/settings-unlocked', builder: (c, s) => const SettingsScreen()),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),    ],
   );
 });
