@@ -241,7 +241,8 @@ class _ScheduleCallSheet extends ConsumerStatefulWidget {
 }
 
 class _ScheduleCallSheetState extends ConsumerState<_ScheduleCallSheet> {
-  String   _callType = 'voice';
+  String   _callType   = 'voice';
+  String   _recurrence = 'once';
   DateTime _selectedDate = DateTime.now().add(const Duration(hours: 1));
   String?  _recipientId, _recipientName;
   bool     _loading = false;
