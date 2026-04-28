@@ -28,7 +28,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     if (_showingLock) return;
     _showingLock = true;
     final router = ref.read(routerProvider);
-    router.push('/app-lock');
+    router.push('/app-lock').then((_) => _showingLock = false);
   }
 
   @override

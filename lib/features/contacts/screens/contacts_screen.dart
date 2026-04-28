@@ -17,6 +17,8 @@ import '../../../core/services/socket_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/xame_user.dart';
 import '../providers/contacts_provider.dart';
+import '../../../shared/widgets/pin_lock_screen.dart';
+import '../../../core/services/wallet_lock_service.dart';
 import '../../messaging/broadcast.dart';
 import '../../messaging/groups.dart';
 import '../../calling/call_schedule.dart';
@@ -93,8 +95,22 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                             ))
                         .toList(),
                   ); }),
-          Consumer(builder: (_, ref, __) {
-              final u = ref.read(currentUserProvider);
+          Consumer(builder: (ctx, ref, __) {
+              final u        = ref.read(currentUserProvider);
+              final lockState = ref.watch(walletLockProvider);
+              if (lockState.enabled) {
+                return PinLockScreen(
+                  title:      'XamePay Wallet',
+                  subtitle:   'Enter your wallet PIN',
+                  icon:       '💰',
+                  pinLength:  4,
+                  autoBiometric: true,
+                  onVerify: (pin) async {
+                    final ok = ref.read(walletLockProvider.notifier).verify(pin);
+                    return ok;
+                  },
+                );
+              }
               return XamePayScreen(
                 userId:       u?.xameId ?? '',
                 serverUrl:    AppConstants.serverUrl,
@@ -102,6 +118,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     .map((c) => {'id': c.id, 'name': c.name})
                     .toList(),
               );
+            }),
             }),
         ])),
       ])),
