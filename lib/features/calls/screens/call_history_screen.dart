@@ -40,9 +40,6 @@ class CallRecord {
 // ── Provider ─────────────────────────────────────────────────────────────────
 final callHistoryProvider = FutureProvider.autoDispose
     .family<List<CallRecord>, String>((ref, userId) async {
-  // Load cache instantly first
-  final cached = CacheService.loadCallHistory()
-    .map((c) => CallRecord.fromJson(c)).toList();
   try {
     final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
     final res  = await dio.get('/api/call-history/$userId');
@@ -50,13 +47,14 @@ final callHistoryProvider = FutureProvider.autoDispose
       final fresh = (res.data['calls'] as List)
           .map((c) => CallRecord.fromJson(Map<String, dynamic>.from(c)))
           .toList();
-      // Persist fresh data
       await CacheService.saveCallHistory(res.data['calls']
         .map<Map<String,dynamic>>((c) => Map<String,dynamic>.from(c)).toList());
       return fresh;
     }
   } catch (_) {}
-  return cached;
+  // Fallback to cache only if network fails
+  return CacheService.loadCallHistory()
+    .map((c) => CallRecord.fromJson(c)).toList();
 });
 
 // ── Screen ───────────────────────────────────────────────────────────────────
