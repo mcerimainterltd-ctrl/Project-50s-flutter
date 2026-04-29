@@ -42,9 +42,11 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
       if (callerId != null) {
         final user = ref.read(currentUserProvider);
         if (user != null) {
+          final callId = ref.read(webRTCServiceProvider).currentCallId;
           socket.emit('call-unanswered', {
             'recipientId': user.xameId,
             'callerId':    callerId,
+            'callId':      callId ?? '',
           });
         }
       }

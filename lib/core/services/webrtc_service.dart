@@ -41,6 +41,7 @@ class WebRTCService {
   bool _callCancelled = false;
   Timer? _callTimeoutTimer;
   String? _currentCallId;
+  String? get currentCallId => _currentCallId;
   DateTime? _callStartTime;
   bool isRinging = false;
   bool _remoteDescriptionSet = false;
@@ -166,6 +167,8 @@ class WebRTCService {
     var answer = await _pc!.createAnswer();
     await _pc!.setLocalDescription(answer);
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
+    // Notify server call was accepted so CallHistory status updates
+    _socket.emitCallAccepted(currentRemoteUserId!, callId: _currentCallId);
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
     _pendingIce.clear();
     await _audio.stopAll();
