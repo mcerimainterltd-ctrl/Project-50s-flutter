@@ -58,7 +58,11 @@ class _CallScreenState extends State<CallScreen> {
               padding: const EdgeInsets.all(40.0),
               child: FloatingActionButton(
                 backgroundColor: Colors.red,
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  final webrtc = ProviderScope.containerOf(context).read(webRTCServiceProvider);
+                  webrtc.endCall();
+                  Navigator.pop(context);
+                },
                 child: const Icon(Icons.call_end),
               ),
             ),

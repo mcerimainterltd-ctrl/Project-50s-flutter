@@ -99,10 +99,13 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
     Future.microtask(() {
       ref.read(webRTCServiceProvider).onIncomingCall.listen((incoming) {
-        if (!incoming) return;
         final router = ref.read(routerProvider);
-        // Guard: don't push if already on incoming-call screen
         final location = router.routerDelegate.currentConfiguration.uri.toString();
+        if (!incoming) {
+          if (location.contains('incoming-call')) router.pop();
+          return;
+        }
+        // Guard: don't push if already on incoming-call screen
         if (location.contains('incoming-call')) return;
         router.push("/incoming-call");
       });

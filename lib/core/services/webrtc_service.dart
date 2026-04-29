@@ -103,6 +103,8 @@ class WebRTCService {
 
     _socket.callAnswer.listen((data) async {
       _callCancelled = true;
+      _incomingCallController.add(false);
+      try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
       await _audio.stopAll(); // Stop outgoing tone immediately and forcefully
       if (_pc != null) {
         await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
@@ -245,7 +247,9 @@ class WebRTCService {
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
     try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
+    try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
     _socket.emitCallEnded(currentRemoteUserId ?? "");
+    _incomingCallController.add(false);
     _cleanup();
     _callState = CallState.ended; _callStateController.add(CallState.ended);
     _pc?.close();
@@ -258,6 +262,8 @@ class WebRTCService {
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
     try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
+    try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
+    _incomingCallController.add(false);
     _callState = CallState.ended;
     _callStateController.add(CallState.ended);
     _cleanup();

@@ -22,10 +22,24 @@ class MainActivity : FlutterActivity() {
             SocketKeepaliveService.CHANNEL_NAME)
             .setMethodCallHandler { call, result ->
                 if (call.method == "heartbeat") {
-                    // Flutter will handle this via platform channel listener
                     result.success(null)
                 } else {
                     result.notImplemented()
+                }
+            }
+
+        // Call control channel — dismiss heads-up notification
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.xamepage.app/call")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "dismissIncomingCall" -> {
+                        val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+                        mgr.cancel(CallService.NOTIF_ID + 1)
+                        CallService.stop(this)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
                 }
             }
     }
