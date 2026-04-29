@@ -25,6 +25,17 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
                 // Also show heads-up notification
                 showHeadsUpNotification(callerName, callType)
             }
+            "scheduled_call_due" -> {
+                // Wake app so Flutter socket listener can fire the call
+                val wakeIntent = Intent(this, MainActivity::class.java).apply {
+                    flags  = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    action = "SCHEDULED_CALL_DUE"
+                    putExtra("scheduleId",  data["scheduleId"]  ?: "")
+                    putExtra("recipientId", data["recipientId"] ?: "")
+                    putExtra("callType",    data["callType"]    ?: "voice")
+                }
+                startActivity(wakeIntent)
+            }
             "call_ended" -> {
                 CallService.stop(this)
             }
