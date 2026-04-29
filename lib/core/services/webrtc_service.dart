@@ -73,7 +73,7 @@ class WebRTCService {
       _audio.stopAll();
       // Record as declined — recipient actively rejected the call
       if (_callState == CallState.outgoing && currentRemoteUserId != null) {
-        _recordDeclinedCall(currentRemoteUserId!, isVideo ? 'video' : 'voice');
+        _recordDeclinedCall(currentRemoteUserId!, isIncomingVideo ? 'video' : 'voice');
       }
       _cleanup();
       _callState = CallState.ended;
