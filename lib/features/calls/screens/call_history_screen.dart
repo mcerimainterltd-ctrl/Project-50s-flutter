@@ -226,8 +226,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   List<CallRecord> _filterCalls(List<CallRecord> calls, String userId) {
     switch (_filter) {
       case 'missed':
-        return calls.where((c) =>
-            c.status == 'missed' && c.recipientId == userId).toList();
+        return calls.where((c) => c.status == 'missed').toList();
       case 'incoming':
         return calls.where((c) => c.recipientId == userId).toList();
       case 'outgoing':
@@ -369,8 +368,13 @@ class _CallTile extends StatelessWidget {
     final isNoAnswer   = call.status == 'missed' && isOutgoing;
     final isDeclined   = call.status == 'rejected';
     final isVideo      = call.callType == 'video';
-    final nameColor    = (isMissed || isNoAnswer || isDeclined)
-        ? context.xDanger : context.xText;
+    final nameColor    = isMissed
+        ? Colors.redAccent
+        : isNoAnswer
+            ? Colors.redAccent
+            : isDeclined
+                ? Colors.orange
+                : context.xText;
     final initials  = name.trim().split(' ').take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
@@ -410,7 +414,10 @@ class _CallTile extends StatelessWidget {
                   Text(_statusLabel(),
                     style: TextStyle(
                       color: isMissed
-                          ? context.xDanger : context.xMuted,
+                          ? Colors.redAccent
+                          : isDeclined
+                              ? Colors.orange
+                              : context.xMuted,
                       fontSize: 12)),
                   if (call.duration > 0) ...[
                     Text(' · ',
