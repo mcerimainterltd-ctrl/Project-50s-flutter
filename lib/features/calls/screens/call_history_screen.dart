@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:async';
+import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,8 +40,7 @@ class CallRecord {
 }
 
 // ── Provider ─────────────────────────────────────────────────────────────────
-final callHistoryProvider = FutureProvider.autoDispose
-    .family<List<CallRecord>, String>((ref, userId) async {
+Future<List<CallRecord>> _fetchCallHistory(String userId) async {
   try {
     final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
     final res  = await dio.get('/api/call-history/$userId');
@@ -49,13 +49,34 @@ final callHistoryProvider = FutureProvider.autoDispose
           .map((c) => CallRecord.fromJson(Map<String, dynamic>.from(c)))
           .toList();
       await CacheService.saveCallHistory(res.data['calls']
-        .map<Map<String,dynamic>>((c) => Map<String,dynamic>.from(c)).toList());
+          .map<Map<String, dynamic>>((c) => Map<String, dynamic>.from(c)).toList());
       return fresh;
     }
   } catch (_) {}
-  // Fallback to cache only if network fails
   return CacheService.loadCallHistory()
-    .map((c) => CallRecord.fromJson(c)).toList();
+      .map((c) => CallRecord.fromJson(c)).toList();
+}
+
+final callHistoryProvider = StreamProvider.autoDispose
+    .family<List<CallRecord>, String>((ref, userId) async* {
+  final socket = ref.read(socketServiceProvider);
+
+  // Emit initial data immediately
+  yield await _fetchCallHistory(userId);
+
+  // Merge all call-related socket events into one stream
+  final triggers = StreamGroup.merge([
+    socket.callEnded.map((_) => 'ended'),
+    socket.callAccepted.map((_) => 'accepted'),
+    socket.callRejected.map((_) => 'rejected'),
+    socket.missedCallCount.map((_) => 'missed'),
+  ]);
+
+  await for (final _ in triggers) {
+    // Small delay to allow server to finish writing the record
+    await Future.delayed(const Duration(milliseconds: 800));
+    yield await _fetchCallHistory(userId);
+  }
 });
 
 // ── Screen ───────────────────────────────────────────────────────────────────
@@ -70,7 +91,6 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
 
   late TabController _tabs;
   String _filter = 'all'; // all | missed | incoming | outgoing
-  StreamSubscription? _callStateSub;
 
   @override
   void initState() {
@@ -81,21 +101,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         _filter = ['all', 'missed', 'incoming', 'outgoing'][_tabs.index];
       });
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _markSeen();
-      // Auto-refresh when any call ends
-      final webrtc = ref.read(webRTCServiceProvider);
-      _callStateSub = webrtc.callState.listen((state) {
-        if (state == CallState.ended && mounted) {
-          Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) {
-              final user = ref.read(currentUserProvider);
-              if (user != null) ref.invalidate(callHistoryProvider(user.xameId));
-            }
-          });
-        }
-      });
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _markSeen());
   }
 
   Future<void> _markSeen() async {
@@ -111,7 +117,6 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
 
   @override
   void dispose() {
-    _callStateSub?.cancel();
     _tabs.dispose();
     super.dispose();
   }
