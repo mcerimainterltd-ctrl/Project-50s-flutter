@@ -33,6 +33,22 @@ const _rtcConfig = {
   'iceServers': [
     {'urls': 'stun:stun.l.google.com:19302'},
     {'urls': 'stun:stun1.l.google.com:19302'},
+    {'urls': 'stun:stun2.l.google.com:19302'},
+    {
+      'urls': 'turn:openrelay.metered.ca:80',
+      'username': 'openrelayproject',
+      'credential': 'openrelayproject',
+    },
+    {
+      'urls': 'turn:openrelay.metered.ca:443',
+      'username': 'openrelayproject',
+      'credential': 'openrelayproject',
+    },
+    {
+      'urls': 'turn:openrelay.metered.ca:443?transport=tcp',
+      'username': 'openrelayproject',
+      'credential': 'openrelayproject',
+    },
   ]
 };
 
@@ -108,6 +124,18 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
   void _listenSocket() {
     final socket = _ref.read(socketServiceProvider);
 
+    // Retry until rawSocket is available
+    Future.doWhile(() async {
+      if (socket.rawSocket != null) {
+        _registerSocketHandlers(socket);
+        return false;
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+      return true;
+    });
+  }
+
+  void _registerSocketHandlers(dynamic socket) {
     socket.rawSocket?.on('conference:peer-joined', (data) async {
       final map  = Map<String, dynamic>.from(data as Map);
       final peer = map['peerId'] as String;
@@ -367,7 +395,7 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     final socket = _ref.read(socketServiceProvider);
     final me     = _ref.read(currentUserProvider)?.xameId;
     socket.rawSocket?.emit('conference:mute-peer',
-        {'roomId': state.roomId, 'hostId': me, 'peerId': peerId});
+        {'roomId': state.roomId, 'hostId': me, 'targetId': peerId});
   }
 
   void removeParticipant(String peerId) {
