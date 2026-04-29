@@ -806,131 +806,70 @@ class _FileBubbleState extends State<_FileBubble> {
   @override
   Widget build(BuildContext context) {
     final st = _style;
-    final w  = MediaQuery.of(context).size.width * 0.68;
 
     return GestureDetector(
       onTap: _opening ? null : _openFile,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: SizedBox(
-          width: w,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-
-            // ── Preview area ─────────────────────────────────────────
-            SizedBox(
-              height: w * 0.56,
-              child: Stack(fit: StackFit.expand, children: [
-
-                // PDF thumbnail or styled doc card
-                if (_isPdf && _pdfLoading)
-                  _Shimmer(width: w, height: w * 0.56, radius: 0)
-                else if (_isPdf && _pdfThumb != null)
-                  Image.memory(_pdfThumb!, fit: BoxFit.cover)
-                else
-                  // Rich document preview card (non-PDF or PDF fallback)
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end:   Alignment.bottomRight,
-                        colors: [
-                          context.xCard,
-                          st.bgTint,
-                          context.xCard,
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Large file type icon with glow
-                        Container(
-                          width: 72, height: 72,
-                          decoration: BoxDecoration(
-                            color: st.color.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: st.color.withValues(alpha: 0.25),
-                                blurRadius: 24, spreadRadius: 2),
-                            ],
-                          ),
-                          child: Icon(st.icon, color: st.color, size: 36),
-                        ),
-                        const SizedBox(height: 10),
-                        // Extension badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: st.color.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                                color: st.color.withValues(alpha: 0.35)),
-                          ),
-                          child: Text(st.label,
-                              style: TextStyle(
-                                  color: st.color,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.2)),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Opening overlay
-                if (_opening)
-                  Container(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    child: Center(
-                      child: SizedBox(width: 44, height: 44,
-                        child: Stack(alignment: Alignment.center, children: [
-                          CircularProgressIndicator(
-                              value: _progress > 0 ? _progress : null,
-                              color: st.color, strokeWidth: 3),
-                          if (_progress > 0)
-                            Text('${(_progress * 100).toInt()}%',
-                                style: TextStyle(
-                                    color: st.color, fontSize: 10,
-                                    fontWeight: FontWeight.w600)),
-                        ])),
-                    ),
-                  ),
-              ]),
-            ),
-
-            // ── Metadata footer bar ──────────────────────────────────
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              color: context.xCard,
-              child: Row(children: [
-                Icon(st.icon, color: st.color, size: 16),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text(widget.fileName,
-                        style: TextStyle(
-                            color: context.xText, fontSize: 12,
-                            fontWeight: FontWeight.w500),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                    if (widget.fileSize != null)
-                      Text(_fmtSize(widget.fileSize),
-                          style: TextStyle(
-                              color: context.xMuted, fontSize: 10)),
-                  ]),
-                ),
-                const SizedBox(width: 6),
-                _opening
-                    ? const SizedBox.shrink()
-                    : Icon(Icons.download_outlined,
-                        color: st.color.withValues(alpha: 0.7), size: 18),
-              ]),
-            ),
-          ]),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 200, maxWidth: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: context.xCard.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: st.color.withValues(alpha: 0.15)),
         ),
+        child: Row(children: [
+          // ── File type icon pill ───────────────────────────────────
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: st.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: st.color.withValues(alpha: 0.25)),
+            ),
+            child: _opening
+                ? Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: CircularProgressIndicator(
+                        value: _progress > 0 ? _progress : null,
+                        color: st.color, strokeWidth: 2))
+                : Icon(st.icon, color: st.color, size: 22),
+          ),
+          const SizedBox(width: 10),
+          // ── Name + meta ───────────────────────────────────────────
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.fileName,
+                  style: TextStyle(color: context.xText, fontSize: 13,
+                      fontWeight: FontWeight.w600),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 3),
+              Row(children: [
+                if (widget.fileSize != null) ...[
+                  Text(_fmtSize(widget.fileSize),
+                      style: TextStyle(color: context.xMuted, fontSize: 11)),
+                  Text('  ·  ',
+                      style: TextStyle(color: context.xMuted, fontSize: 11)),
+                ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: st.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(st.label,
+                      style: TextStyle(color: st.color, fontSize: 10,
+                          fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                ),
+              ]),
+            ],
+          )),
+          const SizedBox(width: 8),
+          // ── Download arrow ────────────────────────────────────────
+          if (!_opening)
+            Icon(Icons.download_rounded,
+                color: st.color.withValues(alpha: 0.6), size: 20),
+        ]),
       ),
     );
   }
@@ -969,9 +908,11 @@ class _AudioBubbleState extends State<_AudioBubble> {
         .listen((p) { if (mounted) setState(() => _position = p); }));
     _subs.add(_player!.durationStream
         .listen((d) { if (d != null && mounted) setState(() => _duration = d); }));
-    _subs.add(_player!.playerStateStream.listen((ps) {
+    _subs.add(_player!.playerStateStream.listen((ps) async {
       if (ps.processingState == ProcessingState.completed && mounted) {
-        setState(() { _playing = false; _position = Duration.zero; });
+        await _player?.seek(Duration.zero);
+        await _player?.stop();
+        if (mounted) setState(() { _playing = false; _position = Duration.zero; });
       }
     }));
     _player!.setUrl(widget.url).catchError((_) {});
@@ -989,7 +930,8 @@ class _AudioBubbleState extends State<_AudioBubble> {
       await _player?.pause();
       setState(() => _playing = false);
     } else {
-      if (_duration > Duration.zero && _position >= _duration) {
+      // Always seek to start if at end or position is zero after completion
+      if (_position >= _duration && _duration > Duration.zero) {
         await _player?.seek(Duration.zero);
       }
       await _player?.play();
