@@ -120,7 +120,7 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
           final contact  = contacts.where((c) => c.id == recipientId).firstOrNull;
           if (call != null) await _showCallNotif(call, contact?.name ?? recipientId);
           try {
-            await _ref.read(webrtcServiceProvider).startCall(recipientId, callType == 'video');
+            await _ref.read(webRTCServiceProvider).startCall(recipientId, callType == 'video');
           } catch (e) { debugPrint('[CallSchedule] socket auto-dial error: $e'); }
           if (call == null || call.recurrence == 'once') {
             state = state.where((c) => c.scheduleId != scheduleId).toList();
@@ -146,7 +146,7 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
     final contact  = contacts.where((c) => c.id == call.recipientId).firstOrNull;
     await _showCallNotif(call, contact?.name ?? call.recipientId);
     try {
-      await _ref.read(webrtcServiceProvider).startCall(call.recipientId, call.callType == 'video');
+      await _ref.read(webRTCServiceProvider).startCall(call.recipientId, call.callType == 'video');
     } catch (e) { debugPrint('[CallSchedule] local auto-dial error: $e'); }
     if (call.recurrence == 'daily') {
       final next = ScheduledCall(
