@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-const _keepaliveChannel = MethodChannel('com.xamepage.app/keepalive');
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
 import 'package:xamepage/core/services/app_lock_service.dart';
@@ -14,6 +13,8 @@ import 'package:xamepage/core/theme/app_theme.dart';
 import 'package:xamepage/features/contacts/providers/contacts_provider.dart';
 import 'package:xamepage/features/calls/screens/call_history_screen.dart';
 import 'package:xamepage/core/services/cache_service.dart';
+
+const _keepaliveChannel = MethodChannel('com.xamepage.app/keepalive');
 
 class XamePageApp extends ConsumerStatefulWidget {
   const XamePageApp({super.key});
