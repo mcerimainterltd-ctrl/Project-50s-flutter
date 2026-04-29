@@ -36,7 +36,21 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
   void initState() {
     super.initState();
     final socket = ref.read(socketServiceProvider);
-    _endedSub = socket.callEnded.listen((_) => _safePop());
+    _endedSub = socket.callEnded.listen((_) {
+      // Caller ended before recipient answered — record as missed
+      final webrtc = ref.read(webRTCServiceProvider);
+      final callerId = webrtc.currentRemoteUserId;
+      if (callerId != null) {
+        final user = ref.read(currentUserProvider);
+        if (user != null) {
+          socket.emit('call-unanswered', {
+            'recipientId': user.xameId,
+            'callerId':    callerId,
+          });
+        }
+      }
+      _safePop();
+    });
     _timeoutTimer = Timer(Duration(seconds: 60), () {
       if (mounted) {
         ref.read(webRTCServiceProvider).rejectCall();
@@ -181,9 +195,12 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                       _buildControl(
                         icon: isVideo ? Icons.videocam : Icons.call,
                         label: "Accept",
-                        color: context.xAccent, // XamePage Accent
+                        color: context.xAccent,
                         onTap: () {
-                          context.push('/call/$userId?video=$isVideo&incoming=true');
+                          _isPopping = true; // prevent double-pop
+                          ref.read(webRTCServiceProvider).clearIncomingCall();
+                          // Replace incoming screen with call screen
+                          context.pushReplacement('/call/$userId?video=$isVideo&incoming=true');
                         },
                         isAccept: true,
                       ),
