@@ -21,6 +21,7 @@ import '../../../shared/models/message.dart';
 import '../../contacts/providers/contacts_provider.dart';
 import '../../contacts/screens/contacts_screen.dart';
 import '../providers/chat_provider.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../widgets/message_bubble.dart';
 import 'chat_wallpaper.dart';
 import 'message_schedule_screen.dart';
@@ -37,6 +38,9 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _msgCtrl      = TextEditingController();
   final _scrollCtrl   = ScrollController();
+  final _tts          = FlutterTts();
+  bool  _isSpeaking   = false;
+  String _speakingText = '';
   final _picker       = ImagePicker();
   bool  _showAttach   = false;
   Timer? _typingTimer;
@@ -52,6 +56,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _tts.setStartHandler(() { if (mounted) setState(() => _isSpeaking = true); });
+    _tts.setCompletionHandler(() { if (mounted) setState(() { _isSpeaking = false; _speakingText = ''; }); });
+    _tts.setCancelHandler(() { if (mounted) setState(() { _isSpeaking = false; _speakingText = ''; }); });
+    _tts.setSpeechRate(0.5);
+    _tts.setVolume(1.0);
+    _tts.setPitch(1.0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(activeChatIdProvider.notifier).state = widget.userId;
       ref.read(chatProvider(widget.userId).notifier).markAllSeen();
@@ -68,8 +78,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
+  Future<void> _speak(String text) async {
+    if (_isSpeaking) { await _tts.stop(); return; }
+    setState(() { _isSpeaking = true; _speakingText = text; });
+    await _tts.speak(text);
+  }
+
   @override
   void dispose() {
+    _tts.stop();
     ref.read(activeChatIdProvider.notifier).state = null;
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
@@ -530,6 +547,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
           ),
         ),
+        if (_isSpeaking) _TtsPill(
+          text: _speakingText,
+          onStop: () async { await _tts.stop(); setState(() { _isSpeaking = false; _speakingText = ''; }); },
+        ),
         if (_replyTo != null) _ReplyPreview(
           message: _replyTo!,
           onCancel: () => setState(() => _replyTo = null),
@@ -863,6 +884,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Navigator.pop(sheetCtx);
                 showTranslateSheet(outerContext, outerRef, msg.text);
               }),
+        if (msg.text.isNotEmpty)
+          ListTile(
+              leading: Text('🔊', style: TextStyle(fontSize: 18)),
+              title: Text('Read Aloud', style: TextStyle(color: outerContext.xText)),
+              onTap: () { Navigator.pop(sheetCtx); _speak(msg.text); }),
         ListTile(leading: Icon(Icons.select_all, color: outerContext.xMuted),
             title: Text('Select', style: TextStyle(color: outerContext.xText)),
             onTap: () { Navigator.pop(sheetCtx); _enterSelectMode(msg.id); }),
@@ -1401,6 +1427,105 @@ class _ChatPinKey extends StatelessWidget {
                   fontSize: 24, fontWeight: FontWeight.w400)),
         ),
       ),
+    );
+  }
+}
+
+// ── TTS Floating Pill ─────────────────────────────────────────────────────────
+class _TtsPill extends StatefulWidget {
+  final String text;
+  final VoidCallback onStop;
+  const _TtsPill({required this.text, required this.onStop});
+
+  @override
+  State<_TtsPill> createState() => _TtsPillState();
+}
+
+class _TtsPillState extends State<_TtsPill>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _waveCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _waveCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200))
+      ..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() { _waveCtrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = widget.text.length > 40
+        ? '${widget.text.substring(0, 40)}...'
+        : widget.text;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: context.xCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.xPrimary.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(
+          color: context.xPrimary.withValues(alpha: 0.15),
+          blurRadius: 20, spreadRadius: 2)],
+      ),
+      child: Row(children: [
+        // Waveform
+        SizedBox(width: 32, height: 24,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(5, (i) {
+              return AnimatedBuilder(
+                animation: _waveCtrl,
+                builder: (_, __) {
+                  final offset = (i * 0.2);
+                  final val = ((_waveCtrl.value + offset) % 1.0);
+                  final h = 4.0 + (val * 16.0);
+                  return Container(
+                    width: 3,
+                    height: h,
+                    decoration: BoxDecoration(
+                      color: context.xPrimary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  );
+                },
+              );
+            }),
+          ),
+        ),
+        const SizedBox(width: 10),
+        // Text preview
+        Expanded(
+          child: Text(preview,
+            style: TextStyle(
+              color: context.xText.withValues(alpha: 0.7),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Stop button
+        GestureDetector(
+          onTap: widget.onStop,
+          child: Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+              color: context.xPrimary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.stop_rounded,
+                color: context.xPrimary, size: 16),
+          ),
+        ),
+      ]),
     );
   }
 }
