@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../../../core/services/webrtc_service.dart';
@@ -11,13 +12,19 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-  final _localRenderer = RTCVideoRenderer();
+  final _localRenderer  = RTCVideoRenderer();
   final _remoteRenderer = RTCVideoRenderer();
+  StreamSubscription? _callStateSub;
 
   @override
   void initState() {
     super.initState();
     _initRenderers();
+    _callStateSub = widget.webrtcService.callState.listen((state) {
+      if (state == CallState.ended && mounted) {
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   void _initRenderers() async {
@@ -33,6 +40,7 @@ class _CallScreenState extends State<CallScreen> {
 
   @override
   void dispose() {
+    _callStateSub?.cancel();
     _localRenderer.dispose();
     _remoteRenderer.dispose();
     super.dispose();

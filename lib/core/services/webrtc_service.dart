@@ -271,7 +271,11 @@ class WebRTCService {
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
     try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
     try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
-    _incomingCallController.add(false);
+    // Only reset incoming state if we were actually in incoming state
+    // (not active — emitting false on active call triggers ghost incoming screen)
+    if (_callState == CallState.incoming) {
+      _incomingCallController.add(false);
+    }
     _callState = CallState.ended;
     _callStateController.add(CallState.ended);
     _cleanup();
