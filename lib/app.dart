@@ -102,7 +102,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         final router = ref.read(routerProvider);
         final location = router.routerDelegate.currentConfiguration.uri.toString();
         if (!incoming) {
-          if (location.contains('incoming-call')) router.pop();
+          // Let IncomingCallScreen handle its own pop via _safePop()
           return;
         }
         // Guard: don't push if already on incoming-call screen

@@ -22,17 +22,25 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
   StreamSubscription? _endedSub;
   Timer? _timeoutTimer;
 
+  bool _isPopping = false;
+
+  void _safePop() {
+    if (_isPopping || !mounted) return;
+    _isPopping = true;
+    // Also reset webrtc incoming state
+    ref.read(webRTCServiceProvider).clearIncomingCall();
+    context.pop();
+  }
+
   @override
   void initState() {
     super.initState();
     final socket = ref.read(socketServiceProvider);
-    _endedSub = socket.callEnded.listen((_) {
-      if (mounted) context.pop();
-    });
+    _endedSub = socket.callEnded.listen((_) => _safePop());
     _timeoutTimer = Timer(Duration(seconds: 60), () {
       if (mounted) {
         ref.read(webRTCServiceProvider).rejectCall();
-        context.pop();
+        _safePop();
       }
     });
   }

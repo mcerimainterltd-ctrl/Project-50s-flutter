@@ -258,6 +258,13 @@ class WebRTCService {
     _remoteDescriptionSet = false;
   }
 
+  void clearIncomingCall() {
+    currentRemoteUserId = null;
+    _pendingOffer = null;
+    _callState = CallState.idle;
+    _incomingCallController.add(false);
+  }
+
   void _handleRemoteHangup() {
     _callCancelled = true;
     _audio.stopAll();
