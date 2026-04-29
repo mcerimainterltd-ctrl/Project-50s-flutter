@@ -1,5 +1,7 @@
 
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,28 +31,27 @@ class _ConferencePeer {
 }
 
 // ── RTC config ────────────────────────────────────────────────────────────────
-const _rtcConfig = {
-  'iceServers': [
-    {'urls': 'stun:stun.l.google.com:19302'},
-    {'urls': 'stun:stun1.l.google.com:19302'},
-    {'urls': 'stun:stun2.l.google.com:19302'},
-    {
-      'urls': 'turn:openrelay.metered.ca:80',
-      'username': 'openrelayproject',
-      'credential': 'openrelayproject',
-    },
-    {
-      'urls': 'turn:openrelay.metered.ca:443',
-      'username': 'openrelayproject',
-      'credential': 'openrelayproject',
-    },
-    {
-      'urls': 'turn:openrelay.metered.ca:443?transport=tcp',
-      'username': 'openrelayproject',
-      'credential': 'openrelayproject',
-    },
-  ]
-};
+Future<Map<String, dynamic>> _buildRtcConfig() async {
+  try {
+    final res = await http.get(
+        Uri.parse('https://project-50s.onrender.com/api/ice-servers'));
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      return {'iceServers': data['iceServers']};
+    }
+  } catch (_) {}
+  return {
+    'iceServers': [
+      {'urls': 'stun:stun.l.google.com:19302'},
+      {'urls': 'stun:stun1.l.google.com:19302'},
+      {
+        'urls': 'turn:openrelay.metered.ca:443',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
+    ]
+  };
+}
 
 // ── Conference state ──────────────────────────────────────────────────────────
 enum ConferenceLayout { grid, spotlight, sidebar }
@@ -270,7 +271,7 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     final socket = _ref.read(socketServiceProvider);
     final me     = _ref.read(currentUserProvider)?.xameId;
 
-    final pc       = await createPeerConnection(_rtcConfig);
+    final pc       = await createPeerConnection(await _buildRtcConfig());
     final renderer = RTCVideoRenderer();
     await renderer.initialize();
 
