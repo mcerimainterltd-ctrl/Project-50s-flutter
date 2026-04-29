@@ -27,9 +27,8 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
   void _safePop() {
     if (_isPopping || !mounted) return;
     _isPopping = true;
-    // Also reset webrtc incoming state
     ref.read(webRTCServiceProvider).clearIncomingCall();
-    context.pop();
+    context.go('/contacts');
   }
 
   @override
@@ -173,7 +172,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                         color: Colors.redAccent,
                         onTap: () {
                           webrtc.rejectCall();
-                          context.pop();
+                          _safePop();
                         },
                       ),
                       _buildControl(
@@ -187,7 +186,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                           currentUserId: ref.read(currentUserProvider)?.xameId ?? "",
                           onDecline: () {
                             webrtc.rejectCall();
-                            context.pop();
+                            _safePop();
                           },
                         ),
                       ),
@@ -198,8 +197,6 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                         color: context.xAccent,
                         onTap: () {
                           _isPopping = true; // prevent double-pop
-                          ref.read(webRTCServiceProvider).clearIncomingCall();
-                          // Replace incoming screen with call screen
                           context.pushReplacement('/call/$userId?video=$isVideo&incoming=true');
                         },
                         isAccept: true,
