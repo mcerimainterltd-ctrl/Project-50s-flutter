@@ -335,7 +335,7 @@ class WebRTCService {
     // Notify server so recipient gets missed call recorded
     _socket.emit('call-unanswered', {
       'recipientId': recipientId,
-      'callId':      callId,
+      'callId':      _currentCallId ?? '', // only send real server callId
     });
   }
 
