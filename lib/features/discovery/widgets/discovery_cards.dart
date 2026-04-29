@@ -55,6 +55,8 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   BetterPlayerController? _playerCtrl;
 
   void _playVideo() {
+    _playerCtrl?.dispose();
+    _playerCtrl = null;
     final ctrl = BetterPlayerController(
       BetterPlayerConfiguration(
         autoPlay: true,
@@ -128,6 +130,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   void dispose() {
     _tapCtrl.dispose();
     _likeCtrl.dispose();
+    _playerCtrl?.dispose();
     super.dispose();
   }
 
