@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+const _keepaliveChannel = MethodChannel('com.xamepage.app/keepalive');
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
 import 'package:xamepage/core/services/app_lock_service.dart';
@@ -71,6 +72,21 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       return null;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _resetInactivityTimer());
+
+    // Keepalive heartbeat — called every 25s by SocketKeepaliveService
+    _keepaliveChannel.setMethodCallHandler((call) async {
+      if (call.method == 'heartbeat') {
+        final user = ref.read(currentUserProvider);
+        if (user != null) {
+          final socket = ref.read(socketServiceProvider);
+          if (socket.isConnected) {
+            socket.emitHeartbeat(user.xameId);
+          } else {
+            socket.connect(user.xameId);
+          }
+        }
+      }
+    });
 
 
     // Listen for calls in a dedicated listener, not the build method
