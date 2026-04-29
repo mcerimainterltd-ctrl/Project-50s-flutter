@@ -58,7 +58,7 @@ Future<List<CallRecord>> _fetchCallHistory(String userId) async {
       .map((c) => CallRecord.fromJson(c)).toList();
 }
 
-final callHistoryProvider = StreamProvider.autoDispose
+final callHistoryProvider = StreamProvider
     .family<List<CallRecord>, String>((ref, userId) async* {
   final socket = ref.read(socketServiceProvider);
 
@@ -249,11 +249,18 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   List<CallRecord> _filterCalls(List<CallRecord> calls, String userId) {
     switch (_filter) {
       case 'missed':
+        // Missed = unanswered incoming (recipient) or timed-out outgoing (caller)
         return calls.where((c) => c.status == 'missed').toList();
       case 'incoming':
-        return calls.where((c) => c.recipientId == userId).toList();
+        // Answered or declined incoming calls — not missed
+        return calls.where((c) =>
+            c.recipientId == userId &&
+            c.status != 'missed').toList();
       case 'outgoing':
-        return calls.where((c) => c.callerId == userId).toList();
+        // Calls initiated by this user that were answered or ended
+        return calls.where((c) =>
+            c.callerId == userId &&
+            c.status != 'missed').toList();
       default:
         return calls;
     }
