@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:async';
+import '../../../core/services/socket_service.dart';
 import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,7 +66,7 @@ final callHistoryProvider = StreamProvider.autoDispose
   yield await _fetchCallHistory(userId);
 
   // Merge all call-related socket events into one stream
-  final triggers = StreamGroup.merge([
+  final triggers = StreamGroup.merge<String>([
     socket.callEnded.map((_) => 'ended'),
     socket.callAccepted.map((_) => 'accepted'),
     socket.callRejected.map((_) => 'rejected'),
