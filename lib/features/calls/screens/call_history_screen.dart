@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -69,6 +70,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
 
   late TabController _tabs;
   String _filter = 'all'; // all | missed | incoming | outgoing
+  StreamSubscription? _callStateSub;
 
   @override
   void initState() {
@@ -79,8 +81,21 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         _filter = ['all', 'missed', 'incoming', 'outgoing'][_tabs.index];
       });
     });
-    // Mark missed calls as seen
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markSeen());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markSeen();
+      // Auto-refresh when any call ends
+      final webrtc = ref.read(webRTCServiceProvider);
+      _callStateSub = webrtc.callState.listen((state) {
+        if (state == CallState.ended && mounted) {
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              final user = ref.read(currentUserProvider);
+              if (user != null) ref.invalidate(callHistoryProvider(user.xameId));
+            }
+          });
+        }
+      });
+    });
   }
 
   Future<void> _markSeen() async {
@@ -95,7 +110,11 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   }
 
   @override
-  void dispose() { _tabs.dispose(); super.dispose(); }
+  void dispose() {
+    _callStateSub?.cancel();
+    _tabs.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

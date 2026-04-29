@@ -71,9 +71,9 @@ class WebRTCService {
       _callCancelled = true;
       _callTimeoutTimer?.cancel();
       _audio.stopAll();
-      // Record as missed — recipient rejected or didn't answer
+      // Record as declined — recipient actively rejected the call
       if (_callState == CallState.outgoing && currentRemoteUserId != null) {
-        _recordMissedCall(currentRemoteUserId!, 'voice');
+        _recordDeclinedCall(currentRemoteUserId!, isVideo ? 'video' : 'voice');
       }
       _cleanup();
       _callState = CallState.ended;
@@ -302,6 +302,21 @@ class WebRTCService {
     _currentCallId = null;
     currentRemoteUserId = null;
     _callState = CallState.idle;
+  }
+
+  void _recordDeclinedCall(String recipientId, String callType) {
+    final callId = _currentCallId ?? 'local_${DateTime.now().millisecondsSinceEpoch}';
+    final record = {
+      'callId':      callId,
+      'callerId':    _socket.currentUserId ?? '',
+      'recipientId': recipientId,
+      'callType':    callType,
+      'status':      'rejected',
+      'startTime':   (_callStartTime ?? DateTime.now()).toIso8601String(),
+      'duration':    0,
+      'seen':        false,
+    };
+    CacheService.addCallRecord(record);
   }
 
   void _recordMissedCall(String recipientId, String callType) {
