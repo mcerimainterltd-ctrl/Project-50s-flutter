@@ -82,6 +82,7 @@ class WebRTCService {
     // Listening to YOUR existing SocketService streams
     _socket.incomingCall.listen((data) async {
       if (data.callerId == _socket.currentUserId) return; // Ignore self
+      if (_callState == CallState.incoming || _callState == CallState.active) return; // Already in a call
       currentRemoteUserId = data.callerId;
       _pendingOffer = data.offer;
       isIncomingVideo = data.callType == 'video';
@@ -285,6 +286,8 @@ class WebRTCService {
     _callTimeoutTimer?.cancel();
     _callTimeoutTimer = null;
     _currentCallId = null;
+    currentRemoteUserId = null;
+    _callState = CallState.idle;
   }
 
   void _recordMissedCall(String recipientId, String callType) {
