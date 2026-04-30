@@ -1373,11 +1373,15 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
+    final screenH = MediaQuery.of(context).size.height;
+    final mediaH  = item.mediaType == DiscoveryMediaType.video
+        ? screenH * 0.55
+        : screenH * 0.45;
     return Scaffold(
     backgroundColor: context.xBg,
     body: CustomScrollView(slivers: [
       SliverAppBar(
-        expandedHeight: 360, pinned: true,
+        expandedHeight: mediaH, pinned: true,
         backgroundColor: context.xBg,
         leading: IconButton(
           icon: Container(
@@ -1394,10 +1398,11 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
             else
               GestureDetector(
                 onTap: () => _showFullscreenImage(context, item.mediaUrl),
-                child: CachedNetworkImage(imageUrl: item.mediaUrl,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) =>
-                    Container(color: context.xSurface))),
+                child: InteractiveViewer(
+                  child: CachedNetworkImage(imageUrl: item.mediaUrl,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) =>
+                      Container(color: context.xSurface)))),
             Container(decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
