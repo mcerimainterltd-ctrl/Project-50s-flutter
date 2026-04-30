@@ -22,6 +22,7 @@ class MediaDiscoverCard extends StatefulWidget {
   final int     likeCount;
   final String  postId;
   final String  userId;
+  final String? thumbnailUrl;
   final VoidCallback? onTap;
 
   const MediaDiscoverCard({
@@ -37,6 +38,7 @@ class MediaDiscoverCard extends StatefulWidget {
     this.likeCount   = 0,
     this.postId      = '',
     this.userId      = '',
+    this.thumbnailUrl,
     this.onTap,
   }) : super(key: key);
 
@@ -175,7 +177,9 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                     onTap: _playVideo,
                     child: Stack(fit: StackFit.expand, children: [
                       CachedNetworkImage(
-                        imageUrl: widget.mediaUrl.replaceFirst('/upload/', '/upload/so_0/'),
+                        imageUrl: widget.thumbnailUrl?.isNotEmpty == true
+                            ? widget.thumbnailUrl!
+                            : widget.mediaUrl.replaceFirst('/upload/', '/upload/so_0/'),
                         fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => Container(
                           color: context.xSurface,
