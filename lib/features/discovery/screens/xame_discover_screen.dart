@@ -1375,47 +1375,49 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     final item = widget.item;
     final screenH = MediaQuery.of(context).size.height;
     final mediaH  = item.mediaType == DiscoveryMediaType.video
-        ? screenH * 0.55
+        ? screenH * 0.52
         : screenH * 0.45;
     return Scaffold(
-    backgroundColor: context.xBg,
-    body: CustomScrollView(slivers: [
-      SliverAppBar(
-        expandedHeight: mediaH, pinned: true,
-        backgroundColor: context.xBg,
-        leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(shape: BoxShape.circle,
-                color: Colors.black.withOpacity(0.5)),
-            child: Icon(Icons.arrow_back_ios_new,
-                color: context.xText, size: 16)),
-          onPressed: () => Navigator.pop(context)),
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(fit: StackFit.expand, children: [
-            if (item.mediaType == DiscoveryMediaType.video)
-              _DetailVideoPlayer(url: item.mediaUrl)
-            else
-              GestureDetector(
-                onTap: () => _showFullscreenImage(context, item.mediaUrl),
-                child: InteractiveViewer(
-                  child: CachedNetworkImage(imageUrl: item.mediaUrl,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) =>
-                      Container(color: context.xSurface)))),
-            Container(decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Color(0xCC000000)]))),
-            if (item.isLive)
-              Positioned(top: 60, right: 20,
-                child: LivePulseIndicator()),
-          ]),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: Padding(
+      backgroundColor: context.xBg,
+      body: Column(children: [
+        // ── Media area ──────────────────────────────────────────────
+        Stack(children: [
+          SizedBox(
+            height: mediaH,
+            width: double.infinity,
+            child: item.mediaType == DiscoveryMediaType.video
+                ? _DetailVideoPlayer(url: item.mediaUrl)
+                : GestureDetector(
+                    onTap: () => _showFullscreenImage(context, item.mediaUrl),
+                    child: InteractiveViewer(
+                      child: CachedNetworkImage(
+                        imageUrl: item.mediaUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: mediaH,
+                        errorWidget: (_, __, ___) =>
+                            Container(color: context.xSurface)))),
+          ),
+          // Back button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 12,
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withOpacity(0.5)),
+                child: Icon(Icons.arrow_back_ios_new,
+                    color: Colors.white, size: 16)),
+              onPressed: () => Navigator.pop(context)),
+          ),
+          if (item.isLive)
+            Positioned(top: MediaQuery.of(context).padding.top + 12,
+                right: 20, child: LivePulseIndicator()),
+        ]),
+        // ── Info area ────────────────────────────────────────────────
+        Expanded(child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start,
             children: [
