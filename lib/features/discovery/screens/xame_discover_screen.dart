@@ -1233,6 +1233,54 @@ class _FilterSheetState extends State<_FilterSheet> {
   );
 }
 
+// ── Detail video player ──────────────────────────────────────────────────────
+class _DetailVideoPlayer extends StatefulWidget {
+  final String url;
+  const _DetailVideoPlayer({required this.url});
+  @override
+  State<_DetailVideoPlayer> createState() => _DetailVideoPlayerState();
+}
+
+class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
+  BetterPlayerController? _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = BetterPlayerController(
+      const BetterPlayerConfiguration(
+        autoPlay: true,
+        looping: true,
+        fit: BoxFit.cover,
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          enableFullscreen: true,
+          enableMute: true,
+          enablePlayPause: true,
+          enableProgressBar: true,
+          enableSkips: false,
+          controlBarColor: Colors.black54,
+          iconsColor: Colors.white,
+          progressBarPlayedColor: XameColors.primary,
+          progressBarHandleColor: XameColors.primary,
+          progressBarBackgroundColor: Colors.white24,
+        ),
+      ),
+      betterPlayerDataSource: BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network, widget.url),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _ctrl != null ? BetterPlayer(controller: _ctrl!) : const SizedBox.shrink();
+}
+
 // ── Detail screen ─────────────────────────────────────────────────────────────
 class _DetailScreen extends ConsumerStatefulWidget {
   final DiscoveryItem item;
@@ -1319,10 +1367,13 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
           onPressed: () => Navigator.pop(context)),
         flexibleSpace: FlexibleSpaceBar(
           background: Stack(fit: StackFit.expand, children: [
-            CachedNetworkImage(imageUrl: item.mediaUrl,
-              fit: BoxFit.cover,
-              errorWidget: (_, __, ___) =>
-                Container(color: context.xSurface)),
+            if (item.mediaType == DiscoveryMediaType.video)
+              _DetailVideoPlayer(url: item.mediaUrl)
+            else
+              CachedNetworkImage(imageUrl: item.mediaUrl,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) =>
+                  Container(color: context.xSurface)),
             Container(decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
