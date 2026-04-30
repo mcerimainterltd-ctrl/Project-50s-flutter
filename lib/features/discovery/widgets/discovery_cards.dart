@@ -64,6 +64,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
         autoPlay: true,
         aspectRatio: 16 / 9,
         fit: BoxFit.cover,
+        showControlsOnInitialize: true,
         controlsConfiguration: BetterPlayerControlsConfiguration(
           enableFullscreen: true,
           enableMute: true,
@@ -75,6 +76,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
           progressBarPlayedColor: XameColors.primary,
           progressBarHandleColor: XameColors.primary,
           progressBarBackgroundColor: Colors.white24,
+          controlsHideTime: Duration(seconds: 5),
         ),
       ),
       betterPlayerDataSource: BetterPlayerDataSource(

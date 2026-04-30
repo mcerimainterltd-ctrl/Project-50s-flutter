@@ -1250,10 +1250,11 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
   void initState() {
     super.initState();
     _ctrl = BetterPlayerController(
-      const BetterPlayerConfiguration(
+      BetterPlayerConfiguration(
         autoPlay: true,
         looping: true,
         fit: BoxFit.cover,
+        showControlsOnInitialize: true,
         controlsConfiguration: BetterPlayerControlsConfiguration(
           enableFullscreen: true,
           enableMute: true,
@@ -1265,6 +1266,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
           progressBarPlayedColor: XameColors.primary,
           progressBarHandleColor: XameColors.primary,
           progressBarBackgroundColor: Colors.white24,
+          controlsHideTime: Duration(seconds: 5),
         ),
       ),
       betterPlayerDataSource: BetterPlayerDataSource(
