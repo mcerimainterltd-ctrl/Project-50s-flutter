@@ -1379,11 +1379,12 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         : screenH * 0.45;
     return Scaffold(
       backgroundColor: context.xBg,
+      extendBodyBehindAppBar: true,
       body: Column(children: [
         // ── Media area ──────────────────────────────────────────────
         Stack(children: [
           SizedBox(
-            height: mediaH,
+            height: mediaH + MediaQuery.of(context).padding.top,
             width: double.infinity,
             child: item.mediaType == DiscoveryMediaType.video
                 ? _DetailVideoPlayer(url: item.mediaUrl)
