@@ -64,7 +64,6 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
         autoPlay: true,
         aspectRatio: 16 / 9,
         fit: BoxFit.cover,
-        showControlsOnInitialize: true,
         controlsConfiguration: BetterPlayerControlsConfiguration(
           enableFullscreen: true,
           enableMute: true,
