@@ -1254,7 +1254,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
         autoPlay: true,
         looping: true,
         fit: BoxFit.cover,
-        controlsConfiguration: BetterPlayerControlsConfiguration(
+        controlsConfiguration: const BetterPlayerControlsConfiguration(
           enableFullscreen: true,
           enableMute: true,
           enablePlayPause: true,
@@ -1262,10 +1262,6 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
           enableSkips: false,
           controlBarColor: Colors.black54,
           iconsColor: Colors.white,
-          progressBarPlayedColor: XameColors.primary,
-          progressBarHandleColor: XameColors.primary,
-          progressBarBackgroundColor: Colors.white24,
-          controlsHideTime: Duration(seconds: 5),
         ),
       ),
       betterPlayerDataSource: BetterPlayerDataSource(
@@ -1301,6 +1297,29 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
     if (n >= 1000)    return '${(n / 1000).toStringAsFixed(1)}K';
     return '$n';
+  }
+
+  void _showFullscreenImage(BuildContext context, String url) {
+    Navigator.of(context).push(PageRouteBuilder(
+      opaque: false,
+      barrierColor: Colors.black.withOpacity(0.95),
+      pageBuilder: (_, __, ___) => GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
+            child: InteractiveViewer(
+              child: CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.contain,
+                errorWidget: (_, __, ___) => const Icon(
+                    Icons.broken_image, color: Colors.white54, size: 64),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
   }
 
   Future<void> _toggleFollow() async {
@@ -1373,10 +1392,12 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
             if (item.mediaType == DiscoveryMediaType.video)
               _DetailVideoPlayer(url: item.mediaUrl)
             else
-              CachedNetworkImage(imageUrl: item.mediaUrl,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) =>
-                  Container(color: context.xSurface)),
+              GestureDetector(
+                onTap: () => _showFullscreenImage(context, item.mediaUrl),
+                child: CachedNetworkImage(imageUrl: item.mediaUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) =>
+                    Container(color: context.xSurface))),
             Container(decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
