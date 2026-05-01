@@ -1373,55 +1373,49 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final screenH = MediaQuery.of(context).size.height;
-    final mediaH  = item.mediaType == DiscoveryMediaType.video
-        ? screenH * 0.52
-        : screenH * 0.45;
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.xBg,
-      extendBodyBehindAppBar: true,
-      body: Column(children: [
-        // ── Media area ──────────────────────────────────────────────
-        Stack(children: [
-          SizedBox(
-            height: mediaH + MediaQuery.of(context).padding.top,
-            width: double.infinity,
-            child: item.mediaType == DiscoveryMediaType.video
-                ? _DetailVideoPlayer(url: item.mediaUrl)
-                : GestureDetector(
-                    onTap: () => _showFullscreenImage(context, item.mediaUrl),
-                    child: InteractiveViewer(
-                      child: CachedNetworkImage(
-                        imageUrl: item.mediaUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: mediaH,
-                        errorWidget: (_, __, ___) =>
-                            Container(color: context.xSurface)))),
-          ),
-          // Back button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 12,
-            child: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.black.withOpacity(0.5)),
-                child: Icon(Icons.arrow_back_ios_new,
-                    color: Colors.white, size: 16)),
-              onPressed: () => Navigator.pop(context)),
-          ),
-          if (item.isLive)
-            Positioned(top: MediaQuery.of(context).padding.top + 12,
-                right: 20, child: LivePulseIndicator()),
-        ]),
-        // ── Info area ────────────────────────────────────────────────
-        Expanded(child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: SingleChildScrollView(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+          // ── Media area — full width, natural ratio ───────────────
+          Stack(children: [
+            if (item.mediaType == DiscoveryMediaType.video)
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: _DetailVideoPlayer(url: item.mediaUrl))
+            else
+              GestureDetector(
+                onTap: () => _showFullscreenImage(context, item.mediaUrl),
+                child: CachedNetworkImage(
+                  imageUrl:   item.mediaUrl,
+                  fit:        BoxFit.fitWidth,
+                  width:      double.infinity,
+                  errorWidget: (_, __, ___) =>
+                      Container(height: 300, color: context.xSurface))),
+            // Back button overlay
+            Positioned(
+              top: topPad + 8, left: 12,
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(0.55)),
+                  child: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white, size: 16)),
+                onPressed: () => Navigator.pop(context)),
+            ),
+            if (item.isLive)
+              Positioned(top: topPad + 12, right: 20,
+                  child: LivePulseIndicator()),
+          ]),
+          // ── Info area ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Row(children: [
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -1489,10 +1483,10 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
             SizedBox(height: 40),
           ]),
         ),
-      ),
-    ]),
-  );
-}
+        const SizedBox(height: 40),
+      ]),
+    );
+  }
 }
 // ── Empty state ───────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
