@@ -321,137 +321,194 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
-    final topPad = MediaQuery.of(context).padding.top;
+    final user = ref.watch(currentUserProvider);
     return Scaffold(
       backgroundColor: context.xBg,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Media ─────────────────────────────────────────────
-            Stack(children: [
-              if (item.mediaType == DiscoveryMediaType.video)
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: _DetailVideoPlayer(url: item.mediaUrl))
-              else
-                GestureDetector(
-                  onTap: () => _showFullscreenImage(context, item.mediaUrl),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: 200,
-                      maxHeight: MediaQuery.of(context).size.height * 0.75,
+      floatingActionButton: _PostFAB(
+        onPost: () => _showPostDialog(context, user?.xameId ?? ''),
+      ),
+      body: Stack(children: [
+        CustomScrollView(
+          controller: _scrollCtrl,
+          physics:    BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              backgroundColor:  context.xBg,
+              surfaceTintColor: Colors.transparent,
+              floating: true, snap: true, elevation: 0,
+              titleSpacing: 0,
+              title: Row(children: [
+                if (widget.authorId != null)
+                  GestureDetector(
+                    onTap: () => context.canPop()
+                        ? context.pop() : context.go('/contacts'),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8, right: 4),
+                      child: Icon(Icons.arrow_back_ios_new,
+                          color: context.xText, size: 18),
                     ),
-                    child: CachedNetworkImage(
-                      imageUrl: item.mediaUrl,
-                      fit: BoxFit.fitWidth,
-                      width: double.infinity,
-                      errorWidget: (_, __, ___) =>
-                          Container(height: 300, color: context.xSurface)))),
-              Positioned(
-                top: topPad + 8, left: 12,
-                child: IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.55)),
-                    child: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.white, size: 16)),
-                  onPressed: () => Navigator.pop(context)),
-              ),
-              if (item.isLive)
-                Positioned(
-                    top: topPad + 12, right: 20,
-                    child: LivePulseIndicator()),
-            ]),
-            // ── Info ──────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: context.xPrimary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: context.xPrimary.withOpacity(0.3))),
-                      child: Text(item.category.toUpperCase(),
-                        style: TextStyle(color: context.xPrimary,
-                            fontSize: 10, fontWeight: FontWeight.w800,
-                            letterSpacing: 1))),
-                    const Spacer(),
-                    Text('${_fmt(item.viewCount)} views',
-                      style: TextStyle(color: context.xMuted, fontSize: 12)),
-                  ]),
-                  const SizedBox(height: 12),
-                  Text(item.title,
-                    style: TextStyle(color: context.xText,
-                        fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
-                  const SizedBox(height: 8),
-                  if (item.subtitle.isNotEmpty)
-                    Text(item.subtitle,
-                      style: TextStyle(
-                          color: context.xText.withValues(alpha: 0.54),
-                          fontSize: 14, height: 1.5)),
-                  const SizedBox(height: 16),
-                  Row(children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: item.authorAvatar.isNotEmpty
-                          ? NetworkImage(item.authorAvatar) : null,
+                  ),
+                ShaderMask(
+                  shaderCallback: (b) => LinearGradient(
+                    colors: [context.xPrimary, context.xSecondary],
+                  ).createShader(b),
+                  child: Text('DISCOVERY',
+                    style: TextStyle(color: context.xText, fontSize: 22,
+                        fontWeight: FontWeight.w900, letterSpacing: 2.5)),
+                ),
+                SizedBox(width: 8),
+                _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
+              ]),
+              actions: [
+                TVEntryButton(onTap: () => context.push("/tv")),
+                IconButton(
+                  icon: AnimatedSwitcher(
+                    duration: Duration(milliseconds: 200),
+                    child: Icon(
+                      _searchOpen ? Icons.close : Icons.search,
+                      key: ValueKey(_searchOpen),
+                      color: context.xText.withValues(alpha: 0.7))),
+                  onPressed: _searchOpen ? _closeSearch : _openSearch),
+                IconButton(
+                  icon: Icon(Icons.tune_rounded,
+                      color: context.xText.withValues(alpha: 0.7)),
+                  onPressed: () => _showFilterSheet(context)),
+                IconButton(
+                  icon: Icon(Icons.refresh_rounded,
+                      color: context.xText.withValues(alpha: 0.7)),
+                  onPressed: () => _loadData(refresh: true)),
+                const SizedBox(width: 4),
+              ],
+            ),
+
+            // Stories bar
+            SliverToBoxAdapter(
+              child: _loading
+                ? _StoriesSkeleton()
+                : DiscoveryStoriesBar(
+                    users: [
+                      {
+                        'name':     'You',
+                        'avatar':   user?.profilePic ?? '',
+                        'hasSeen':  true,
+                        'isOnline': true,
+                        'isSelf':   true,
+                        'onTap':    () => _showPostStoryDialog(context, user?.xameId ?? ''),
+                      },
+                      ..._stories.asMap().entries.map((e) {
+                        final idx = e.key;
+                        final s   = e.value;
+                        return {
+                          'name':     s['authorName']   as String? ?? '',
+                          'avatar':   s['authorAvatar'] as String? ?? '',
+                          'hasSeen':  s['hasSeen']      as bool?   ?? false,
+                          'isOnline': s['isOnline']     as bool?   ?? false,
+                          'onTap':    () => _openStoryViewer(context, idx),
+                        };
+                      }),
+                    ],
+                  ),
+            ),
+
+            // Region filter
+            SliverToBoxAdapter(
+              child: RegionFilterBar(
+                onRegionSelected: _onRegionSelected,
+                initialCode:      _regionCode),
+            ),
+
+            // People carousel
+            if (!_loading && _people.isNotEmpty)
+              SliverToBoxAdapter(
+                child: PeoplePerspectiveCarousel(
+                  users: _people,
+                  onAdd: (user) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Request sent to \${user.name}'),
                       backgroundColor: context.xSurface,
-                      child: item.authorAvatar.isEmpty
-                          ? Icon(Icons.person, color: context.xMuted) : null),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item.authorName,
-                          style: TextStyle(
-                              color: context.xText,
-                              fontWeight: FontWeight.w600)),
-                        Text(item.region,
-                          style: TextStyle(
-                              color: context.xMuted, fontSize: 12)),
-                      ]),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: _toggleFollow,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          gradient: LinearGradient(colors: _following
-                              ? [context.xMuted.withValues(alpha: 0.5),
-                                 context.xMuted.withValues(alpha: 0.5)]
-                              : [context.xPrimary, context.xSecondary]),
-                        ),
-                        child: _followLoading
-                            ? const SizedBox(width: 14, height: 14,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 1.5))
-                            : Text(_following ? 'Following' : 'Follow',
-                                style: TextStyle(color: context.xText,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700)),
-                      ),
-                    ),
-                  ]),
-                  const SizedBox(height: 40),
-                ],
+                      duration: Duration(seconds: 2)));
+                  },
+                ),
+              ),
+
+            // Section header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                child: Row(children: [
+                  Text(
+                    _searchQuery.isNotEmpty
+                      ? 'RESULTS FOR "\${_searchQuery.toUpperCase()}"'
+                      : 'TRENDING IN \${_regionName.toUpperCase()}',
+                    style: TextStyle(color: context.xMuted,
+                        fontSize: 11, fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2)),
+                  Spacer(),
+                  if (_loading)
+                    SizedBox(width: 14, height: 14,
+                      child: CircularProgressIndicator(
+                          color: context.xPrimary, strokeWidth: 1.5)),
+                ]),
               ),
             ),
+
+            // Feed
+            if (_loading)
+              SliverList(delegate: SliverChildBuilderDelegate(
+                (_, __) => const DiscoveryCardSkeleton(), childCount: 3))
+            else if (_filtered.isEmpty)
+              SliverToBoxAdapter(child: _EmptyState(
+                region: _regionName,
+                onPost: () => _showPostDialog(context, user?.xameId ?? ''),
+              ))
+            else
+              SliverList(delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = _filtered[index];
+                  return MediaDiscoverCard(
+                    mediaType:    item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
+                    mediaUrl:     item.mediaUrl,
+                    thumbnailUrl: item.thumbnailUrl,
+                    title:        item.title,
+                    category:     item.category,
+                    isLive:       item.isLive,
+                    authorName:   item.authorName,
+                    authorAvatar: item.authorAvatar,
+                    viewCount:    item.viewCount,
+                    likeCount:    item.likeCount,
+                    postId:       item.id,
+                    userId:       user?.xameId ?? '',
+                    onTap: () {
+                      DiscoveryApiService.viewPost(item.id);
+                      _openDetail(context, item);
+                    },
+                  );
+                },
+                childCount: _filtered.length)),
+
+            if (_loadingMore)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator(
+                      color: context.xPrimary, strokeWidth: 1.5)))),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
-      ),
+
+        // Search overlay
+        if (_searchOpen)
+          FadeTransition(
+            opacity: _searchFade,
+            child: _SearchOverlay(
+              ctrl:     _searchCtrl,
+              onSearch: (q) => setState(() => _searchQuery = q),
+              onClose:  _closeSearch,
+              feed:     _feed,
+            ),
+          ),
+      ]),
     );
   }
 }
