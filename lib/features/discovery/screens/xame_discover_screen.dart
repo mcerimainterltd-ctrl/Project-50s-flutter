@@ -1377,115 +1377,118 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final topPad = MediaQuery.of(context).padding.top;
-    return Scaffold(
-      backgroundColor: context.xBg,
-      body: SingleChildScrollView(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    final screenH = MediaQuery.of(context).size.height;
+    final screenW = MediaQuery.of(context).size.width;
+    final isVideo = item.mediaType == DiscoveryMediaType.video;
 
-          // ── Media ────────────────────────────────────────────────
-          Stack(children: [
-            if (item.mediaType == DiscoveryMediaType.video)
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: _DetailVideoPlayer(url: item.mediaUrl))
-            else
-              GestureDetector(
-                onTap: () => _showFullscreenImage(context, item.mediaUrl),
-                child: CachedNetworkImage(
-                  imageUrl: item.mediaUrl,
-                  fit: BoxFit.fitWidth,
-                  width: double.infinity,
-                  errorWidget: (_, __, ___) =>
-                      Container(height: 300, color: context.xSurface))),
-            Positioned(
-              top: topPad + 8, left: 8,
-              child: IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withOpacity(0.55)),
-                  child: const Icon(Icons.arrow_back_ios_new,
-                      color: Colors.white, size: 16)),
-                onPressed: () => Navigator.pop(context)),
-            ),
-            if (item.isLive)
-              Positioned(top: topPad + 12, right: 20,
-                  child: LivePulseIndicator()),
+    final infoPanel = Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [Colors.black.withOpacity(0.92), Colors.transparent]),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 32),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: context.xPrimary.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: context.xPrimary.withOpacity(0.5))),
+            child: Text(item.category.toUpperCase(),
+              style: TextStyle(color: context.xPrimary,
+                  fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1))),
+          const Spacer(),
+          Text('${_fmt(item.viewCount)} views',
+            style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ]),
+        const SizedBox(height: 10),
+        Text(item.title, style: const TextStyle(color: Colors.white,
+            fontSize: 22, fontWeight: FontWeight.w800, height: 1.2)),
+        if (item.subtitle.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(item.subtitle, style: TextStyle(
+              color: Colors.white.withOpacity(0.7), fontSize: 13, height: 1.4)),
+        ],
+        const SizedBox(height: 14),
+        Row(children: [
+          CircleAvatar(radius: 18,
+            backgroundImage: item.authorAvatar.isNotEmpty
+                ? NetworkImage(item.authorAvatar) : null,
+            backgroundColor: Colors.white24,
+            child: item.authorAvatar.isEmpty
+                ? const Icon(Icons.person, color: Colors.white) : null),
+          const SizedBox(width: 10),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(item.authorName, style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+            Text(item.region, style: TextStyle(
+                color: Colors.white.withOpacity(0.6), fontSize: 12)),
           ]),
-
-          // ── Info ─────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: context.xPrimary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.xPrimary.withOpacity(0.3))),
-                  child: Text(item.category.toUpperCase(),
-                    style: TextStyle(color: context.xPrimary,
-                        fontSize: 10, fontWeight: FontWeight.w800,
-                        letterSpacing: 1))),
-                const Spacer(),
-                Text('${_fmt(item.viewCount)} views',
-                  style: TextStyle(color: context.xMuted, fontSize: 12)),
-              ]),
-              const SizedBox(height: 12),
-              Text(item.title, style: TextStyle(color: context.xText,
-                  fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
-              const SizedBox(height: 8),
-              if (item.subtitle.isNotEmpty)
-                Text(item.subtitle, style: TextStyle(
-                    color: context.xText.withValues(alpha: 0.54),
-                    fontSize: 14, height: 1.5)),
-              const SizedBox(height: 16),
-              Row(children: [
-                CircleAvatar(radius: 20,
-                  backgroundImage: item.authorAvatar.isNotEmpty
-                      ? NetworkImage(item.authorAvatar) : null,
-                  backgroundColor: context.xSurface,
-                  child: item.authorAvatar.isEmpty
-                      ? Icon(Icons.person, color: context.xMuted) : null),
-                const SizedBox(width: 10),
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(item.authorName, style: TextStyle(
-                      color: context.xText, fontWeight: FontWeight.w600)),
-                  Text(item.region, style: TextStyle(
-                      color: context.xMuted, fontSize: 12)),
-                ]),
-                const Spacer(),
-                GestureDetector(
-                  onTap: _toggleFollow,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(colors: _following
-                          ? [context.xMuted.withValues(alpha: 0.5),
-                             context.xMuted.withValues(alpha: 0.5)]
-                          : [context.xPrimary, context.xSecondary]),
-                    ),
-                    child: _followLoading
-                        ? const SizedBox(width: 14, height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 1.5))
-                        : Text(_following ? 'Following' : 'Follow',
-                            style: TextStyle(color: context.xText,
-                                fontSize: 13, fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ]),
-              const SizedBox(height: 40),
-            ]),
+          const Spacer(),
+          GestureDetector(
+            onTap: _toggleFollow,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(colors: _following
+                    ? [Colors.white24, Colors.white24]
+                    : [context.xPrimary, context.xSecondary]),
+              ),
+              child: _followLoading
+                  ? const SizedBox(width: 14, height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 1.5, color: Colors.white))
+                  : Text(_following ? 'Following' : 'Follow',
+                      style: const TextStyle(color: Colors.white,
+                          fontSize: 13, fontWeight: FontWeight.w700)),
+            ),
           ),
         ]),
-      ),
+      ]),
+    );
+
+    final backBtn = Positioned(
+      top: topPad + 4, left: 4,
+      child: IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+              shape: BoxShape.circle, color: Colors.black.withOpacity(0.55)),
+          child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16)),
+        onPressed: () => Navigator.pop(context)),
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(children: [
+        // Media fills full screen
+        SizedBox(
+          width: screenW, height: screenH,
+          child: isVideo
+              ? _DetailVideoPlayer(url: item.mediaUrl)
+              : GestureDetector(
+                  onTap: () => _showFullscreenImage(context, item.mediaUrl),
+                  child: InteractiveViewer(
+                    child: CachedNetworkImage(
+                      imageUrl: item.mediaUrl,
+                      fit: BoxFit.contain,
+                      width: screenW, height: screenH,
+                      errorWidget: (_, __, ___) =>
+                          const Icon(Icons.broken_image,
+                              color: Colors.white54, size: 64))))),
+        // Info overlay at bottom
+        Positioned(left: 0, right: 0, bottom: 0, child: infoPanel),
+        backBtn,
+        if (item.isLive)
+          Positioned(top: topPad + 12, right: 20, child: LivePulseIndicator()),
+      ]),
     );
   }
-}
 // ── Empty state ───────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final String region;
