@@ -399,7 +399,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                         'name':     'You',
                         'avatar':   user?.profilePic ?? '',
                         'hasSeen':  true,
-                        'isOnline': true,
+                        'isOnline': false,
                         'isSelf':   true,
                         'onTap':    () => _showPostStoryDialog(context, user?.xameId ?? ''),
                       },

@@ -13,8 +13,8 @@ class DiscoveryStoriesBar extends StatelessWidget {
     final list = users ?? List.generate(8, (i) => {
       'name':     i == 0 ? 'You' : 'User $i',
       'avatar':   'https://i.pravatar.cc/150?img=${i + 10}',
-      'hasSeen':  i == 0,
-      'isOnline': i % 3 == 0,
+      'hasSeen':  false,
+      'isOnline': false,
     });
     return SizedBox(
       height: 106,
@@ -97,12 +97,12 @@ class _StoryRingState extends State<_StoryRing>
                 ),
               ),
             ),
-            if (widget.isOnline)
+            if (!widget.hasSeen && !widget.isFirst)
               Positioned(bottom: 2, right: 2,
                 child: Container(width: 12, height: 12,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: XameColors.accent,
+                    color: XameColors.primary,
                     border: Border.all(
                         color: XameColors.darkBg, width: 2)))),
             if (widget.isFirst)
