@@ -39,12 +39,15 @@ class LifecycleService with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         // App coming to foreground
         webrtc.isAppForeground = true;
-        // Re-emit online presence
-        if (socket.isConnected && user != null) {
-          socket.emitRequestOnlineUsers();
-        } else if (user != null) {
-          // Reconnect if dropped
-          socket.connect(user.xameId);
+        if (user != null) {
+          if (socket.isConnected) {
+            socket.emitRequestOnlineUsers();
+            socket.startHeartbeat(user.xameId);
+          } else {
+            // Reconnect and restart heartbeat
+            socket.connect(user.xameId);
+            socket.startHeartbeat(user.xameId);
+          }
         }
         debugPrint('XamePage: App foregrounded — refreshing presence');
         break;
@@ -69,8 +72,9 @@ class LifecycleService with WidgetsBindingObserver {
       if (isOnline && !_wasConnected) {
         // Network restored
         debugPrint('XamePage: Network restored — reconnecting');
-        if (user != null && !socket.isConnected) {
-          socket.connect(user.xameId);
+        if (user != null) {
+          if (!socket.isConnected) socket.connect(user.xameId);
+          socket.startHeartbeat(user.xameId);
         }
       } else if (!isOnline && _wasConnected) {
         // Network lost

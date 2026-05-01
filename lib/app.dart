@@ -6,6 +6,7 @@ import 'package:xamepage/core/services/app_lock_service.dart';
 import 'package:xamepage/shared/widgets/pin_lock_screen.dart';
 import 'dart:async';
 import 'package:xamepage/core/services/socket_service.dart';
+import 'package:xamepage/core/services/lifecycle_service.dart';
 import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
 import 'package:xamepage/shared/models/xame_user.dart';
@@ -83,18 +84,28 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
           if (socket.isConnected) {
             socket.emitHeartbeat(user.xameId);
           } else {
-            socket.connect(user.xameId);
+            // Socket dead — reconnect and restart heartbeat
+            await socket.connect(user.xameId);
+            socket.startHeartbeat(user.xameId);
           }
         }
       }
     });
 
 
+    // Initialize lifecycle service — handles reconnect on network/resume
+    ref.read(lifecycleServiceProvider);
+
     // Listen for calls in a dedicated listener, not the build method
     // Eager load all data immediately
     Future.microtask(() async {
       // Load contacts immediately
       try { ref.read(contactsProvider); } catch (_) {}
+      // Start heartbeat immediately on app start
+      final user = ref.read(currentUserProvider);
+      if (user != null) {
+        ref.read(socketServiceProvider).startHeartbeat(user.xameId);
+      }
     });
 
     Future.microtask(() {
