@@ -3,6 +3,7 @@ import "package:go_router/go_router.dart";
 import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:video_compress/video_compress.dart';
