@@ -1150,6 +1150,19 @@ class _SendTabState extends State<_SendTab> {
                 fontSize: 13)),
           ),
         const SizedBox(height: 8),
+        const SizedBox(height: 12),
+        SizedBox(width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14))),
+            onPressed: _send,
+            child: const Text('Send Money',
+                style: TextStyle(color: Colors.black,
+                    fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
+        ),
       ],
     ]),
   );
