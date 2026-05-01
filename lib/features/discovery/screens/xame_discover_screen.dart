@@ -1388,12 +1388,17 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
             else
               GestureDetector(
                 onTap: () => _showFullscreenImage(context, item.mediaUrl),
-                child: CachedNetworkImage(
-                  imageUrl:   item.mediaUrl,
-                  fit:        BoxFit.fitWidth,
-                  width:      double.infinity,
-                  errorWidget: (_, __, ___) =>
-                      Container(height: 300, color: context.xSurface))),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: 200,
+                    maxHeight: MediaQuery.of(context).size.height * 0.75,
+                  ),
+                  child: CachedNetworkImage(
+                    imageUrl:   item.mediaUrl,
+                    fit:        BoxFit.fitWidth,
+                    width:      double.infinity,
+                    errorWidget: (_, __, ___) =>
+                        Container(height: 300, color: context.xSurface)))),
             // Back button overlay
             Positioned(
               top: topPad + 8, left: 12,
