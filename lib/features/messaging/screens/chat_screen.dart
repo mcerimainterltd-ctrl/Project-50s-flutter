@@ -675,6 +675,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 style: TextStyle(color: context.xText, fontSize: 15,
                     fontWeight: FontWeight.w600),
                 maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(widget.userId,
+                style: const TextStyle(color: XameColors.primary, fontSize: 11,
+                    fontWeight: FontWeight.w500),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
             Text(
               isTyping ? 'typing...'
                   : contact?.isOnline == true ? 'online' : 'offline',
