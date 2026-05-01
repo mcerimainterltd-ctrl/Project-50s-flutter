@@ -360,33 +360,31 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
               ]),
               actions: [
-                TVEntryButton(onTap: () => context.push("/tv")),
+          TVEntryButton(onTap: () => context.push("/tv")),
                 IconButton(
                   icon: AnimatedSwitcher(
                     duration: Duration(milliseconds: 200),
                     child: Icon(
                       _searchOpen ? Icons.close : Icons.search,
-                      key: ValueKey(_searchOpen),
-                      color: context.xText.withValues(alpha: 0.7))),
+                      key: ValueKey(_searchOpen), color: context.xText.withValues(alpha: 0.7))),
                   onPressed: _searchOpen ? _closeSearch : _openSearch),
                 IconButton(
-                  icon: Icon(Icons.tune_rounded,
-                      color: context.xText.withValues(alpha: 0.7)),
+                  icon: Icon(Icons.tune_rounded, color: context.xText.withValues(alpha: 0.7)),
                   onPressed: () => _showFilterSheet(context)),
                 IconButton(
-                  icon: Icon(Icons.refresh_rounded,
-                      color: context.xText.withValues(alpha: 0.7)),
+                  icon: Icon(Icons.refresh_rounded, color: context.xText.withValues(alpha: 0.7)),
                   onPressed: () => _loadData(refresh: true)),
                 const SizedBox(width: 4),
               ],
             ),
 
-            // Stories bar
+            // Stories bar — live from API
             SliverToBoxAdapter(
               child: _loading
                 ? _StoriesSkeleton()
                 : DiscoveryStoriesBar(
                     users: [
+                      // Self first
                       {
                         'name':     'You',
                         'avatar':   user?.profilePic ?? '',
@@ -395,14 +393,15 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                         'isSelf':   true,
                         'onTap':    () => _showPostStoryDialog(context, user?.xameId ?? ''),
                       },
+                      // Other users' stories
                       ..._stories.asMap().entries.map((e) {
                         final idx = e.key;
                         final s   = e.value;
                         return {
                           'name':     s['authorName']   as String? ?? '',
                           'avatar':   s['authorAvatar'] as String? ?? '',
-                          'hasSeen':  s['hasSeen']      as bool?   ?? false,
-                          'isOnline': s['isOnline']     as bool?   ?? false,
+                          'hasSeen':  s['hasSeen']      as bool? ?? false,
+                          'isOnline': s['isOnline']     as bool? ?? false,
                           'onTap':    () => _openStoryViewer(context, idx),
                         };
                       }),
@@ -417,14 +416,14 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 initialCode:      _regionCode),
             ),
 
-            // People carousel
+            // People carousel — live from API
             if (!_loading && _people.isNotEmpty)
               SliverToBoxAdapter(
                 child: PeoplePerspectiveCarousel(
                   users: _people,
                   onAdd: (user) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Request sent to \${user.name}'),
+                      content: Text('Request sent to ${user.name}'),
                       backgroundColor: context.xSurface,
                       duration: Duration(seconds: 2)));
                   },
@@ -438,8 +437,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 child: Row(children: [
                   Text(
                     _searchQuery.isNotEmpty
-                      ? 'RESULTS FOR "\${_searchQuery.toUpperCase()}"'
-                      : 'TRENDING IN \${_regionName.toUpperCase()}',
+                      ? 'RESULTS FOR "${_searchQuery.toUpperCase()}"'
+                      : 'TRENDING IN ${_regionName.toUpperCase()}',
                     style: TextStyle(color: context.xMuted,
                         fontSize: 11, fontWeight: FontWeight.w800,
                         letterSpacing: 1.2)),
@@ -459,12 +458,11 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             else if (_filtered.isEmpty)
               SliverToBoxAdapter(child: _EmptyState(
                 region: _regionName,
-                onPost: () => _showPostDialog(context, user?.xameId ?? ''),
-              ))
+                onPost: () => _showPostDialog(context, user?.xameId ?? '')))
             else
               SliverList(delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = _filtered[index];
+                (_, i) {
+                  final item = _filtered[i];
                   return MediaDiscoverCard(
                     mediaType:    item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
                     mediaUrl:     item.mediaUrl,
@@ -486,6 +484,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 },
                 childCount: _filtered.length)),
 
+            // Load more indicator
             if (_loadingMore)
               SliverToBoxAdapter(
                 child: Padding(
@@ -511,6 +510,729 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       ]),
     );
   }
+
+  void _openDetail(BuildContext context, DiscoveryItem item) {
+    Navigator.of(context).push(PageRouteBuilder(
+      pageBuilder: (_, anim, __) => FadeTransition(
+          opacity: anim, child: _DetailScreen(item: item)),
+      transitionDuration: const Duration(milliseconds: 300),
+    ));
+  }
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.xSurface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _FilterSheet(
+        currentRegion: _regionCode,
+        onApply: (r) { Navigator.pop(context); _onRegionSelected(r); }),
+    );
+  }
+
+  void _showPostDialog(BuildContext context, String userId) {
+    showModalBottomSheet(
+      context:          context,
+      backgroundColor:  context.xSurface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _CreatePostSheet(
+        userId:   userId,
+        region:   _regionName,
+        onPosted: () => _loadData(refresh: true),
+      ),
+    );
+  }
+
+  void _openStoryViewer(BuildContext context, int groupIndex) {
+    if (_stories.isEmpty) return;
+    final groups = _stories.map((s) =>
+      StoryGroup.fromMap(s)).toList();
+    if (groups.isEmpty) return;
+    final safeIndex = groupIndex.clamp(0, groups.length - 1);
+    Navigator.of(context).push(PageRouteBuilder(
+      pageBuilder: (_, anim, __) => FadeTransition(
+        opacity: anim,
+        child: StoryViewerScreen(
+          groups:            groups,
+          initialGroupIndex: safeIndex,
+          currentUserId:     ref.read(currentUserProvider)?.xameId ?? '',
+        ),
+      ),
+      transitionDuration:        Duration(milliseconds: 200),
+      reverseTransitionDuration: Duration(milliseconds: 200),
+    ));
+  }
+
+  void _showPostStoryDialog(BuildContext context, String userId) {
+    showModalBottomSheet(
+      context:          context,
+      backgroundColor:  context.xSurface,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _CreateStorySheet(
+        userId:   userId,
+        onPosted: () => _loadData(refresh: true),
+      ),
+    );
+  }
+}
+
+// ── Post FAB ──────────────────────────────────────────────────────────────────
+class _PostFAB extends StatelessWidget {
+  final VoidCallback onPost;
+  _PostFAB({required this.onPost});
+
+  @override
+  Widget build(BuildContext context) => FloatingActionButton.extended(
+    onPressed: onPost,
+    backgroundColor: XameColors.primary,
+    foregroundColor: context.xBg,
+    elevation: 4,
+    icon: const Icon(Icons.add_photo_alternate_outlined),
+    label: const Text('Post',
+        style: TextStyle(fontWeight: FontWeight.w700)),
+  );
+}
+
+// ── Create Post Sheet ─────────────────────────────────────────────────────────
+class _CreatePostSheet extends StatefulWidget {
+  final String   userId, region;
+  final VoidCallback onPosted;
+  const _CreatePostSheet({
+    required this.userId, required this.region,
+    required this.onPosted});
+  @override
+  State<_CreatePostSheet> createState() => _CreatePostSheetState();
+}
+
+class _CreatePostSheetState extends State<_CreatePostSheet> {
+  final _titleCtrl   = TextEditingController();
+  final _captionCtrl = TextEditingController();
+  File?  _mediaFile;
+  String _mediaType  = 'image';
+  String _category   = 'General';
+  bool   _uploading  = false;
+  String? _error;
+  final _picker = ImagePicker();
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _captionCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickMedia() async {
+    final picked = await _picker.pickImage(
+        source: ImageSource.gallery, imageQuality: 85);
+    if (picked != null) {
+      setState(() { _mediaFile = File(picked.path); _mediaType = 'image'; });
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    final picked = await _picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 10),
+    );
+    if (picked == null) return;
+
+    File videoFile = File(picked.path);
+    final size = await videoFile.length();
+    const maxBytes = 25 * 1024 * 1024; // 25MB safe limit for discover endpoint
+
+    if (size > maxBytes) {
+      setState(() => _error = 'Compressing video...');
+      try {
+        final info = await VideoCompress.compressVideo(
+          picked.path,
+          quality: VideoQuality.MediumQuality,
+          deleteOrigin: false,
+          includeAudio: true,
+        );
+        if (info?.file != null) {
+          final compressedSize = await info!.file!.length();
+          if (compressedSize <= maxBytes) {
+            videoFile = info.file!;
+          } else {
+            setState(() => _error =
+                'Video too large (${(compressedSize/1024/1024).toStringAsFixed(1)}MB). Try a shorter clip.');
+            return;
+          }
+        }
+      } catch (e) {
+        setState(() => _error = 'Compression failed: $e');
+        return;
+      }
+    }
+    setState(() {
+      _mediaFile = videoFile;
+      _mediaType = 'video';
+      _error = null;
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_titleCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Title is required'); return;
+    }
+    if (_mediaFile == null) {
+      setState(() => _error = 'Please select media'); return;
+    }
+    setState(() { _uploading = true; _error = null; });
+    final err = await DiscoveryApiService.createPost(
+      authorId:  widget.userId,
+      title:     _titleCtrl.text.trim(),
+      caption:   _captionCtrl.text.trim(),
+      region:    widget.region,
+      category:  _category,
+      mediaFile: _mediaFile!,
+      mediaType: _mediaType,
+    );
+    if (!mounted) return;
+    setState(() => _uploading = false);
+    if (err == null) {
+      Navigator.pop(context);
+      widget.onPosted();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Post published!'),
+        backgroundColor: context.xSurface));
+    } else {
+      setState(() => _error = err);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.fromLTRB(20, 20, 20,
+        MediaQuery.of(context).viewInsets.bottom + 20),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 36, height: 4,
+        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(2))),
+      SizedBox(height: 16),
+      Text('Create Post', style: TextStyle(color: context.xText,
+          fontSize: 18, fontWeight: FontWeight.w700)),
+      SizedBox(height: 16),
+
+      // Media picker
+      GestureDetector(
+        onTap: _pickMedia,
+        child: Container(
+          height: 160,
+          decoration: BoxDecoration(
+            color: context.xBg.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.xSurface)),
+          child: _mediaFile != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(fit: StackFit.expand, children: [
+                  _mediaType == 'video'
+                    ? Container(
+                        color: context.xText,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.videocam_rounded,
+                                color: XameColors.primary, size: 48),
+                            SizedBox(height: 8),
+                            Text(
+                              _mediaFile!.path.split('/').last,
+                              style: TextStyle(
+                                  color: context.xText.withValues(alpha: 0.6), fontSize: 12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            FutureBuilder<int>(
+                              future: _mediaFile!.length(),
+                              builder: (_, snap) => Text(
+                                snap.hasData
+                                    ? '${(snap.data! / 1024 / 1024).toStringAsFixed(1)}MB'
+                                    : '',
+                                style: TextStyle(
+                                    color: context.xMuted, fontSize: 11)),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Image.file(_mediaFile!, fit: BoxFit.cover,
+                        width: double.infinity),
+                  if (_mediaType == 'video')
+                    Center(child: Icon(Icons.play_circle_outline,
+                        color: context.xText.withValues(alpha: 0.54), size: 40)),
+                ]))
+            : Column(mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                Icon(Icons.add_photo_alternate_outlined,
+                    color: context.xMuted, size: 40),
+                SizedBox(height: 8),
+                Row(mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                  GestureDetector(onTap: _pickMedia,
+                    child: Text('Photo',
+                      style: TextStyle(color: XameColors.primary,
+                          fontWeight: FontWeight.w600))),
+                  Text('  or  ',
+                      style: TextStyle(color: context.xSurface)),
+                  GestureDetector(onTap: _pickVideo,
+                    child: Text('Video',
+                      style: TextStyle(color: XameColors.primary,
+                          fontWeight: FontWeight.w600))),
+                ]),
+              ]),
+        ),
+      ),
+      SizedBox(height: 12),
+
+      // Title
+      TextField(
+        controller: _titleCtrl,
+        style: TextStyle(color: context.xText),
+        decoration: InputDecoration(
+          hintText:  'Title',
+          hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+          filled: true, fillColor: context.xBg,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                  color: XameColors.primary, width: 1))),
+      ),
+      SizedBox(height: 8),
+
+      // Caption
+      TextField(
+        controller: _captionCtrl,
+        style: TextStyle(color: context.xText),
+        maxLines: 2,
+        decoration: InputDecoration(
+          hintText:  'Caption (optional)',
+          hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+          filled: true, fillColor: context.xBg,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                  color: XameColors.primary, width: 1))),
+      ),
+      SizedBox(height: 8),
+
+      if (_error != null)
+        Padding(padding: const EdgeInsets.only(bottom: 8),
+          child: Text(_error!, style: TextStyle(
+              color: XameColors.danger, fontSize: 13))),
+
+      SizedBox(width: double.infinity, height: 50,
+        child: ElevatedButton(
+          onPressed: _uploading ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: XameColors.primary,
+            foregroundColor: context.xBg,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+            elevation: 0),
+          child: _uploading
+            ? SizedBox(width: 20, height: 20,
+                child: CircularProgressIndicator(
+                    color: context.xText, strokeWidth: 2))
+            : const Text('Publish',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        ),
+      ),
+    ]),
+  );
+}
+
+// ── Create Story Sheet ────────────────────────────────────────────────────────
+class _CreateStorySheet extends StatefulWidget {
+  final String userId;
+  final VoidCallback onPosted;
+  const _CreateStorySheet({required this.userId, required this.onPosted});
+  @override
+  State<_CreateStorySheet> createState() => _CreateStorySheetState();
+}
+
+class _CreateStorySheetState extends State<_CreateStorySheet> {
+  File?  _mediaFile;
+  String _mediaType = 'image';
+  bool   _uploading = false;
+  String? _error;
+  final _picker = ImagePicker();
+
+  Future<void> _pickMedia() async {
+    final picked = await _picker.pickImage(
+        source: ImageSource.gallery, imageQuality: 85);
+    if (picked != null)
+      setState(() { _mediaFile = File(picked.path); _mediaType = 'image'; });
+  }
+
+  Future<void> _submit() async {
+    if (_mediaFile == null) {
+      setState(() => _error = 'Please select a photo or video'); return;
+    }
+    setState(() { _uploading = true; _error = null; });
+    final err = await DiscoveryApiService.createStory(
+      authorId:  widget.userId,
+      mediaFile: _mediaFile!,
+      mediaType: _mediaType,
+    );
+    if (!mounted) return;
+    setState(() => _uploading = false);
+    if (err == null) {
+      Navigator.pop(context);
+      widget.onPosted();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Story posted! Expires in 24hrs'),
+        backgroundColor: context.xSurface));
+    } else {
+      setState(() => _error = err);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.fromLTRB(20, 20, 20,
+        MediaQuery.of(context).viewInsets.bottom + 20),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 36, height: 4,
+        decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(2))),
+      SizedBox(height: 16),
+      Text('Add to Your Story',
+        style: TextStyle(color: context.xText, fontSize: 18,
+            fontWeight: FontWeight.w700)),
+      SizedBox(height: 8),
+      Text('Stories disappear after 24 hours',
+        style: TextStyle(color: context.xMuted, fontSize: 13)),
+      SizedBox(height: 16),
+      GestureDetector(
+        onTap: _pickMedia,
+        child: Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: context.xBg.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.xSurface)),
+          child: _mediaFile != null
+            ? ClipRRect(borderRadius: BorderRadius.circular(16),
+                child: Image.file(_mediaFile!, fit: BoxFit.cover,
+                    width: double.infinity))
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                Icon(Icons.camera_alt_outlined,
+                    color: context.xMuted, size: 48),
+                SizedBox(height: 8),
+                Text('Tap to select photo',
+                  style: TextStyle(color: context.xSurface)),
+              ]),
+        ),
+      ),
+      SizedBox(height: 12),
+      if (_error != null)
+        Padding(padding: const EdgeInsets.only(bottom: 8),
+          child: Text(_error!, style: TextStyle(
+              color: XameColors.danger, fontSize: 13))),
+      SizedBox(width: double.infinity, height: 50,
+        child: ElevatedButton(
+          onPressed: _uploading ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: XameColors.secondary,
+            foregroundColor: context.xBg,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+            elevation: 0),
+          child: _uploading
+            ? SizedBox(width: 20, height: 20,
+                child: CircularProgressIndicator(
+                    color: context.xText, strokeWidth: 2))
+            : Text('Share Story',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        ),
+      ),
+    ]),
+  );
+}
+
+// ── Live count badge ──────────────────────────────────────────────────────────
+class _LiveCountBadge extends StatelessWidget {
+  final int count;
+  _LiveCountBadge({this.count = 0});
+  @override
+  Widget build(BuildContext context) {
+    if (count == 0) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: context.xDanger.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+            color: context.xDanger.withOpacity(0.3))),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 5, height: 5,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle, color: context.xDanger)),
+        SizedBox(width: 4),
+        Text('$count LIVE', style: TextStyle(
+            color: context.xDanger, fontSize: 9,
+            fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+      ]),
+    );
+  }
+}
+
+// ── Stories skeleton ──────────────────────────────────────────────────────────
+class _StoriesSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 106,
+    child: ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: 6,
+      itemBuilder: (_, __) => Container(
+        width: 72, margin: const EdgeInsets.only(right: 12),
+        child: Column(children: [
+          const ShimmerBox(width: 66, height: 66, radius: 33),
+          const SizedBox(height: 6),
+          const ShimmerBox(width: 48, height: 10, radius: 5),
+        ]),
+      ),
+    ),
+  );
+}
+
+// ── Search overlay ────────────────────────────────────────────────────────────
+class _SearchOverlay extends StatefulWidget {
+  final TextEditingController ctrl;
+  final Function(String)      onSearch;
+  final VoidCallback          onClose;
+  final List<DiscoveryItem>   feed;
+  _SearchOverlay({required this.ctrl, required this.onSearch,
+      required this.onClose, required this.feed});
+  @override
+  State<_SearchOverlay> createState() => _SearchOverlayState();
+}
+
+class _SearchOverlayState extends State<_SearchOverlay> {
+  List<DiscoveryItem> _results = [];
+
+  void _search(String q) {
+    widget.onSearch(q);
+    setState(() {
+      _results = q.isEmpty ? [] : widget.feed.where((i) =>
+        i.title.toLowerCase().contains(q.toLowerCase()) ||
+        i.category.toLowerCase().contains(q.toLowerCase())
+      ).take(6).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    color: context.xBg.withValues(alpha: 0.94),
+    child: SafeArea(child: Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Row(children: [
+          Expanded(
+            child: TextField(
+              controller: widget.ctrl,
+              autofocus:  true,
+              onChanged:  _search,
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText:  'Search people, topics, moments...',
+                hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3), fontSize: 14),
+                prefixIcon: Icon(Icons.search,
+                    color: context.xMuted, size: 20),
+                filled: true, fillColor: context.xSurface,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                        color: XameColors.primary, width: 1)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12)),
+            ),
+          ),
+          SizedBox(width: 8),
+          GestureDetector(onTap: widget.onClose,
+            child: Text('Cancel', style: TextStyle(
+                color: XameColors.primary, fontSize: 14,
+                fontWeight: FontWeight.w600))),
+        ]),
+      ),
+      Expanded(
+        child: _results.isEmpty && widget.ctrl.text.isEmpty
+          ? _SearchSuggestions(ctrl: widget.ctrl, onSearch: widget.onSearch)
+          : _results.isEmpty
+            ? Center(child: Text('No results found',
+                style: TextStyle(color: context.xSurface)))
+            : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: _results.length,
+                itemBuilder: (_, i) {
+                  final item = _results[i];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: CachedNetworkImage(
+                        imageUrl: item.mediaUrl,
+                        width: 52, height: 52, fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => Container(
+                          width: 52, height: 52,
+                          color: context.xSurface))),
+                    title: Text(item.title, style: TextStyle(
+                        color: context.xText, fontSize: 14,
+                        fontWeight: FontWeight.w600)),
+                    subtitle: Text(item.category, style: TextStyle(
+                        color: context.xMuted, fontSize: 12)),
+                    trailing: item.isLive
+                      ? LivePulseIndicator(compact: true) : null,
+                  );
+                }),
+      ),
+    ])),
+  );
+}
+
+class _SearchSuggestions extends StatelessWidget {
+  final TextEditingController ctrl;
+  final Function(String) onSearch;
+  _SearchSuggestions({required this.ctrl, required this.onSearch});
+  final _trending = const [
+    '🔥 Afrobeats','⚡ Tech Africa','🌍 Global Culture',
+    '🎬 Nollywood','🏆 Sport','🎨 Street Art',
+    '💡 Startups','🌊 Ocean Life',
+  ];
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(20),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('TRENDING SEARCHES', style: TextStyle(
+          color: context.xMuted, fontSize: 11,
+          fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+      SizedBox(height: 14),
+      Wrap(spacing: 8, runSpacing: 8,
+        children: _trending.map((t) => GestureDetector(
+          onTap: () {
+            // Strip emoji prefix — e.g. '🔥 Afrobeats' → 'Afrobeats'
+            final query = t.contains(' ') ? t.split(' ').skip(1).join(' ') : t;
+            ctrl.text = query;
+            onSearch(query);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: context.xBg.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: context.xSurface)),
+            child: Text(t, style: TextStyle(
+                color: context.xText.withValues(alpha: 0.6), fontSize: 13)),
+          ),
+        )).toList()),
+    ]),
+  );
+}
+
+// ── Filter sheet ──────────────────────────────────────────────────────────────
+class _FilterSheet extends StatefulWidget {
+  final String currentRegion;
+  final Function(DiscoveryRegion) onApply;
+  _FilterSheet({required this.currentRegion, required this.onApply});
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  late String _selected;
+  @override
+  void initState() { super.initState(); _selected = widget.currentRegion; }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 36, height: 4,
+          decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(2))),
+        SizedBox(height: 20),
+        Text('Filter by Region', style: TextStyle(
+            color: context.xText, fontSize: 18,
+            fontWeight: FontWeight.w700)),
+        SizedBox(height: 16),
+        SizedBox(height: 320,
+          child: GridView.builder(
+            gridDelegate:
+              SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3, childAspectRatio: 2.2,
+                crossAxisSpacing: 8, mainAxisSpacing: 8),
+            itemCount: discoveryRegions.length,
+            itemBuilder: (_, i) {
+              final r          = discoveryRegions[i];
+              final isSelected = r.code == _selected;
+              return GestureDetector(
+                onTap: () => setState(() => _selected = r.code),
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 150),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: isSelected
+                      ? XameColors.primary.withOpacity(0.15)
+                      : context.xBg.withOpacity(0.04),
+                    border: Border.all(
+                      color: isSelected
+                        ? XameColors.primary.withOpacity(0.5)
+                        : context.xSurface)),
+                  child: Center(child: Text('${r.flag} ${r.name}',
+                    style: TextStyle(
+                      color: isSelected
+                        ? XameColors.primary : context.xText.withValues(alpha: 0.54),
+                      fontSize: 12,
+                      fontWeight: isSelected
+                        ? FontWeight.w700 : FontWeight.normal),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis)),
+                ),
+              );
+            },
+          ),
+        ),
+        SizedBox(height: 16),
+        SizedBox(width: double.infinity, height: 50,
+          child: ElevatedButton(
+            onPressed: () {
+              final r = discoveryRegions.firstWhere(
+                  (r) => r.code == _selected);
+              widget.onApply(r);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: XameColors.primary,
+              foregroundColor: context.xBg,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              elevation: 0),
+            child: const Text('Apply Filter',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+          ),
+        ),
+      ]),
+    ),
+  );
 }
 
 // ── Detail video player ──────────────────────────────────────────────────────
@@ -532,7 +1254,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
         autoPlay: true,
         looping: true,
         fit: BoxFit.cover,
-        controlsConfiguration: const BetterPlayerControlsConfiguration(
+        controlsConfiguration: BetterPlayerControlsConfiguration(
           enableFullscreen: true,
           enableMute: true,
           enablePlayPause: true,
@@ -540,6 +1262,10 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
           enableSkips: false,
           controlBarColor: Colors.black54,
           iconsColor: Colors.white,
+          progressBarPlayedColor: XameColors.primary,
+          progressBarHandleColor: XameColors.primary,
+          progressBarBackgroundColor: Colors.white24,
+          controlsHideTime: Duration(seconds: 5),
         ),
       ),
       betterPlayerDataSource: BetterPlayerDataSource(
@@ -548,7 +1274,10 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
   }
 
   @override
-  void dispose() { _ctrl?.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) =>
@@ -559,6 +1288,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
 class _DetailScreen extends ConsumerStatefulWidget {
   final DiscoveryItem item;
   const _DetailScreen({required this.item});
+
   @override
   ConsumerState<_DetailScreen> createState() => _DetailScreenState();
 }
@@ -573,29 +1303,6 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     return '$n';
   }
 
-  void _showFullscreenImage(BuildContext context, String url) {
-    Navigator.of(context).push(PageRouteBuilder(
-      opaque: false,
-      barrierColor: Colors.black.withOpacity(0.95),
-      pageBuilder: (_, __, ___) => GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Center(
-            child: InteractiveViewer(
-              child: CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.contain,
-                errorWidget: (_, __, ___) => const Icon(
-                    Icons.broken_image, color: Colors.white54, size: 64),
-              ),
-            ),
-          ),
-        ),
-      ),
-    ));
-  }
-
   Future<void> _toggleFollow() async {
     if (_followLoading || widget.item.authorId.isEmpty) return;
     final self = ref.read(currentUserProvider);
@@ -604,28 +1311,41 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       if (_following) {
+        // Unfollow
         await dio.post('/api/remove-contact', data: {
           'userId':    self.xameId,
           'contactId': widget.item.authorId,
         });
         if (mounted) setState(() => _following = false);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Unfollowed \${widget.item.authorName}'),
-          backgroundColor: context.xSurface));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Unfollowed \${widget.item.authorName}'),
+            backgroundColor: context.xSurface,
+          ));
+        }
       } else {
+        // Follow
         await dio.post('/api/add-contact', data: {
           'userId':    self.xameId,
           'contactId': widget.item.authorId,
         });
         if (mounted) setState(() => _following = true);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Now following \${widget.item.authorName}'),
-          backgroundColor: context.xSurface));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Now following \${widget.item.authorName}'),
+            backgroundColor: context.xSurface,
+          ));
+        }
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(_following ? 'Could not unfollow' : 'Could not follow'),
-        backgroundColor: Colors.redAccent));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_following
+              ? 'Could not unfollow — try again'
+              : 'Could not follow — try again'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
     } finally {
       if (mounted) setState(() => _followLoading = false);
     }
@@ -634,135 +1354,117 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
-      backgroundColor: context.xBg,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Media ─────────────────────────────────────────────
-            Stack(children: [
-              if (item.mediaType == DiscoveryMediaType.video)
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: _DetailVideoPlayer(url: item.mediaUrl))
-              else
-                GestureDetector(
-                  onTap: () => _showFullscreenImage(context, item.mediaUrl),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: 200,
-                      maxHeight: MediaQuery.of(context).size.height * 0.75,
-                    ),
-                    child: CachedNetworkImage(
-                      imageUrl: item.mediaUrl,
-                      fit: BoxFit.fitWidth,
-                      width: double.infinity,
-                      errorWidget: (_, __, ___) =>
-                          Container(height: 300, color: context.xSurface)))),
-              Positioned(
-                top: topPad + 8, left: 12,
-                child: IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.55)),
-                    child: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.white, size: 16)),
-                  onPressed: () => Navigator.pop(context)),
-              ),
-              if (item.isLive)
-                Positioned(top: topPad + 12, right: 20,
-                    child: LivePulseIndicator()),
-            ]),
-            // ── Info ──────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: context.xPrimary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: context.xPrimary.withOpacity(0.3))),
-                      child: Text(item.category.toUpperCase(),
-                        style: TextStyle(color: context.xPrimary,
-                            fontSize: 10, fontWeight: FontWeight.w800,
-                            letterSpacing: 1))),
-                    const Spacer(),
-                    Text('\${_fmt(item.viewCount)} views',
-                      style: TextStyle(color: context.xMuted, fontSize: 12)),
-                  ]),
-                  const SizedBox(height: 12),
-                  Text(item.title,
-                    style: TextStyle(color: context.xText,
-                        fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
-                  const SizedBox(height: 8),
-                  if (item.subtitle.isNotEmpty)
-                    Text(item.subtitle,
-                      style: TextStyle(
-                          color: context.xText.withValues(alpha: 0.54),
-                          fontSize: 14, height: 1.5)),
-                  const SizedBox(height: 16),
-                  Row(children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: item.authorAvatar.isNotEmpty
-                          ? NetworkImage(item.authorAvatar) : null,
-                      backgroundColor: context.xSurface,
-                      child: item.authorAvatar.isEmpty
-                          ? Icon(Icons.person, color: context.xMuted) : null),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item.authorName,
-                          style: TextStyle(color: context.xText,
-                              fontWeight: FontWeight.w600)),
-                        Text(item.region,
-                          style: TextStyle(color: context.xMuted, fontSize: 12)),
-                      ]),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: _toggleFollow,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          gradient: LinearGradient(colors: _following
-                              ? [context.xMuted.withValues(alpha: 0.5),
-                                 context.xMuted.withValues(alpha: 0.5)]
-                              : [context.xPrimary, context.xSecondary]),
-                        ),
-                        child: _followLoading
-                            ? const SizedBox(width: 14, height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 1.5))
-                            : Text(_following ? 'Following' : 'Follow',
-                                style: TextStyle(color: context.xText,
-                                    fontSize: 13, fontWeight: FontWeight.w700)),
-                      ),
-                    ),
-                  ]),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ],
+    backgroundColor: context.xBg,
+    body: CustomScrollView(slivers: [
+      SliverAppBar(
+        expandedHeight: 360, pinned: true,
+        backgroundColor: context.xBg,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.5)),
+            child: Icon(Icons.arrow_back_ios_new,
+                color: context.xText, size: 16)),
+          onPressed: () => Navigator.pop(context)),
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(fit: StackFit.expand, children: [
+            if (item.mediaType == DiscoveryMediaType.video)
+              _DetailVideoPlayer(url: item.mediaUrl)
+            else
+              CachedNetworkImage(imageUrl: item.mediaUrl,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) =>
+                  Container(color: context.xSurface)),
+            Container(decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0xCC000000)]))),
+            if (item.isLive)
+              Positioned(top: 60, right: 20,
+                child: LivePulseIndicator()),
+          ]),
         ),
       ),
-    );
-  }
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: context.xPrimary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: context.xPrimary.withOpacity(0.3))),
+                child: Text(item.category.toUpperCase(),
+                  style: TextStyle(color: context.xPrimary,
+                      fontSize: 10, fontWeight: FontWeight.w800,
+                      letterSpacing: 1))),
+              Spacer(),
+              Text('${_fmt(item.viewCount)} views',
+                style: TextStyle(
+                    color: context.xMuted, fontSize: 12)),
+            ]),
+            SizedBox(height: 12),
+            Text(item.title, style: TextStyle(color: context.xText,
+                fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
+            SizedBox(height: 8),
+            if (item.subtitle.isNotEmpty)
+              Text(item.subtitle, style: TextStyle(
+                  color: context.xText.withValues(alpha: 0.54), fontSize: 14, height: 1.5)),
+            SizedBox(height: 16),
+            Row(children: [
+              CircleAvatar(radius: 20,
+                backgroundImage: item.authorAvatar.isNotEmpty
+                  ? NetworkImage(item.authorAvatar) : null,
+                backgroundColor: context.xSurface,
+                child: item.authorAvatar.isEmpty
+                  ? Icon(Icons.person, color: context.xMuted) : null),
+              SizedBox(width: 10),
+              Column(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                Text(item.authorName, style: TextStyle(
+                    color: context.xText, fontWeight: FontWeight.w600)),
+                Text(item.region, style: TextStyle(
+                    color: context.xMuted, fontSize: 12)),
+              ]),
+              Spacer(),
+              GestureDetector(
+                onTap: _toggleFollow,
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(colors: _following
+                        ? [context.xMuted.withValues(alpha: 0.5), context.xMuted.withValues(alpha: 0.5)]
+                        : [context.xPrimary, context.xSecondary]),
+                  ),
+                  child: _followLoading
+                      ? SizedBox(width: 14, height: 14,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 1.5, color: context.xText))
+                      : Text(_following ? 'Following' : 'Follow',
+                          style: TextStyle(color: context.xText,
+                              fontSize: 13, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ]),
+            SizedBox(height: 40),
+          ]),
+        ),
+      ),
+    ]),
+  );
 }
-
+}
 // ── Empty state ───────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final String region;
