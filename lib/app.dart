@@ -85,7 +85,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
             socket.emitHeartbeat(user.xameId);
           } else {
             // Socket dead — reconnect and restart heartbeat
-            await socket.connect(user.xameId);
+            socket.connect(user.xameId);
             socket.startHeartbeat(user.xameId);
           }
         }

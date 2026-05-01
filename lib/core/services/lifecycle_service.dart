@@ -31,14 +31,12 @@ class LifecycleService with WidgetsBindingObserver {
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
         // App going to background — maintain socket but update foreground flag
-        webrtc.isAppForeground = false;
         // Don't disconnect socket — keep user online
         debugPrint('XamePage: App backgrounded — maintaining presence');
         break;
 
       case AppLifecycleState.resumed:
         // App coming to foreground
-        webrtc.isAppForeground = true;
         if (user != null) {
           if (socket.isConnected) {
             socket.emitRequestOnlineUsers();
