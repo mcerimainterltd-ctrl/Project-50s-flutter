@@ -1297,6 +1297,28 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
   bool _following = false;
   bool _followLoading = false;
 
+  void _showFullscreenImage(BuildContext context, String url) {
+    Navigator.of(context).push(PageRouteBuilder(
+      opaque: false,
+      barrierColor: Colors.black.withOpacity(0.95),
+      pageBuilder: (_, __, ___) => GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
+            child: InteractiveViewer(
+              child: CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.contain,
+                errorWidget: (_, __, ___) => const Icon(
+                    Icons.broken_image, color: Colors.white54, size: 64)),
+            ),
+          ),
+        ),
+      ),
+    ));
+  }
+
   String _fmt(int n) {
     if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
     if (n >= 1000)    return '${(n / 1000).toStringAsFixed(1)}K';
@@ -1354,115 +1376,115 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
-    backgroundColor: context.xBg,
-    body: CustomScrollView(slivers: [
-      SliverAppBar(
-        expandedHeight: 360, pinned: true,
-        backgroundColor: context.xBg,
-        leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(shape: BoxShape.circle,
-                color: Colors.black.withOpacity(0.5)),
-            child: Icon(Icons.arrow_back_ios_new,
-                color: context.xText, size: 16)),
-          onPressed: () => Navigator.pop(context)),
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(fit: StackFit.expand, children: [
+      backgroundColor: context.xBg,
+      body: SingleChildScrollView(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+          // ── Media ────────────────────────────────────────────────
+          Stack(children: [
             if (item.mediaType == DiscoveryMediaType.video)
-              _DetailVideoPlayer(url: item.mediaUrl)
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: _DetailVideoPlayer(url: item.mediaUrl))
             else
-              CachedNetworkImage(imageUrl: item.mediaUrl,
-                fit: BoxFit.cover,
-                errorWidget: (_, __, ___) =>
-                  Container(color: context.xSurface)),
-            Container(decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Color(0xCC000000)]))),
-            if (item.isLive)
-              Positioned(top: 60, right: 20,
-                child: LivePulseIndicator()),
-          ]),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            Row(children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: context.xPrimary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: context.xPrimary.withOpacity(0.3))),
-                child: Text(item.category.toUpperCase(),
-                  style: TextStyle(color: context.xPrimary,
-                      fontSize: 10, fontWeight: FontWeight.w800,
-                      letterSpacing: 1))),
-              Spacer(),
-              Text('${_fmt(item.viewCount)} views',
-                style: TextStyle(
-                    color: context.xMuted, fontSize: 12)),
-            ]),
-            SizedBox(height: 12),
-            Text(item.title, style: TextStyle(color: context.xText,
-                fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
-            SizedBox(height: 8),
-            if (item.subtitle.isNotEmpty)
-              Text(item.subtitle, style: TextStyle(
-                  color: context.xText.withValues(alpha: 0.54), fontSize: 14, height: 1.5)),
-            SizedBox(height: 16),
-            Row(children: [
-              CircleAvatar(radius: 20,
-                backgroundImage: item.authorAvatar.isNotEmpty
-                  ? NetworkImage(item.authorAvatar) : null,
-                backgroundColor: context.xSurface,
-                child: item.authorAvatar.isEmpty
-                  ? Icon(Icons.person, color: context.xMuted) : null),
-              SizedBox(width: 10),
-              Column(crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                Text(item.authorName, style: TextStyle(
-                    color: context.xText, fontWeight: FontWeight.w600)),
-                Text(item.region, style: TextStyle(
-                    color: context.xMuted, fontSize: 12)),
-              ]),
-              Spacer(),
               GestureDetector(
-                onTap: _toggleFollow,
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                onTap: () => _showFullscreenImage(context, item.mediaUrl),
+                child: CachedNetworkImage(
+                  imageUrl: item.mediaUrl,
+                  fit: BoxFit.fitWidth,
+                  width: double.infinity,
+                  errorWidget: (_, __, ___) =>
+                      Container(height: 300, color: context.xSurface))),
+            Positioned(
+              top: topPad + 8, left: 8,
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(colors: _following
-                        ? [context.xMuted.withValues(alpha: 0.5), context.xMuted.withValues(alpha: 0.5)]
-                        : [context.xPrimary, context.xSecondary]),
-                  ),
-                  child: _followLoading
-                      ? SizedBox(width: 14, height: 14,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 1.5, color: context.xText))
-                      : Text(_following ? 'Following' : 'Follow',
-                          style: TextStyle(color: context.xText,
-                              fontSize: 13, fontWeight: FontWeight.w700)),
-                ),
-              ),
-            ]),
-            SizedBox(height: 40),
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(0.55)),
+                  child: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white, size: 16)),
+                onPressed: () => Navigator.pop(context)),
+            ),
+            if (item.isLive)
+              Positioned(top: topPad + 12, right: 20,
+                  child: LivePulseIndicator()),
           ]),
-        ),
+
+          // ── Info ─────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: context.xPrimary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: context.xPrimary.withOpacity(0.3))),
+                  child: Text(item.category.toUpperCase(),
+                    style: TextStyle(color: context.xPrimary,
+                        fontSize: 10, fontWeight: FontWeight.w800,
+                        letterSpacing: 1))),
+                const Spacer(),
+                Text('${_fmt(item.viewCount)} views',
+                  style: TextStyle(color: context.xMuted, fontSize: 12)),
+              ]),
+              const SizedBox(height: 12),
+              Text(item.title, style: TextStyle(color: context.xText,
+                  fontSize: 26, fontWeight: FontWeight.w800, height: 1.2)),
+              const SizedBox(height: 8),
+              if (item.subtitle.isNotEmpty)
+                Text(item.subtitle, style: TextStyle(
+                    color: context.xText.withValues(alpha: 0.54),
+                    fontSize: 14, height: 1.5)),
+              const SizedBox(height: 16),
+              Row(children: [
+                CircleAvatar(radius: 20,
+                  backgroundImage: item.authorAvatar.isNotEmpty
+                      ? NetworkImage(item.authorAvatar) : null,
+                  backgroundColor: context.xSurface,
+                  child: item.authorAvatar.isEmpty
+                      ? Icon(Icons.person, color: context.xMuted) : null),
+                const SizedBox(width: 10),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(item.authorName, style: TextStyle(
+                      color: context.xText, fontWeight: FontWeight.w600)),
+                  Text(item.region, style: TextStyle(
+                      color: context.xMuted, fontSize: 12)),
+                ]),
+                const Spacer(),
+                GestureDetector(
+                  onTap: _toggleFollow,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(colors: _following
+                          ? [context.xMuted.withValues(alpha: 0.5),
+                             context.xMuted.withValues(alpha: 0.5)]
+                          : [context.xPrimary, context.xSecondary]),
+                    ),
+                    child: _followLoading
+                        ? const SizedBox(width: 14, height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 1.5))
+                        : Text(_following ? 'Following' : 'Follow',
+                            style: TextStyle(color: context.xText,
+                                fontSize: 13, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 40),
+            ]),
+          ),
+        ]),
       ),
-    ]),
-  );
+    );
+  }
 }
 }
 // ── Empty state ───────────────────────────────────────────────────────────────
