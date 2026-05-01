@@ -1260,9 +1260,10 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
     // BetterPlayer as pure engine — no built-in controls UI
     _ctrl = BetterPlayerController(
       BetterPlayerConfiguration(
-        autoPlay:  true,
-        looping:   true,
-        fit:       BoxFit.contain,
+        autoPlay:     true,
+        looping:      true,
+        fit:          BoxFit.contain,
+        aspectRatio:  9/16,
         controlsConfiguration: const BetterPlayerControlsConfiguration(
           enablePlayPause:      false,
           enableMute:           false,
@@ -1357,12 +1358,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
           // ── Video surface — full size, engine only ───────────────
           if (_ctrl != null)
             SizedBox(width: sw, height: sh,
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: SizedBox(
-                  width: sw,
-                  height: sw * (16/9),
-                  child: BetterPlayer(controller: _ctrl!)))),
+              child: BetterPlayer(controller: _ctrl!)),
 
           // ── Cinematic controls overlay ───────────────────────────
           AnimatedOpacity(
