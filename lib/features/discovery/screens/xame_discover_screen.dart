@@ -1263,7 +1263,6 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
         autoPlay:  true,
         looping:   true,
         fit:       BoxFit.contain,
-        expandToFill: true,
         controlsConfiguration: const BetterPlayerControlsConfiguration(
           enablePlayPause:      false,
           enableMute:           false,
@@ -1358,7 +1357,12 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
           // ── Video surface — full size, engine only ───────────────
           if (_ctrl != null)
             SizedBox(width: sw, height: sh,
-              child: BetterPlayer(controller: _ctrl!)),
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: SizedBox(
+                  width: sw,
+                  height: sw * (16/9),
+                  child: BetterPlayer(controller: _ctrl!)))),
 
           // ── Cinematic controls overlay ───────────────────────────
           AnimatedOpacity(
