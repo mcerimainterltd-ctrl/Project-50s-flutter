@@ -105,7 +105,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   Future<void> _loadLike() async {
     try {
       final box = await Hive.openBox<bool>(_boxName);
-      if (mounted) setState(() => _liked = box.get(widget.title) ?? false);
+      if (mounted) setState(() => _liked = box.get(widget.postId.isNotEmpty ? widget.postId : widget.title) ?? false);
     } catch (_) {}
   }
 
@@ -117,7 +117,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     // Persist locally
     try {
       final box = await Hive.openBox<bool>(_boxName);
-      await box.put(widget.title, next);
+      await box.put(widget.postId.isNotEmpty ? widget.postId : widget.title, next);
     } catch (_) {}
     // Sync to server if postId available
     if (widget.postId.isNotEmpty && widget.userId.isNotEmpty) {

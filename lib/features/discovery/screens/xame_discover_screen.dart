@@ -430,11 +430,25 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               SliverToBoxAdapter(
                 child: PeoplePerspectiveCarousel(
                   users: _people,
-                  onAdd: (user) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Request sent to ${user.name}'),
-                      backgroundColor: context.xSurface,
-                      duration: Duration(seconds: 2)));
+                  onAdd: (user) async {
+                    final self = ref.read(currentUserProvider);
+                    if (self == null) return;
+                    try {
+                      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                      await dio.post('/api/add-contact', data: {
+                        'userId':    self.xameId,
+                        'contactId': user.id,
+                      });
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Now following ' + user.name),
+                        backgroundColor: context.xSurface,
+                        duration: const Duration(seconds: 2)));
+                    } catch (_) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Could not follow ' + user.name),
+                        backgroundColor: Colors.redAccent,
+                        duration: const Duration(seconds: 2)));
+                    }
                   },
                 ),
               ),
@@ -1489,6 +1503,22 @@ class _DetailScreen extends ConsumerStatefulWidget {
 class _DetailScreenState extends ConsumerState<_DetailScreen> {
   bool _following = false;
   bool _followLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFollowing();
+  }
+
+  Future<void> _checkFollowing() async {
+    final self = ref.read(currentUserProvider);
+    if (self == null) return;
+    try {
+      final contacts = ref.read(contactsProvider).valueOrNull ?? [];
+      final already = contacts.any((c) => c.id == widget.item.authorId);
+      if (mounted) setState(() => _following = already);
+    } catch (_) {}
+  }
 
   void _showFullscreenImage(BuildContext context, String url) {
     Navigator.of(context).push(PageRouteBuilder(
