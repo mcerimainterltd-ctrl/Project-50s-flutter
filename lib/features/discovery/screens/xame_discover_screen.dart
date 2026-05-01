@@ -1245,43 +1245,224 @@ class _DetailVideoPlayer extends StatefulWidget {
 
 class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
   BetterPlayerController? _ctrl;
+  bool   _showControls = true;
+  bool   _playing      = true;
+  bool   _muted        = false;
+  Duration _position   = Duration.zero;
+  Duration _duration   = Duration.zero;
+  Timer?   _hideTimer;
+  final List<StreamSubscription> _subs = [];
 
   @override
   void initState() {
     super.initState();
+    // BetterPlayer as pure engine — no built-in controls UI
     _ctrl = BetterPlayerController(
       BetterPlayerConfiguration(
-        autoPlay: true,
-        looping: true,
-        fit: BoxFit.contain,
-        controlsConfiguration: BetterPlayerControlsConfiguration(
-          enableFullscreen: true,
-          enableMute: true,
-          enablePlayPause: true,
-          enableProgressBar: true,
-          enableSkips: false,
-          controlBarColor: Colors.black54,
-          iconsColor: Colors.white,
-          progressBarPlayedColor: XameColors.primary,
-          progressBarHandleColor: XameColors.primary,
-          progressBarBackgroundColor: Colors.white24,
-          controlsHideTime: Duration(seconds: 5),
+        autoPlay:  true,
+        looping:   true,
+        fit:       BoxFit.contain,
+        expandToFill: true,
+        controlsConfiguration: const BetterPlayerControlsConfiguration(
+          enablePlayPause:      false,
+          enableMute:           false,
+          enableFullscreen:     false,
+          enableProgressBar:    false,
+          enableSkips:          false,
+          enableAudioTracks:    false,
+          enableOverflowMenu:   false,
+          enableProgressText:   false,
         ),
       ),
       betterPlayerDataSource: BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network, widget.url),
+          BetterPlayerDataSourceType.network, widget.url),
     );
+    _ctrl!.addEventsListener(_onEvent);
+    _resetHideTimer();
   }
+
+  void _onEvent(BetterPlayerEvent e) {
+    if (!mounted) return;
+    final pos = _ctrl?.videoPlayerController?.value.position;
+    final dur = _ctrl?.videoPlayerController?.value.duration;
+    setState(() {
+      if (pos != null) _position = pos;
+      if (dur != null && dur > Duration.zero) _duration = dur;
+      _playing = _ctrl?.isPlaying() ?? false;
+    });
+  }
+
+  void _resetHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _showControls = false);
+    });
+  }
+
+  void _onTap() {
+    setState(() => _showControls = !_showControls);
+    if (_showControls) _resetHideTimer();
+  }
+
+  void _togglePlay() {
+    if (_playing) {
+      _ctrl?.pause();
+    } else {
+      _ctrl?.play();
+    }
+    setState(() => _playing = !_playing);
+    _resetHideTimer();
+  }
+
+  void _toggleMute() {
+    _muted ? _ctrl?.setVolume(1.0) : _ctrl?.setVolume(0.0);
+    setState(() => _muted = !_muted);
+    _resetHideTimer();
+  }
+
+  void _seekTo(double ratio) {
+    if (_duration.inMilliseconds == 0) return;
+    final ms = (ratio * _duration.inMilliseconds).toInt();
+    _ctrl?.seekTo(Duration(milliseconds: ms));
+    _resetHideTimer();
+  }
+
+  String _fmt(Duration d) =>
+      '${d.inMinutes.toString().padLeft(2, '0')}:'
+      '${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 
   @override
   void dispose() {
+    _hideTimer?.cancel();
+    _ctrl?.removeEventsListener(_onEvent);
     _ctrl?.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) =>
-      _ctrl != null ? BetterPlayer(controller: _ctrl!) : const SizedBox.shrink();
+  Widget build(BuildContext context) {
+    final sw = MediaQuery.of(context).size.width;
+    final sh = MediaQuery.of(context).size.height;
+    final progress = _duration.inMilliseconds > 0
+        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+
+    return GestureDetector(
+      onTap: _onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: sw, height: sh,
+        child: Stack(children: [
+
+          // ── Video surface — full size, engine only ───────────────
+          if (_ctrl != null)
+            SizedBox(width: sw, height: sh,
+              child: BetterPlayer(controller: _ctrl!)),
+
+          // ── Cinematic controls overlay ───────────────────────────
+          AnimatedOpacity(
+            opacity: _showControls ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 250),
+            child: Stack(children: [
+
+              // Top gradient
+              Positioned(
+                top: 0, left: 0, right: 0,
+                child: Container(
+                  height: 120,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black.withOpacity(0.6), Colors.transparent])),
+                ),
+              ),
+
+              // Bottom gradient + controls bar
+              Positioned(
+                bottom: 0, left: 0, right: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black.withOpacity(0.8), Colors.transparent])),
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+
+                    // Progress bar
+                    SliderTheme(
+                      data: SliderThemeData(
+                        trackHeight: 2.5,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                        activeTrackColor: XameColors.primary,
+                        inactiveTrackColor: Colors.white24,
+                        thumbColor: Colors.white,
+                        overlayColor: XameColors.primary.withOpacity(0.3),
+                      ),
+                      child: Slider(
+                        value: progress.toDouble(),
+                        onChanged: _showControls ? _seekTo : null,
+                      ),
+                    ),
+
+                    // Controls row
+                    Row(children: [
+                      // Play/Pause
+                      GestureDetector(
+                        onTap: _togglePlay,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                            key: ValueKey(_playing),
+                            color: Colors.white, size: 36),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Time
+                      Text('${_fmt(_position)} / ${_fmt(_duration)}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Spacer(),
+                      // Mute
+                      GestureDetector(
+                        onTap: _toggleMute,
+                        child: Icon(
+                          _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                          color: Colors.white, size: 24),
+                      ),
+                      const SizedBox(width: 16),
+                      // Fullscreen
+                      GestureDetector(
+                        onTap: () => _ctrl?.enterFullScreen(),
+                        child: const Icon(Icons.fullscreen_rounded,
+                            color: Colors.white, size: 26),
+                      ),
+                    ]),
+                  ]),
+                ),
+              ),
+
+              // Centre play/pause on tap
+              if (!_playing)
+                Center(
+                  child: Container(
+                    width: 72, height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(0.6),
+                      border: Border.all(color: Colors.white24)),
+                    child: const Icon(Icons.play_arrow_rounded,
+                        color: Colors.white, size: 44),
+                  ),
+                ),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
 }
 
 // ── Detail screen ─────────────────────────────────────────────────────────────
