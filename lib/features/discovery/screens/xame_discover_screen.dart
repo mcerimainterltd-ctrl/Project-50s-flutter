@@ -200,6 +200,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
   late AnimationController _searchAnim;
   late Animation<double>   _searchFade;
+  StreamSubscription?      _discoverySub;
 
   @override
   void initState() {
@@ -209,6 +210,17 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     _searchFade = CurvedAnimation(
         parent: _searchAnim, curve: Curves.easeOut);
     _scrollCtrl.addListener(_onScroll);
+    // Auto-refresh feed when a followed contact posts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _discoverySub = ref.read(socketServiceProvider)
+          .newDiscoveryPost
+          .listen((authorId) {
+        if (!mounted) return;
+        final contacts = ref.read(contactsProvider).valueOrNull ?? [];
+        final isContact = contacts.any((c) => c.id == authorId);
+        if (isContact) _loadData(refresh: true);
+      });
+    });
     if (widget.authorId != null && widget.authorId!.isNotEmpty) {
       _authorFilter = widget.authorId;
     }
@@ -220,6 +232,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
   @override
   void dispose() {
+    _discoverySub?.cancel();
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
     _searchAnim.dispose();
