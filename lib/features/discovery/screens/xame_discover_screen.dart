@@ -1486,7 +1486,6 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     );
   }
 }
-}
 // ── Empty state ───────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final String region;
