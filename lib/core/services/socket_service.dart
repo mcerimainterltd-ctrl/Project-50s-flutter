@@ -147,13 +147,10 @@ class SocketService {
   }
 
   void _scheduleReconnect(String xameId, {bool stealth = false}) {
-    if (_reconnectAttempts >= AppConstants.maxReconnectAttempts) {
-      _connectionStateCtrl.add(SocketState.failed);
-      return;
-    }
+    // Never give up reconnecting — cap delay at 30s
     final delay = min(
       AppConstants.reconnectBaseDelayMs * pow(1.5, _reconnectAttempts),
-      15000).toInt();
+      30000).toInt();
     _reconnectAttempts++;
     debugPrint('🔄 Reconnecting in ${delay}ms (attempt $_reconnectAttempts)');
     Future.delayed(Duration(milliseconds: delay),

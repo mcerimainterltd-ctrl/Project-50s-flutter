@@ -48,6 +48,8 @@ class SocketKeepaliveService : Service() {
     }
 
     private fun pingFlutter() {
+        // Renew wakelock to prevent expiry
+        if (wakeLock?.isHeld == false) acquireWakeLock()
         try {
             val engine: FlutterEngine? = FlutterEngineCache.getInstance().get("main")
             engine?.dartExecutor?.binaryMessenger?.let { messenger ->
@@ -97,7 +99,7 @@ class SocketKeepaliveService : Service() {
         wakeLock = pm.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "xamepage:SocketKeepalive"
-        ).apply { acquire(10 * 60 * 1000L) } // 10 min max
+        ).apply { acquire(12 * 60 * 60 * 1000L) } // 12 hours — renewed by heartbeat
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
