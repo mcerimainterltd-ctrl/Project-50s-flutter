@@ -88,12 +88,20 @@ const _kCountries = [
 
 // —— SCREEN ————————————————————————————————————————————————————————————————————
 
+class XameContact {
+  final String id, name;
+  final String? profilePic;
+  const XameContact({required this.id, required this.name, this.profilePic});
+}
+
 class PhoneScreen extends StatefulWidget {
   final String userId, serverUrl;
+  final List<XameContact> xameContacts;
   const PhoneScreen({
     super.key,
     required this.userId,
     required this.serverUrl,
+    this.xameContacts = const [],
   });
   @override State<PhoneScreen> createState() => _PhoneScreenState();
 }
