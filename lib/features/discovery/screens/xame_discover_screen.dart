@@ -1466,22 +1466,28 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(children: [
-        // Media fills full screen
-        SizedBox(
-          width: screenW, height: screenH,
-          child: isVideo
-              ? _DetailVideoPlayer(url: item.mediaUrl)
-              : GestureDetector(
-                  onTap: () => _showFullscreenImage(context, item.mediaUrl),
-                  child: InteractiveViewer(
-                    child: CachedNetworkImage(
-                      imageUrl: item.mediaUrl,
-                      fit: BoxFit.contain,
-                      width: screenW, height: screenH,
-                      errorWidget: (_, __, ___) =>
-                          const Icon(Icons.broken_image,
-                              color: Colors.white54, size: 64))))),
-        // Info overlay at bottom
+        // ── Media — full width, natural height, centered ────────────
+        Positioned.fill(
+          child: Center(
+            child: isVideo
+                ? SizedBox(
+                    width: screenW,
+                    height: screenH,
+                    child: _DetailVideoPlayer(url: item.mediaUrl))
+                : InteractiveViewer(
+                    minScale: 1.0,
+                    maxScale: 4.0,
+                    child: GestureDetector(
+                      onTap: () => _showFullscreenImage(context, item.mediaUrl),
+                      child: CachedNetworkImage(
+                        imageUrl: item.mediaUrl,
+                        fit: BoxFit.contain,
+                        width: screenW,
+                        errorWidget: (_, __, ___) => const Icon(
+                            Icons.broken_image,
+                            color: Colors.white54, size: 64))))),
+        ),
+        // ── Info overlay at bottom ───────────────────────────────────
         Positioned(left: 0, right: 0, bottom: 0, child: infoPanel),
         backBtn,
         if (item.isLive)
