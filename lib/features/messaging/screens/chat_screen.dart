@@ -1,4 +1,5 @@
 import 'dart:io' as dart_io;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -902,6 +903,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Navigator.pop(sheetCtx);
               _enterSelectMode(msg.id);
               _showForwardPicker(messages);
+            }),
+        if (msg.text.isNotEmpty)
+          ListTile(
+            leading: Icon(Icons.email_outlined, color: outerContext.xMuted),
+            title: Text('Send via Email', style: TextStyle(color: outerContext.xText)),
+            onTap: () {
+              Navigator.pop(sheetCtx);
+              launchUrl(
+                Uri(
+                  scheme: 'mailto',
+                  queryParameters: {
+                    'subject': 'Message from XamePage',
+                    'body': msg.text,
+                  },
+                ),
+                mode: LaunchMode.externalApplication,
+              );
             }),
         ListTile(leading: Icon(Icons.delete_outline, color: outerContext.xDanger),
             title: Text('Delete', style: TextStyle(color: outerContext.xDanger)),
