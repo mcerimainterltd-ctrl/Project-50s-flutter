@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/socket_service.dart';
 import '../../../features/contacts/providers/contacts_provider.dart';
 import '../../../core/services/cache_service.dart';
 import '../../../core/services/cache_service.dart';
@@ -124,6 +125,7 @@ class DiscoveryApiService {
   static Future<bool> deletePost(String postId, String userId) async {
     try {
       final res = await _dio.delete('/api/discover/post/$postId',
+          queryParameters: {'userId': userId},
           data: {'userId': userId});
       return res.data['success'] == true;
     } catch (_) { return false; }
