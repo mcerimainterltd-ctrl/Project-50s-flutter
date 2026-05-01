@@ -1404,7 +1404,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                       ),
                       child: Slider(
                         value: progress.toDouble(),
-                        onChanged: _showControls ? _seekTo : null,
+                        onChanged: _seekTo,
                       ),
                     ),
 
@@ -1436,7 +1436,10 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                       const SizedBox(width: 16),
                       // Fullscreen
                       GestureDetector(
-                        onTap: () => _ctrl?.enterFullScreen(),
+                        onTap: () {
+                          SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+                          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                        },
                         child: const Icon(Icons.fullscreen_rounded,
                             color: Colors.white, size: 26),
                       ),
