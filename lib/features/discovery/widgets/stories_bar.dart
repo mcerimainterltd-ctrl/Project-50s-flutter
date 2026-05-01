@@ -97,14 +97,7 @@ class _StoryRingState extends State<_StoryRing>
                 ),
               ),
             ),
-            if (!widget.hasSeen && !widget.isFirst)
-              Positioned(bottom: 2, right: 2,
-                child: Container(width: 12, height: 12,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: XameColors.primary,
-                    border: Border.all(
-                        color: XameColors.darkBg, width: 2)))),
+
             if (widget.isFirst)
               Positioned(bottom: 0, right: 0,
                 child: Container(width: 20, height: 20,
