@@ -1072,10 +1072,10 @@ class _ContactTile extends StatelessWidget {
           margin: const EdgeInsets.only(right: 8),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: XameColors.darkBg.withOpacity(0.05),
-            border: Border.all(color: XameColors.darkSurface)),
+            color: XameColors.primary.withOpacity(0.1),
+            border: Border.all(color: XameColors.primary.withOpacity(0.3))),
           child: Icon(Icons.message_outlined,
-              color: XameColors.darkBg.withValues(alpha: 0.54), size: 16))),
+              color: XameColors.primary, size: 16))),
       // Call
       GestureDetector(
         onTap: onCall,
