@@ -120,6 +120,14 @@ class DiscoveryApiService {
     } catch (_) {}
   }
 
+  static Future<bool> deletePost(String postId, String userId) async {
+    try {
+      final res = await _dio.delete('/api/discover/post/$postId',
+          data: {'userId': userId});
+      return res.data['success'] == true;
+    } catch (_) { return false; }
+  }
+
   static Future<String?> createPost({
     required String authorId,
     required String title,
@@ -1637,6 +1645,9 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
       ]),
     );
 
+    final self = ref.read(currentUserProvider);
+    final isOwner = self?.xameId == item.authorId;
+
     final backBtn = Positioned(
       top: topPad + 4, left: 4,
       child: IconButton(
@@ -1677,7 +1688,55 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         backBtn,
         if (item.isLive)
           Positioned(top: topPad + 12, right: 20, child: LivePulseIndicator()),
+        // Delete button — owner only
+        if (isOwner)
+          Positioned(
+            top: topPad + 8, right: 8,
+            child: GestureDetector(
+              onTap: () => _confirmDelete(context, item, self!.xameId),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withOpacity(0.55)),
+                child: const Icon(Icons.delete_outline_rounded,
+                    color: Colors.redAccent, size: 22)),
+            ),
+          ),
       ]),
+    );
+  }
+
+  void _confirmDelete(BuildContext ctx, DiscoveryItem item, String userId) {
+    showDialog(
+      context: ctx,
+      builder: (_) => AlertDialog(
+        backgroundColor: ctx.xSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Delete Post',
+            style: TextStyle(color: ctx.xText, fontWeight: FontWeight.w700)),
+        content: Text('Remove this post permanently?',
+            style: TextStyle(color: ctx.xMuted)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: ctx.xMuted))),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ok = await DiscoveryApiService.deletePost(item.id, userId);
+              if (ok && mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: const Text('Post deleted'),
+                  backgroundColor: ctx.xSurface));
+              }
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: Colors.redAccent,
+                    fontWeight: FontWeight.w700))),
+        ],
+      ),
     );
   }
 }
