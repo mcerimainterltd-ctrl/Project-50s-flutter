@@ -1246,10 +1246,9 @@ class _DetailVideoPlayer extends StatefulWidget {
 
 class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
   BetterPlayerController? _ctrl;
-  bool   _showControls  = true;
-  bool   _playing       = true;
-  bool   _muted         = false;
-  bool   _isFullscreen  = false;
+  bool   _showControls = true;
+  bool   _playing      = true;
+  bool   _muted        = false;
   Duration _position   = Duration.zero;
   Duration _duration   = Duration.zero;
   Timer?   _hideTimer;
@@ -1261,9 +1260,10 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
     // BetterPlayer as pure engine — no built-in controls UI
     _ctrl = BetterPlayerController(
       BetterPlayerConfiguration(
-        autoPlay:  true,
-        looping:   true,
-        fit:       BoxFit.contain,
+        autoPlay:     true,
+        looping:      true,
+        fit:          BoxFit.contain,
+        aspectRatio:  9/16,
         controlsConfiguration: const BetterPlayerControlsConfiguration(
           enablePlayPause:      false,
           enableMute:           false,
@@ -1315,25 +1315,6 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
     _resetHideTimer();
   }
 
-  void _restorePortrait() {
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  }
-
-  void _toggleFullscreen() {
-    setState(() => _isFullscreen = !_isFullscreen);
-    if (_isFullscreen) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    } else {
-      _restorePortrait();
-    }
-    _resetHideTimer();
-  }
-
   void _toggleMute() {
     _muted ? _ctrl?.setVolume(1.0) : _ctrl?.setVolume(0.0);
     setState(() => _muted = !_muted);
@@ -1356,7 +1337,6 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
     _hideTimer?.cancel();
     _ctrl?.removeEventsListener(_onEvent);
     _ctrl?.dispose();
-    _restorePortrait();
     super.dispose();
   }
 
@@ -1456,12 +1436,9 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                       const SizedBox(width: 16),
                       // Fullscreen
                       GestureDetector(
-                        onTap: _toggleFullscreen,
-                        child: Icon(
-                          _isFullscreen
-                              ? Icons.fullscreen_exit_rounded
-                              : Icons.fullscreen_rounded,
-                          color: Colors.white, size: 26),
+                        onTap: () => _ctrl?.enterFullScreen(),
+                        child: const Icon(Icons.fullscreen_rounded,
+                            color: Colors.white, size: 26),
                       ),
                     ]),
                   ]),
