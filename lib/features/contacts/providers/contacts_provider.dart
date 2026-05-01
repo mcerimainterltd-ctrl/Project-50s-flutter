@@ -86,10 +86,12 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
           .where((id) => id.isNotEmpty)
           .toSet()
           .intersection(contactIds);
+      // Only set dots — never clear via seed (cleared when user views stories)
+      if (authorsWithUnseen.isEmpty) return;
       state = AsyncData(current.map((c) =>
         authorsWithUnseen.contains(c.id)
           ? c.copyWith(hasNewDiscoveryPost: true)
-          : c.copyWith(hasNewDiscoveryPost: false)
+          : c
       ).toList());
     } catch (e) {
       debugPrint('seedDiscoveryDots error: \$e');
@@ -235,7 +237,7 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
 
     // missed call count
     // Seed discovery dots once on startup
-    Future.delayed(const Duration(seconds: 2), () => seedDiscoveryDots());
+    Future.delayed(const Duration(seconds: 5), () => seedDiscoveryDots());
 
     _subs.add(socket.newDiscoveryPost.listen((authorId) {
       final current = state.valueOrNull ?? [];
