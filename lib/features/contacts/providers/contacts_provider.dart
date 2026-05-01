@@ -76,14 +76,20 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
       final current = state.valueOrNull ?? [];
       if (current.isEmpty) return;
       final contactIds = current.map((c) => c.id).toSet();
-      final feed = await DiscoveryApiService.fetchFeed(limit: 50);
-      final authorsWithPosts = feed.map((i) => i.authorId).toSet()
+      // Use stories endpoint — hasSeen is tracked per user
+      final userId = ref.read(currentUserProvider)?.xameId ?? '';
+      final stories = await DiscoveryApiService.fetchStories(userId);
+      // Authors with at least one unseen story
+      final authorsWithUnseen = stories
+          .where((s) => !(s['hasSeen'] as bool? ?? false))
+          .map((s) => s['authorId'] as String? ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet()
           .intersection(contactIds);
-      if (authorsWithPosts.isEmpty) return;
       state = AsyncData(current.map((c) =>
-        authorsWithPosts.contains(c.id)
+        authorsWithUnseen.contains(c.id)
           ? c.copyWith(hasNewDiscoveryPost: true)
-          : c
+          : c.copyWith(hasNewDiscoveryPost: false)
       ).toList());
     } catch (e) {
       debugPrint('seedDiscoveryDots error: \$e');
