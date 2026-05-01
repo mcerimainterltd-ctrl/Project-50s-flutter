@@ -1253,7 +1253,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
       BetterPlayerConfiguration(
         autoPlay: true,
         looping: true,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         controlsConfiguration: BetterPlayerControlsConfiguration(
           enableFullscreen: true,
           enableMute: true,
