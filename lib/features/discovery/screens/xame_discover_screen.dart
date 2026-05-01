@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../features/contacts/providers/contacts_provider.dart';
 import '../../../core/services/cache_service.dart';
 import '../../../core/services/cache_service.dart';
 import '../widgets/discovery_cards.dart';
