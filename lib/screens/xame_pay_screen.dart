@@ -2609,7 +2609,7 @@ class _HistoryTab extends StatelessWidget {
                         fontSize: 11, fontWeight: FontWeight.w500)),
               ])),
               const SizedBox(width: 8),
-              Text('\${cr ? '+' : '-'}\${fmt(tx.amount)}',
+              Text('${cr ? "+" : "-"}${fmt(tx.amount)}',
                   style: TextStyle(
                       color: cr ? _kTeal : const Color(0xFFFF6464),
                       fontSize: 15, fontWeight: FontWeight.w700)),
