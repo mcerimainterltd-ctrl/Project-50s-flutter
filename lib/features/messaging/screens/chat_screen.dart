@@ -339,15 +339,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Text(contact?.name ?? widget.userId,
               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
               maxLines: 1, overflow: TextOverflow.ellipsis),
-            GestureDetector(
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: widget.userId));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Xame-ID copied!'), duration: Duration(seconds: 2)));
-              },
-              child: Text(widget.userId,
-                style: const TextStyle(color: XameColors.accent, fontSize: 11)),
-            ),
             Text(
               isTyping ? 'typing...'
                 : contact?.isOnline == true ? 'online' : 'offline',
