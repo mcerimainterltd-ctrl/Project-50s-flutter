@@ -387,14 +387,12 @@ class _XamePayScreenState extends State<XamePayScreen>
   Future<void> _loadPrefs() async {
     final p = await SharedPreferences.getInstance();
     setState(() {
-      _currency     = p.getString('wallet:currency')     ?? 'NGN';
       _dispCurrency = p.getString('wallet:dispCurrency') ?? _currency;
     });
   }
 
   Future<void> _savePrefs() async {
     final p = await SharedPreferences.getInstance();
-    await p.setString('wallet:currency',     _currency);
     await p.setString('wallet:dispCurrency', _dispCurrency);
   }
 
@@ -486,7 +484,7 @@ class _XamePayScreenState extends State<XamePayScreen>
             onPressed: _goBack,
           ),
           title: Row(mainAxisSize: MainAxisSize.min, children: [
-            Text(_ri.flag, style: const TextStyle(fontSize: 18)),
+            Text(_region(_dispCurrency).flag, style: const TextStyle(fontSize: 18)),
             const SizedBox(width: 6),
             const Text('XamePay',
                 style: TextStyle(color: Colors.white,
@@ -679,7 +677,7 @@ class _XamePayScreenState extends State<XamePayScreen>
   // ── SETTINGS ──────────────────────────────────────────────────────────────
 
   void _showSettings() {
-    String tc = _currency, td = _dispCurrency;
+    String tc = _dispCurrency, td = _dispCurrency;
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: _kCard,
       shape: const RoundedRectangleBorder(
