@@ -1149,8 +1149,18 @@ class _SendTabState extends State<_SendTab> {
                     ? _kTeal : const Color(0xFFF0A500),
                 fontSize: 13)),
           ),
+        const SizedBox(height: 16),
+        const Text('Amount',
+            style: TextStyle(color: _kMuted,
+                fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
-        const SizedBox(height: 12),
+        _xf(_amtCtrl, 'Enter amount',
+            const TextInputType.numberWithOptions(decimal: true),
+            (v) => _amount = double.tryParse(v) ?? 0),
+        const SizedBox(height: 6),
+        Text('Balance: \${widget.fmt(widget.balance)}',
+            style: const TextStyle(color: _kMuted, fontSize: 12)),
+        const SizedBox(height: 16),
         SizedBox(width: double.infinity,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
@@ -2449,6 +2459,112 @@ class _HistoryTab extends StatelessWidget {
   final String Function(double) fmt;
   const _HistoryTab({required this.txs, required this.fmt});
 
+  String _fmtTs(String ts) {
+    try {
+      final dt = DateTime.parse(ts).toLocal();
+      final months = ['Jan','Feb','Mar','Apr','May','Jun',
+                      'Jul','Aug','Sep','Oct','Nov','Dec'];
+      final h = dt.hour.toString().padLeft(2,'0');
+      final m = dt.minute.toString().padLeft(2,'0');
+      return '\${months[dt.month-1]} \${dt.day}, \${dt.year} • \$h:\$m';
+    } catch (_) { return ts.length > 10 ? ts.substring(0,10) : ts; }
+  }
+
+  void _showReceipt(BuildContext context, WalletTx tx) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _kCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 20),
+          Container(width: 56, height: 56,
+            decoration: BoxDecoration(
+              color: tx.type == 'credit'
+                  ? const Color(0x1A00B0A0) : const Color(0x1AFF6464),
+              shape: BoxShape.circle),
+            child: Center(child: Text(tx.icon,
+                style: const TextStyle(fontSize: 26)))),
+          const SizedBox(height: 12),
+          Text(fmt(tx.amount),
+              style: TextStyle(
+                  color: tx.type == 'credit' ? _kTeal : const Color(0xFFFF6464),
+                  fontSize: 32, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(tx.status,
+              style: TextStyle(
+                  color: tx.status == 'Completed' ? _kTeal : const Color(0xFFF0A500),
+                  fontSize: 14, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 20),
+          const Divider(color: Colors.white12),
+          const SizedBox(height: 12),
+          _receiptRow('Description', tx.label),
+          _receiptRow('Date & Time', _fmtTs(tx.ts)),
+          _receiptRow('Reference', tx.id),
+          _receiptRow('Status', tx.status),
+          const SizedBox(height: 20),
+          const Divider(color: Colors.white12),
+          const SizedBox(height: 16),
+          const Text('Share Receipt',
+              style: TextStyle(color: Colors.white,
+                  fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white24),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Share as image — coming soon')));
+              },
+              icon: const Icon(Icons.image_outlined, size: 18),
+              label: const Text('Image', style: TextStyle(fontSize: 13)))),
+            const SizedBox(width: 12),
+            Expanded(child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                  foregroundColor: _kTeal,
+                  side: const BorderSide(color: Color(0x4D00B0A0)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Share as PDF — coming soon')));
+              },
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              label: const Text('PDF', style: TextStyle(fontSize: 13)))),
+          ]),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+  }
+
+  Widget _receiptRow(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(width: 110,
+          child: Text(label, style: const TextStyle(
+              color: _kMuted, fontSize: 13))),
+      Expanded(child: Text(value, style: const TextStyle(
+          color: Colors.white, fontSize: 13,
+          fontWeight: FontWeight.w500),
+          textAlign: TextAlign.right)),
+    ]),
+  );
+
   @override
   Widget build(BuildContext context) {
     if (txs.isEmpty) return const Center(
@@ -2465,28 +2581,40 @@ class _HistoryTab extends StatelessWidget {
           const Divider(color: Colors.white10, height: 1),
       itemBuilder: (_, i) {
         final tx = txs[i]; final cr = tx.type == 'credit';
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(children: [
-            Container(width: 42, height: 42,
-              decoration: BoxDecoration(
-                color: cr ? const Color(0x1A00B0A0) : const Color(0x1AFF6464),
-                shape: BoxShape.circle),
-              child: Center(child: Text(tx.icon,
-                  style: const TextStyle(fontSize: 18)))),
-            const SizedBox(width: 14),
-            Expanded(child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(tx.label, style: const TextStyle(color: Colors.white,
-                  fontSize: 14, fontWeight: FontWeight.w600)),
-              Text('${tx.ts.substring(0, 10)} • ${tx.status}',
-                  style: const TextStyle(color: _kMuted, fontSize: 11)),
-            ])),
-            Text('${cr ? '+' : '-'}${fmt(tx.amount)}',
-                style: TextStyle(
-                    color: cr ? _kTeal : const Color(0xFFFF6464),
-                    fontSize: 15, fontWeight: FontWeight.w700)),
-          ]),
+        return InkWell(
+          onTap: () => _showReceipt(context, tx),
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Row(children: [
+              Container(width: 42, height: 42,
+                decoration: BoxDecoration(
+                  color: cr ? const Color(0x1A00B0A0) : const Color(0x1AFF6464),
+                  shape: BoxShape.circle),
+                child: Center(child: Text(tx.icon,
+                    style: const TextStyle(fontSize: 18)))),
+              const SizedBox(width: 14),
+              Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(tx.label, style: const TextStyle(color: Colors.white,
+                    fontSize: 14, fontWeight: FontWeight.w600),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(_fmtTs(tx.ts),
+                    style: const TextStyle(color: _kMuted, fontSize: 11)),
+                Text(tx.status,
+                    style: TextStyle(
+                        color: tx.status == 'Completed'
+                            ? _kTeal : const Color(0xFFF0A500),
+                        fontSize: 11, fontWeight: FontWeight.w500)),
+              ])),
+              const SizedBox(width: 8),
+              Text('\${cr ? '+' : '-'}\${fmt(tx.amount)}',
+                  style: TextStyle(
+                      color: cr ? _kTeal : const Color(0xFFFF6464),
+                      fontSize: 15, fontWeight: FontWeight.w700)),
+            ]),
+          ),
         );
       },
     );
