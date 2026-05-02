@@ -618,24 +618,31 @@ class _XamePayScreenState extends State<XamePayScreen>
                 style: TextStyle(color: Colors.white,
                     fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 20),
-            ...methods.map((m) => Padding(
+            ...methods.asMap().entries.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (e.key == 3) {
+                    _tab.animateTo(3);
+                  } else {
+                    _snack('Coming soon');
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(color: _kCard,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.white12)),
                   child: Row(children: [
-                    Text(m[0], style: const TextStyle(fontSize: 28)),
+                    Text(e.value[0], style: const TextStyle(fontSize: 28)),
                     const SizedBox(width: 16),
                     Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text(m[1], style: const TextStyle(color: Colors.white,
+                      Text(e.value[1], style: const TextStyle(color: Colors.white,
                           fontSize: 15, fontWeight: FontWeight.w700)),
-                      Text(m[2], style: const TextStyle(
+                      Text(e.value[2], style: const TextStyle(
                           color: _kMuted, fontSize: 12)),
                     ])),
                     const Icon(Icons.chevron_right, color: _kMuted),
@@ -688,7 +695,13 @@ class _XamePayScreenState extends State<XamePayScreen>
                             color: Colors.white, fontSize: 14))),
                   ]),
                 )).toList(),
-                onChanged: (v) { if (v != null) ss(() => tc = v); },
+                onChanged: (v) {
+                  if (v != null) {
+                    ss(() => tc = v);
+                    setState(() { _currency = v; _dispCurrency = v; });
+                    _FxService.load(v);
+                  }
+                },
               ),
               const SizedBox(height: 20),
               _sLabel('💱 Display Balance In'),
@@ -2466,7 +2479,7 @@ class _HistoryTab extends StatelessWidget {
                       'Jul','Aug','Sep','Oct','Nov','Dec'];
       final h = dt.hour.toString().padLeft(2,'0');
       final m = dt.minute.toString().padLeft(2,'0');
-      return '\${months[dt.month-1]} \${dt.day}, \${dt.year} • \$h:\$m';
+      return '${months[dt.month-1]} ${dt.day}, ${dt.year} • $h:$m';
     } catch (_) { return ts.length > 10 ? ts.substring(0,10) : ts; }
   }
 
