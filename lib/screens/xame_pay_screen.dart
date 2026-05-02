@@ -715,7 +715,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                 )).toList(),
                 onChanged: (v) {
                   if (v != null) {
-                    ss(() => tc = v);
+                    ss(() { tc = v; td = v; });
                     _FxService.load(_currency).then((_) {
                       ss(() {});
                       setState(() { _dispCurrency = v; });
@@ -747,7 +747,15 @@ class _XamePayScreenState extends State<XamePayScreen>
                             color: Colors.white, fontSize: 14))),
                   ]),
                 )).toList(),
-                onChanged: (v) { if (v != null) ss(() => td = v); },
+                onChanged: (v) {
+                  if (v != null) {
+                    ss(() => td = v);
+                    _FxService.load(_currency).then((_) {
+                      ss(() {});
+                      setState(() { _dispCurrency = v; });
+                    });
+                  }
+                },
               ),
               if (tc != td)
                 FutureBuilder(
