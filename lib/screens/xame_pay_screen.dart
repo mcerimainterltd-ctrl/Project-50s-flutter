@@ -621,22 +621,22 @@ class _XamePayScreenState extends State<XamePayScreen>
             ...methods.asMap().entries.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () {
                   if (e.key == 3) {
                     Navigator.pop(context);
                     _tab.animateTo(3);
                   } else {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${e.value[1]} — coming soon'),
-                          behavior: SnackBarBehavior.floating));
+                    _snack('${e.value[1]} — coming soon');
                   }
                 },
                 child: Container(
                   padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(color: _kCard,
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF1E2D3D),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white12)),
+                      border: Border.all(color: Colors.white24)),
                   child: Row(children: [
                     Text(e.value[0], style: const TextStyle(fontSize: 28)),
                     const SizedBox(width: 16),
