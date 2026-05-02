@@ -17,14 +17,21 @@ const _kMuted = Color(0xFF7A9BB5);
 class WalletTx {
   final String id, label, icon, type, status, ts;
   final double amount;
+  final double? sentAmount, recvAmount, fxRate;
+  final String? sentCurrency, recvCurrency;
   WalletTx.fromJson(Map<String, dynamic> j)
-      : id     = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
-        label  = j['label']  ?? '',
-        icon   = j['icon']   ?? '💳',
-        type   = j['type']   ?? 'debit',
-        status = j['status'] ?? 'Completed',
-        ts     = j['ts']     ?? DateTime.now().toIso8601String(),
-        amount = (j['amount'] as num?)?.toDouble() ?? 0;
+      : id           = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
+        label        = j['label']  ?? '',
+        icon         = j['icon']   ?? '💳',
+        type         = j['type']   ?? 'debit',
+        status       = j['status'] ?? 'Completed',
+        ts           = j['ts']     ?? DateTime.now().toIso8601String(),
+        amount       = (j['amount']     as num?)?.toDouble() ?? 0,
+        sentAmount   = (j['sentAmount'] as num?)?.toDouble(),
+        recvAmount   = (j['recvAmount'] as num?)?.toDouble(),
+        fxRate       = (j['fxRate']     as num?)?.toDouble(),
+        sentCurrency = j['sentCurrency']?.toString(),
+        recvCurrency = j['recvCurrency']?.toString();
 }
 
 class BankItem {
@@ -2524,6 +2531,13 @@ class _HistoryTab extends StatelessWidget {
           const SizedBox(height: 12),
           _receiptRow('Description', tx.label),
           _receiptRow('Date & Time', _fmtTs(tx.ts)),
+          if (tx.sentAmount != null && tx.sentCurrency != null &&
+              tx.recvAmount != null && tx.recvCurrency != null &&
+              tx.sentCurrency != tx.recvCurrency) ...[
+            _receiptRow('Sent', '${tx.sentCurrency} ${tx.sentAmount!.toStringAsFixed(2)}'),
+            _receiptRow('Received', '${tx.recvCurrency} ${tx.recvAmount!.toStringAsFixed(2)}'),
+            _receiptRow('FX Rate', '1 ${tx.sentCurrency} = ${tx.fxRate?.toStringAsFixed(4)} ${tx.recvCurrency}'),
+          ],
           _receiptRow('Reference', tx.id),
           _receiptRow('Status', tx.status),
           const SizedBox(height: 20),
@@ -2618,6 +2632,10 @@ class _HistoryTab extends StatelessWidget {
                     fontSize: 14, fontWeight: FontWeight.w600),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
+                if (tx.sentCurrency != null && tx.recvCurrency != null &&
+                    tx.sentCurrency != tx.recvCurrency)
+                  Text('${tx.sentCurrency} ${tx.sentAmount?.toStringAsFixed(2)} → ${tx.recvCurrency} ${tx.recvAmount?.toStringAsFixed(2)}',
+                      style: const TextStyle(color: _kTeal, fontSize: 11)),
                 Text(_fmtTs(tx.ts),
                     style: const TextStyle(color: _kMuted, fontSize: 11)),
                 Text(tx.status,
