@@ -718,9 +718,9 @@ class _XamePayScreenState extends State<XamePayScreen>
                 onChanged: (v) {
                   if (v != null) {
                     ss(() => tc = v);
-                    _FxService.load(v).then((_) {
+                    _FxService.load(_currency).then((_) {
                       ss(() {});
-                      setState(() { _currency = v; _dispCurrency = v; });
+                      setState(() { _dispCurrency = v; });
                     });
                   }
                 },
@@ -782,7 +782,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                       borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () async {
-                  setState(() { _currency = tc; _dispCurrency = td; });
+                  setState(() { _dispCurrency = td; });
                   await _savePrefs();
                   try {
                     await http.post(
