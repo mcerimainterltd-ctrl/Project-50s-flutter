@@ -622,11 +622,14 @@ class _XamePayScreenState extends State<XamePayScreen>
               padding: const EdgeInsets.only(bottom: 12),
               child: GestureDetector(
                 onTap: () {
-                  Navigator.pop(context);
                   if (e.key == 3) {
+                    Navigator.pop(context);
                     _tab.animateTo(3);
                   } else {
-                    _snack('Coming soon');
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${e.value[1]} — coming soon'),
+                          behavior: SnackBarBehavior.floating));
                   }
                 },
                 child: Container(
@@ -698,8 +701,10 @@ class _XamePayScreenState extends State<XamePayScreen>
                 onChanged: (v) {
                   if (v != null) {
                     ss(() => tc = v);
-                    setState(() { _currency = v; _dispCurrency = v; });
-                    _FxService.load(v);
+                    _FxService.load(v).then((_) {
+                      ss(() {});
+                      setState(() { _currency = v; _dispCurrency = v; });
+                    });
                   }
                 },
               ),
