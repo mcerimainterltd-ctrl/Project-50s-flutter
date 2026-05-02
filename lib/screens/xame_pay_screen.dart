@@ -446,11 +446,21 @@ class _XamePayScreenState extends State<XamePayScreen>
     return '${buf.toString().split('').reversed.join()}.${parts[1]}';
   }
 
+  // When dispCurrency differs, main shows converted amount, small line shows original
+  double get _displayBalance {
+    if (_dispCurrency == _currency) return _balance;
+    return _FxService.convert(_balance, _currency, _dispCurrency) ?? _balance;
+  }
+
+  String get _displaySymbol =>
+      _region(_dispCurrency == _currency ? _currency : _dispCurrency).symbol;
+
+  String get _displayCurrency =>
+      _dispCurrency == _currency ? _currency : _dispCurrency;
+
   String _convLine() {
     if (_dispCurrency == _currency) return '';
-    final v = _FxService.convert(_balance, _currency, _dispCurrency);
-    if (v == null) return '';
-    return '≈ ${_region(_dispCurrency).symbol}${_fmtN(v)} $_dispCurrency';
+    return '≈ ${_region(_currency).symbol}${_fmtN(_balance)} $_currency';
   }
 
   void _snack(String m) {
@@ -543,14 +553,14 @@ class _XamePayScreenState extends State<XamePayScreen>
             style: TextStyle(color: Color(0xCCFFFFFF),
                 fontSize: 12, letterSpacing: 1)),
         const SizedBox(height: 8),
-        Text(_fmt(_balance),
+        Text('$_displaySymbol${_fmtN(_displayBalance)}',
             style: const TextStyle(color: Colors.white,
                 fontSize: 32, fontWeight: FontWeight.w800)),
         if (conv.isNotEmpty)
           Padding(padding: const EdgeInsets.only(top: 4),
               child: Text(conv, style: const TextStyle(
                   color: Color(0xB3FFFFFF), fontSize: 13))),
-        Text('XamePay • $_currency',
+        Text('XamePay • $_displayCurrency',
             style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 12)),
         const SizedBox(height: 20),
         Row(children: [
