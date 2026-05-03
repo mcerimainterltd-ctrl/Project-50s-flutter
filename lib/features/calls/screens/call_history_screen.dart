@@ -55,7 +55,7 @@ final callHistoryProvider = FutureProvider
         .map<Map<String,dynamic>>((c) => Map<String,dynamic>.from(c)).toList());
       return fresh;
     }
-  } catch (_) {}
+  } catch (e) { debugPrint("[CallHistory] API error: $e"); }
   return cached;
 });
 
@@ -78,6 +78,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     super.initState();
     _tabs = TabController(length: 4, vsync: this);
     _tabs.addListener(() {
+      if (_tabs.indexIsChanging) return;
       setState(() {
         _filter = ['all', 'missed', 'incoming', 'outgoing'][_tabs.index];
       });
@@ -113,7 +114,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       await dio.patch('/api/call-history/${user.xameId}/seen');
-    } catch (_) {}
+    } catch (e) { debugPrint("[CallHistory] API error: $e"); }
   }
 
   @override
@@ -271,7 +272,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
         await dio.delete('/api/call-history/$userId');
         ref.refresh(callHistoryProvider(userId));
-      } catch (_) {}
+      } catch (e) { debugPrint("[CallHistory] API error: $e"); }
     }
   }
 
