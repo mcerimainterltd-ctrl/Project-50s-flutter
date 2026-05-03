@@ -2,6 +2,11 @@
 // XamePay — go_router-aware wallet for XamePage 2.1  (Build 264+)
 
 import 'dart:convert';
+import 'dart:ui' as ui;
+import 'package:share_plus/share_plus.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,7 +23,7 @@ class WalletTx {
   final String id, label, icon, type, status, ts;
   final double amount;
   final double? sentAmount, recvAmount, fxRate;
-  final String? sentCurrency, recvCurrency;
+  final String? sentCurrency, recvCurrency, recipient;
   WalletTx.fromJson(Map<String, dynamic> j)
       : id           = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
         label        = j['label']  ?? '',
@@ -31,7 +36,8 @@ class WalletTx {
         recvAmount   = (j['recvAmount'] as num?)?.toDouble(),
         fxRate       = (j['fxRate']     as num?)?.toDouble(),
         sentCurrency = j['sentCurrency']?.toString(),
-        recvCurrency = j['recvCurrency']?.toString();
+        recvCurrency = j['recvCurrency']?.toString(),
+        recipient    = j['recipient']?.toString();
 }
 
 class BankItem {
@@ -2507,10 +2513,18 @@ class _BillsTabState extends State<_BillsTab> {
 
 // ── HISTORY TAB ───────────────────────────────────────────────────────────────
 
-class _HistoryTab extends StatelessWidget {
+class _HistoryTab extends StatefulWidget {
   final List<WalletTx> txs;
   final String Function(double) fmt;
   const _HistoryTab({required this.txs, required this.fmt});
+  @override State<_HistoryTab> createState() => _HistoryTabState();
+}
+
+class _HistoryTabState extends State<_HistoryTab> {
+  final _screenshotCtrl = ScreenshotController();
+
+  List<WalletTx> get txs => widget.txs;
+  String Function(double) get fmt => widget.fmt;
 
   String _fmtTs(String ts) {
     try {
@@ -2521,6 +2535,56 @@ class _HistoryTab extends StatelessWidget {
       final m = dt.minute.toString().padLeft(2,'0');
       return '${months[dt.month-1]} ${dt.day}, ${dt.year} • $h:$m';
     } catch (_) { return ts.length > 10 ? ts.substring(0,10) : ts; }
+  }
+
+  Future<void> _shareReceipt(WalletTx tx, bool asPdf) async {
+    final image = await _screenshotCtrl.captureFromWidget(
+      Material(
+        color: _kCard,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Text('XamePay', style: TextStyle(color: _kTeal,
+                  fontSize: 20, fontWeight: FontWeight.w800)),
+              const Spacer(),
+              Text('Transaction Receipt', style: const TextStyle(
+                  color: Colors.white54, fontSize: 11)),
+            ]),
+            const SizedBox(height: 16),
+            Center(child: Text(fmt(tx.amount),
+                style: TextStyle(
+                    color: tx.type == 'credit' ? _kTeal : const Color(0xFFFF6464),
+                    fontSize: 36, fontWeight: FontWeight.w800))),
+            Center(child: Text(tx.status, style: TextStyle(
+                color: tx.status == 'Completed' ? _kTeal : const Color(0xFFF0A500),
+                fontSize: 14))),
+            const SizedBox(height: 16),
+            const Divider(color: Colors.white12),
+            const SizedBox(height: 8),
+            if (tx.recipient != null && tx.recipient!.isNotEmpty)
+              _receiptRow('Beneficiary', tx.recipient!),
+            _receiptRow('Description', tx.label),
+            _receiptRow('Date & Time', _fmtTs(tx.ts)),
+            if (tx.sentCurrency != null && tx.recvCurrency != null &&
+                tx.sentCurrency != tx.recvCurrency) ...[
+              _receiptRow('Sent', '${tx.sentCurrency} ${tx.sentAmount?.toStringAsFixed(2)}'),
+              _receiptRow('Received', '${tx.recvCurrency} ${tx.recvAmount?.toStringAsFixed(2)}'),
+              _receiptRow('FX Rate', '1 ${tx.sentCurrency} = ${tx.fxRate?.toStringAsFixed(4)} ${tx.recvCurrency}'),
+            ],
+            _receiptRow('Reference', tx.id),
+            _receiptRow('Status', tx.status),
+          ]),
+        ),
+      ),
+      pixelRatio: 2.0,
+    );
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/xamepay_receipt_${tx.id}.png');
+    await file.writeAsBytes(image);
+    await Share.shareXFiles([XFile(file.path)],
+        text: 'XamePay Transaction Receipt');
   }
 
   void _showReceipt(BuildContext context, WalletTx tx) {
@@ -2557,6 +2621,8 @@ class _HistoryTab extends StatelessWidget {
           const SizedBox(height: 20),
           const Divider(color: Colors.white12),
           const SizedBox(height: 12),
+          if (tx.recipient != null && tx.recipient!.isNotEmpty)
+            _receiptRow('Beneficiary', tx.recipient!),
           _receiptRow('Description', tx.label),
           _receiptRow('Date & Time', _fmtTs(tx.ts)),
           if (tx.sentAmount != null && tx.sentCurrency != null &&
@@ -2585,8 +2651,7 @@ class _HistoryTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12))),
               onPressed: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share as image — coming soon')));
+                _shareReceipt(tx, false);
               },
               icon: const Icon(Icons.image_outlined, size: 18),
               label: const Text('Image', style: TextStyle(fontSize: 13)))),
@@ -2600,8 +2665,7 @@ class _HistoryTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12))),
               onPressed: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share as PDF — coming soon')));
+                _shareReceipt(tx, true);
               },
               icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
               label: const Text('PDF', style: TextStyle(fontSize: 13)))),
@@ -2626,6 +2690,7 @@ class _HistoryTab extends StatelessWidget {
   );
 
   @override
+  @override
   Widget build(BuildContext context) {
     if (txs.isEmpty) return const Center(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -2640,7 +2705,7 @@ class _HistoryTab extends StatelessWidget {
       separatorBuilder: (_, __) =>
           const Divider(color: Colors.white10, height: 1),
       itemBuilder: (_, i) {
-        final tx = txs[i]; final cr = tx.type == 'credit';
+        final tx = widget.txs[i]; final cr = tx.type == 'credit';
         return InkWell(
           onTap: () => _showReceipt(context, tx),
           borderRadius: BorderRadius.circular(10),
@@ -2673,7 +2738,7 @@ class _HistoryTab extends StatelessWidget {
                         fontSize: 11, fontWeight: FontWeight.w500)),
               ])),
               const SizedBox(width: 8),
-              Text('${cr ? "+" : "-"}${fmt(tx.amount)}',
+              Text('${cr ? "+" : "-"}${widget.fmt(tx.amount)}',
                   style: TextStyle(
                       color: cr ? _kTeal : const Color(0xFFFF6464),
                       fontSize: 15, fontWeight: FontWeight.w700)),
