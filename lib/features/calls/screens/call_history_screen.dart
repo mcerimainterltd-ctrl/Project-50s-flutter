@@ -10,6 +10,7 @@ import '../../../core/services/cache_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/webrtc_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
+import '../../../core/services/socket_service.dart';
 
 // ── Model ────────────────────────────────────────────────────────────────────
 class CallRecord {
