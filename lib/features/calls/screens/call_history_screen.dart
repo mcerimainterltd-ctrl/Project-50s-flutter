@@ -61,9 +61,11 @@ final callHistoryProvider = FutureProvider
 
 // ── Screen ───────────────────────────────────────────────────────────────────
 class CallHistoryScreen extends ConsumerStatefulWidget {
-  const CallHistoryScreen({super.key});
+  final VoidCallback? onBack;
+  const CallHistoryScreen({super.key, this.onBack});
   @override
   ConsumerState<CallHistoryScreen> createState() => _CallHistoryScreenState();
+}
 }
 
 class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
@@ -136,7 +138,17 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
                   color: Colors.white, size: 18),
-              onPressed: () => context.go('/contacts'),
+              onPressed: () {
+                if (widget.onBack != null) {
+                  widget.onBack!();
+                } else if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/contacts');
+                }
+              },
+                else context.go('/contacts');
+              },
             ),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 60),
@@ -227,7 +239,8 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         return calls.where((c) =>
             c.status == 'missed' && c.recipientId == userId).toList();
       case 'incoming':
-        return calls.where((c) => c.recipientId == userId).toList();
+        return calls.where((c) =>
+            c.recipientId == userId && c.status != 'missed').toList();
       case 'outgoing':
         return calls.where((c) => c.callerId == userId).toList();
       default:
@@ -363,9 +376,11 @@ class _CallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMissed  = call.status == 'missed' && !isOutgoing;
-    final isVideo   = call.callType == 'video';
-    final nameColor = isMissed ? const Color(0xFFE53935) : Colors.white;
+    final isMissed   = call.status == 'missed' && !isOutgoing;
+    final isDeclined = call.status == 'rejected';
+    final nameColor  = isMissed ? const Color(0xFFE53935)
+        : isDeclined ? const Color(0xFFFF9800)
+        : Colors.white;
     final initials  = name.trim().split(' ').take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
@@ -400,12 +415,12 @@ class _CallTile extends StatelessWidget {
                       fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Row(children: [
-                  _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed),
+                  _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed, isDeclined: isDeclined),
                   const SizedBox(width: 5),
                   Text(_statusLabel(),
                     style: TextStyle(
-                      color: isMissed
-                          ? const Color(0xFFE53935) : Colors.white38,
+                      color: isMissed ? const Color(0xFFE53935)
+                          : isDeclined ? const Color(0xFFFF9800) : Colors.white38,
                       fontSize: 12)),
                   if (call.duration > 0) ...[
                     const Text(' · ',
@@ -486,18 +501,20 @@ class _CallTile extends StatelessWidget {
 
 // ── Direction Icon ────────────────────────────────────────────────────────────
 class _DirectionIcon extends StatelessWidget {
-  final bool isOutgoing, isMissed;
-  const _DirectionIcon({required this.isOutgoing, required this.isMissed});
+  final bool isOutgoing, isMissed, isDeclined;
+  const _DirectionIcon({required this.isOutgoing, required this.isMissed, this.isDeclined = false});
 
   @override
   Widget build(BuildContext context) {
     return Icon(
       isOutgoing ? Icons.call_made : Icons.call_received,
-      size: 13,
       color: isMissed
           ? const Color(0xFFE53935)
-          : isOutgoing
-              ? const Color(0xFF00FF88)
+          : isDeclined
+              ? const Color(0xFFFF9800)
+              : isOutgoing
+                  ? const Color(0xFF00FF88)
+                  : Colors.white38,
               : Colors.white38,
     );
   }

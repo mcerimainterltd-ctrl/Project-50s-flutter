@@ -19,7 +19,7 @@ class _CallsHubScreenState extends ConsumerState<CallsHubScreen> {
     return Scaffold(
       backgroundColor: context.xBg,
       body: IndexedStack(index: _tab, children: [
-        CallHistoryScreen(),
+        CallHistoryScreen(onBack: () => context.go('/contacts')),
         _CallScheduleTab(),
         _ConferenceTab(),
       ]),
