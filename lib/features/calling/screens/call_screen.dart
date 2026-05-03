@@ -60,9 +60,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         displayName: user.preferredName ?? user.firstName,
       );
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final service = ref.read(webRTCServiceProvider);
-      service.initRenderers();
+      await service.initRenderers();
       if (!widget.isIncoming) {
         service.startCall(widget.userId, widget.isVideo);
       } else {
