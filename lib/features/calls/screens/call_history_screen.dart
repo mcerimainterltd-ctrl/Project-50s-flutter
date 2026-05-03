@@ -12,7 +12,7 @@ import '../../../core/services/webrtc_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/services/socket_service.dart';
 
-// ── Model ────────────────────────────────────────────────────────────────────
+// ── Model ─────────────────────────────────────────────────────────────────────
 class CallRecord {
   final String callId, callerId, recipientId, callType, status;
   final DateTime startTime;
@@ -37,7 +37,7 @@ class CallRecord {
   );
 }
 
-// ── Provider ─────────────────────────────────────────────────────────────────
+// ── Provider ──────────────────────────────────────────────────────────────────
 final callHistoryProvider = StreamProvider
     .family<List<CallRecord>, String>((ref, userId) async* {
   // Yield cache immediately
@@ -45,7 +45,7 @@ final callHistoryProvider = StreamProvider
       .map((c) => CallRecord.fromJson(c)).toList();
   yield cached;
 
-  // Fetch fresh from API and yield update
+  // Fetch fresh from API
   try {
     final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
     final res  = await dio.get('/api/call-history/$userId');
@@ -59,9 +59,8 @@ final callHistoryProvider = StreamProvider
     }
   } catch (_) {}
 });
-});
 
-// ── Screen ───────────────────────────────────────────────────────────────────
+// ── Screen ────────────────────────────────────────────────────────────────────
 class CallHistoryScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
   const CallHistoryScreen({super.key, this.onBack});
@@ -73,7 +72,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     with SingleTickerProviderStateMixin {
 
   late TabController _tabs;
-  String _filter = 'all'; // all | missed | incoming | outgoing
+  String _filter = 'all';
 
   @override
   void initState() {
@@ -85,11 +84,10 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         _filter = ['all', 'missed', 'incoming', 'outgoing'][_tabs.index];
       });
     });
-    // Mark missed calls as seen
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markSeen());
-
-    // Real-time refresh on call events
-    WidgetsBinding.instance.addPostFrameCallback((_) => _listenToCallEvents());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markSeen();
+      _listenToCallEvents();
+    });
   }
 
   void _listenToCallEvents() {
@@ -98,12 +96,9 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     final user   = ref.read(currentUserProvider);
     if (user == null) return;
 
-    // Refresh on any call state change
-    webrtc.callState.listen((state) {
+    webrtc.callState.listen((_) {
       if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
     });
-
-    // Also refresh on socket events
     socket.callEnded.listen((_) {
       if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
     });
@@ -118,12 +113,11 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   Future<void> _markSeen() async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
-    // Clear badge in local state immediately
     ref.read(contactsProvider.notifier).clearAllMissedCalls();
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       await dio.patch('/api/call-history/${user.xameId}/seen');
-    } catch (e) { debugPrint("[CallHistory] API error: $e"); }
+    } catch (_) {}
   }
 
   @override
@@ -180,47 +174,42 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         ],
         body: history.when(
           loading: () => const Center(
-            child: CircularProgressIndicator(
-                color: Color(0xFF00FF88), strokeWidth: 1.5)),
-          error: (e, _) => Center(
-            child: Text('Failed to load calls',
-              style: TextStyle(color: Colors.white38))),
+              child: CircularProgressIndicator(
+                  color: Color(0xFF00FF88), strokeWidth: 1.5)),
+          error: (e, _) => const Center(
+              child: Text('Failed to load calls',
+                  style: TextStyle(color: Colors.white38))),
           data: (calls) {
             final filtered = _filterCalls(calls, user?.xameId ?? '');
             if (filtered.isEmpty) return _emptyState();
             return ListView.builder(
-                padding: const EdgeInsets.only(top: 8, bottom: 32),
-                itemCount: filtered.length,
-                itemCount: filtered.length,
-                itemBuilder: (_, i) {
-                  final call    = filtered[i];
-                  final isMe    = call.callerId == user?.xameId;
-                  final peerId  = isMe ? call.recipientId : call.callerId;
-                  final contact = contacts.where((c) => c.id == peerId).firstOrNull;
-                  final name    = contact?.name ?? peerId;
-                  final photo   = contact?.isProfilePicHidden == true
-                      ? null : contact?.profilePic;
-
-                  // Group by date
-                  final showDate = i == 0 ||
-                      !_sameDay(filtered[i - 1].startTime, call.startTime);
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (showDate) _DateDivider(date: call.startTime),
-                      _CallTile(
-                        call: call,
-                        isOutgoing: isMe,
-                        name: name,
-                        photoUrl: photo,
-                        peerId: peerId,
-                        onTap: () => _recall(peerId, call.callType),
-                      ),
-                    ],
-                  );
-                },
-              ),
+              padding: const EdgeInsets.only(top: 8, bottom: 32),
+              itemCount: filtered.length,
+              itemBuilder: (_, i) {
+                final call    = filtered[i];
+                final isMe    = call.callerId == user?.xameId;
+                final peerId  = isMe ? call.recipientId : call.callerId;
+                final contact = contacts.where((c) => c.id == peerId).firstOrNull;
+                final name    = contact?.name ?? peerId;
+                final photo   = contact?.isProfilePicHidden == true
+                    ? null : contact?.profilePic;
+                final showDate = i == 0 ||
+                    !_sameDay(filtered[i - 1].startTime, call.startTime);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showDate) _DateDivider(date: call.startTime),
+                    _CallTile(
+                      call: call,
+                      isOutgoing: isMe,
+                      name: name,
+                      photoUrl: photo,
+                      peerId: peerId,
+                      onTap: () => _recall(peerId, call.callType),
+                    ),
+                  ],
+                );
+              },
             );
           },
         ),
@@ -232,10 +221,14 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     switch (_filter) {
       case 'missed':
         return calls.where((c) =>
-            (c.status == 'missed' || c.status == 'no-answer' || c.status == 'declined') && c.recipientId == userId).toList();
+            (c.status == 'missed' || c.status == 'no-answer') &&
+            c.recipientId == userId).toList();
       case 'incoming':
         return calls.where((c) =>
-            c.recipientId == userId && c.status != 'missed' && c.status != 'rejected' && c.status != 'no-answer' && c.status != 'declined').toList();
+            c.recipientId == userId &&
+            c.status != 'missed' &&
+            c.status != 'rejected' &&
+            c.status != 'no-answer').toList();
       case 'outgoing':
         return calls.where((c) => c.callerId == userId).toList();
       default:
@@ -246,9 +239,8 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  void _recall(String userId, String callType) {
-    final webrtc = ref.read(webRTCServiceProvider);
-    context.push('/call/$userId?video=${callType == 'video'}&incoming=false');
+  void _recall(String peerId, String callType) {
+    context.push('/call/$peerId?video=${callType == 'video'}&incoming=false');
   }
 
   Future<void> _confirmClear(String userId) async {
@@ -277,7 +269,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
         await dio.delete('/api/call-history/$userId');
         ref.invalidate(callHistoryProvider(userId));
-      } catch (e) { debugPrint("[CallHistory] API error: $e"); }
+      } catch (_) {}
     }
   }
 
@@ -289,8 +281,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
           shape: BoxShape.circle,
           color: Colors.white.withOpacity(0.05),
         ),
-        child: const Icon(Icons.call_outlined,
-            color: Colors.white24, size: 36),
+        child: const Icon(Icons.call_outlined, color: Colors.white24, size: 36),
       ),
       const SizedBox(height: 20),
       const Text('No calls yet',
@@ -346,7 +337,6 @@ class _DateDivider extends StatelessWidget {
                 date.day == now.day - 1
             ? 'Yesterday'
             : DateFormat('MMMM d, yyyy').format(date);
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(label,
@@ -371,13 +361,13 @@ class _CallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMissed   = call.status == 'missed' && !isOutgoing;
-    final isVideo    = call.callType == 'video';
+    final isMissed   = (call.status == 'missed' || call.status == 'no-answer') && !isOutgoing;
     final isDeclined = call.status == 'rejected';
+    final isVideo    = call.callType == 'video';
     final nameColor  = isMissed ? const Color(0xFFE53935)
         : isDeclined ? const Color(0xFFFF9800)
         : Colors.white;
-    final initials  = name.trim().split(' ').take(2)
+    final initials   = name.trim().split(' ').take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
     return InkWell(
@@ -385,8 +375,6 @@ class _CallTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(children: [
-
-          // Avatar
           Container(
             width: 52, height: 52,
             decoration: BoxDecoration(shape: BoxShape.circle,
@@ -398,10 +386,7 @@ class _CallTile extends StatelessWidget {
                 : _initialsAvatar(initials),
             ),
           ),
-
           const SizedBox(width: 14),
-
-          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,26 +396,25 @@ class _CallTile extends StatelessWidget {
                       fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Row(children: [
-                  _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed, isDeclined: isDeclined),
+                  _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed,
+                      isDeclined: isDeclined),
                   const SizedBox(width: 5),
                   Text(_statusLabel(),
                     style: TextStyle(
                       color: isMissed ? const Color(0xFFE53935)
-                          : isDeclined ? const Color(0xFFFF9800) : Colors.white38,
+                          : isDeclined ? const Color(0xFFFF9800)
+                          : Colors.white38,
                       fontSize: 12)),
                   if (call.duration > 0) ...[
                     const Text(' · ',
                         style: TextStyle(color: Colors.white24, fontSize: 12)),
                     Text(_fmtDuration(call.duration),
-                      style: const TextStyle(color: Colors.white38,
-                          fontSize: 12)),
+                      style: const TextStyle(color: Colors.white38, fontSize: 12)),
                   ],
                 ]),
               ],
             ),
           ),
-
-          // Time + call back button
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -470,18 +454,20 @@ class _CallTile extends StatelessWidget {
     if (isOutgoing) {
       switch (call.status) {
         case 'accepted':
-        case 'ended':   return 'Outgoing';
+        case 'ended':    return 'Outgoing';
         case 'rejected': return 'Declined';
-        case 'missed':   return 'No answer';
+        case 'missed':
+        case 'no-answer': return 'No answer';
         case 'offline':  return 'Unavailable';
         default:         return 'Outgoing';
       }
     } else {
       switch (call.status) {
         case 'accepted':
-        case 'ended':   return 'Incoming';
+        case 'ended':    return 'Incoming';
         case 'rejected': return 'Declined';
-        case 'missed':   return 'Missed';
+        case 'missed':
+        case 'no-answer': return 'Missed';
         case 'offline':  return 'Missed';
         default:         return 'Incoming';
       }
@@ -489,7 +475,7 @@ class _CallTile extends StatelessWidget {
   }
 
   String _fmtDuration(int s) {
-    if (s < 60) return '${s}s';
+    if (s < 60)   return '${s}s';
     if (s < 3600) return '${s ~/ 60}m ${s % 60}s';
     return '${s ~/ 3600}h ${(s % 3600) ~/ 60}m';
   }
@@ -498,19 +484,18 @@ class _CallTile extends StatelessWidget {
 // ── Direction Icon ────────────────────────────────────────────────────────────
 class _DirectionIcon extends StatelessWidget {
   final bool isOutgoing, isMissed, isDeclined;
-  const _DirectionIcon({required this.isOutgoing, required this.isMissed, this.isDeclined = false});
+  const _DirectionIcon({required this.isOutgoing, required this.isMissed,
+      this.isDeclined = false});
 
   @override
   Widget build(BuildContext context) {
     return Icon(
       isOutgoing ? Icons.call_made : Icons.call_received,
-      color: isMissed
-          ? const Color(0xFFE53935)
-          : isDeclined
-              ? const Color(0xFFFF9800)
-              : isOutgoing
-                  ? const Color(0xFF00FF88)
-                  : Colors.white38,
+      size: 13,
+      color: isMissed ? const Color(0xFFE53935)
+          : isDeclined ? const Color(0xFFFF9800)
+          : isOutgoing ? const Color(0xFF00FF88)
+          : Colors.white38,
     );
   }
 }
