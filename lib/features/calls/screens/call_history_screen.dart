@@ -258,7 +258,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   Future<void> _confirmClear(String userId) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: const Color(0xFF161B22),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Clear Call History',
@@ -266,10 +266,10 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         content: const Text('This will delete all your call records.',
             style: TextStyle(color: Colors.white54)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx, false),
               child: const Text('Cancel',
                   style: TextStyle(color: Colors.white38))),
-          TextButton(onPressed: () => Navigator.pop(context, true),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx, true),
               child: const Text('Clear',
                   style: TextStyle(color: Color(0xFFE53935),
                       fontWeight: FontWeight.w700))),
