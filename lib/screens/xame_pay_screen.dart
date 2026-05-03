@@ -434,7 +434,7 @@ class _XamePayScreenState extends State<XamePayScreen>
           _balance = (d['balance'] as num?)?.toDouble() ?? 0;
           if (newDisp.isNotEmpty) _dispCurrency = newDisp;
           _txs = (d['transactions'] as List? ?? [])
-              .map((t) => WalletTx.fromJson(t)).toList();
+              .map((t) => WalletTx.fromJson(t)).toList().reversed.toList();
         });
         if (newDisp.isNotEmpty) {
           final p2 = await SharedPreferences.getInstance();
