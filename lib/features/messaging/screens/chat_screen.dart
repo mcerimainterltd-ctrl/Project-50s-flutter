@@ -913,7 +913,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               _enterSelectMode(msg.id);
               _showForwardPicker(messages);
             }),
-        if (msg.text.isNotEmpty)
+        if (msg.fileUrl != null)
           ListTile(
             leading: Icon(Icons.email_outlined, color: outerContext.xMuted),
             title: Text('Send via Email', style: TextStyle(color: outerContext.xText)),
@@ -923,8 +923,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Uri(
                   scheme: 'mailto',
                   queryParameters: {
-                    'subject': 'Message from XamePage',
-                    'body': msg.text,
+                    'subject': 'File from XamePage',
+                    'body': 'Please find the attached file: ${msg.fileName ?? msg.fileUrl}',
                   },
                 ),
                 mode: LaunchMode.externalApplication,
