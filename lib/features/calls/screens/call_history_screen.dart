@@ -235,7 +235,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             (c.status == 'missed' || c.status == 'no-answer' || c.status == 'declined') && c.recipientId == userId).toList();
       case 'incoming':
         return calls.where((c) =>
-            c.recipientId == userId && c.status != 'missed' && c.status != 'no-answer').toList();
+            c.recipientId == userId && c.status != 'missed' && c.status != 'rejected' && c.status != 'no-answer' && c.status != 'declined').toList();
       case 'outgoing':
         return calls.where((c) => c.callerId == userId).toList();
       default:
