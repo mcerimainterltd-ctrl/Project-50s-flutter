@@ -137,15 +137,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
                   color: Colors.white, size: 18),
-              onPressed: () {
-                if (widget.onBack != null) {
-                  widget.onBack!();
-                } else if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/contacts');
-                }
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 60),
@@ -234,10 +226,10 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     switch (_filter) {
       case 'missed':
         return calls.where((c) =>
-            c.status == 'missed' && c.recipientId == userId).toList();
+            (c.status == 'missed' || c.status == 'no-answer' || c.status == 'declined') && c.recipientId == userId).toList();
       case 'incoming':
         return calls.where((c) =>
-            c.recipientId == userId && c.status != 'missed').toList();
+            c.recipientId == userId && c.status != 'missed' && c.status != 'no-answer').toList();
       case 'outgoing':
         return calls.where((c) => c.callerId == userId).toList();
       default:
