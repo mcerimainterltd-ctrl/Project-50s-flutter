@@ -428,8 +428,8 @@ class _XamePayScreenState extends State<XamePayScreen>
 
   void _goBack() { if (widget.onBack != null) widget.onBack!(); }
 
-  RegionInfo get _ri => _region(_currency);
-  String _fmt(double n) => '${_ri.symbol}${_fmtN(n)}';
+  RegionInfo get _ri => _region(_dispCurrency);
+  String _fmt(double n) => '${_region(_dispCurrency).symbol}${_fmtN(n)}';
 
   static String _fmtN(double n) {
     final s = n.toStringAsFixed(2);
@@ -507,22 +507,22 @@ class _XamePayScreenState extends State<XamePayScreen>
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
                     _AirtimeTab(
-                        region: _ri, balance: _balance,
+                        region: _ri, balance: _displayBalance,
                         serverUrl: widget.serverUrl, userId: widget.userId,
                         fmt: _fmt, onSuccess: _loadWallet, snack: _snack),
                     _DataTab(
-                        region: _ri, balance: _balance,
+                        region: _ri, balance: _displayBalance,
                         serverUrl: widget.serverUrl, userId: widget.userId,
                         fmt: _fmt, onSuccess: _loadWallet, snack: _snack),
                     _BillsTab(
-                        region: _ri, balance: _balance,
+                        region: _ri, balance: _displayBalance,
                         serverUrl: widget.serverUrl, userId: widget.userId,
-                        currency: _currency, fmt: _fmt,
+                        currency: _dispCurrency, fmt: _fmt,
                         onSuccess: _loadWallet, snack: _snack),
                     _SendTab(
-                        region: _ri, balance: _balance,
+                        region: _ri, balance: _displayBalance,
                         serverUrl: widget.serverUrl, userId: widget.userId,
-                        currency: _currency, fmt: _fmt,
+                        currency: _dispCurrency, fmt: _fmt,
                         onSuccess: _loadWallet, snack: _snack,
                         contacts: widget.xameContacts),
                     _HistoryTab(txs: _txs, fmt: _fmt),
