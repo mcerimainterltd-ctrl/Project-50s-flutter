@@ -38,11 +38,14 @@ class CallRecord {
 }
 
 // ── Provider ─────────────────────────────────────────────────────────────────
-final callHistoryProvider = FutureProvider
-    .family<List<CallRecord>, String>((ref, userId) async {
-  // Load cache instantly first
+final callHistoryProvider = StreamProvider
+    .family<List<CallRecord>, String>((ref, userId) async* {
+  // Yield cache immediately
   final cached = CacheService.loadCallHistory()
-    .map((c) => CallRecord.fromJson(c)).toList();
+      .map((c) => CallRecord.fromJson(c)).toList();
+  yield cached;
+
+  // Fetch fresh from API and yield update
   try {
     final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
     final res  = await dio.get('/api/call-history/$userId');
@@ -50,13 +53,12 @@ final callHistoryProvider = FutureProvider
       final fresh = (res.data['calls'] as List)
           .map((c) => CallRecord.fromJson(Map<String, dynamic>.from(c)))
           .toList();
-      // Persist fresh data
       await CacheService.saveCallHistory(res.data['calls']
-        .map<Map<String,dynamic>>((c) => Map<String,dynamic>.from(c)).toList());
-      return fresh;
+          .map<Map<String,dynamic>>((c) => Map<String,dynamic>.from(c)).toList());
+      yield fresh;
     }
-  } catch (e) { debugPrint("[CallHistory] API error: $e"); }
-  return cached;
+  } catch (_) {}
+});
 });
 
 // ── Screen ───────────────────────────────────────────────────────────────────
@@ -92,17 +94,24 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
 
   void _listenToCallEvents() {
     final socket = ref.read(socketServiceProvider);
+    final webrtc = ref.read(webRTCServiceProvider);
     final user   = ref.read(currentUserProvider);
     if (user == null) return;
 
+    // Refresh on any call state change
+    webrtc.callState.listen((state) {
+      if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
+    });
+
+    // Also refresh on socket events
     socket.callEnded.listen((_) {
-      if (mounted) ref.refresh(callHistoryProvider(user.xameId));
+      if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
     });
     socket.callRejected.listen((_) {
-      if (mounted) ref.refresh(callHistoryProvider(user.xameId));
+      if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
     });
-    socket.callAccepted.listen((_) {
-      if (mounted) ref.refresh(callHistoryProvider(user.xameId));
+    socket.missedCallCount.listen((_) {
+      if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
     });
   }
 
@@ -179,13 +188,9 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
           data: (calls) {
             final filtered = _filterCalls(calls, user?.xameId ?? '');
             if (filtered.isEmpty) return _emptyState();
-            return RefreshIndicator(
-              color: const Color(0xFF00FF88),
-              backgroundColor: const Color(0xFF161B22),
-              onRefresh: () => ref.refresh(
-                  callHistoryProvider(user?.xameId ?? '').future),
-              child: ListView.builder(
+            return ListView.builder(
                 padding: const EdgeInsets.only(top: 8, bottom: 32),
+                itemCount: filtered.length,
                 itemCount: filtered.length,
                 itemBuilder: (_, i) {
                   final call    = filtered[i];
@@ -271,7 +276,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
       try {
         final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
         await dio.delete('/api/call-history/$userId');
-        ref.refresh(callHistoryProvider(userId));
+        ref.invalidate(callHistoryProvider(userId));
       } catch (e) { debugPrint("[CallHistory] API error: $e"); }
     }
   }
