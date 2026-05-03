@@ -405,6 +405,10 @@ class _XamePayScreenState extends State<XamePayScreen>
       final p = await SharedPreferences.getInstance();
       if (d['currency'] != null && p.getString('wallet:currency') == null)
         _currency = d['currency'];
+        if (d['dispCurrency'] != null && (d['dispCurrency'] as String).isNotEmpty) {
+          _dispCurrency = d['dispCurrency'];
+          await p.setString('wallet:dispCurrency', _dispCurrency);
+        }
     } catch (_) {}
     await _loadWallet();
     await _FxService.load(_currency);
@@ -420,6 +424,11 @@ class _XamePayScreenState extends State<XamePayScreen>
       final d = jsonDecode(r.body);
       if (d['success'] == true) setState(() {
         _balance = (d['balance'] as num?)?.toDouble() ?? 0;
+        if (d['dispCurrency'] != null && (d['dispCurrency'] as String).isNotEmpty) {
+          setState(() => _dispCurrency = d['dispCurrency']);
+          final p2 = await SharedPreferences.getInstance();
+          await p2.setString('wallet:dispCurrency', _dispCurrency);
+        }
         _txs = (d['transactions'] as List? ?? [])
             .map((t) => WalletTx.fromJson(t)).toList();
       });
@@ -795,7 +804,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                       Uri.parse('${widget.serverUrl}/api/wallet/currency'),
                       headers: {'Content-Type': 'application/json'},
                       body: jsonEncode(
-                          {'userId': widget.userId, 'currency': _currency}),
+                          {'userId': widget.userId, 'currency': _currency, 'dispCurrency': _dispCurrency}),
                     );
                   } catch (_) {}
                   await _FxService.load(_currency);
