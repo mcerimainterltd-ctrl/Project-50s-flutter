@@ -1,7 +1,4 @@
 import 'dart:ui';
-import 'dart:async';
-import '../../../core/services/socket_service.dart';
-import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +10,6 @@ import '../../../core/services/cache_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/webrtc_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
-import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Model ────────────────────────────────────────────────────────────────────
 class CallRecord {
@@ -34,14 +30,18 @@ class CallRecord {
     recipientId: j['recipientId'] ?? '',
     callType:    j['callType']    ?? 'voice',
     status:      j['status']      ?? 'ended',
-    startTime:   DateTime.tryParse(j['startTime'] ?? '') ?? DateTime.now(),
+    startTime:   (DateTime.tryParse(j['startTime'] ?? '') ?? DateTime.now()).toLocal(),
     duration:    j['duration']    ?? 0,
     seen:        j['seen']        ?? true,
   );
 }
 
 // ── Provider ─────────────────────────────────────────────────────────────────
-Future<List<CallRecord>> _fetchCallHistory(String userId) async {
+final callHistoryProvider = FutureProvider.autoDispose
+    .family<List<CallRecord>, String>((ref, userId) async {
+  // Load cache instantly first
+  final cached = CacheService.loadCallHistory()
+    .map((c) => CallRecord.fromJson(c)).toList();
   try {
     final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
     final res  = await dio.get('/api/call-history/$userId');
@@ -49,35 +49,13 @@ Future<List<CallRecord>> _fetchCallHistory(String userId) async {
       final fresh = (res.data['calls'] as List)
           .map((c) => CallRecord.fromJson(Map<String, dynamic>.from(c)))
           .toList();
+      // Persist fresh data
       await CacheService.saveCallHistory(res.data['calls']
-          .map<Map<String, dynamic>>((c) => Map<String, dynamic>.from(c)).toList());
+        .map<Map<String,dynamic>>((c) => Map<String,dynamic>.from(c)).toList());
       return fresh;
     }
   } catch (_) {}
-  return CacheService.loadCallHistory()
-      .map((c) => CallRecord.fromJson(c)).toList();
-}
-
-final callHistoryProvider = StreamProvider
-    .family<List<CallRecord>, String>((ref, userId) async* {
-  final socket = ref.read(socketServiceProvider);
-
-  // Emit initial data immediately
-  yield await _fetchCallHistory(userId);
-
-  // Merge all call-related socket events into one stream
-  final triggers = StreamGroup.merge<String>([
-    socket.callEnded.map((_) => 'ended'),
-    socket.callAccepted.map((_) => 'accepted'),
-    socket.callRejected.map((_) => 'rejected'),
-    socket.missedCallCount.map((_) => 'missed'),
-  ]);
-
-  await for (final _ in triggers) {
-    // Small delay to allow server to finish writing the record
-    await Future.delayed(const Duration(milliseconds: 800));
-    yield await _fetchCallHistory(userId);
-  }
+  return cached;
 });
 
 // ── Screen ───────────────────────────────────────────────────────────────────
@@ -102,7 +80,27 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         _filter = ['all', 'missed', 'incoming', 'outgoing'][_tabs.index];
       });
     });
+    // Mark missed calls as seen
     WidgetsBinding.instance.addPostFrameCallback((_) => _markSeen());
+
+    // Real-time refresh on call events
+    WidgetsBinding.instance.addPostFrameCallback((_) => _listenToCallEvents());
+  }
+
+  void _listenToCallEvents() {
+    final socket = ref.read(socketServiceProvider);
+    final user   = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    socket.callEnded.listen((_) {
+      if (mounted) ref.refresh(callHistoryProvider(user.xameId));
+    });
+    socket.callRejected.listen((_) {
+      if (mounted) ref.refresh(callHistoryProvider(user.xameId));
+    });
+    socket.callAccepted.listen((_) {
+      if (mounted) ref.refresh(callHistoryProvider(user.xameId));
+    });
   }
 
   Future<void> _markSeen() async {
@@ -117,10 +115,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   }
 
   @override
-  void dispose() {
-    _tabs.dispose();
-    super.dispose();
-  }
+  void dispose() { _tabs.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -129,47 +124,41 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     final history  = ref.watch(callHistoryProvider(user?.xameId ?? ''));
 
     return Scaffold(
-      backgroundColor: context.xBg,
+      backgroundColor: const Color(0xFF0A0A0F),
       body: NestedScrollView(
         headerSliverBuilder: (_, __) => [
           SliverAppBar(
             pinned: true,
             expandedHeight: 120,
-            backgroundColor: context.xBg,
+            backgroundColor: const Color(0xFF0A0A0F),
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new,
-                  color: context.xText, size: 18),
-              onPressed: () {
-                if (Navigator.of(context, rootNavigator: true).canPop()) {
-                  Navigator.of(context, rootNavigator: true).pop();
-                } else {
-                  context.go('/contacts');
-                }
-              },
+              icon: const Icon(Icons.arrow_back_ios_new,
+                  color: Colors.white, size: 18),
+              onPressed: () => context.go('/contacts'),
             ),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 60),
-              title: Text('Calls',
-                style: TextStyle(color: context.xText, fontSize: 28,
+              title: const Text('Calls',
+                style: TextStyle(color: Colors.white, fontSize: 28,
                     fontWeight: FontWeight.w800, letterSpacing: -0.5)),
               background: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [context.xSurface, context.xBg],
+                    colors: [Color(0xFF0D1117), Color(0xFF0A0A0F)],
                   ),
                 ),
               ),
             ),
             actions: [
               IconButton(
-                icon: Icon(Icons.delete_sweep_outlined,
-                    color: context.xText.withValues(alpha: 0.54)),
+                icon: const Icon(Icons.delete_sweep_outlined,
+                    color: Colors.white54),
                 onPressed: () => _confirmClear(user?.xameId ?? ''),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(44),
@@ -178,45 +167,26 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
           ),
         ],
         body: history.when(
-          loading: () {
-            final cached = history.valueOrNull;
-            if (cached != null && cached.isNotEmpty) {
-              return _buildList(cached, user?.xameId ?? '', contacts, user);
-            }
-            return Center(
-              child: CircularProgressIndicator(
-                  color: context.xAccent, strokeWidth: 1.5));
-          },
-          error: (e, _) {
-            final cached = history.valueOrNull;
-            if (cached != null && cached.isNotEmpty) {
-              return _buildList(cached, user?.xameId ?? '', contacts, user);
-            }
-            return Center(
-              child: Text('Failed to load calls',
-                style: TextStyle(color: context.xMuted)));
-          },
-          data: (calls) => _buildList(calls, user?.xameId ?? '', contacts, user),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildList(List<CallRecord> calls, String userId,
-      List<ContactModel> contacts, dynamic user) {
-    final filtered = _filterCalls(calls, userId);
-    if (filtered.isEmpty) return _emptyState();
-    return RefreshIndicator(
-              color: context.xAccent,
-              backgroundColor: context.xSurface,
+          loading: () => const Center(
+            child: CircularProgressIndicator(
+                color: Color(0xFF00FF88), strokeWidth: 1.5)),
+          error: (e, _) => Center(
+            child: Text('Failed to load calls',
+              style: TextStyle(color: Colors.white38))),
+          data: (calls) {
+            final filtered = _filterCalls(calls, user?.xameId ?? '');
+            if (filtered.isEmpty) return _emptyState();
+            return RefreshIndicator(
+              color: const Color(0xFF00FF88),
+              backgroundColor: const Color(0xFF161B22),
               onRefresh: () => ref.refresh(
-                  callHistoryProvider(userId).future),
+                  callHistoryProvider(user?.xameId ?? '').future),
               child: ListView.builder(
                 padding: const EdgeInsets.only(top: 8, bottom: 32),
                 itemCount: filtered.length,
                 itemBuilder: (_, i) {
                   final call    = filtered[i];
-                  final isMe    = call.callerId == userId;
+                  final isMe    = call.callerId == user?.xameId;
                   final peerId  = isMe ? call.recipientId : call.callerId;
                   final contact = contacts.where((c) => c.id == peerId).firstOrNull;
                   final name    = contact?.name ?? peerId;
@@ -244,23 +214,21 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
                 },
               ),
             );
+          },
+        ),
+      ),
+    );
   }
 
   List<CallRecord> _filterCalls(List<CallRecord> calls, String userId) {
     switch (_filter) {
       case 'missed':
-        // Missed = unanswered incoming (recipient) or timed-out outgoing (caller)
-        return calls.where((c) => c.status == 'missed').toList();
+        return calls.where((c) =>
+            c.status == 'missed' && c.recipientId == userId).toList();
       case 'incoming':
-        // Answered or declined incoming calls — not missed
-        return calls.where((c) =>
-            c.recipientId == userId &&
-            c.status != 'missed').toList();
+        return calls.where((c) => c.recipientId == userId).toList();
       case 'outgoing':
-        // Calls initiated by this user that were answered or ended
-        return calls.where((c) =>
-            c.callerId == userId &&
-            c.status != 'missed').toList();
+        return calls.where((c) => c.callerId == userId).toList();
       default:
         return calls;
     }
@@ -278,19 +246,19 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: XameColors.darkSurface,
+        backgroundColor: const Color(0xFF161B22),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Clear Call History',
-            style: TextStyle(color: XameColors.darkBg, fontWeight: FontWeight.w700)),
-        content: Text('This will delete all your call records.',
-            style: TextStyle(color: XameColors.darkBg.withValues(alpha: 0.54))),
+        title: const Text('Clear Call History',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content: const Text('This will delete all your call records.',
+            style: TextStyle(color: Colors.white54)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false),
-              child: Text('Cancel',
-                  style: TextStyle(color: XameColors.darkSurface))),
+              child: const Text('Cancel',
+                  style: TextStyle(color: Colors.white38))),
           TextButton(onPressed: () => Navigator.pop(context, true),
-              child: Text('Clear',
-                  style: TextStyle(color: XameColors.danger,
+              child: const Text('Clear',
+                  style: TextStyle(color: Color(0xFFE53935),
                       fontWeight: FontWeight.w700))),
         ],
       ),
@@ -310,18 +278,18 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
         width: 80, height: 80,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: context.xSurface,
+          color: Colors.white.withOpacity(0.05),
         ),
-        child: Icon(Icons.call_outlined,
-            color: context.xMuted, size: 36),
+        child: const Icon(Icons.call_outlined,
+            color: Colors.white24, size: 36),
       ),
-      SizedBox(height: 20),
-      Text('No calls yet',
-        style: TextStyle(color: context.xText, fontSize: 16,
+      const SizedBox(height: 20),
+      const Text('No calls yet',
+        style: TextStyle(color: Colors.white38, fontSize: 16,
             fontWeight: FontWeight.w500)),
-      SizedBox(height: 8),
-      Text('Your call history will appear here',
-        style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 13)),
+      const SizedBox(height: 8),
+      const Text('Your call history will appear here',
+        style: TextStyle(color: Colors.white24, fontSize: 13)),
     ]),
   );
 }
@@ -329,7 +297,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
 // ── Filter Tabs ───────────────────────────────────────────────────────────────
 class _FilterTabs extends StatelessWidget {
   final TabController controller;
-  _FilterTabs({required this.controller});
+  const _FilterTabs({required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -337,13 +305,13 @@ class _FilterTabs extends StatelessWidget {
       controller: controller,
       isScrollable: true,
       tabAlignment: TabAlignment.start,
-      indicatorColor: context.xAccent,
+      indicatorColor: const Color(0xFF00FF88),
       indicatorWeight: 2,
-      labelColor: context.xAccent,
-      unselectedLabelColor: context.xMuted,
-      labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+      labelColor: const Color(0xFF00FF88),
+      unselectedLabelColor: Colors.white38,
+      labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
           letterSpacing: 0.3),
-      dividerColor: context.xMuted.withValues(alpha: 0.1),
+      dividerColor: Colors.white10,
       tabs: const [
         Tab(text: 'All'),
         Tab(text: 'Missed'),
@@ -357,7 +325,7 @@ class _FilterTabs extends StatelessWidget {
 // ── Date Divider ──────────────────────────────────────────────────────────────
 class _DateDivider extends StatelessWidget {
   final DateTime date;
-  _DateDivider({required this.date});
+  const _DateDivider({required this.date});
 
   @override
   Widget build(BuildContext context) {
@@ -373,7 +341,7 @@ class _DateDivider extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(label,
-        style: TextStyle(color: context.xMuted, fontSize: 12,
+        style: const TextStyle(color: Colors.white38, fontSize: 12,
             fontWeight: FontWeight.w600, letterSpacing: 0.5)),
     );
   }
@@ -387,24 +355,16 @@ class _CallTile extends StatelessWidget {
   final String? photoUrl;
   final VoidCallback onTap;
 
-  _CallTile({
+  const _CallTile({
     required this.call, required this.isOutgoing, required this.name,
     required this.peerId, this.photoUrl, required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isMissed     = call.status == 'missed' && !isOutgoing;
-    final isNoAnswer   = call.status == 'missed' && isOutgoing;
-    final isDeclined   = call.status == 'rejected';
-    final isVideo      = call.callType == 'video';
-    final nameColor    = isMissed
-        ? Colors.redAccent
-        : isNoAnswer
-            ? Colors.redAccent
-            : isDeclined
-                ? Colors.orange
-                : context.xText;
+    final isMissed  = call.status == 'missed' && !isOutgoing;
+    final isVideo   = call.callType == 'video';
+    final nameColor = isMissed ? const Color(0xFFE53935) : Colors.white;
     final initials  = name.trim().split(' ').take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
@@ -418,7 +378,7 @@ class _CallTile extends StatelessWidget {
           Container(
             width: 52, height: 52,
             decoration: BoxDecoration(shape: BoxShape.circle,
-                border: Border.all(color: context.xMuted.withValues(alpha: 0.1), width: 1)),
+                border: Border.all(color: Colors.white10, width: 1)),
             child: ClipOval(
               child: photoUrl != null
                 ? CachedNetworkImage(imageUrl: photoUrl!, fit: BoxFit.cover,
@@ -427,7 +387,7 @@ class _CallTile extends StatelessWidget {
             ),
           ),
 
-          SizedBox(width: 14),
+          const SizedBox(width: 14),
 
           // Info
           Expanded(
@@ -437,23 +397,20 @@ class _CallTile extends StatelessWidget {
                 Text(name,
                   style: TextStyle(color: nameColor, fontSize: 16,
                       fontWeight: FontWeight.w600)),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Row(children: [
-                  _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed || isNoAnswer || isDeclined),
-                  SizedBox(width: 5),
+                  _DirectionIcon(isOutgoing: isOutgoing, isMissed: isMissed),
+                  const SizedBox(width: 5),
                   Text(_statusLabel(),
                     style: TextStyle(
                       color: isMissed
-                          ? Colors.redAccent
-                          : isDeclined
-                              ? Colors.orange
-                              : context.xMuted,
+                          ? const Color(0xFFE53935) : Colors.white38,
                       fontSize: 12)),
                   if (call.duration > 0) ...[
-                    Text(' · ',
-                        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+                    const Text(' · ',
+                        style: TextStyle(color: Colors.white24, fontSize: 12)),
                     Text(_fmtDuration(call.duration),
-                      style: TextStyle(color: context.xMuted,
+                      style: const TextStyle(color: Colors.white38,
                           fontSize: 12)),
                   ],
                 ]),
@@ -466,21 +423,21 @@ class _CallTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(DateFormat('h:mm a').format(call.startTime),
-                style: TextStyle(color: context.xMuted, fontSize: 11)),
-              SizedBox(height: 8),
+                style: const TextStyle(color: Colors.white38, fontSize: 11)),
+              const SizedBox(height: 8),
               GestureDetector(
                 onTap: onTap,
                 child: Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: context.xAccent.withOpacity(0.1),
+                    color: const Color(0xFF00FF88).withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: context.xAccent.withOpacity(0.3)),
+                        color: const Color(0xFF00FF88).withOpacity(0.3)),
                   ),
                   child: Icon(
                     isVideo ? Icons.videocam_outlined : Icons.call_outlined,
-                    color: context.xAccent, size: 16),
+                    color: const Color(0xFF00FF88), size: 16),
                 ),
               ),
             ],
@@ -491,9 +448,9 @@ class _CallTile extends StatelessWidget {
   }
 
   Widget _initialsAvatar(String initials) => Container(
-    color: XameColors.darkSurface,
+    color: const Color(0xFF1E2533),
     child: Center(child: Text(initials,
-      style: TextStyle(color: XameColors.darkBg, fontSize: 18,
+      style: const TextStyle(color: Colors.white, fontSize: 18,
           fontWeight: FontWeight.w600))),
   );
 
@@ -529,7 +486,7 @@ class _CallTile extends StatelessWidget {
 // ── Direction Icon ────────────────────────────────────────────────────────────
 class _DirectionIcon extends StatelessWidget {
   final bool isOutgoing, isMissed;
-  _DirectionIcon({required this.isOutgoing, required this.isMissed});
+  const _DirectionIcon({required this.isOutgoing, required this.isMissed});
 
   @override
   Widget build(BuildContext context) {
@@ -537,10 +494,10 @@ class _DirectionIcon extends StatelessWidget {
       isOutgoing ? Icons.call_made : Icons.call_received,
       size: 13,
       color: isMissed
-          ? context.xDanger
+          ? const Color(0xFFE53935)
           : isOutgoing
-              ? context.xAccent
-              : context.xMuted,
+              ? const Color(0xFF00FF88)
+              : Colors.white38,
     );
   }
 }
