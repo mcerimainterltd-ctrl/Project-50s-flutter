@@ -146,8 +146,6 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
                   context.go('/contacts');
                 }
               },
-                else context.go('/contacts');
-              },
             ),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 60),
