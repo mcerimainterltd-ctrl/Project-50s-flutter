@@ -221,14 +221,15 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     switch (_filter) {
       case 'missed':
         return calls.where((c) =>
-            (c.status == 'missed' || c.status == 'no-answer') &&
-            c.recipientId == userId).toList();
+            c.recipientId == userId &&
+            (c.status == 'missed' ||
+             c.status == 'no-answer' ||
+             c.status == 'offline')).toList();
       case 'incoming':
         return calls.where((c) =>
             c.recipientId == userId &&
-            c.status != 'missed' &&
-            c.status != 'rejected' &&
-            c.status != 'no-answer').toList();
+            (c.status == 'ended' ||
+             c.status == 'accepted')).toList();
       case 'outgoing':
         return calls.where((c) => c.callerId == userId).toList();
       default:
@@ -361,7 +362,7 @@ class _CallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMissed   = (call.status == 'missed' || call.status == 'no-answer') && !isOutgoing;
+    final isMissed   = (call.status == 'missed' || call.status == 'no-answer' || call.status == 'offline') && !isOutgoing;
     final isDeclined = call.status == 'rejected';
     final isVideo    = call.callType == 'video';
     final nameColor  = isMissed ? const Color(0xFFE53935)
