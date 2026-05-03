@@ -377,6 +377,7 @@ class _CallTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMissed   = call.status == 'missed' && !isOutgoing;
+    final isVideo    = call.callType == 'video';
     final isDeclined = call.status == 'rejected';
     final nameColor  = isMissed ? const Color(0xFFE53935)
         : isDeclined ? const Color(0xFFFF9800)
@@ -515,7 +516,6 @@ class _DirectionIcon extends StatelessWidget {
               : isOutgoing
                   ? const Color(0xFF00FF88)
                   : Colors.white38,
-              : Colors.white38,
     );
   }
 }
