@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'dart:async';
 import 'package:xamepage/core/services/app_lock_service.dart';
 import 'package:xamepage/shared/widgets/pin_lock_screen.dart';
 import 'dart:async';
@@ -50,6 +52,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   @override
   void initState() {
     super.initState();
+    _initShareListener();
 
     // App lock — listen to lifecycle
     SystemChannels.lifecycle.setMessageHandler((msg) async {
@@ -124,6 +127,73 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   }
 
   @override
+  StreamSubscription? _shareSubscription;
+
+  void _initShareListener() {
+    // Handle sharing when app is already open
+    _shareSubscription = ReceiveSharingIntent.instance.getMediaStream().listen(
+      (List<SharedMediaFile> files) {
+        if (files.isEmpty) return;
+        _handleSharedFiles(files);
+      },
+    );
+    // Handle sharing when app is launched from share
+    ReceiveSharingIntent.instance.getInitialMedia().then(
+      (List<SharedMediaFile> files) {
+        if (files.isEmpty) return;
+        _handleSharedFiles(files);
+        ReceiveSharingIntent.instance.reset();
+      },
+    );
+  }
+
+  void _handleSharedFiles(List<SharedMediaFile> files) {
+    final router = ref.read(routerProvider);
+    final contacts = ref.read(contactsProvider).valueOrNull ?? [];
+    if (contacts.isEmpty) return;
+    showModalBottomSheet(
+      context: router.routerDelegate.navigatorKey.currentContext!,
+      backgroundColor: const Color(0xFF1A2332),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Share to Contact',
+                style: TextStyle(color: Colors.white,
+                    fontSize: 16, fontWeight: FontWeight.w700))),
+          const Divider(color: Colors.white12, height: 1),
+          SizedBox(
+            height: 300,
+            child: ListView.builder(
+              itemCount: contacts.length,
+              itemBuilder: (ctx, i) {
+                final c = contacts[i];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF00B0A0),
+                    child: Text(c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                        style: const TextStyle(color: Colors.black,
+                            fontWeight: FontWeight.bold))),
+                  title: Text(c.name,
+                      style: const TextStyle(color: Colors.white, fontSize: 14)),
+                  subtitle: Text(c.id,
+                      style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    router.push('/chat/${c.id}',
+                        extra: {'sharedFiles': files});
+                  },
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     if (user != null) {
