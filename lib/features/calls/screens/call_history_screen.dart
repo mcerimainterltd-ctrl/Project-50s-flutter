@@ -38,7 +38,7 @@ class CallRecord {
 }
 
 // ── Provider ─────────────────────────────────────────────────────────────────
-final callHistoryProvider = FutureProvider.autoDispose
+final callHistoryProvider = FutureProvider
     .family<List<CallRecord>, String>((ref, userId) async {
   // Load cache instantly first
   final cached = CacheService.loadCallHistory()
