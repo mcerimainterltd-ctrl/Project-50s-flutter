@@ -66,7 +66,6 @@ class CallHistoryScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<CallHistoryScreen> createState() => _CallHistoryScreenState();
 }
-}
 
 class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     with SingleTickerProviderStateMixin {
