@@ -293,9 +293,6 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
       final data      = res.data as Map<String, dynamic>?;
       final publicId  = data?['public_id'] as String?;
-      final cloudName = (data?['secure_url'] as String? ?? '').contains('dveoa6j32')
-          ? 'dveoa6j32'
-          : sigData['cloud_name'] as String;
       // Build a permanent URL from public_id — secure_url may contain expiring tokens
       final fileUrl = (publicId != null && publicId.isNotEmpty)
           ? 'https://res.cloudinary.com/$cloudName/$resourceType/upload/$publicId'
