@@ -246,7 +246,8 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       // Step 2: Upload directly to Cloudinary
       final isVideo    = effectiveMime.startsWith('video');
       final isAudio    = effectiveMime.startsWith('audio');
-      final resourceType = isVideo || isAudio ? 'video' : 'image';
+      final isImage    = effectiveMime.startsWith('image');
+      final resourceType = isVideo || isAudio ? 'video' : isImage ? 'image' : 'raw';
       final cloudUrl   = 'https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload';
 
       final cloudForm  = FormData.fromMap({
