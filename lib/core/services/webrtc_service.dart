@@ -105,17 +105,22 @@ class WebRTCService {
     });
 
     _socket.callAnswer.listen((data) async {
-      _callCancelled = true;
       _incomingCallController.add(false);
       try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
-      await _audio.stopAll(); // Stop outgoing tone immediately and forcefully
+      await _audio.stopAll();
       if (_pc != null) {
         await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
         _remoteDescriptionSet = true;
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
-        _audio.stopAll();
-        Helper.setSpeakerphoneOn(false); _callState = CallState.active; _callStateController.add(CallState.active);
+        await _audio.stopAll();
+        await Helper.setSpeakerphoneOn(false);
+        _callCancelled = true;
+        _callState = CallState.active;
+        _callStateController.add(CallState.active);
+      } else {
+        _callState = CallState.ended;
+        _callStateController.add(CallState.ended);
       }
     });
 
@@ -204,7 +209,15 @@ class WebRTCService {
     });
     
     _pc!.onIceConnectionState = (s) => print('[ICE] state: \$s');
-    _pc!.onConnectionState = (s) => print('[CONN] state: \$s');
+    _pc!.onConnectionState = (s) {
+      print('[CONN] state: \$s');
+      if (s == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        if (_callState != CallState.active) {
+          _callState = CallState.active;
+          _callStateController.add(CallState.active);
+        }
+      }
+    };
     _pc!.onIceCandidate = (c) => _socket.emitIceCandidate(currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
     
     _pc!.onTrack = (e) {
