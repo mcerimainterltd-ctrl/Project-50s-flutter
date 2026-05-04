@@ -13,6 +13,7 @@ import 'package:xamepage/core/config/constants.dart';
 enum CallState { idle, outgoing, incoming, active, ended }
 
 final webRTCServiceProvider = Provider((ref) {
+  ref.keepAlive();
   // We use your existing, proven socket provider
   final socket = ref.watch(socketServiceProvider);
   return WebRTCService(socket);
