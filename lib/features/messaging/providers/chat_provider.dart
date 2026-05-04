@@ -248,16 +248,26 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       final isAudio    = effectiveMime.startsWith('audio');
       final isImage    = effectiveMime.startsWith('image');
       final resourceType = isVideo || isAudio ? 'video' : isImage ? 'image' : 'raw';
+      final isRaw      = resourceType == 'raw';
       final cloudUrl   = 'https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload';
 
-      final cloudForm  = FormData.fromMap({
-        'file':      await MultipartFile.fromFile(file.path,
-                         contentType: DioMediaType.parse(effectiveMime)),
-        'api_key':   apiKey,
-        'timestamp': timestamp.toString(),
-        'signature': signature,
-        'folder':    folder,
-      });
+      // Raw files (documents) use unsigned upload with preset — signed upload
+      // does not include resource_type in signature so Cloudinary rejects it
+      final cloudForm  = isRaw
+          ? FormData.fromMap({
+              'file':           await MultipartFile.fromFile(file.path,
+                                    contentType: DioMediaType.parse(effectiveMime)),
+              'upload_preset':  'gx8rteqo',
+              'folder':         folder,
+            })
+          : FormData.fromMap({
+              'file':      await MultipartFile.fromFile(file.path,
+                               contentType: DioMediaType.parse(effectiveMime)),
+              'api_key':   apiKey,
+              'timestamp': timestamp.toString(),
+              'signature': signature,
+              'folder':    folder,
+            });
 
       final cloudDio = Dio(BaseOptions(
         connectTimeout: const Duration(seconds: 30),
