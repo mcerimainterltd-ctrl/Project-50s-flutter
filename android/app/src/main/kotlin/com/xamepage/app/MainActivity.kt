@@ -46,8 +46,34 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Start keepalive service when app opens
         SocketKeepaliveService.start(this)
+        handleCallIntent(intent)
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleCallIntent(intent)
+    }
+
+    private fun handleCallIntent(intent: android.content.Intent?) {
+        if (intent == null) return
+        val callerName = intent.getStringExtra("caller_name") ?: return
+        val callType   = intent.getStringExtra("call_type")   ?: "voice"
+        when (intent.action) {
+            CallService.ACTION_ANSWER -> {
+                // Start service then let Flutter handle the answer
+                CallService.start(this, callerName, callType)
+            }
+            CallService.ACTION_DECLINE -> {
+                CallService.stop(this)
+            }
+            else -> {
+                // App opened from full-screen notification — start call service
+                if (intent.getBooleanExtra("incoming_call", false)) {
+                    CallService.start(this, callerName, callType)
+                }
+            }
+        }
     }
 
     override fun onDestroy() {

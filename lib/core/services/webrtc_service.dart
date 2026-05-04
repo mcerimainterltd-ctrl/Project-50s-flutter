@@ -105,19 +105,23 @@ class WebRTCService {
     });
 
     _socket.callAnswer.listen((data) async {
-      _incomingCallController.add(false);
-      try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
+      // Recipient answered — stop outgoing ringtone and timeout
+      _callTimeoutTimer?.cancel();
+      _callCancelled = true; // prevents timeout from firing
       await _audio.stopAll();
+      try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
       if (_pc != null) {
-        await _pc!.setRemoteDescription(RTCSessionDescription(data.answer['sdp'], data.answer['type']));
+        await _pc!.setRemoteDescription(
+            RTCSessionDescription(data.answer['sdp'], data.answer['type']));
         _remoteDescriptionSet = true;
+        // Drain any ICE candidates that arrived before remote description
         for (var c in _pendingIce) { await _pc!.addCandidate(c); }
         _pendingIce.clear();
-        await _audio.stopAll();
-        await Helper.setSpeakerphoneOn(false);
-        _callCancelled = true;
+        // Set speakerphone AFTER call goes active, not before
         _callState = CallState.active;
         _callStateController.add(CallState.active);
+        await Helper.setSpeakerphoneOn(false);
+        _incomingCallController.add(false);
       } else {
         _callState = CallState.ended;
         _callStateController.add(CallState.ended);

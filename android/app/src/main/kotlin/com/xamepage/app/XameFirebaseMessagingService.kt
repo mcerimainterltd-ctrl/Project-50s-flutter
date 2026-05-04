@@ -20,10 +20,13 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
         when (type) {
             "incoming_call" -> {
-                // Start foreground service — shows on lock screen
-                CallService.start(this, callerName, callType)
-                // Also show heads-up notification
+                // Android 12+ blocks foreground service from FCM background.
+                // Show notification first — MainActivity starts CallService on resume.
                 showHeadsUpNotification(callerName, callType)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    // Android 11 and below: safe to start foreground service from background
+                    CallService.start(this, callerName, callType)
+                }
             }
             "scheduled_call_due" -> {
                 // Wake app so Flutter socket listener can fire the call
