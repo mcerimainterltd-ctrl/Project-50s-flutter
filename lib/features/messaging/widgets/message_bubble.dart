@@ -742,10 +742,15 @@ class _FileBubbleState extends State<_FileBubble> {
       final cached = File(path);
       if (!cached.existsSync() || cached.lengthSync() == 0) {
         if (cached.existsSync()) await cached.delete();
+        final resolvedUrl = _resolveUrl(widget.url);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('URL: $resolvedUrl', style: TextStyle(fontSize: 10)),
+          duration: Duration(seconds: 10),
+          backgroundColor: Colors.blueGrey));
         await Dio(BaseOptions(
           connectTimeout: Duration(seconds: 30),
           receiveTimeout: Duration(minutes: 5),
-        )).download(_resolveUrl(widget.url), path,
+        )).download(resolvedUrl, path,
             onReceiveProgress: (r, t) {
           if (t > 0 && mounted) setState(() => _progress = r / t);
         });
