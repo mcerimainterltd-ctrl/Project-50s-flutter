@@ -123,7 +123,7 @@ class SocketService {
         AppConstants.serverUrl,
         IO.OptionBuilder()
           .setQuery({'userId': xameId})
-          .setTransports(['websocket'])
+          .setTransports(['polling', 'websocket'])
           .setPath('/socket.io/')
           .enableReconnection()
           .setReconnectionDelay(1000)

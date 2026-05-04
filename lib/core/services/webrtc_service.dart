@@ -192,7 +192,9 @@ class WebRTCService {
 
   Future<List<Map<String, dynamic>>> _fetchIceServers() async {
     try {
-      final res = await http.get(Uri.parse('https://project-50s.onrender.com/api/ice-servers'));
+      final res = await http.get(
+        Uri.parse('https://project-50s.onrender.com/api/ice-servers'),
+      ).timeout(const Duration(seconds: 5));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final servers = (data['iceServers'] as List).map((s) => Map<String, dynamic>.from(s)).toList();
@@ -202,9 +204,22 @@ class WebRTCService {
     } catch (e) {
       print('[ICE] Failed to fetch, using fallback: \$e');
     }
+    // Fallback — multiple STUN + open TURN for NAT traversal on older Android
     return [
       {'urls': 'stun:stun.l.google.com:19302'},
       {'urls': 'stun:stun1.l.google.com:19302'},
+      {'urls': 'stun:stun2.l.google.com:19302'},
+      {'urls': 'stun:stun3.l.google.com:19302'},
+      {
+        'urls': 'turn:openrelay.metered.ca:80',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
+      {
+        'urls': 'turn:openrelay.metered.ca:443',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
     ];
   }
 
