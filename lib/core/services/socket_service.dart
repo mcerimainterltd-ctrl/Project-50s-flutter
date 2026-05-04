@@ -393,6 +393,7 @@ class SocketService {
   void emitUserOnline(String id)                   => emit('user-online',        {'userId': id, 'timestamp': DateTime.now().millisecondsSinceEpoch});
   void emitUserOffline(String id)                  => emit('user-offline',       {'userId': id});
   void emitHeartbeat(String id)                    => emit('heartbeat',          {'userId': id, 'timestamp': DateTime.now().millisecondsSinceEpoch});
+  void emitCallRingingAck(String callerId)         => emit('call-ringing-ack',   {'callerId': callerId});
   void emitCallUser(String r, dynamic o, String t) => emit('call-user',          {'recipientId': r, 'offer': o, 'callType': t});
 
   // Listen for callId assigned by server after emitting call-user

@@ -102,29 +102,31 @@ class WebRTCService {
       } catch (_) {}
       _callState = CallState.incoming;
       _callStateController.add(CallState.incoming);
+      // Notify caller that this device is actually ringing
+      _socket.emitCallRingingAck(data.callerId);
     });
 
     _socket.callAnswer.listen((data) async {
       // Recipient answered — stop outgoing ringtone and timeout
       _callTimeoutTimer?.cancel();
-      _callCancelled = true; // prevents timeout from firing
+      _callCancelled = true;
       await _audio.stopAll();
       try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
+      // Always update UI to active regardless of _pc state
+      _callState = CallState.active;
+      _callStateController.add(CallState.active);
+      _incomingCallController.add(false);
       if (_pc != null) {
-        await _pc!.setRemoteDescription(
-            RTCSessionDescription(data.answer['sdp'], data.answer['type']));
-        _remoteDescriptionSet = true;
-        // Drain any ICE candidates that arrived before remote description
-        for (var c in _pendingIce) { await _pc!.addCandidate(c); }
-        _pendingIce.clear();
-        // Set speakerphone AFTER call goes active, not before
-        _callState = CallState.active;
-        _callStateController.add(CallState.active);
-        await Helper.setSpeakerphoneOn(false);
-        _incomingCallController.add(false);
-      } else {
-        _callState = CallState.ended;
-        _callStateController.add(CallState.ended);
+        try {
+          await _pc!.setRemoteDescription(
+              RTCSessionDescription(data.answer['sdp'], data.answer['type']));
+          _remoteDescriptionSet = true;
+          for (var c in _pendingIce) { await _pc!.addCandidate(c); }
+          _pendingIce.clear();
+          await Helper.setSpeakerphoneOn(false);
+        } catch (e) {
+          print('[WebRTC] setRemoteDescription error: \$e');
+        }
       }
     });
 
