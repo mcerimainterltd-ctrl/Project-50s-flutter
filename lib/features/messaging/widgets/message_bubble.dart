@@ -32,10 +32,9 @@ String _resolveUrl(String url, {bool forDisplay = false}) {
   if (url.isEmpty) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) {
     if (url.contains('res.cloudinary.com')) {
-      // All Cloudinary raw uploads need fl_attachment to be publicly accessible
-      if (url.contains('/raw/upload/') && !url.contains('fl_attachment')) {
-        return url.replaceFirst('/raw/upload/', '/raw/upload/fl_attachment/');
-      }
+      // Raw files uploaded via unsigned preset are publicly accessible as-is
+      // fl_attachment transformation causes 401 on raw resource type
+      // so we serve the direct URL without any transformation
     }
     return url;
   }
