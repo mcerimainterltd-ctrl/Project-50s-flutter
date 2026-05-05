@@ -74,7 +74,7 @@ class DiscoveryApiService {
     } catch (_) { return []; }
   }
 
-  static Future<List<DiscoveryUser>> fetchPeople(String userId) async {
+  static Future<List<DiscoveryUser>> fetchPeople(String userId, {Set<String> contactIds = const {}}) async {
     try {
       final res = await _dio.get('/api/discover/people',
           queryParameters: {'userId': userId, 'limit': 20});
@@ -82,13 +82,15 @@ class DiscoveryApiService {
       if (data['success'] != true) return [];
       return (data['people'] as List).map((p) {
         final m = Map<String, dynamic>.from(p);
+        final id = m['id'] as String? ?? '';
         return DiscoveryUser(
-          id:           m['id']          as String? ?? '',
+          id:           id,
           name:         m['name']        as String? ?? '',
           avatarUrl:    m['avatarUrl']   as String? ?? '',
           mutualCount:  (m['mutualCount'] as num?)?.toInt() ?? 0,
           isOnline:     m['isOnline']    as bool? ?? false,
           tagline:      m['tagline']     as String?,
+          isAdded:      contactIds.contains(id),
         );
       }).toList();
     } catch (_) { return []; }
@@ -273,7 +275,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
     final results = await Future.wait([
       DiscoveryApiService.fetchFeed(region: _regionCode, page: 1),
-      DiscoveryApiService.fetchPeople(userId),
+      DiscoveryApiService.fetchPeople(userId, contactIds: ref.read(contactsProvider).valueOrNull?.map((c) => c.id).toSet() ?? {}),
       DiscoveryApiService.fetchStories(userId),
     ]);
 
@@ -456,15 +458,29 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                         'contactId': user.id,
                       });
                       final data = res.data as Map<String, dynamic>;
+                      final success = data['success'] == true;
+                      final msg = data['message'] as String? ?? '';
+                      if (msg.toLowerCase().contains('already')) {
+                        setState(() => user.isAdded = true);
+                      }
                       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(data['message'] ?? 'Request sent to ${user.name}'),
-                        backgroundColor: context.xSurface,
+                        content: Text(success ? 'Request sent to \${user.name}' : msg),
+                        backgroundColor: success ? context.xSurface : Colors.orange,
                         duration: const Duration(seconds: 2)));
-                    } catch (_) {
+                    } on DioException catch (e) {
+                      final msg = (e.response?.data as Map?)?['message'] as String?
+                          ?? 'Could not send request';
                       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Could not send request to ${user.name}'),
+                        content: Text(msg),
                         backgroundColor: Colors.redAccent,
                         duration: const Duration(seconds: 2)));
+                      setState(() => user.isAdded = false);
+                    } catch (_) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Could not send request to \${user.name}'),
+                        backgroundColor: Colors.redAccent,
+                        duration: const Duration(seconds: 2)));
+                      setState(() => user.isAdded = false);
                     }
                   },
                 ),
