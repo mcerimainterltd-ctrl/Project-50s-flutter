@@ -102,8 +102,12 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     void refresh() {
       if (mounted) {
         ref.invalidate(callHistoryProvider(user.xameId));
+        setState(() {});
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
+          if (mounted) {
+            ref.invalidate(callHistoryProvider(user.xameId));
+            setState(() {});
+          }
         });
       }
     }
