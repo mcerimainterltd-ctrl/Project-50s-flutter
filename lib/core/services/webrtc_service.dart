@@ -160,7 +160,7 @@ class WebRTCService {
     _callTimeoutTimer = Timer(
       Duration(seconds: AppConstants.callTimeoutSeconds), () {
       if (_callState == CallState.outgoing) {
-        _recordMissedCall(userId, 'voice');
+        _recordMissedCall(userId, isVideo ? 'video' : 'voice');
         endCall();
       }
     });
