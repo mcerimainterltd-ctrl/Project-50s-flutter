@@ -164,14 +164,7 @@
             </intent-filter>
         </service>
 
-        <!-- Boot receiver -->
-        <receiver
-            android:name=".BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            </intent-filter>
-        </receiver>
+
 
         <meta-data android:name="flutterEmbedding" android:value="2"/>
     </application>
