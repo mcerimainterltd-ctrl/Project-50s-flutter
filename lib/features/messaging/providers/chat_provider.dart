@@ -30,8 +30,8 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
   final _storage = const FlutterSecureStorage();
   final _dio     = Dio(BaseOptions(
     baseUrl:        AppConstants.serverUrl,
-    connectTimeout: const Duration(seconds: 60), // Render cold start can take 50s
-    receiveTimeout: const Duration(seconds: 60),
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 30),
     sendTimeout:    const Duration(minutes: 10), // large video uploads need time
   ));
   final List<StreamSubscription> _subs = [];

@@ -82,6 +82,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.read(chatProvider(widget.userId).notifier).markAllSeen();
       ref.read(contactsProvider.notifier).markRead(widget.userId);
       ref.read(socketServiceProvider).emitGetChatHistory(widget.userId);
+      // Also fetch via HTTP — faster and more reliable than socket history
+      ref.read(chatProvider(widget.userId).notifier).fetchHistory().then((_) {
+        if (mounted) _scrollToBottom();
+      });
       Future.delayed(const Duration(milliseconds: 800), _scrollToBottom);
     });
     // Scroll to bottom when composer gains focus (keyboard opens)
