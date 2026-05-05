@@ -2588,8 +2588,11 @@ class _HistoryTabState extends State<_HistoryTab> {
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/xamepay_receipt_${tx.id}.png');
     await file.writeAsBytes(image);
-    await Share.shareXFiles([XFile(file.path)],
-        text: 'XamePay Transaction Receipt');
+    await Share.shareXFiles(
+      [XFile(file.path, mimeType: 'image/png')],
+      text: 'XamePay Transaction Receipt',
+      subject: 'XamePay Transaction Receipt',
+    );
   }
 
   void _showReceipt(BuildContext context, WalletTx tx) {
