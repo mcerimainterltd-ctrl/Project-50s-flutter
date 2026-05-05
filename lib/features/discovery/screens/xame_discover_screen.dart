@@ -457,12 +457,12 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       });
                       final data = res.data as Map<String, dynamic>;
                       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(data['message'] ?? 'Request sent to \${user.name}'),
+                        content: Text(data['message'] ?? 'Request sent to ${user.name}'),
                         backgroundColor: context.xSurface,
                         duration: const Duration(seconds: 2)));
                     } catch (_) {
                       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Could not send request to \${user.name}'),
+                        content: Text('Could not send request to ${user.name}'),
                         backgroundColor: Colors.redAccent,
                         duration: const Duration(seconds: 2)));
                     }
