@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:dio/dio.dart';
 import '../../discovery/screens/discovery_aura_feed.dart';
 import '../../../core/services/wallet_lock_service.dart';
 import '../../../core/services/chat_lock_service.dart';
@@ -176,6 +178,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               fontWeight: FontWeight.bold)),
       ),
       _ConnectionDot(),
+      _ContactRequestsBadge(),
       IconButton(
         icon: Icon(Icons.more_vert, color: context.xText),
         onPressed: _showMainMenu),
@@ -877,4 +880,65 @@ class _ChatPinPromptState extends ConsumerState<_ChatPinPrompt> {
         child: Text('Cancel', style: TextStyle(color: context.xMuted))),
     ]),
   );
+}
+
+// ── Contact Requests Badge ────────────────────────────────────────────────────
+class _ContactRequestsBadge extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_ContactRequestsBadge> createState() => _ContactRequestsBadgeState();
+}
+
+class _ContactRequestsBadgeState extends ConsumerState<_ContactRequestsBadge> {
+  int _count = 0;
+  StreamSubscription? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCount();
+    _sub = ref.read(socketServiceProvider).contactRequest.listen((_) {
+      if (mounted) setState(() => _count++);
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchCount() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res = await dio.get('/api/add-requests/${user.xameId}');
+      final data = res.data as Map<String, dynamic>;
+      if (data['success'] == true && mounted) {
+        setState(() => _count = (data['requests'] as List).length);
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(clipBehavior: Clip.none, children: [
+      IconButton(
+        icon: Icon(Icons.person_add_outlined, color: context.xText),
+        onPressed: () async {
+          await context.push('/contact-requests');
+          _fetchCount();
+        }),
+      if (_count > 0)
+        Positioned(top: 6, right: 6,
+          child: Container(
+            width: 16, height: 16,
+            decoration: BoxDecoration(
+              color: context.xAccent,
+              shape: BoxShape.circle),
+            child: Center(child: Text('$_count',
+              style: const TextStyle(color: Colors.black,
+                  fontSize: 9, fontWeight: FontWeight.w800))))),
+    ]);
+  }
 }

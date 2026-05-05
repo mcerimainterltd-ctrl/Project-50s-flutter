@@ -16,6 +16,8 @@ import '../../features/messaging/screens/chat_screen.dart';
 import '../../features/calling/screens/call_screen.dart';
 import '../../features/calling/screens/incoming_call_screen.dart';
 import '../../features/calls/screens/call_history_screen.dart';
+import '../../features/contacts/screens/contact_requests_screen.dart';
+import '../../features/contacts/screens/contact_requests_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/settings_lock_screen.dart';
@@ -76,6 +78,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const IncomingCallScreen()),
       GoRoute(path: '/conference',    builder: (c, s) => _Placeholder('Conference')),
       GoRoute(path: '/call-history',  builder: (c, s) => CallHistoryScreen(onBack: () => c.go('/contacts'))),
+      GoRoute(path: '/contact-requests', builder: (c, s) => const ContactRequestsScreen()),
+      GoRoute(path: '/contact-requests', builder: (c, s) => const ContactRequestsScreen()),
       GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl)),
       GoRoute(path: '/app-lock', builder: (c, s) {
         final notifier = ref.read(appLockProvider.notifier);

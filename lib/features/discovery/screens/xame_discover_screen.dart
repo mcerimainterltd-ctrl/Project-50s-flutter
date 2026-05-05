@@ -451,17 +451,18 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     if (self == null) return;
                     try {
                       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-                      await dio.post('/api/add-contact', data: {
+                      final res = await dio.post('/api/add-request', data: {
                         'userId':    self.xameId,
                         'contactId': user.id,
                       });
+                      final data = res.data as Map<String, dynamic>;
                       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Now following ' + user.name),
+                        content: Text(data['message'] ?? 'Request sent to \${user.name}'),
                         backgroundColor: context.xSurface,
                         duration: const Duration(seconds: 2)));
                     } catch (_) {
                       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Could not follow ' + user.name),
+                        content: Text('Could not send request to \${user.name}'),
                         backgroundColor: Colors.redAccent,
                         duration: const Duration(seconds: 2)));
                     }
