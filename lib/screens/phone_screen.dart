@@ -1131,23 +1131,27 @@ class _XameContactsSection extends StatelessWidget {
             return SizedBox(width: 68,
               child: Column(children: [
                 Stack(children: [
-                  CircleAvatar(radius: 26,
-                    backgroundColor: context.xSurface,
-                    backgroundImage: c.profilePic != null
-                        ? NetworkImage(c.profilePic!) : null,
-                    child: c.profilePic == null
-                        ? Text(
-                            c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
-                            style: TextStyle(color: context.xText,
-                                fontSize: 18, fontWeight: FontWeight.w700))
-                        : null),
-                  Positioned(bottom: 0, right: 0,
-                    child: Container(width: 13, height: 13,
-                      decoration: BoxDecoration(
-                          color: context.xAccent,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: context.xSurface, width: 2)))),
+                  Container(
+                    width: 56, height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: context.xPrimary, width: 2)),
+                    child: ClipOval(child: c.profilePic != null
+                        ? Image.network(c.profilePic!, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => CircleAvatar(
+                              backgroundColor: context.xSurface,
+                              child: Text(
+                                c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                                style: TextStyle(color: context.xText,
+                                    fontSize: 18, fontWeight: FontWeight.w700))))
+                        : CircleAvatar(
+                            backgroundColor: context.xSurface,
+                            child: Text(
+                              c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                              style: TextStyle(color: context.xText,
+                                  fontSize: 18, fontWeight: FontWeight.w700))))),
+                  // Blue ring indicates XamePage user — matches main contacts screen
                 ]),
                 SizedBox(height: 4),
                 Text(c.name,
