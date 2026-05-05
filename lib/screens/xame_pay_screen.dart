@@ -8,7 +8,9 @@ import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ── COLOURS ───────────────────────────────────────────────────────────────────
@@ -636,12 +638,14 @@ class _XamePayScreenState extends State<XamePayScreen>
 
   // ── ADD MONEY SHEET ───────────────────────────────────────────────────────
 
+  // ── ADD MONEY SHEET ─────────────────────────────────────────────────────
+
   void _showAddMoney() {
     final methods = [
       ['💳', 'Debit / Credit Card',  'Instant • Visa, Mastercard, Verve'],
-      ['🏦', 'Bank Transfer',         'Instant • Virtual account'],
-      ['📟', 'USSD',                  'No internet needed'],
-      ['📥', 'Receive from Contact',  'From another XamePage user'],
+      ['🏦', 'Bank Transfer',        'Instant • Virtual account'],
+      ['📟', 'USSD',                 'No internet needed'],
+      ['📥', 'Receive from Contact', 'Request from another XamePage user'],
     ];
     showModalBottomSheet(
       context: context, backgroundColor: _kCard,
@@ -661,12 +665,12 @@ class _XamePayScreenState extends State<XamePayScreen>
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
-                  if (e.key == 3) {
-                    Navigator.pop(context);
-                    _tab.animateTo(3);
-                  } else {
-                    Navigator.pop(context);
-                    _snack('${e.value[1]} — coming soon');
+                  Navigator.pop(context);
+                  switch (e.key) {
+                    case 0: _showCardPayment(); break;
+                    case 1: _showBankTransfer(); break;
+                    case 2: _showUSSD(); break;
+                    case 3: _showRequestFromContact(); break;
                   }
                 },
                 child: Container(
@@ -693,6 +697,215 @@ class _XamePayScreenState extends State<XamePayScreen>
             )),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── CARD PAYMENT ─────────────────────────────────────────────────────────
+  void _showCardPayment() {
+    final amtCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context, backgroundColor: _kCard, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Padding(padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text("💳 Card Payment",
+                style: TextStyle(color: Colors.white,
+                    fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            const Text("Visa, Mastercard, Verve accepted",
+                style: TextStyle(color: _kMuted, fontSize: 12)),
+            const SizedBox(height: 20),
+            TextField(
+              controller: amtCtrl,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Amount ($_currency)",
+                labelStyle: const TextStyle(color: _kMuted),
+                filled: true, fillColor: const Color(0xFF1E2D3D),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: _kTeal,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                onPressed: () async {
+                  final amt = double.tryParse(amtCtrl.text.trim());
+                  if (amt == null || amt <= 0) { _snack("Enter a valid amount"); return; }
+                  Navigator.pop(ctx);
+                  _snack("Initializing payment...");
+                  try {
+                    final r = await http.post(
+                      Uri.parse("${widget.serverUrl}/api/wallet/flw/init-payment"),
+                      headers: {"Content-Type": "application/json"},
+                      body: jsonEncode({
+                        "userId": widget.userId, "amount": amt,
+                        "currency": _currency,
+                        "email": "${widget.userId}@xamepage.app",
+                        "name": widget.userId,
+                      }),
+                    ).timeout(const Duration(seconds: 15));
+                    final d = jsonDecode(r.body);
+                    if (d["success"] == true) {
+                      final url = Uri.parse(d["paymentLink"]);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      } else { _snack("Could not open payment page"); }
+                    } else { _snack(d["message"] ?? "Payment initialization failed"); }
+                  } catch (_) { _snack("Payment failed — check connection"); }
+                },
+                child: const Text("Proceed to Payment",
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+              )),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ── BANK TRANSFER ────────────────────────────────────────────────────────
+  void _showBankTransfer() {
+    showModalBottomSheet(
+      context: context, backgroundColor: _kCard, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => _BankTransferSheet(
+        userId: widget.userId, serverUrl: widget.serverUrl,
+        currency: _currency, onSnack: _snack,
+      ),
+    );
+  }
+
+  // ── USSD ─────────────────────────────────────────────────────────────────
+  void _showUSSD() {
+    final amtCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context, backgroundColor: _kCard, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Padding(padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text("📟 USSD Payment",
+                style: TextStyle(color: Colors.white,
+                    fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            const Text("Works without internet",
+                style: TextStyle(color: _kMuted, fontSize: 12)),
+            const SizedBox(height: 20),
+            TextField(
+              controller: amtCtrl, keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Amount ($_currency)",
+                labelStyle: const TextStyle(color: _kMuted),
+                filled: true, fillColor: const Color(0xFF1E2D3D),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () async {
+                  final amt = double.tryParse(amtCtrl.text.trim());
+                  if (amt == null || amt <= 0) { _snack("Enter a valid amount"); return; }
+                  Navigator.pop(ctx);
+                  _snack("Generating USSD code...");
+                  try {
+                    final r = await http.post(
+                      Uri.parse("${widget.serverUrl}/api/wallet/flw/ussd"),
+                      headers: {"Content-Type": "application/json"},
+                      body: jsonEncode({"userId": widget.userId, "amount": amt, "currency": _currency}),
+                    ).timeout(const Duration(seconds: 15));
+                    final d = jsonDecode(r.body);
+                    if (d["success"] == true) { _showUSSDCode(d["ussdCode"], amt); }
+                    else { _snack(d["message"] ?? "USSD generation failed"); }
+                  } catch (_) { _snack("Failed — check connection"); }
+                },
+                child: const Text("Get USSD Code",
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+              )),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _showUSSDCode(String code, double amount) {
+    showModalBottomSheet(
+      context: context, backgroundColor: _kCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text("📟 Dial this USSD code",
+              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: const Color(0xFF1E2D3D),
+                borderRadius: BorderRadius.circular(16)),
+            child: Column(children: [
+              Text(code, style: const TextStyle(color: _kTeal,
+                  fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 2)),
+              const SizedBox(height: 8),
+              Text("Amount: $_currency ${amount.toStringAsFixed(2)}",
+                  style: const TextStyle(color: _kMuted, fontSize: 13)),
+            ]),
+          ),
+          const SizedBox(height: 16),
+          const Text("Dial the code above on your phone to complete payment.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: _kMuted, fontSize: 13)),
+          const SizedBox(height: 16),
+          SizedBox(width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              onPressed: () async {
+                final url = Uri(scheme: "tel", path: code);
+                if (await canLaunchUrl(url)) await launchUrl(url);
+              },
+              child: const Text("Dial Now",
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+            )),
+        ]),
+      ),
+    );
+  }
+
+  // ── REQUEST FROM CONTACT ─────────────────────────────────────────────────
+  void _showRequestFromContact() {
+    showModalBottomSheet(
+      context: context, backgroundColor: _kCard, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => _RequestMoneySheet(
+        userId: widget.userId, serverUrl: widget.serverUrl,
+        currency: _currency, contacts: widget.xameContacts, onSnack: _snack,
       ),
     );
   }
@@ -862,6 +1075,264 @@ Widget _netGrid(List<NetItem> nets, String? selected, void Function(String) onTa
     );
 
 // ── SEND TAB ──────────────────────────────────────────────────────────────────
+
+// ── BANK TRANSFER SHEET ──────────────────────────────────────────────────────
+class _BankTransferSheet extends StatefulWidget {
+  final String userId, serverUrl, currency;
+  final void Function(String) onSnack;
+  const _BankTransferSheet({required this.userId, required this.serverUrl,
+      required this.currency, required this.onSnack});
+  @override
+  State<_BankTransferSheet> createState() => _BankTransferSheetState();
+}
+
+class _BankTransferSheetState extends State<_BankTransferSheet> {
+  Map<String, dynamic>? _account;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchVirtualAccount();
+  }
+
+  Future<void> _fetchVirtualAccount() async {
+    try {
+      final r = await http.post(
+        Uri.parse("${widget.serverUrl}/api/wallet/flw/virtual-account"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "userId": widget.userId,
+          "email": "${widget.userId}@xamepage.app",
+          "name": widget.userId,
+          "currency": widget.currency,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      final d = jsonDecode(r.body);
+      if (d["success"] == true) {
+        setState(() { _account = d["account"]; _loading = false; });
+      } else {
+        setState(() { _error = d["message"] ?? "Could not load account"; _loading = false; });
+      }
+    } catch (_) {
+      setState(() { _error = "Connection failed"; _loading = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false, initialChildSize: 0.5,
+      builder: (_, sc) => ListView(
+        controller: sc, padding: const EdgeInsets.all(24),
+        children: [
+          const Text("🏦 Bank Transfer",
+              style: TextStyle(color: Colors.white,
+                  fontSize: 17, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          const Text("Transfer to this account to fund your wallet",
+              style: TextStyle(color: _kMuted, fontSize: 12)),
+          const SizedBox(height: 20),
+          if (_loading)
+            const Center(child: CircularProgressIndicator(color: _kTeal))
+          else if (_error != null)
+            Text(_error!, style: const TextStyle(color: Colors.redAccent))
+          else if (_account != null) ...[
+            _accountRow("Bank Name", _account!["bank_name"] ?? ""),
+            _accountRow("Account Number", _account!["account_number"] ?? ""),
+            _accountRow("Account Name", _account!["account_name"] ?? "XamePay"),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: _kTeal.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _kTeal.withOpacity(0.3))),
+              child: const Row(children: [
+                Icon(Icons.info_outline, color: _kTeal, size: 16),
+                SizedBox(width: 8),
+                Expanded(child: Text(
+                  "Transfer any amount to this account. Your wallet will be credited automatically.",
+                  style: TextStyle(color: _kTeal, fontSize: 12))),
+              ]),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _accountRow(String label, String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFF1E2D3D),
+          borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: const TextStyle(color: _kMuted, fontSize: 11)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(color: Colors.white,
+              fontSize: 15, fontWeight: FontWeight.w700)),
+        ])),
+        GestureDetector(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: value));
+            widget.onSnack("Copied!");
+          },
+          child: const Icon(Icons.copy, color: _kMuted, size: 18)),
+      ]),
+    ),
+  );
+}
+
+// ── REQUEST MONEY SHEET ───────────────────────────────────────────────────────
+class _RequestMoneySheet extends StatefulWidget {
+  final String userId, serverUrl, currency;
+  final List<Map<String, String>> contacts;
+  final void Function(String) onSnack;
+  const _RequestMoneySheet({required this.userId, required this.serverUrl,
+      required this.currency, required this.contacts, required this.onSnack});
+  @override
+  State<_RequestMoneySheet> createState() => _RequestMoneySheetState();
+}
+
+class _RequestMoneySheetState extends State<_RequestMoneySheet> {
+  Map<String, String>? _selectedContact;
+  final _amtCtrl  = TextEditingController();
+  final _noteCtrl = TextEditingController();
+  bool _sending = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false, initialChildSize: 0.7,
+      builder: (_, sc) => ListView(
+        controller: sc, padding: const EdgeInsets.all(24),
+        children: [
+          const Text("📥 Request Money",
+              style: TextStyle(color: Colors.white,
+                  fontSize: 17, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          const Text("Request payment from a XamePage contact",
+              style: TextStyle(color: _kMuted, fontSize: 12)),
+          const SizedBox(height: 20),
+          // Contact picker
+          const Text("Select Contact",
+              style: TextStyle(color: _kMuted, fontSize: 12,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<Map<String, String>>(
+            value: _selectedContact,
+            dropdownColor: _kCard,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              filled: true, fillColor: const Color(0xFF1E2D3D),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24)),
+              hintText: "Choose contact",
+              hintStyle: const TextStyle(color: _kMuted),
+            ),
+            items: widget.contacts.map((c) => DropdownMenuItem(
+              value: c,
+              child: Text(c["name"] ?? c["id"] ?? "",
+                  style: const TextStyle(color: Colors.white)),
+            )).toList(),
+            onChanged: (v) => setState(() => _selectedContact = v),
+          ),
+          const SizedBox(height: 16),
+          // Amount
+          const Text("Amount",
+              style: TextStyle(color: _kMuted, fontSize: 12,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _amtCtrl, keyboardType: TextInputType.number,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: "0.00",
+              hintStyle: const TextStyle(color: _kMuted),
+              prefixText: "${widget.currency} ",
+              prefixStyle: const TextStyle(color: _kTeal, fontWeight: FontWeight.w700),
+              filled: true, fillColor: const Color(0xFF1E2D3D),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Note
+          const Text("Note (optional)",
+              style: TextStyle(color: _kMuted, fontSize: 12,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _noteCtrl,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: "What is this for?",
+              hintStyle: const TextStyle(color: _kMuted),
+              filled: true, fillColor: const Color(0xFF1E2D3D),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: _kTeal,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+              onPressed: _sending ? null : () async {
+                if (_selectedContact == null) {
+                  widget.onSnack("Select a contact"); return;
+                }
+                final amt = double.tryParse(_amtCtrl.text.trim());
+                if (amt == null || amt <= 0) {
+                  widget.onSnack("Enter a valid amount"); return;
+                }
+                setState(() => _sending = true);
+                try {
+                  final r = await http.post(
+                    Uri.parse("${widget.serverUrl}/api/wallet/request"),
+                    headers: {"Content-Type": "application/json"},
+                    body: jsonEncode({
+                      "fromId":  widget.userId,
+                      "toId":    _selectedContact!["id"],
+                      "amount":  amt,
+                      "currency": widget.currency,
+                      "note":    _noteCtrl.text.trim(),
+                    }),
+                  ).timeout(const Duration(seconds: 15));
+                  final d = jsonDecode(r.body);
+                  if (mounted) Navigator.pop(context);
+                  widget.onSnack(d["success"] == true
+                      ? "Request sent to ${_selectedContact!["name"]}"
+                      : d["message"] ?? "Request failed");
+                } catch (_) {
+                  widget.onSnack("Request failed — check connection");
+                } finally {
+                  if (mounted) setState(() => _sending = false);
+                }
+              },
+              child: _sending
+                  ? const SizedBox(height: 20, width: 20,
+                      child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                  : const Text("Send Request",
+                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+            )),
+        ],
+      ),
+    );
+  }
+}
 
 class _SendTab extends StatefulWidget {
   final RegionInfo region; final double balance;
