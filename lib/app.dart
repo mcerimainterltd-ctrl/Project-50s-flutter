@@ -53,6 +53,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   void initState() {
     super.initState();
     _initShareListener();
+    _initContactRequestListener();
 
     // App lock — listen to lifecycle
     SystemChannels.lifecycle.setMessageHandler((msg) async {
@@ -128,6 +129,15 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
   @override
   StreamSubscription? _shareSubscription;
+  StreamSubscription? _contactRequestAcceptedSub;
+
+  void _initContactRequestListener() {
+    _contactRequestAcceptedSub = ref.read(socketServiceProvider)
+        .contactRequestAccepted.listen((data) {
+      // Refresh contacts when our request is accepted
+      ref.invalidate(contactsProvider);
+    });
+  }
 
   void _initShareListener() {
     // Handle sharing when app is already open

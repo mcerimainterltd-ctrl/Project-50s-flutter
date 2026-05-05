@@ -166,16 +166,16 @@ class _PersonCardState extends State<_PersonCard>
                       horizontal: 20, vertical: 7),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: context.xAccent.withOpacity(0.12),
+                    color: context.xMuted.withOpacity(0.1),
                     border: Border.all(
-                        color: context.xAccent.withOpacity(0.3))),
+                        color: context.xMuted.withOpacity(0.3))),
                   child: Row(mainAxisSize: MainAxisSize.min,
                     children: [
-                    Icon(Icons.check_rounded,
-                        color: context.xAccent, size: 14),
+                    Icon(Icons.schedule_rounded,
+                        color: context.xMuted, size: 14),
                     SizedBox(width: 5),
-                    Text('Added', style: TextStyle(
-                        color: context.xAccent, fontSize: 12,
+                    Text('Requested', style: TextStyle(
+                        color: context.xMuted, fontSize: 12,
                         fontWeight: FontWeight.w700)),
                   ]))
               : GestureDetector(
