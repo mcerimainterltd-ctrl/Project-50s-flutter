@@ -62,6 +62,8 @@ class CallService : Service() {
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("incoming_call", true)
+            putExtra("caller_name", caller)
+            putExtra("call_type",   callType)
         }
         val fullScreenPi = PendingIntent.getActivity(
             this, 0, fullScreenIntent,
@@ -72,6 +74,8 @@ class CallService : Service() {
         val answerIntent = Intent(this, MainActivity::class.java).apply {
             action = ACTION_ANSWER
             flags  = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("caller_name", caller)
+            putExtra("call_type",   callType)
         }
         val answerPi = PendingIntent.getActivity(
             this, 1, answerIntent,
