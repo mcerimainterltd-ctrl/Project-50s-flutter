@@ -90,24 +90,27 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     });
   }
 
+  final List<StreamSubscription> _subs = [];
+
   void _listenToCallEvents() {
     final socket = ref.read(socketServiceProvider);
     final webrtc = ref.read(webRTCServiceProvider);
     final user   = ref.read(currentUserProvider);
     if (user == null) return;
 
-    webrtc.callState.listen((_) {
-      if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
-    });
-    socket.callEnded.listen((_) {
-      if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
-    });
-    socket.callRejected.listen((_) {
-      if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
-    });
-    socket.missedCallCount.listen((_) {
-      if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
-    });
+    void refresh() {
+      if (mounted) {
+        ref.invalidate(callHistoryProvider(user.xameId));
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) ref.invalidate(callHistoryProvider(user.xameId));
+        });
+      }
+    }
+
+    _subs.add(webrtc.callState.listen((_) => refresh()));
+    _subs.add(socket.callEnded.listen((_) => refresh()));
+    _subs.add(socket.callRejected.listen((_) => refresh()));
+    _subs.add(socket.missedCallCount.listen((_) => refresh()));
   }
 
   Future<void> _markSeen() async {
@@ -121,7 +124,11 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   }
 
   @override
-  void dispose() { _tabs.dispose(); super.dispose(); }
+  void dispose() {
+    _tabs.dispose();
+    for (final sub in _subs) { sub.cancel(); }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
