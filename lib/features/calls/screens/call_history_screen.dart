@@ -218,20 +218,24 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   }
 
   List<CallRecord> _filterCalls(List<CallRecord> calls, String userId) {
+    const missedStatuses = ['missed', 'no-answer', 'offline'];
+    const answeredStatuses = ['ended', 'accepted'];
     switch (_filter) {
       case 'missed':
+        // Missed = I was the recipient AND call was never answered
         return calls.where((c) =>
-            c.recipientId == userId &&
-            (c.status == 'missed' ||
-             c.status == 'no-answer' ||
-             c.status == 'offline')).toList();
+            (c.recipientId == userId || c.callerId == userId) &&
+            missedStatuses.contains(c.status)).toList();
       case 'incoming':
+        // Incoming = I was the recipient AND call was answered
         return calls.where((c) =>
             c.recipientId == userId &&
-            (c.status == 'ended' ||
-             c.status == 'accepted')).toList();
+            answeredStatuses.contains(c.status)).toList();
       case 'outgoing':
-        return calls.where((c) => c.callerId == userId).toList();
+        // Outgoing = I was the caller
+        return calls.where((c) =>
+            c.callerId == userId &&
+            !missedStatuses.contains(c.status)).toList();
       default:
         return calls;
     }
