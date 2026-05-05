@@ -2545,19 +2545,21 @@ class _HistoryTabState extends State<_HistoryTab> {
   Future<void> _shareReceipt(WalletTx tx, bool asPdf) async {
     final image = await _screenshotCtrl.captureFromWidget(
       Material(
-        color: _kCard,
+        color: Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Header
             Row(children: [
               const Text('XamePay', style: TextStyle(color: _kTeal,
                   fontSize: 20, fontWeight: FontWeight.w800)),
               const Spacer(),
-              Text('Transaction Receipt', style: const TextStyle(
-                  color: Colors.white54, fontSize: 11)),
+              const Text('Transaction Receipt', style: TextStyle(
+                  color: Color(0xFF888888), fontSize: 11)),
             ]),
             const SizedBox(height: 16),
+            // Amount
             Center(child: Text(fmt(tx.amount),
                 style: TextStyle(
                     color: tx.type == 'credit' ? _kTeal : const Color(0xFFFF6464),
@@ -2566,20 +2568,25 @@ class _HistoryTabState extends State<_HistoryTab> {
                 color: tx.status == 'Completed' ? _kTeal : const Color(0xFFF0A500),
                 fontSize: 14))),
             const SizedBox(height: 16),
-            const Divider(color: Colors.white12),
+            const Divider(color: Color(0xFFE0E0E0)),
             const SizedBox(height: 8),
             if (tx.recipient != null && tx.recipient!.isNotEmpty)
-              _receiptRow('Beneficiary', tx.recipient!),
-            _receiptRow('Description', tx.label),
-            _receiptRow('Date & Time', _fmtTs(tx.ts)),
+              _receiptRowLight('Beneficiary', tx.recipient!),
+            _receiptRowLight('Description', tx.label),
+            _receiptRowLight('Date & Time', _fmtTs(tx.ts)),
             if (tx.sentCurrency != null && tx.recvCurrency != null &&
                 tx.sentCurrency != tx.recvCurrency) ...[
-              _receiptRow('Sent', '${tx.sentCurrency} ${tx.sentAmount?.toStringAsFixed(2)}'),
-              _receiptRow('Received', '${tx.recvCurrency} ${tx.recvAmount?.toStringAsFixed(2)}'),
-              _receiptRow('FX Rate', '1 ${tx.sentCurrency} = ${tx.fxRate?.toStringAsFixed(4)} ${tx.recvCurrency}'),
+              _receiptRowLight('Sent', '\${tx.sentCurrency} \${tx.sentAmount?.toStringAsFixed(2)}'),
+              _receiptRowLight('Received', '\${tx.recvCurrency} \${tx.recvAmount?.toStringAsFixed(2)}'),
+              _receiptRowLight('FX Rate', '1 \${tx.sentCurrency} = \${tx.fxRate?.toStringAsFixed(4)} \${tx.recvCurrency}'),
             ],
-            _receiptRow('Reference', tx.id),
-            _receiptRow('Status', tx.status),
+            _receiptRowLight('Reference', tx.id),
+            _receiptRowLight('Status', tx.status),
+            const SizedBox(height: 16),
+            const Divider(color: Color(0xFFE0E0E0)),
+            const SizedBox(height: 8),
+            Center(child: Text('Powered by XamePage',
+                style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 10))),
           ]),
         ),
       ),
@@ -2693,6 +2700,19 @@ class _HistoryTabState extends State<_HistoryTab> {
       Expanded(child: Text(value, style: const TextStyle(
           color: Colors.white, fontSize: 13,
           fontWeight: FontWeight.w500),
+          textAlign: TextAlign.right)),
+    ]),
+  );
+
+  Widget _receiptRowLight(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(width: 110,
+          child: Text(label, style: const TextStyle(
+              color: Color(0xFF888888), fontSize: 13))),
+      Expanded(child: Text(value, style: const TextStyle(
+          color: Color(0xFF222222), fontSize: 13,
+          fontWeight: FontWeight.w600),
           textAlign: TextAlign.right)),
     ]),
   );
