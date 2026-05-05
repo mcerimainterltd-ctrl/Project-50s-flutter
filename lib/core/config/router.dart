@@ -58,7 +58,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
       GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
       GoRoute(path: '/chat/:userId',
-        builder: (c, s) => ChatScreen(userId: s.pathParameters['userId']!)),
+        builder: (c, s) {
+          final extra = s.extra as Map<String, dynamic>?;
+          final sharedFiles = extra?['sharedFiles'] as List<dynamic>?;
+          return ChatScreen(
+            userId: s.pathParameters['userId']!,
+            sharedFiles: sharedFiles,
+          );
+        }),
       GoRoute(path: '/call/:userId',
         builder: (context, state) => CallScreen(
           userId: state.pathParameters['userId']!,

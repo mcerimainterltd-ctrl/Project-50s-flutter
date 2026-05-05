@@ -82,6 +82,16 @@ void main() async {
 
   runApp(ProviderScope(
     overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
-    child: const XamePageApp(),
+    child: XamePageApp(sharedFile: await _getSharedFile()),
   ));
+}
+
+Future<Map<String, String>?> _getSharedFile() async {
+  try {
+    const channel = MethodChannel('com.xamepage.app/share');
+    final result = await channel.invokeMapMethod<String, String>('getSharedFile');
+    return result;
+  } catch (_) {
+    return null;
+  }
 }

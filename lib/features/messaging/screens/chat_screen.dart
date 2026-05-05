@@ -30,7 +30,8 @@ import '../disappearing.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String userId;
-  const ChatScreen({super.key, required this.userId});
+  final List<dynamic>? sharedFiles;
+  const ChatScreen({super.key, required this.userId, this.sharedFiles});
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -58,6 +59,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void initState() {
     super.initState();
     _tts.setStartHandler(() { if (mounted) setState(() => _isSpeaking = true); });
+    // Handle files shared from other apps
+    if (widget.sharedFiles != null && widget.sharedFiles!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        for (final f in widget.sharedFiles!) {
+          final path = f.path as String?;
+          final mime = f.mimeType as String? ?? 'application/octet-stream';
+          if (path != null) {
+            await ref.read(chatProvider(widget.userId).notifier)
+                .sendFile(dart_io.File(path), mime);
+          }
+        }
+      });
+    }
     _tts.setCompletionHandler(() { if (mounted) setState(() { _isSpeaking = false; _speakingText = ''; }); });
     _tts.setCancelHandler(() { if (mounted) setState(() { _isSpeaking = false; _speakingText = ''; }); });
     _tts.setSpeechRate(0.5);
