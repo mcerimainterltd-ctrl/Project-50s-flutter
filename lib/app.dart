@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:xamepage/core/services/app_lock_service.dart';
 import 'package:xamepage/shared/widgets/pin_lock_screen.dart';
@@ -129,6 +130,18 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
   @override
   StreamSubscription? _shareSubscription;
+
+  Future<void> _requestCriticalPermissions() async {
+    // POST_NOTIFICATIONS — required for Android 13+ call notifications
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
+    // USE_FULL_SCREEN_INTENT — required for Android 14+ lock screen calls
+    if (await Permission.systemAlertWindow.isDenied) {
+      await Permission.systemAlertWindow.request();
+    }
+  }
+
   StreamSubscription? _contactRequestAcceptedSub;
 
   void _initContactRequestListener() {
