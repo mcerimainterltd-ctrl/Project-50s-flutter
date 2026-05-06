@@ -77,7 +77,7 @@ void main() async {
 
   if (savedUser != null) {
     final pushService = PushService();
-    pushService.init(savedUser.xameId);
+    await pushService.init(savedUser.xameId);
   }
 
   runApp(ProviderScope(

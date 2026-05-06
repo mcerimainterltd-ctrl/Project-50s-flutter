@@ -125,11 +125,14 @@ class PushService {
 
   Future<void> _saveToken(String userId, String token) async {
     try {
-      await http.post(
+      final res = await http.post(
         Uri.parse('\${AppConstants.serverUrl}/api/save-fcm-token'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': userId, 'fcmToken': token}),
       );
-    } catch (_) {}
+      debugPrint('📱 FCM token saved: \${res.statusCode} for \$userId token=\${token.substring(0, 20)}...');
+    } catch (e) {
+      debugPrint('📱 FCM token save FAILED: \$e');
+    }
   }
 }
