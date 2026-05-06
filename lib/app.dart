@@ -189,7 +189,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
                         borderRadius: BorderRadius.circular(12))),
                 onPressed: () {
                   Navigator.pop(ctx);
-                  ctx.go('/wallet');
+                  router.go('/wallet');
                 },
                 child: const Text('Pay Now',
                     style: TextStyle(color: Colors.black,
