@@ -17,7 +17,7 @@ import androidx.core.graphics.drawable.IconCompat
 class CallService : Service() {
 
     companion object {
-        const val CHANNEL_ID       = "xamepage_call_v2"
+        const val CHANNEL_ID       = "xamepage_call_v3"
         const val NOTIF_ID         = 1001
         const val ACTION_ANSWER    = "ACTION_ANSWER"
         const val ACTION_DECLINE   = "ACTION_DECLINE"
