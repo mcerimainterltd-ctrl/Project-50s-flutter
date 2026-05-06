@@ -785,7 +785,7 @@ class _XamePayScreenState extends State<XamePayScreen>
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => _BankTransferSheet(
         userId: widget.userId, serverUrl: widget.serverUrl,
-        currency: 'NGN', onSnack: _snack,
+        currency: _currency, onSnack: _snack,
       ),
     );
   }
