@@ -6,6 +6,7 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -112,7 +113,12 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(this, channelId)
+        val caller_person = Person.Builder()
+            .setName(callerName)
+            .setImportant(true)
+            .build()
+
+        val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(callerName)
             .setContentText("Incoming ${if (isVideo) "Video" else "Voice"} Call · XamePage")
@@ -125,7 +131,13 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
             .addAction(android.R.drawable.ic_menu_call, "Answer",  answerPi)
             .addAction(android.R.drawable.ic_delete,    "Decline", declinePi)
             .setContentIntent(fullScreenPi)
-            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setStyle(NotificationCompat.CallStyle.forIncomingCall(
+                caller_person, declinePi, answerPi))
+        }
+
+        val notification = builder.build()
 
         val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         mgr.notify(CallService.NOTIF_ID + 1, notification)

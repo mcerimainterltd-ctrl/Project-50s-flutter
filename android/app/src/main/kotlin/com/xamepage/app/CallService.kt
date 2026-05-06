@@ -3,6 +3,7 @@ package com.xamepage.app
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Icon
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.RingtoneManager
@@ -10,6 +11,8 @@ import android.os.*
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.Person
+import androidx.core.graphics.drawable.IconCompat
 
 class CallService : Service() {
 
@@ -92,20 +95,31 @@ class CallService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val caller_person = Person.Builder()
+            .setName(caller)
+            .setImportant(true)
+            .build()
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(caller)
-            .setContentText("Incoming ${if (isVideo) "Video" else "Voice"} Call")
+            .setContentText("Incoming ${if (isVideo) "Video" else "Voice"} Call · XamePage")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setAutoCancel(false)
             .setFullScreenIntent(fullScreenPi, true)
+            .setContentIntent(fullScreenPi)
             .addAction(android.R.drawable.ic_menu_call, "Answer", answerPi)
             .addAction(android.R.drawable.ic_delete,    "Decline", declinePi)
-            .setContentIntent(fullScreenPi)
-            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setStyle(NotificationCompat.CallStyle.forIncomingCall(
+                caller_person, declinePi, answerPi))
+        }
+
+        return builder.build()
     }
 
     private fun createNotificationChannel() {
