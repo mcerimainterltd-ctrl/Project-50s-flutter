@@ -1086,44 +1086,51 @@ class _BankTransferSheet extends StatefulWidget {
   State<_BankTransferSheet> createState() => _BankTransferSheetState();
 }
 
+
 class _BankTransferSheetState extends State<_BankTransferSheet> {
   Map<String, dynamic>? _account;
-  bool _loading = true;
+  bool _loading = false;
+  bool _bvnSubmitted = false;
   String? _error;
+  final _bvnCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchVirtualAccount();
   }
 
-  Future<void> _fetchVirtualAccount() async {
+  Future<void> _fetchVirtualAccount(String bvn) async {
+    setState(() { _loading = true; _error = null; });
     try {
       final r = await http.post(
-        Uri.parse("${widget.serverUrl}/api/wallet/flw/virtual-account"),
+        Uri.parse("\${widget.serverUrl}/api/wallet/flw/virtual-account"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "userId": widget.userId,
-          "email": "${widget.userId}@xamepage.app",
+          "email": "\${widget.userId}@xamepage.app",
           "name": widget.userId,
           "currency": widget.currency,
+          "bvn": bvn,
         }),
       ).timeout(const Duration(seconds: 15));
       final d = jsonDecode(r.body);
       if (d["success"] == true) {
-        setState(() { _account = d["account"]; _loading = false; });
+        setState(() { _account = d["account"]; _loading = false; _bvnSubmitted = true; });
       } else {
         setState(() { _error = d["message"] ?? "Could not load account"; _loading = false; });
       }
+  }
+
     } catch (_) {
       setState(() { _error = "Connection failed"; _loading = false; });
     }
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      expand: false, initialChildSize: 0.5,
+      expand: false, initialChildSize: 0.6,
       builder: (_, sc) => ListView(
         controller: sc, padding: const EdgeInsets.all(24),
         children: [
@@ -1136,9 +1143,16 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
           const SizedBox(height: 20),
           if (_loading)
             const Center(child: CircularProgressIndicator(color: _kTeal))
-          else if (_error != null)
-            Text(_error!, style: const TextStyle(color: Colors.redAccent))
-          else if (_account != null) ...[
+          else if (_error != null) ...[
+            Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              onPressed: () => setState(() { _error = null; _bvnSubmitted = false; }),
+              child: const Text("Try Again", style: TextStyle(color: Colors.black))),
+          ]
+          else if (_bvnSubmitted && _account != null) ...[
             _accountRow("Bank Name", _account!["bank_name"] ?? ""),
             _accountRow("Account Number", _account!["account_number"] ?? ""),
             _accountRow("Account Name", _account!["account_name"] ?? "XamePay"),
@@ -1156,6 +1170,57 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                   style: TextStyle(color: _kTeal, fontSize: 12))),
               ]),
             ),
+          ] else ...[
+            const Text("Enter your BVN",
+                style: TextStyle(color: _kMuted, fontSize: 12,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _bvnCtrl,
+              keyboardType: TextInputType.number,
+              maxLength: 11,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "11-digit BVN",
+                hintStyle: const TextStyle(color: _kMuted),
+                filled: true, fillColor: const Color(0xFF1E2D3D),
+                counterStyle: const TextStyle(color: _kMuted),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white24)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3))),
+              child: const Row(children: [
+                Icon(Icons.lock_outline, color: Colors.orange, size: 14),
+                SizedBox(width: 8),
+                Expanded(child: Text(
+                  "Your BVN is required by Flutterwave to generate a virtual account. It is not stored by XamePage.",
+                  style: TextStyle(color: Colors.orange, fontSize: 11))),
+              ]),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                onPressed: () {
+                  final bvn = _bvnCtrl.text.trim();
+                  if (bvn.length != 11) {
+                    widget.onSnack("Enter a valid 11-digit BVN"); return;
+                  }
+                  _fetchVirtualAccount(bvn);
+                },
+                child: const Text("Get Virtual Account",
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+              )),
           ],
         ],
       ),
