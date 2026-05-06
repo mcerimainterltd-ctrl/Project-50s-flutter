@@ -54,6 +54,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     super.initState();
     _initShareListener();
     _initContactRequestListener();
+    _initWalletRequestListener();
 
     // App lock — listen to lifecycle
     SystemChannels.lifecycle.setMessageHandler((msg) async {
@@ -130,6 +131,75 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   @override
   StreamSubscription? _shareSubscription;
   StreamSubscription? _contactRequestAcceptedSub;
+
+
+  StreamSubscription? _walletRequestSub;
+
+  void _initWalletRequestListener() {
+    _walletRequestSub = ref.read(socketServiceProvider)
+        .walletRequest.listen((data) {
+      final fromName = data['fromName'] as String? ?? 'Someone';
+      final amount   = data['amount'];
+      final currency = data['currency'] as String? ?? 'NGN';
+      final fromId   = data['fromId']  as String? ?? '';
+      final note     = data['note']    as String? ?? '';
+      final router = ref.read(routerProvider);
+      final ctx = router.routerDelegate.navigatorKey.currentContext;
+      if (ctx == null) return;
+      showModalBottomSheet(
+        context: ctx,
+        backgroundColor: const Color(0xFF111E2E),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (_) => Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('💰 Payment Request',
+                style: TextStyle(color: Colors.white,
+                    fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+            Text('$fromName is requesting',
+                style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            const SizedBox(height: 8),
+            Text('$currency $amount',
+                style: const TextStyle(color: Color(0xFF00B0A0),
+                    fontSize: 32, fontWeight: FontWeight.w800)),
+            if (note.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('"$note"',
+                  style: const TextStyle(color: Colors.white54, fontSize: 13)),
+            ],
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Dismiss',
+                    style: TextStyle(color: Colors.white54)))),
+              const SizedBox(width: 12),
+              Expanded(flex: 2, child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00B0A0),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ctx.go('/wallet');
+                },
+                child: const Text('Pay Now',
+                    style: TextStyle(color: Colors.black,
+                        fontWeight: FontWeight.w700)))),
+            ]),
+          ]),
+        ),
+      );
+    });
+  }
 
   void _initContactRequestListener() {
     _contactRequestAcceptedSub = ref.read(socketServiceProvider)
