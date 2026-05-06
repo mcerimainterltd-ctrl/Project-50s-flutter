@@ -1097,6 +1097,32 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
   @override
   void initState() {
     super.initState();
+    _loadExistingAccount();
+  }
+
+  Future<void> _loadExistingAccount() async {
+    setState(() { _loading = true; });
+    try {
+      final r = await http.get(
+        Uri.parse("\${widget.serverUrl}/api/wallet/me?userId=\${widget.userId}"),
+      ).timeout(const Duration(seconds: 8));
+      final d = jsonDecode(r.body);
+      if (d["success"] == true) {
+        final va = d["virtualAccount"];
+        if (va != null &&
+            (va["accountNumber"] ?? "").toString().isNotEmpty) {
+          setState(() {
+            _account = {
+              "account_number": va["accountNumber"],
+              "bank_name":      va["bankName"],
+              "account_name":   "XamePay",
+            };
+            _bvnSubmitted = true;
+          });
+        }
+      }
+    } catch (_) {}
+    setState(() { _loading = false; });
   }
 
   Future<void> _fetchVirtualAccount(String bvn) async {
