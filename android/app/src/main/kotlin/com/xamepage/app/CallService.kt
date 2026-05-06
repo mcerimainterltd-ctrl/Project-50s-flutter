@@ -14,7 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 class CallService : Service() {
 
     companion object {
-        const val CHANNEL_ID       = "xamepage_call_channel"
+        const val CHANNEL_ID       = "xamepage_call_v2"
         const val NOTIF_ID         = 1001
         const val ACTION_ANSWER    = "ACTION_ANSWER"
         const val ACTION_DECLINE   = "ACTION_DECLINE"
