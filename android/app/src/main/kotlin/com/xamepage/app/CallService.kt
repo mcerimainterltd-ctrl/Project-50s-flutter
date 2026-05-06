@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.drawable.Icon
 import android.media.AudioAttributes
 import android.media.AudioManager
+import android.media.Ringtone
 import android.media.RingtoneManager
 import android.os.*
 import android.view.WindowManager
@@ -41,6 +42,7 @@ class CallService : Service() {
     }
 
     private var wakeLock: PowerManager.WakeLock? = null
+    private var ringtone: Ringtone? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -53,6 +55,7 @@ class CallService : Service() {
         val callType = intent?.getStringExtra(EXTRA_CALL_TYPE) ?: "voice"
 
         startForeground(NOTIF_ID, buildNotification(caller, callType))
+        startRingtone()
         return START_NOT_STICKY
     }
 
@@ -122,6 +125,32 @@ class CallService : Service() {
         return builder.build()
     }
 
+    private fun startRingtone() {
+        try {
+            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            ringtone = RingtoneManager.getRingtone(applicationContext, uri)
+            ringtone?.let {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    it.isLooping = true
+                }
+                val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+                audioManager.mode = AudioManager.MODE_RINGTONE
+                it.play()
+            }
+        } catch (e: Exception) {
+            // Fallback — silent if ringtone unavailable
+        }
+    }
+
+    private fun stopRingtone() {
+        try {
+            ringtone?.stop()
+            ringtone = null
+            val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+            audioManager.mode = AudioManager.MODE_NORMAL
+        } catch (_: Exception) {}
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -134,13 +163,7 @@ class CallService : Service() {
                 setShowBadge(true)
                 enableVibration(true)
                 vibrationPattern  = longArrayOf(0, 500, 200, 500)
-                setSound(
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
+                setSound(null, null) // Native ringtone handled by startRingtone()
             }
             val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             mgr.createNotificationChannel(channel)
@@ -158,6 +181,7 @@ class CallService : Service() {
     }
 
     override fun onDestroy() {
+        stopRingtone()
         wakeLock?.release()
         super.onDestroy()
     }
