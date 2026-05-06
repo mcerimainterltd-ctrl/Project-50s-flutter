@@ -51,11 +51,11 @@ class PushService {
     // Create notification channels
     await _createChannels();
 
-    // Save token
+    // Get fresh token — always save latest to server
     final token = await _fcm.getToken();
     if (token != null) await _saveToken(userId, token);
 
-    // Refresh token
+    // Refresh token whenever it rotates
     _fcm.onTokenRefresh.listen((t) => _saveToken(userId, t));
 
     // Foreground messages
