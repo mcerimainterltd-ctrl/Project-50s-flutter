@@ -1119,14 +1119,11 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
       } else {
         setState(() { _error = d["message"] ?? "Could not load account"; _loading = false; });
       }
-  }
-
     } catch (_) {
       setState(() { _error = "Connection failed"; _loading = false; });
     }
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
