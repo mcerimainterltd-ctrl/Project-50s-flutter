@@ -50,6 +50,18 @@ class CallService : Service() {
         val callType = intent?.getStringExtra(EXTRA_CALL_TYPE) ?: "voice"
 
         startForeground(NOTIF_ID, buildNotification(caller, callType))
+
+        // Launch full screen activity directly for lock screen support
+        val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("incoming_call", true)
+            putExtra("caller_name",   caller)
+            putExtra("call_type",     callType)
+        }
+        startActivity(fullScreenIntent)
+
         return START_NOT_STICKY
     }
 
