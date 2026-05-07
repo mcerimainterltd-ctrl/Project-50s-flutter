@@ -42,6 +42,9 @@ class MainActivity : FlutterActivity() {
                         CallService.stop(this)
                         result.success(null)
                     }
+                    "showIncomingCall" -> {
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -136,6 +139,16 @@ class MainActivity : FlutterActivity() {
                 // App opened from full-screen notification — start call service
                 if (intent.getBooleanExtra("incoming_call", false)) {
                     CallService.start(this, callerName, callType)
+                    // Notify Flutter to show incoming call screen
+                    val engine = io.flutter.embedding.engine.FlutterEngineCache
+                        .getInstance().get("main")
+                    engine?.dartExecutor?.binaryMessenger?.let { messenger ->
+                        io.flutter.plugin.common.MethodChannel(messenger, "com.xamepage.app/call")
+                            .invokeMethod("showIncomingCall", mapOf(
+                                "callerName" to callerName,
+                                "callType"   to callType
+                            ))
+                    }
                 }
             }
         }

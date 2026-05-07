@@ -58,7 +58,14 @@ class WebRTCService {
   Stream<MediaStream> get remoteStream$ => _remoteStreamController.stream;
   Stream<bool> get onIncomingCall => _incomingCallController.stream;
 
-  WebRTCService(this._socket) { 
+  WebRTCService(this._socket) {
+    // Handle native -> Flutter call to show incoming call screen
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'showIncomingCall') {
+        _incomingCallController.add(true);
+      }
+    });
+
     _socket.callEnded.listen((data) {
       _handleRemoteHangup();
     });
