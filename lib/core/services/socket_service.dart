@@ -113,6 +113,11 @@ class SocketService {
       debugPrint('✅ Socket already connected for: $xameId');
       return;
     }
+    // If socket exists but not connected, force reconnect
+    if (_socket != null && _socket!.connected == false) {
+      _socket!.connect();
+      return;
+    }
     if (_socket != null) {
       _socket!.clearListeners();
       _socket!.disconnect();
@@ -129,7 +134,7 @@ class SocketService {
         AppConstants.serverUrl,
         IO.OptionBuilder()
           .setQuery({'userId': xameId})
-          .setTransports(['websocket'])
+          .setTransports(['polling', 'websocket'])
           .setPath('/socket.io/')
           .enableReconnection()
           .setReconnectionDelay(1000)
