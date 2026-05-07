@@ -1264,11 +1264,12 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
               fontSize: 15, fontWeight: FontWeight.w700)),
         ])),
         GestureDetector(
-          onTap: () {
-            Clipboard.setData(ClipboardData(text: value));
-            widget.onSnack("Copied!");
+          behavior: HitTestBehavior.opaque,
+          onTap: () async {
+            await Clipboard.setData(ClipboardData(text: value));
+            widget.onSnack("$value copied!");
           },
-          child: const Icon(Icons.copy, color: _kMuted, size: 18)),
+          child: const Icon(Icons.copy, color: _kTeal, size: 20)),
       ]),
     ),
   );
