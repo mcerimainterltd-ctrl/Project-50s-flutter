@@ -113,11 +113,6 @@ class SocketService {
       debugPrint('✅ Socket already connected for: $xameId');
       return;
     }
-    // If socket exists but not connected, force reconnect
-    if (_socket != null && _socket!.connected == false) {
-      _socket!.connect();
-      return;
-    }
     if (_socket != null) {
       _socket!.clearListeners();
       _socket!.disconnect();
