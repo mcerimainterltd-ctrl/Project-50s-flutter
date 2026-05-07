@@ -50,7 +50,7 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun showHeadsUpNotification(callerName: String, callType: String) {
-        val channelId = "xamepage_headsup"
+        val channelId = "xamepage_headsup_v2"
         val isVideo   = callType == "video"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

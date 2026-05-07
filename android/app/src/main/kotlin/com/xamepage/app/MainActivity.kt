@@ -81,8 +81,38 @@ class MainActivity : FlutterActivity() {
                 startActivity(intent)
             }
         }
+        requestOneTimePermissions()
         SocketKeepaliveService.start(this)
         handleCallIntent(intent)
+    }
+
+    private fun requestOneTimePermissions() {
+        val prefs = getSharedPreferences("xamepage_prefs", MODE_PRIVATE)
+        val versionCode = packageManager.getPackageInfo(packageName, 0).versionCode
+        val lastAsked = prefs.getInt("permissions_asked_version", -1)
+        if (lastAsked == versionCode) return
+
+        // Overlay permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            !Settings.canDrawOverlays(this)) {
+            startActivity(android.content.Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            ))
+        }
+
+        // Battery optimization exemption
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(android.os.PowerManager::class.java)
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                startActivity(android.content.Intent(
+                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:$packageName")
+                ))
+            }
+        }
+
+        prefs.edit().putInt("permissions_asked_version", versionCode).apply()
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
