@@ -55,18 +55,6 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initShareListener();
     _initContactRequestListener();
     _initWalletRequestListener();
-    // Auto-connect socket as soon as user is available
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(currentUserProvider);
-      if (user != null) {
-        ref.read(socketServiceProvider).connect(user.xameId);
-      }
-      ref.listenManual(currentUserProvider, (prev, next) {
-        if (next != null && prev?.xameId != next.xameId) {
-          ref.read(socketServiceProvider).connect(next.xameId);
-        }
-      });
-    });
 
     // App lock — listen to lifecycle
     SystemChannels.lifecycle.setMessageHandler((msg) async {
