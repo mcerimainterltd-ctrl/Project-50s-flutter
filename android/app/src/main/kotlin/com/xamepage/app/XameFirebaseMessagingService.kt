@@ -2,6 +2,8 @@ package com.xamepage.app
 
 import android.app.*
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -19,8 +21,7 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
         when (type) {
             "incoming_call" -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    // Android 12+: foreground service blocked from FCM background
-                    // Show heads-up only — MainActivity starts CallService on resume
+                    // Android 12+: can't start foreground service from FCM background
                     showHeadsUpNotification(callerName, callType)
                 } else {
                     // Android 11 and below: start CallService first for wake lock + lock screen
@@ -29,7 +30,6 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
                 }
             }
             "scheduled_call_due" -> {
-                // Wake app so Flutter socket listener can fire the call
                 val wakeIntent = Intent(this, MainActivity::class.java).apply {
                     flags  = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     action = "SCHEDULED_CALL_DUE"
@@ -47,14 +47,34 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // Token refresh handled by Flutter side
     }
 
     private fun showHeadsUpNotification(callerName: String, callType: String) {
-        val channelId = CallService.CHANNEL_ID
+        val channelId = "xamepage_headsup"
         val isVideo   = callType == "video"
 
-        // Full screen intent
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "XamePage Calls",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                setShowBadge(true)
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 400, 200, 400)
+                setSound(
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+            }
+            val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            mgr.createNotificationChannel(channel)
+        }
+
         val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -68,7 +88,6 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Answer
         val answerPi = PendingIntent.getActivity(
             this, 1,
             Intent(this, MainActivity::class.java).apply {
@@ -80,7 +99,6 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Decline
         val declinePi = PendingIntent.getActivity(
             this, 2,
             Intent(this, MainActivity::class.java).apply {
