@@ -2,8 +2,9 @@ package com.xamepage.app
 
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.net.Uri
+import android.provider.Settings
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
@@ -11,147 +12,85 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
 
-    override fun provideFlutterEngine(context: android.content.Context): FlutterEngine? {
-        return super.provideFlutterEngine(context)
-    }
-
-    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        // Cache engine so SocketKeepaliveService can reach it
-        FlutterEngineCache.getInstance().put("main", flutterEngine)
-
-        // Keepalive channel — Flutter handles heartbeat
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
-            SocketKeepaliveService.CHANNEL_NAME)
-            .setMethodCallHandler { call, result ->
-                if (call.method == "heartbeat") {
-                    result.success(null)
-                } else {
-                    result.notImplemented()
-                }
-            }
-
-        // Call control channel — dismiss heads-up notification
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
-            "com.xamepage.app/call")
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "dismissIncomingCall" -> {
-                        val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
-                        mgr.cancel(CallService.NOTIF_ID + 1)
-                        CallService.stop(this)
-                        result.success(null)
-                    }
-                    "showIncomingCall" -> {
-                        result.success(null)
-                    }
-                    else -> result.notImplemented()
-                }
-            }
-    }
+    private val CHANNEL = "com.xamepage.app/call"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Show over lock screen and turn screen on
+        // Allow activity to show on lock screen and wake device
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
         } else {
             @Suppress("DEPRECATION")
             window.addFlags(
-                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
             )
-        }
-        // Request display over other apps permission if not granted
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            !Settings.canDrawOverlays(this)) {
-            val intent = android.content.Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            startActivity(intent)
-        }
-        // Request battery optimization exemption for reliable background delivery
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val pm = getSystemService(android.os.PowerManager::class.java)
-            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                val intent = android.content.Intent(
-                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                    Uri.parse("package:$packageName")
-                )
-                startActivity(intent)
-            }
         }
         requestOneTimePermissions()
         SocketKeepaliveService.start(this)
-        handleCallIntent(intent)
     }
 
     private fun requestOneTimePermissions() {
         val prefs = getSharedPreferences("xamepage_prefs", MODE_PRIVATE)
         val versionCode = packageManager.getPackageInfo(packageName, 0).versionCode
-        val lastAsked = prefs.getInt("permissions_asked_version", -1)
-        if (lastAsked == versionCode) return
-
-        // Overlay permission
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            !Settings.canDrawOverlays(this)) {
+        if (prefs.getInt("permissions_asked_version", -1) == versionCode) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             startActivity(android.content.Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            ))
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
         }
-
-        // Battery optimization exemption
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val pm = getSystemService(android.os.PowerManager::class.java)
             if (!pm.isIgnoringBatteryOptimizations(packageName)) {
                 startActivity(android.content.Intent(
                     Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                    Uri.parse("package:$packageName")
-                ))
+                    Uri.parse("package:$packageName")))
             }
         }
-
         prefs.edit().putInt("permissions_asked_version", versionCode).apply()
     }
 
-    override fun onNewIntent(intent: android.content.Intent) {
-        super.onNewIntent(intent)
-        handleCallIntent(intent)
-    }
-
-    private fun handleCallIntent(intent: android.content.Intent?) {
-        if (intent == null) return
-        val callerName = intent.getStringExtra("caller_name") ?: return
-        val callType   = intent.getStringExtra("call_type")   ?: "voice"
-        when (intent.action) {
-            CallService.ACTION_ANSWER -> {
-                // Start service then let Flutter handle the answer
-                CallService.start(this, callerName, callType)
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        FlutterEngineCache.getInstance().put("main", flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            SocketKeepaliveService.CHANNEL_NAME)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "heartbeat") result.success(null)
+                else result.notImplemented()
             }
-            CallService.ACTION_DECLINE -> {
-                CallService.stop(this)
-            }
-            else -> {
-                // App opened from full-screen notification — start call service
-                if (intent.getBooleanExtra("incoming_call", false)) {
-                    CallService.start(this, callerName, callType)
-                    // Notify Flutter to show incoming call screen
-                    val engine = io.flutter.embedding.engine.FlutterEngineCache
-                        .getInstance().get("main")
-                    engine?.dartExecutor?.binaryMessenger?.let { messenger ->
-                        io.flutter.plugin.common.MethodChannel(messenger, "com.xamepage.app/call")
-                            .invokeMethod("showIncomingCall", mapOf(
-                                "callerName" to callerName,
-                                "callType"   to callType
-                            ))
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "startCallService" -> {
+                        val caller   = call.argument<String>("callerName") ?: "Unknown"
+                        val callType = call.argument<String>("callType")   ?: "voice"
+                        CallService.start(this, caller, callType)
+                        result.success(null)
                     }
+                    "stopCallService" -> {
+                        CallService.stop(this)
+                        result.success(null)
+                    }
+                    "dismissIncomingCall" -> {
+                        val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+                        mgr.cancel(CallService.NOTIF_ID + 1)
+                        CallService.stop(this)
+                        result.success(null)
+                    }
+                    "keepScreenOn" -> {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        result.success(null)
+                    }
+                    "releaseScreen" -> {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
                 }
             }
-        }
     }
 
     override fun onDestroy() {
