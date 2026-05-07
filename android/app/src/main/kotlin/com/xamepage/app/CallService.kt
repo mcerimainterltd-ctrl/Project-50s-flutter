@@ -49,6 +49,7 @@ class CallService : Service() {
         val caller   = intent?.getStringExtra(EXTRA_CALLER)    ?: "Unknown"
         val callType = intent?.getStringExtra(EXTRA_CALL_TYPE) ?: "voice"
 
+        acquireWakeLock()
         startForeground(NOTIF_ID, buildNotification(caller, callType))
 
         // Launch full screen activity directly for lock screen support
