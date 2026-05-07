@@ -1104,7 +1104,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
     setState(() { _loading = true; });
     try {
       final r = await http.get(
-        Uri.parse("\${widget.serverUrl}/api/wallet/me?userId=\${widget.userId}"),
+        Uri.parse("${widget.serverUrl}/api/wallet/me?userId=${widget.userId}"),
       ).timeout(const Duration(seconds: 8));
       final d = jsonDecode(r.body);
       if (d["success"] == true) {
@@ -1129,11 +1129,11 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
     setState(() { _loading = true; _error = null; });
     try {
       final r = await http.post(
-        Uri.parse("\${widget.serverUrl}/api/wallet/flw/virtual-account"),
+        Uri.parse("${widget.serverUrl}/api/wallet/flw/virtual-account"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "userId": widget.userId,
-          "email": "\${widget.userId}@xamepage.app",
+          "email": "${widget.userId}@xamepage.app",
           "name": widget.userId,
           "currency": widget.currency,
           "bvn": bvn,
@@ -1781,7 +1781,7 @@ class _SendTabState extends State<_SendTab> {
             const TextInputType.numberWithOptions(decimal: true),
             (v) => _amount = double.tryParse(v) ?? 0),
         const SizedBox(height: 6),
-        Text('Balance: \${widget.fmt(widget.balance)}',
+        Text('Balance: ${widget.fmt(widget.balance)}',
             style: const TextStyle(color: _kMuted, fontSize: 12)),
         const SizedBox(height: 16),
         SizedBox(width: double.infinity,
@@ -3135,9 +3135,9 @@ class _HistoryTabState extends State<_HistoryTab> {
             _receiptRowLight('Date & Time', _fmtTs(tx.ts)),
             if (tx.sentCurrency != null && tx.recvCurrency != null &&
                 tx.sentCurrency != tx.recvCurrency) ...[
-              _receiptRowLight('Sent', '\${tx.sentCurrency} \${tx.sentAmount?.toStringAsFixed(2)}'),
-              _receiptRowLight('Received', '\${tx.recvCurrency} \${tx.recvAmount?.toStringAsFixed(2)}'),
-              _receiptRowLight('FX Rate', '1 \${tx.sentCurrency} = \${tx.fxRate?.toStringAsFixed(4)} \${tx.recvCurrency}'),
+              _receiptRowLight('Sent', '${tx.sentCurrency} ${tx.sentAmount?.toStringAsFixed(2)}'),
+              _receiptRowLight('Received', '${tx.recvCurrency} ${tx.recvAmount?.toStringAsFixed(2)}'),
+              _receiptRowLight('FX Rate', '1 ${tx.sentCurrency} = ${tx.fxRate?.toStringAsFixed(4)} ${tx.recvCurrency}'),
             ],
             _receiptRowLight('Reference', tx.id),
             _receiptRowLight('Status', tx.status),
