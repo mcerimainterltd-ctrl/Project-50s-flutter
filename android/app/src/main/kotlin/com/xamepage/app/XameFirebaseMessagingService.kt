@@ -18,12 +18,14 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
         when (type) {
             "incoming_call" -> {
-                // Android 12+ blocks foreground service from FCM background.
-                // Show notification first — MainActivity starts CallService on resume.
-                showHeadsUpNotification(callerName, callType)
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                    // Android 11 and below: safe to start foreground service from background
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // Android 12+: foreground service blocked from FCM background
+                    // Show heads-up only — MainActivity starts CallService on resume
+                    showHeadsUpNotification(callerName, callType)
+                } else {
+                    // Android 11 and below: start CallService first for wake lock + lock screen
                     CallService.start(this, callerName, callType)
+                    showHeadsUpNotification(callerName, callType)
                 }
             }
             "scheduled_call_due" -> {
