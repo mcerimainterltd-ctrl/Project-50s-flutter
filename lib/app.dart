@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -187,9 +189,36 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12))),
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  router.go('/wallet');
+                  final user = ref.read(currentUserProvider);
+                  if (user == null) return;
+                  try {
+                    final res = await http.post(
+                      Uri.parse('${AppConstants.serverUrl}/api/wallet/p2p'),
+                      headers: {'Content-Type': 'application/json'},
+                      body: jsonEncode({
+                        'senderId':    user.xameId,
+                        'recipientId': fromId,
+                        'amount':      amount,
+                        'currency':    currency,
+                        'note':        note,
+                      }),
+                    );
+                    final d = jsonDecode(res.body);
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                        content: Text(d['success'] == true
+                            ? 'Payment sent to $fromName'
+                            : d['message'] ?? 'Payment failed'),
+                      ));
+                    }
+                  } catch (_) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(content: Text('Payment failed — check connection')));
+                    }
+                  }
                 },
                 child: const Text('Pay Now',
                     style: TextStyle(color: Colors.black,
