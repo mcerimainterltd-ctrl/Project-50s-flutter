@@ -485,8 +485,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
 class _ConnectionDot extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final connected = ref.watch(
-      socketServiceProvider.select((s) => s.isConnected));
+    final state = ref.watch(socketStateProvider).valueOrNull;
+    final connected = state == SocketState.connected;
     return Container(
       width: 8, height: 8, margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(

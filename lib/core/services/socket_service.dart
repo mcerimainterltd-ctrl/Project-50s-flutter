@@ -9,6 +9,10 @@ import 'package:xamepage/core/services/audio_service.dart';
 
 final socketServiceProvider = Provider<SocketService>((ref) => SocketService());
 
+final socketStateProvider = StreamProvider<SocketState>((ref) {
+  return ref.watch(socketServiceProvider).connectionState;
+});
+
 enum SocketState { disconnected, connecting, connected, reconnecting, failed }
 
 class SocketService {
