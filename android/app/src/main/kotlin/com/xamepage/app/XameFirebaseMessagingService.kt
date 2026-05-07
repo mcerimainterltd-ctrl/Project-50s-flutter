@@ -2,8 +2,6 @@ package com.xamepage.app
 
 import android.app.*
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -51,30 +49,8 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun showHeadsUpNotification(callerName: String, callType: String) {
-        val channelId = "xamepage_headsup"
+        val channelId = CallService.CHANNEL_ID
         val isVideo   = callType == "video"
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "XamePage Calls",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                lockscreenVisibility    = Notification.VISIBILITY_PUBLIC
-                setShowBadge(true)
-                enableVibration(true)
-                vibrationPattern        = longArrayOf(0, 400, 200, 400)
-                setSound(
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-            }
-            val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            mgr.createNotificationChannel(channel)
-        }
 
         // Full screen intent
         val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
