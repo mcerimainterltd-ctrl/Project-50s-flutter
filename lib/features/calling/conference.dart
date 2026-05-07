@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -171,7 +173,18 @@ class ConferenceService {
   Future<void> _createPeer(String peerId, String displayName,
       {required bool isInitiator}) async {
     if (_participants.containsKey(peerId)) return;
-    final pc = await createPeerConnection({'iceServers': AppConstants.iceServers});
+    List<Map<String, dynamic>> iceServers = AppConstants.iceServers;
+    try {
+      final res = await http.get(
+        Uri.parse('${AppConstants.serverUrl}/api/ice-servers'),
+      ).timeout(const Duration(seconds: 5));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        iceServers = (data['iceServers'] as List)
+            .map((s) => Map<String, dynamic>.from(s)).toList();
+      }
+    } catch (_) {}
+    final pc = await createPeerConnection({'iceServers': iceServers});
     final participant = ConferenceParticipant(peerId: peerId,
         displayName: displayName, pc: pc);
     _participants[peerId] = participant;
