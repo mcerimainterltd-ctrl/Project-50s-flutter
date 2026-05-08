@@ -34,7 +34,20 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Backup custom iOS files
+        run: |
+          cp ios/Runner/AppDelegate.swift /tmp/AppDelegate.swift
+          cp ios/Runner/CallKitService.swift /tmp/CallKitService.swift
+          cp ios/Runner/Info.plist /tmp/Info.plist
 
+      - name: Generate iOS folder
+        run: flutter create --platforms=ios .
+
+      - name: Restore custom iOS files
+        run: |
+          cp /tmp/AppDelegate.swift ios/Runner/AppDelegate.swift
+          cp /tmp/CallKitService.swift ios/Runner/CallKitService.swift
+          cp /tmp/Info.plist ios/Runner/Info.plist
 
       - name: Set minimum iOS deployment target to 13.0
         run: |
