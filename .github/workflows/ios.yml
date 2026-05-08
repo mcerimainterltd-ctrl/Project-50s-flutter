@@ -36,81 +36,38 @@ jobs:
 
       - name: Backup custom iOS files
         run: |
-          cp ios/Runner/AppDelegate.swift /tmp/AppDelegate.swift
-          cp ios/Runner/CallKitService.swift /tmp/CallKitService.swift
-          cp ios/Runner/Info.plist /tmp/Info.plist
+          mkdir -p /tmp/ios_custom
+          cp ios/Runner/AppDelegate.swift /tmp/ios_custom/
+          cp ios/Runner/CallKitService.swift /tmp/ios_custom/
+          cp ios/Runner/Info.plist /tmp/ios_custom/
 
       - name: Generate iOS folder
         run: flutter create --platforms=ios .
 
       - name: Restore custom iOS files
         run: |
-          cp /tmp/AppDelegate.swift ios/Runner/AppDelegate.swift
-          cp /tmp/CallKitService.swift ios/Runner/CallKitService.swift
-          cp /tmp/Info.plist ios/Runner/Info.plist
-
-      - name: Register CallKitService.swift in Xcode project
-        run: |
-          python3 << 'PYEOF'
-          import re, uuid
-
-          pbxproj = 'ios/Runner.xcodeproj/project.pbxproj'
-          with open(pbxproj, 'r') as f:
-              content = f.read()
-
-          if 'CallKitService.swift' in content:
-              print("Already registered")
-              exit(0)
-
-          file_ref_uuid = uuid.uuid4().hex[:24].upper()
-          build_file_uuid = uuid.uuid4().hex[:24].upper()
-
-          # Add PBXFileReference
-          file_ref = f'		{file_ref_uuid} /* CallKitService.swift */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallKitService.swift; sourceTree = "<group>"; }};
-'
-          content = re.sub(r'(AppDelegate\.swift \*/ = \{[^
-]+
-)', r'' + file_ref, content)
-
-          # Add PBXBuildFile
-          build_file = f'		{build_file_uuid} /* CallKitService.swift in Sources */ = {{isa = PBXBuildFile; fileRef = {file_ref_uuid} /* CallKitService.swift */; }};
-'
-          content = re.sub(r'(AppDelegate\.swift in Sources \*/ = \{[^
-]+
-)', r'' + build_file, content)
-
-          # Add to PBXGroup (Runner group)
-          content = re.sub(r'(AppDelegate\.swift \*/,
-)', r'				' + file_ref_uuid + ' /* CallKitService.swift */,
-', content)
-
-          # Add to PBXSourcesBuildPhase
-          content = re.sub(r'(AppDelegate\.swift in Sources \*/,
-)', r'				' + build_file_uuid + ' /* CallKitService.swift in Sources */,
-', content)
-
-          with open(pbxproj, 'w') as f:
-              f.write(content)
-          print("Registered successfully")
-          PYEOF
+          cp /tmp/ios_custom/AppDelegate.swift ios/Runner/AppDelegate.swift
+          cp /tmp/ios_custom/CallKitService.swift ios/Runner/CallKitService.swift
+          cp /tmp/ios_custom/Info.plist ios/Runner/Info.plist
 
       - name: Register CallKitService.swift in Xcode project
         run: |
           cd ios
-          ruby - << 'RUBY'
-require 'xcodeproj'
-project = Xcodeproj::Project.open('Runner.xcodeproj')
-target = project.targets.first
-group = project.main_group['Runner']
-unless group.files.any? { |f| f.path == 'CallKitService.swift' }
-  file_ref = group.new_file('CallKitService.swift')
-  target.source_build_phase.add_file_reference(file_ref)
-  project.save
-  puts 'CallKitService.swift registered'
-else
-  puts 'Already registered'
-end
-RUBY
+          gem install xcodeproj --quiet
+          ruby -e "
+            require 'xcodeproj'
+            project = Xcodeproj::Project.open('Runner.xcodeproj')
+            target = project.targets.first
+            group = project.main_group['Runner']
+            unless group.files.any? { |f| f.path == 'CallKitService.swift' }
+              file_ref = group.new_file('CallKitService.swift')
+              target.source_build_phase.add_file_reference(file_ref)
+              project.save
+              puts 'Registered CallKitService.swift'
+            else
+              puts 'Already registered'
+            end
+          "
 
       - name: Set minimum iOS deployment target to 13.0
         run: |
