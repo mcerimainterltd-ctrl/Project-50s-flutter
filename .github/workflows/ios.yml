@@ -38,10 +38,20 @@ jobs:
       - name: Generate iOS folder
         run: flutter create --platforms=ios .
 
+      - name: Overlay custom iOS files
+        run: |
+          cp ios/Runner/AppDelegate.swift .flutter_create_ios_backup/Runner/AppDelegate.swift 2>/dev/null || true
+          cp -f ios/Runner/AppDelegate.swift ios/Runner/AppDelegate.swift
+          cp -f ios/Runner/CallKitService.swift ios/Runner/CallKitService.swift
+          cp -f ios/Runner/Info.plist ios/Runner/Info.plist
+
       - name: Set minimum iOS deployment target to 13.0
         run: |
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0/IPHONEOS_DEPLOYMENT_TARGET = 13.0/g' ios/Runner.xcodeproj/project.pbxproj
-          sed -i '' "s/platform :ios, '12.0'/platform :ios, '13.0'/g" ios/Podfile || true
+          /usr/libexec/PlistBuddy -c "Set :IPHONEOS_DEPLOYMENT_TARGET 13.0" ios/Runner.xcodeproj/project.pbxproj 2>/dev/null || true
+          echo 'platform :ios, '"'"'13.0'"'"'' > ios/Podfile.tmp
+          cat ios/Podfile >> ios/Podfile.tmp
+          mv ios/Podfile.tmp ios/Podfile
 
       - name: Build iOS (no signing)
         run: flutter build ios --release --no-codesign
