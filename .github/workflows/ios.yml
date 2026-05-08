@@ -1,9 +1,10 @@
 name: XamePage iOS IPA
 
 on:
-  workflow_dispatch:
   push:
-    tags: ['v*-ios']
+    branches: [xamepage-native-v3.0, main]
+    tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write

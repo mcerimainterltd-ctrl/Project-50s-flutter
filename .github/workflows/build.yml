@@ -3,9 +3,7 @@ name: XamePage Release APK
 on:
   push:
     branches: [xamepage-native-v3.0, main]
-    tags:
-      - 'v*'
-      - '!v*-ios'
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
