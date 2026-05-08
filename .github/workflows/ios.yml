@@ -94,6 +94,24 @@ jobs:
           print("Registered successfully")
           PYEOF
 
+      - name: Register CallKitService.swift in Xcode project
+        run: |
+          cd ios
+          ruby - << 'RUBY'
+require 'xcodeproj'
+project = Xcodeproj::Project.open('Runner.xcodeproj')
+target = project.targets.first
+group = project.main_group['Runner']
+unless group.files.any? { |f| f.path == 'CallKitService.swift' }
+  file_ref = group.new_file('CallKitService.swift')
+  target.source_build_phase.add_file_reference(file_ref)
+  project.save
+  puts 'CallKitService.swift registered'
+else
+  puts 'Already registered'
+end
+RUBY
+
       - name: Set minimum iOS deployment target to 13.0
         run: |
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0/IPHONEOS_DEPLOYMENT_TARGET = 13.0/g' ios/Runner.xcodeproj/project.pbxproj
