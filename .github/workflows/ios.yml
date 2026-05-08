@@ -43,11 +43,10 @@ jobs:
           mkdir -p /tmp/ios_custom
           cp ios/Runner/AppDelegate.swift /tmp/ios_custom/
           cp ios/Runner/CallKitService.swift /tmp/ios_custom/
+          cp ios/Runner/SocketKeepaliveService.swift /tmp/ios_custom/
           cp ios/Runner/Info.plist /tmp/ios_custom/
           cp ios/Runner/GoogleService-Info.plist /tmp/ios_custom/
-          cp ios/Runner/SocketKeepaliveService.swift /tmp/ios_custom/ 2>/dev/null || true
-          cp ios/Runner/GoogleService-Info.plist /tmp/ios_custom/
-          cp ios/Runner/SocketKeepaliveService.swift /tmp/ios_custom/ 2>/dev/null || true
+          cp ios/register_files.rb /tmp/ios_custom/
 
       - name: Generate iOS folder
         run: flutter create --platforms=ios .
@@ -56,38 +55,15 @@ jobs:
         run: |
           cp /tmp/ios_custom/AppDelegate.swift ios/Runner/AppDelegate.swift
           cp /tmp/ios_custom/CallKitService.swift ios/Runner/CallKitService.swift
+          cp /tmp/ios_custom/SocketKeepaliveService.swift ios/Runner/SocketKeepaliveService.swift
           cp /tmp/ios_custom/Info.plist ios/Runner/Info.plist
           cp /tmp/ios_custom/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
-          cp /tmp/ios_custom/SocketKeepaliveService.swift ios/Runner/SocketKeepaliveService.swift 2>/dev/null || true
-          cp /tmp/ios_custom/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
-          cp /tmp/ios_custom/SocketKeepaliveService.swift ios/Runner/SocketKeepaliveService.swift 2>/dev/null || true
+          cp /tmp/ios_custom/register_files.rb ios/register_files.rb
 
       - name: Register Swift files in Xcode project
         run: |
           gem install xcodeproj --quiet
-          python3 -c "
-import subprocess, sys
-script = '''
-require \"xcodeproj\"
-project = Xcodeproj::Project.open(\"ios/Runner.xcodeproj\")
-target = project.targets.first
-group = project.main_group[\"Runner\"]
-[%w[CallKitService.swift SocketKeepaliveService.swift]].flatten.each do |file|
-  unless group.files.any? { |f| f.path == file }
-    ref = group.new_file(file)
-    target.source_build_phase.add_file_reference(ref)
-    puts \"Registered #{file}\"
-  end
-end
-project.save
-'''
-import tempfile, os
-with tempfile.NamedTemporaryFile(suffix='.rb', mode='w', delete=False) as f:
-    f.write(script)
-    name = f.name
-os.system(f'ruby {name}')
-os.unlink(name)
-          " 
+          ruby ios/register_files.rb
 
       - name: Set minimum iOS deployment target to 13.0
         run: |
