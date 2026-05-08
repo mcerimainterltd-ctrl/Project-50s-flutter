@@ -1,0 +1,48 @@
+name: XamePage iOS IPA
+
+on:
+  push:
+    branches: [xamepage-native-v3.0]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.32.0'
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Cache pub
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-ios-${{ hashFiles('pubspec.lock') }}
+
+      - run: flutter pub get
+
+      - name: Generate iOS folder
+        run: flutter create --platforms=ios .
+
+      - name: Build iOS (no signing)
+        run: flutter build ios --release --no-codesign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: XamePage-iOS
+          path: build/ios/iphoneos/Runner.app
+          retention-days: 30
