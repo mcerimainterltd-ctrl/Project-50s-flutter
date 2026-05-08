@@ -40,6 +40,8 @@ jobs:
           cp ios/Runner/AppDelegate.swift /tmp/ios_custom/
           cp ios/Runner/CallKitService.swift /tmp/ios_custom/
           cp ios/Runner/Info.plist /tmp/ios_custom/
+          cp ios/Runner/GoogleService-Info.plist /tmp/ios_custom/
+          cp ios/Runner/GoogleService-Info.plist /tmp/ios_custom/
 
       - name: Generate iOS folder
         run: flutter create --platforms=ios .
@@ -49,6 +51,8 @@ jobs:
           cp /tmp/ios_custom/AppDelegate.swift ios/Runner/AppDelegate.swift
           cp /tmp/ios_custom/CallKitService.swift ios/Runner/CallKitService.swift
           cp /tmp/ios_custom/Info.plist ios/Runner/Info.plist
+          cp /tmp/ios_custom/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
+          cp /tmp/ios_custom/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
 
       - name: Register CallKitService.swift in Xcode project
         run: |
