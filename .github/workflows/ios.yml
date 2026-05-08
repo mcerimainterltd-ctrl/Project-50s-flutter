@@ -62,26 +62,32 @@ jobs:
           cp /tmp/ios_custom/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
           cp /tmp/ios_custom/SocketKeepaliveService.swift ios/Runner/SocketKeepaliveService.swift 2>/dev/null || true
 
-      - name: Register CallKitService.swift in Xcode project
+      - name: Register Swift files in Xcode project
         run: |
-          cd ios
           gem install xcodeproj --quiet
-          ruby << 'RUBY'
-require 'xcodeproj'
-project = Xcodeproj::Project.open('Runner.xcodeproj')
+          python3 -c "
+import subprocess, sys
+script = '''
+require \"xcodeproj\"
+project = Xcodeproj::Project.open(\"ios/Runner.xcodeproj\")
 target = project.targets.first
-group = project.main_group['Runner']
-['CallKitService.swift', 'SocketKeepaliveService.swift'].each do |file|
+group = project.main_group[\"Runner\"]
+[%w[CallKitService.swift SocketKeepaliveService.swift]].flatten.each do |file|
   unless group.files.any? { |f| f.path == file }
-    file_ref = group.new_file(file)
-    target.source_build_phase.add_file_reference(file_ref)
-    puts "Registered #{file}"
-  else
-    puts "Already registered: #{file}"
+    ref = group.new_file(file)
+    target.source_build_phase.add_file_reference(ref)
+    puts \"Registered #{file}\"
   end
 end
 project.save
-RUBY
+'''
+import tempfile, os
+with tempfile.NamedTemporaryFile(suffix='.rb', mode='w', delete=False) as f:
+    f.write(script)
+    name = f.name
+os.system(f'ruby {name}')
+os.unlink(name)
+          " 
 
       - name: Set minimum iOS deployment target to 13.0
         run: |
