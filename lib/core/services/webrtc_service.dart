@@ -91,7 +91,7 @@ class WebRTCService {
       _incomingCallController.add(true);
       await _audio.stopAll();
       await Helper.setSpeakerphoneOn(true);
-      // Native ringtone handled by CallService notification channel
+      _audio.playRingtone();
       // Start foreground service + lock screen notification
       try {
         await _channel.invokeMethod('startCallService', {
