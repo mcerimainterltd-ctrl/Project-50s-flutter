@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   FLUTTER_VERSION: '3.32.0'
 
@@ -41,7 +45,9 @@ jobs:
           cp ios/Runner/CallKitService.swift /tmp/ios_custom/
           cp ios/Runner/Info.plist /tmp/ios_custom/
           cp ios/Runner/GoogleService-Info.plist /tmp/ios_custom/
+          cp ios/Runner/SocketKeepaliveService.swift /tmp/ios_custom/ 2>/dev/null || true
           cp ios/Runner/GoogleService-Info.plist /tmp/ios_custom/
+          cp ios/Runner/SocketKeepaliveService.swift /tmp/ios_custom/ 2>/dev/null || true
 
       - name: Generate iOS folder
         run: flutter create --platforms=ios .
@@ -52,7 +58,9 @@ jobs:
           cp /tmp/ios_custom/CallKitService.swift ios/Runner/CallKitService.swift
           cp /tmp/ios_custom/Info.plist ios/Runner/Info.plist
           cp /tmp/ios_custom/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
+          cp /tmp/ios_custom/SocketKeepaliveService.swift ios/Runner/SocketKeepaliveService.swift 2>/dev/null || true
           cp /tmp/ios_custom/GoogleService-Info.plist ios/Runner/GoogleService-Info.plist
+          cp /tmp/ios_custom/SocketKeepaliveService.swift ios/Runner/SocketKeepaliveService.swift 2>/dev/null || true
 
       - name: Register CallKitService.swift in Xcode project
         run: |
@@ -63,14 +71,16 @@ jobs:
             project = Xcodeproj::Project.open('Runner.xcodeproj')
             target = project.targets.first
             group = project.main_group['Runner']
-            unless group.files.any? { |f| f.path == 'CallKitService.swift' }
-              file_ref = group.new_file('CallKitService.swift')
-              target.source_build_phase.add_file_reference(file_ref)
-              project.save
-              puts 'Registered CallKitService.swift'
-            else
-              puts 'Already registered'
+            ['CallKitService.swift', 'SocketKeepaliveService.swift'].each do |file|
+              unless group.files.any? { |f| f.path == file }
+                file_ref = group.new_file(file)
+                target.source_build_phase.add_file_reference(file_ref)
+                puts "Registered #{file}"
+              else
+                puts "Already registered: #{file}"
+              end
             end
+            project.save
           "
 
       - name: Set minimum iOS deployment target to 13.0

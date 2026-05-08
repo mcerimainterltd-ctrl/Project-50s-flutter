@@ -57,6 +57,9 @@ import PushKit
         application.registerForRemoteNotifications()
         Messaging.messaging().delegate = self
 
+        // Start socket keepalive
+        SocketKeepaliveService.shared.start(channel: nil)
+
         let voipRegistry = PKPushRegistry(queue: .main)
         voipRegistry.delegate = self
         voipRegistry.desiredPushTypes = [.voIP]
