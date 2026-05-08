@@ -35,13 +35,12 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Generate iOS folder
-        run: flutter create --platforms=ios .
+
 
       - name: Set minimum iOS deployment target to 13.0
         run: |
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0/IPHONEOS_DEPLOYMENT_TARGET = 13.0/g' ios/Runner.xcodeproj/project.pbxproj
-          sed -i '' "s/platform :ios, '12.0'/platform :ios, '13.0'/g" ios/Podfile || true
+          echo "platform :ios, '13.0'" | cat - ios/Podfile > /tmp/Podfile && mv /tmp/Podfile ios/Podfile
 
       - name: Build iOS (no signing)
         run: flutter build ios --release --no-codesign
