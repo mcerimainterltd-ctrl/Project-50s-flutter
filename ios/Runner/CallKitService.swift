@@ -9,8 +9,7 @@ class CallKitService: NSObject, CXProviderDelegate {
     private var currentCallUUID: UUID?
 
     override init() {
-        let config = CXProviderConfiguration()
-        config.localizedName = "XamePage"
+        let config = CXProviderConfiguration(localizedName: "XamePage")
         config.supportsVideo = true
         config.maximumCallsPerCallGroup = 1
         config.supportedHandleTypes = [.generic]
