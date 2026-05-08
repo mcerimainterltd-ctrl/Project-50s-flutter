@@ -49,6 +49,51 @@ jobs:
           cp /tmp/CallKitService.swift ios/Runner/CallKitService.swift
           cp /tmp/Info.plist ios/Runner/Info.plist
 
+      - name: Register CallKitService.swift in Xcode project
+        run: |
+          python3 << 'PYEOF'
+          import re, uuid
+
+          pbxproj = 'ios/Runner.xcodeproj/project.pbxproj'
+          with open(pbxproj, 'r') as f:
+              content = f.read()
+
+          if 'CallKitService.swift' in content:
+              print("Already registered")
+              exit(0)
+
+          file_ref_uuid = uuid.uuid4().hex[:24].upper()
+          build_file_uuid = uuid.uuid4().hex[:24].upper()
+
+          # Add PBXFileReference
+          file_ref = f'		{file_ref_uuid} /* CallKitService.swift */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallKitService.swift; sourceTree = "<group>"; }};
+'
+          content = re.sub(r'(AppDelegate\.swift \*/ = \{[^
+]+
+)', r'' + file_ref, content)
+
+          # Add PBXBuildFile
+          build_file = f'		{build_file_uuid} /* CallKitService.swift in Sources */ = {{isa = PBXBuildFile; fileRef = {file_ref_uuid} /* CallKitService.swift */; }};
+'
+          content = re.sub(r'(AppDelegate\.swift in Sources \*/ = \{[^
+]+
+)', r'' + build_file, content)
+
+          # Add to PBXGroup (Runner group)
+          content = re.sub(r'(AppDelegate\.swift \*/,
+)', r'				' + file_ref_uuid + ' /* CallKitService.swift */,
+', content)
+
+          # Add to PBXSourcesBuildPhase
+          content = re.sub(r'(AppDelegate\.swift in Sources \*/,
+)', r'				' + build_file_uuid + ' /* CallKitService.swift in Sources */,
+', content)
+
+          with open(pbxproj, 'w') as f:
+              f.write(content)
+          print("Registered successfully")
+          PYEOF
+
       - name: Set minimum iOS deployment target to 13.0
         run: |
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0/IPHONEOS_DEPLOYMENT_TARGET = 13.0/g' ios/Runner.xcodeproj/project.pbxproj
