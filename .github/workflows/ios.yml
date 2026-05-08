@@ -1,10 +1,9 @@
 name: XamePage iOS IPA
 
 on:
-  push:
-    branches: [xamepage-native-v3.0]
-    tags: ['v*']
   workflow_dispatch:
+  push:
+    tags: ['v*-ios']
 
 permissions:
   contents: write
@@ -37,6 +36,11 @@ jobs:
 
       - name: Generate iOS folder
         run: flutter create --platforms=ios .
+
+      - name: Set minimum iOS deployment target to 13.0
+        run: |
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0/IPHONEOS_DEPLOYMENT_TARGET = 13.0/g' ios/Runner.xcodeproj/project.pbxproj
+          sed -i '' "s/platform :ios, '12.0'/platform :ios, '13.0'/g" ios/Podfile || true
 
       - name: Build iOS (no signing)
         run: flutter build ios --release --no-codesign
