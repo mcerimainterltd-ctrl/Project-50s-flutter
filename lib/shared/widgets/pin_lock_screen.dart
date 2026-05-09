@@ -62,7 +62,11 @@ class _PinLockScreenState extends State<PinLockScreen>
       final biometrics = await _auth.getAvailableBiometrics();
       final available  = supported && biometrics.isNotEmpty;
       if (mounted) setState(() => _biometricAvailable = available);
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Biometric error: \$e'),
+          backgroundColor: Colors.redAccent));
+    }
   }
 
   Future<void> _biometricAuth() async {
@@ -79,7 +83,11 @@ class _PinLockScreenState extends State<PinLockScreen>
         // Biometric success — call onVerify with special token
         await widget.onVerify('__biometric__');
       }
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Biometric error: \$e'),
+          backgroundColor: Colors.redAccent));
+    }
   }
 
   void _onKey(String val) {
