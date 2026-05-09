@@ -100,19 +100,34 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text('Your Xame-ID is:',
                   style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 14)),
                 SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: context.xCard,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: context.xPrimary, width: 1.5),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: _returnedXameId!));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Xame-ID copied to clipboard'),
+                      duration: Duration(seconds: 2)));
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: context.xCard,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: context.xPrimary, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_returnedXameId!,
+                          style: TextStyle(color: context.xPrimary, fontSize: 26,
+                            fontWeight: FontWeight.bold, letterSpacing: 2)),
+                        SizedBox(width: 12),
+                        Icon(Icons.copy_rounded, color: context.xPrimary, size: 20),
+                      ],
+                    ),
                   ),
-                  child: Text(_returnedXameId!,
-                    style: TextStyle(color: context.xPrimary, fontSize: 26,
-                      fontWeight: FontWeight.bold, letterSpacing: 2)),
                 ),
                 SizedBox(height: 12),
-                Text('Save this ID — you need it to log in.',
+                Text('Tap to copy · Save this ID — you need it to log in.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: context.xMuted, fontSize: 13)),
                 SizedBox(height: 40),

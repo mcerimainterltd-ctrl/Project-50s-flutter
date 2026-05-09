@@ -91,6 +91,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             icon:     '🔐',
             pinLength: 6,
             showCancel: false,
+            autoBiometric: true,
             onVerify: (pin) async {
               final ok = notifier.verify(pin);
               if (ok) c.pop();
@@ -111,6 +112,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           icon:     '💰',
           pinLength: 4,
           showCancel: true,
+          autoBiometric: true,
           onCancel: () => c.go('/contacts'),
           onVerify: (pin) async {
             final ok = notifier.verify(pin);
