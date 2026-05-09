@@ -74,6 +74,22 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
     super.dispose();
   }
 
+  Future<void> _globalRefresh() async {
+    final socket = ref.read(socketServiceProvider);
+    final user   = ref.read(currentUserProvider);
+    if (user == null) return;
+    // Reconnect socket if disconnected
+    if (socket.currentUserId == null) {
+      socket.connect(user.xameId);
+    } else {
+      socket.emitGetContacts(user.xameId);
+      socket.emitRequestOnlineUsers();
+    }
+    // Invalidate providers to trigger re-fetch
+    ref.invalidate(contactsProvider);
+    ref.invalidate(callHistoryProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
@@ -81,7 +97,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       backgroundColor: context.xBg,
       body: SafeArea(child: Column(children: [
         _buildHeader(user),
-        Expanded(child: IndexedStack(index: _tab, children: [
+        Expanded(child: RefreshIndicator(
+        onRefresh: _globalRefresh,
+        color: XameColors.accent,
+        backgroundColor: context.xCard,
+        child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
           const SizedBox.shrink(), // Calls tab opens fullscreen
           Consumer(builder: (_, ref, __) {
@@ -143,7 +163,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     .toList(),
               );
             }),
-        ])),
+        ]),
+        )),
       ])),
       bottomNavigationBar: _buildBottomNav(),
       floatingActionButton: _tab == 0 ? FloatingActionButton(
