@@ -70,8 +70,9 @@ class _PinLockScreenState extends State<PinLockScreen>
       final ok = await _auth.authenticate(
         localizedReason: widget.subtitle,
         options: const AuthenticationOptions(
-          biometricOnly: false,
-          stickyAuth:    true,
+          biometricOnly: true,
+          stickyAuth:    false,
+          useErrorDialogs: true,
         ),
       );
       if (ok && mounted) {
