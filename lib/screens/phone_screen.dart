@@ -131,6 +131,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   // Credits
   double _credits     = 0;
   String _creditsCurr = 'NGN';
+  bool _creditsHidden = false;
   Map<String, dynamic> _rates = {};
 
   // Recents
@@ -612,6 +613,8 @@ class _PhoneScreenState extends State<PhoneScreen>
         _CreditsBar(
           credits:  _credits,
           currency: _creditsCurr,
+          hidden:   _creditsHidden,
+          onToggle: () => setState(() => _creditsHidden = !_creditsHidden),
           onTopUp:  () => _showTopUpSheet(),
         ),
         // ── Tab bar ──────────────────────────────────────────────
@@ -685,9 +688,11 @@ class _PhoneScreenState extends State<PhoneScreen>
 class _CreditsBar extends StatelessWidget {
   final double credits;
   final String currency;
+  final bool hidden;
   final VoidCallback onTopUp;
+  final VoidCallback onToggle;
   _CreditsBar({required this.credits, required this.currency,
-      required this.onTopUp});
+      required this.hidden, required this.onToggle, required this.onTopUp});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -706,12 +711,18 @@ class _CreditsBar extends StatelessWidget {
           Icon(Icons.phone_in_talk_rounded,
               color: XameColors.accent, size: 14),
           SizedBox(width: 6),
-          Text('$currency ${credits.toStringAsFixed(2)}',
+          Text(hidden ? '••••••' : '$currency ${credits.toStringAsFixed(2)}',
             style: TextStyle(color: XameColors.accent,
                 fontSize: 13, fontWeight: FontWeight.w700)),
           SizedBox(width: 4),
           Text('credits',
             style: TextStyle(color: context.xMuted, fontSize: 11)),
+          SizedBox(width: 6),
+          GestureDetector(
+            onTap: onToggle,
+            child: Icon(
+              hidden ? Icons.visibility_off : Icons.visibility,
+              color: XameColors.accent, size: 14)),
         ]),
       ),
       Spacer(),

@@ -380,17 +380,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     if (widget.mediaUrl.isNotEmpty) parts.add(widget.mediaUrl);
     parts.add('Shared via XamePage');
     final text = parts.join('\n');
-    try {
-      const ch = MethodChannel('com.xamepage.app/call');
-      await ch.invokeMethod('shareText', <String, dynamic>{'text': text});
-    } catch (_) {
-      await Clipboard.setData(ClipboardData(text: text));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Link copied to clipboard'),
-          backgroundColor: XameColors.darkSurface));
-      }
-    }
+    await Share.share(text);
   }
 
   void _showPreview(BuildContext context) {

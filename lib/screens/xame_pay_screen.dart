@@ -379,6 +379,7 @@ class _XamePayScreenState extends State<XamePayScreen>
 
   String _currency = 'NGN', _dispCurrency = 'NGN';
   double _balance  = 0;
+  bool _balanceHidden = false;
   bool   _loading  = true;
   List<WalletTx> _txs = [];
   late TabController _tab;
@@ -572,11 +573,22 @@ class _XamePayScreenState extends State<XamePayScreen>
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Wallet Balance',
-            style: TextStyle(color: Color(0xCCFFFFFF),
-                fontSize: 12, letterSpacing: 1)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Wallet Balance',
+                style: TextStyle(color: Color(0xCCFFFFFF),
+                    fontSize: 12, letterSpacing: 1)),
+            GestureDetector(
+              onTap: () => setState(() => _balanceHidden = !_balanceHidden),
+              child: Icon(
+                _balanceHidden ? Icons.visibility_off : Icons.visibility,
+                color: const Color(0xCCFFFFFF), size: 18),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
-        Text('$_displaySymbol${_fmtN(_displayBalance)}',
+        Text(_balanceHidden ? '••••••' : '$_displaySymbol${_fmtN(_displayBalance)}',
             style: const TextStyle(color: Colors.white,
                 fontSize: 32, fontWeight: FontWeight.w800)),
         if (conv.isNotEmpty)
