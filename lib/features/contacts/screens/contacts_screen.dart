@@ -476,6 +476,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       await ref.read(authServiceProvider).logout(user.xameId);
       ref.read(socketServiceProvider).disconnect();
     }
+    // Clear all local cache so next user sees no previous data
+    await CacheService.clearAll();
     ref.read(currentUserProvider.notifier).state = null;
     if (mounted) context.go('/login');
   }
@@ -588,10 +590,10 @@ class _EmptyChats extends StatelessWidget {
           fontWeight: FontWeight.w900, letterSpacing: 1)),
       SizedBox(height: 4),
       Text('created by Gibson Agbor',
-        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+        style: TextStyle(color: context.xMuted, fontSize: 12)),
       SizedBox(height: 16),
       Text('Tap + to add a contact and start chatting',
-        style: TextStyle(color: XameColors.darkSurface, fontSize: 14),
+        style: TextStyle(color: context.xMuted, fontSize: 14),
         textAlign: TextAlign.center),
     ]),
   );

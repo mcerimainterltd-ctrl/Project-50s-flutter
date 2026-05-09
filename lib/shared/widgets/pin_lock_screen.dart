@@ -58,9 +58,10 @@ class _PinLockScreenState extends State<PinLockScreen>
 
   Future<void> _checkBiometric() async {
     try {
-      final available = await _auth.canCheckBiometrics;
-      final enrolled  = await _auth.isDeviceSupported();
-      if (mounted) setState(() => _biometricAvailable = available && enrolled);
+      final supported  = await _auth.isDeviceSupported();
+      final biometrics = await _auth.getAvailableBiometrics();
+      final available  = supported && biometrics.isNotEmpty;
+      if (mounted) setState(() => _biometricAvailable = available);
     } catch (_) {}
   }
 

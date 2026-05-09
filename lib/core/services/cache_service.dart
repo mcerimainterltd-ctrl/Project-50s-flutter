@@ -128,6 +128,21 @@ class CacheService {
     await _calls.put('list', jsonEncode([]));
   }
 
+  // ── Full wipe on logout ───────────────────────────────────────────────
+  static Future<void> clearAll() async {
+    await _contacts.clear();
+    await _chats.clear();
+    await _calls.clear();
+    if (Hive.isBoxOpen('xame_discovery_likes'))
+      await Hive.box<bool>('xame_discovery_likes').clear();
+    if (Hive.isBoxOpen(_boxDiscovery))
+      await Hive.box<String>(_boxDiscovery).clear();
+    if (Hive.isBoxOpen(_boxPhoneRecents))
+      await Hive.box<String>(_boxPhoneRecents).clear();
+    if (Hive.isBoxOpen(_boxDevContacts))
+      await Hive.box<String>(_boxDevContacts).clear();
+  }
+
   // ── Discovery feed cache ──────────────────────────────────────────────
   static const _boxDiscovery = 'xame_discovery_cache';
 
