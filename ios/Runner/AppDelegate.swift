@@ -20,7 +20,6 @@ import PushKit
         FirebaseApp.configure()
         GeneratedPluginRegistrant.register(with: self)
 
-        // Setup method channel
         if let controller = window?.rootViewController as? FlutterViewController {
             callChannel = FlutterMethodChannel(
                 name: "com.xamepage.app/call",
@@ -29,9 +28,9 @@ import PushKit
             callChannel?.setMethodCallHandler { [weak self] call, result in
                 switch call.method {
                 case "startCallService":
-                    let callerName = call.arguments as? [String: Any]
-                    let name = callerName?["callerName"] as? String ?? "Unknown"
-                    let type = callerName?["callType"] as? String ?? "voice"
+                    let args = call.arguments as? [String: Any]
+                    let name = args?["callerName"] as? String ?? "Unknown"
+                    let type = args?["callType"] as? String ?? "voice"
                     self?.callKitService.reportIncomingCall(callerName: name, callType: type)
                     result(nil)
                 case "stopCallService":
@@ -52,40 +51,52 @@ import PushKit
             }
         }
 
-        // Request notification permissions
+        // CallKit answer/decline -> Flutter
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("CallAnswered"),
+            object: nil, queue: .main) { [weak self] _ in
+            self?.callChannel?.invokeMethod("onCallAnswered", arguments: nil)
+        }
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("CallEnded"),
+            object: nil, queue: .main) { [weak self] _ in
+            self?.callChannel?.invokeMethod("onCallDeclined", arguments: nil)
+        }
+
+        // Notifications
         UNUserNotificationCenter.current().delegate = self
-        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(options: authOptions) { _, _ in }
+        UNUserNotificationCenter.current().requestAuthorization(
+            options: [.alert, .badge, .sound]) { _, _ in }
         application.registerForRemoteNotifications()
 
-        // FCM delegate
+        // FCM
         Messaging.messaging().delegate = self
 
-        // VoIP push registry
-        let voipRegistry = PKPushRegistry(queue: DispatchQueue.main)
+        // Socket keepalive
+        SocketKeepaliveService.shared.start(channel: nil)
+
+        // VoIP push
+        let voipRegistry = PKPushRegistry(queue: .main)
         voipRegistry.delegate = self
         voipRegistry.desiredPushTypes = [.voIP]
 
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 
-    // MARK: - FCM Token
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         guard let token = fcmToken else { return }
         NotificationCenter.default.post(
             name: Notification.Name("FCMToken"),
-            object: nil,
-            userInfo: ["token": token]
-        )
+            object: nil, userInfo: ["token": token])
     }
 
-    // MARK: - VoIP Push (PKPushRegistryDelegate)
-    func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
-        let token = pushCredentials.token.map { String(format: "%02.2hhx", $0) }.joined()
+    func pushRegistry(_ registry: PKPushRegistry, didUpdate credentials: PKPushCredentials, for type: PKPushType) {
+        let token = credentials.token.map { String(format: "%02.2hhx", $0) }.joined()
         print("[VoIP] Token: \(token)")
     }
 
-    func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
+    func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload,
+                      for type: PKPushType, completion: @escaping () -> Void) {
         let data = payload.dictionaryPayload
         let callerName = data["callerName"] as? String ?? "Unknown"
         let callType = data["callType"] as? String ?? "voice"
@@ -93,8 +104,8 @@ import PushKit
         completion()
     }
 
-    // MARK: - Remote notifications
-    override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    override func application(_ application: UIApplication,
+                               didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         Messaging.messaging().apnsToken = deviceToken
         super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
     }
