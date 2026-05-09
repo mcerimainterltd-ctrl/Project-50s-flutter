@@ -505,7 +505,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           );
           if (confirmed == true) {
-            ref.read(chatLockProvider.notifier).unlock(widget.userId);
+            await ref.read(chatLockProvider.notifier).removePin(widget.userId);
             setState(() => _chatUnlocked = true);
           }
         },
