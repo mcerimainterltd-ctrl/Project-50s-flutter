@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
@@ -131,7 +132,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   // Credits
   double _credits     = 0;
   String _creditsCurr = 'NGN';
-  bool _creditsHidden = false;
+  bool _creditsHidden = true;
   Map<String, dynamic> _rates = {};
 
   // Recents
@@ -172,6 +173,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     }
     _loadCredits();
     _loadRates();
+    _loadCreditsVisibility();
     _loadRecents();
     _loadContacts(); // Refresh from device in background
   }
@@ -180,6 +182,11 @@ class _PhoneScreenState extends State<PhoneScreen>
   void dispose() { _tab.dispose(); super.dispose(); }
 
   // ── API ─────────────────────────────────────────────────────────────────────
+
+  Future<void> _loadCreditsVisibility() async {
+    final p = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _creditsHidden = p.getBool('phone:creditsHidden') ?? true);
+  }
 
   Future<void> _loadCredits() async {
     try {
@@ -614,7 +621,11 @@ class _PhoneScreenState extends State<PhoneScreen>
           credits:  _credits,
           currency: _creditsCurr,
           hidden:   _creditsHidden,
-          onToggle: () => setState(() => _creditsHidden = !_creditsHidden),
+          onToggle: () async {
+          setState(() => _creditsHidden = !_creditsHidden);
+          final p = await SharedPreferences.getInstance();
+          await p.setBool('phone:creditsHidden', _creditsHidden);
+        },
           onTopUp:  () => _showTopUpSheet(),
         ),
         // ── Tab bar ──────────────────────────────────────────────

@@ -98,8 +98,23 @@ final routerProvider = Provider<GoRouter>((ref) {
               return ok;
             },
             onForgot: () async {
-              await notifier.disable();
-              c.pop();
+              final confirmed = await showDialog<bool>(
+                context: c, builder: (_) => AlertDialog(
+                  title: const Text('Forgot PIN?'),
+                  content: const Text('You will be signed out. Log back in and set a new PIN from Settings.'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('Cancel')),
+                    TextButton(onPressed: () => Navigator.pop(_, true),  child: const Text('Sign Out')),
+                  ],
+                ),
+              );
+              if (confirmed == true) {
+                await notifier.disable();
+                await ref.read(authServiceProvider).logout(
+                  ref.read(currentUserProvider)?.xameId ?? '');
+                ref.read(currentUserProvider.notifier).state = null;
+                c.go('/login');
+              }
             },
           ),
         );
@@ -153,9 +168,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             return ok;
           },
           onForgot: () async {
-            await ref.read(settingsLockProvider.notifier).disable();
-            Navigator.of(c).pushReplacement(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()));
+            await showDialog(
+              context: c, builder: (_) => AlertDialog(
+                title: const Text('Forgot PIN?'),
+                content: const Text('Contact support or reset your account to regain access.'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(_), child: const Text('OK')),
+                ],
+              ),
+            );
           },
         );
       }),

@@ -116,6 +116,23 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     if (ok) setState(() => _walletUnlocked = true);
                     return ok;
                   },
+                  onForgot: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: ctx, builder: (_) => AlertDialog(
+                        title: const Text('Forgot Wallet PIN?'),
+                        content: const Text('You will be signed out. Log back in and set a new wallet PIN from Settings.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(_, true),  child: const Text('Sign Out')),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await ref.read(authServiceProvider).logout(u?.xameId ?? '');
+                      ref.read(currentUserProvider.notifier).state = null;
+                      if (ctx.mounted) ctx.go('/login');
+                    }
+                  },
                 );
               }
               return XamePayScreen(

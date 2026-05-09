@@ -379,7 +379,7 @@ class _XamePayScreenState extends State<XamePayScreen>
 
   String _currency = 'NGN', _dispCurrency = 'NGN';
   double _balance  = 0;
-  bool _balanceHidden = false;
+  bool _balanceHidden = true; // hidden by default
   bool   _loading  = true;
   List<WalletTx> _txs = [];
   late TabController _tab;
@@ -396,7 +396,8 @@ class _XamePayScreenState extends State<XamePayScreen>
   Future<void> _loadPrefs() async {
     final p = await SharedPreferences.getInstance();
     setState(() {
-      _dispCurrency = p.getString('wallet:dispCurrency') ?? _currency;
+      _dispCurrency  = p.getString('wallet:dispCurrency') ?? _currency;
+      _balanceHidden = p.getBool('wallet:balanceHidden') ?? true;
     });
   }
 
@@ -580,7 +581,11 @@ class _XamePayScreenState extends State<XamePayScreen>
                 style: TextStyle(color: Color(0xCCFFFFFF),
                     fontSize: 12, letterSpacing: 1)),
             GestureDetector(
-              onTap: () => setState(() => _balanceHidden = !_balanceHidden),
+              onTap: () async {
+                setState(() => _balanceHidden = !_balanceHidden);
+                final p = await SharedPreferences.getInstance();
+                await p.setBool('wallet:balanceHidden', _balanceHidden);
+              },
               child: Icon(
                 _balanceHidden ? Icons.visibility_off : Icons.visibility,
                 color: const Color(0xCCFFFFFF), size: 18),
