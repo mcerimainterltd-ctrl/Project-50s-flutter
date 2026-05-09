@@ -39,6 +39,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   String _filter = '';
   int _tab = 0;
   bool _walletUnlocked = false;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -57,6 +58,23 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _connectSocket());
+    _startAutoRefresh();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      final socket = ref.read(socketServiceProvider);
+      final user   = ref.read(currentUserProvider);
+      if (user == null) return;
+      // Fallback contact/online refresh every 1 min via socket
+      socket.emitGetContacts(user.xameId);
+      socket.emitRequestOnlineUsers();
+      // Refresh discovery dots every 5 min
+      if (DateTime.now().minute % 5 == 0) {
+        ref.read(contactsProvider.notifier).seedDiscoveryDots();
+      }
+    });
   }
 
   void _connectSocket() {
@@ -69,6 +87,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _searchCtrl.dispose();
     _tabCtrl.dispose();
     super.dispose();
