@@ -59,6 +59,22 @@ class WebRTCService {
   Stream<bool> get onIncomingCall => _incomingCallController.stream;
 
   WebRTCService(this._socket) {
+    // Handle iOS native -> Flutter callbacks
+    _channel.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'onCallAnswered':
+          await joinCall(isIncomingVideo);
+          break;
+        case 'onCallDeclined':
+          _cleanup();
+          _callState = CallState.ended;
+          _callStateController.add(CallState.ended);
+          break;
+        case 'onFCMToken':
+          break;
+      }
+    });
+
     _socket.callEnded.listen((data) {
       _handleRemoteHangup();
     });
