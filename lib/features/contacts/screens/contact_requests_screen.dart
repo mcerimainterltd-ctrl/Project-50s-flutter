@@ -40,7 +40,7 @@ class _ContactRequestsScreenState extends ConsumerState<ContactRequestsScreen> {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
     try {
-      final res = await _dio.get('/api/add-requests/${user.xameId}');
+      final res = await _dio.get('/api/contact-requests/${user.xameId}');
       final data = res.data as Map<String, dynamic>;
       if (data['success'] == true) {
         setState(() {
@@ -57,7 +57,7 @@ class _ContactRequestsScreenState extends ConsumerState<ContactRequestsScreen> {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
     try {
-      final res = await _dio.post('/api/add-request/accept',
+      final res = await _dio.post('/api/accept-contact-request',
           data: {'userId': user.xameId, 'fromId': fromId});
       final data = res.data as Map<String, dynamic>;
       if (data['success'] == true) {
@@ -82,7 +82,7 @@ class _ContactRequestsScreenState extends ConsumerState<ContactRequestsScreen> {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
     try {
-      await _dio.post('/api/add-request/decline',
+      await _dio.post('/api/decline-contact-request',
           data: {'userId': user.xameId, 'fromId': fromId});
       setState(() => _requests.removeWhere((r) => r['fromId'] == fromId));
     } catch (_) {}
