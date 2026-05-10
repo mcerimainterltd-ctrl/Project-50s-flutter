@@ -1100,7 +1100,10 @@ class _AttachPanel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     color: context.xSurface,
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [      _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+      _AttachBtn(icon: Icons.image_outlined,              label: 'Image',
+          onTap: onImage,  color: XameColors.primary),
+      _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
           onTap: onVideo,  color: XameColors.secondary),
       _AttachBtn(icon: Icons.camera_alt_outlined,         label: 'Camera',
           onTap: onCamera, color: context.xMuted),

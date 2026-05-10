@@ -82,7 +82,7 @@ class _SettingsLockScreenState extends State<SettingsLockScreen>
     try {
       final ok = await _auth.authenticate(
         localizedReason: 'Verify to access Settings',
-        options: const AuthenticationOptions(biometricOnly: false, stickyAuth: true),
+        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: false),
       );
       if (ok && mounted) await widget.onVerify('__biometric__');
     } catch (_) {}
