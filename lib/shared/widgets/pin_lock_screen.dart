@@ -59,13 +59,9 @@ class _PinLockScreenState extends State<PinLockScreen>
   Future<void> _checkBiometric() async {
     try {
       final supported  = await _auth.isDeviceSupported();
-      final biometrics = await _auth.getAvailableBiometrics();
-      final available  = supported && biometrics.isNotEmpty;
-      if (mounted) setState(() => _biometricAvailable = available);
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Biometric error: \$e'),
-          backgroundColor: Colors.redAccent));
+      final canCheck   = await _auth.canCheckBiometrics;
+      if (mounted) setState(() => _biometricAvailable = supported && canCheck);
+    } catch (_) {
     }
   }
 

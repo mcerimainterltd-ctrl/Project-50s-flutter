@@ -71,10 +71,9 @@ class _SettingsLockScreenState extends State<SettingsLockScreen>
 
   Future<void> _checkBiometric() async {
     try {
-      final supported  = await _auth.isDeviceSupported();
-      final biometrics = await _auth.getAvailableBiometrics();
-      final available  = supported && biometrics.isNotEmpty;
-      if (mounted) setState(() => _biometricAvailable = available);
+      final supported = await _auth.isDeviceSupported();
+      final canCheck  = await _auth.canCheckBiometrics;
+      if (mounted) setState(() => _biometricAvailable = supported && canCheck);
     } catch (_) {}
   }
 
