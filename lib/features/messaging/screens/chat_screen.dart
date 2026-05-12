@@ -579,12 +579,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           onVideo:  _pickVideo,
           onFile:   _pickFile,
           onCamera: () async {
-            final file = await _picker.pickImage(
-                source: ImageSource.camera, imageQuality: 85);
-            if (file == null) return;
             setState(() => _showAttach = false);
-            await ref.read(chatProvider(widget.userId).notifier)
-                .sendFile(dart_io.File(file.path), 'image/jpeg');
+            final mode = await showModalBottomSheet<String>(
+              context: context,
+              backgroundColor: context.xSurface,
+              shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+              builder: (_) => SafeArea(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera_outlined),
+                    title: const Text('Take Photo'),
+                    onTap: () => Navigator.pop(context, 'photo'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.videocam_outlined),
+                    title: const Text('Record Video'),
+                    onTap: () => Navigator.pop(context, 'video'),
+                  ),
+                ]),
+              ),
+            );
+            if (mode == 'photo') {
+              final file = await _picker.pickImage(
+                  source: ImageSource.camera, imageQuality: 85);
+              if (file == null) return;
+              await ref.read(chatProvider(widget.userId).notifier)
+                  .sendFile(dart_io.File(file.path), 'image/jpeg');
+            } else if (mode == 'video') {
+              final file = await _picker.pickVideo(source: ImageSource.camera);
+              if (file == null) return;
+              await ref.read(chatProvider(widget.userId).notifier)
+                  .sendFile(dart_io.File(file.path), 'video/mp4');
+            }
             _scrollToBottom();
           },
           onDismiss: () => setState(() => _showAttach = false),
@@ -1100,7 +1127,10 @@ class _AttachPanel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     color: context.xSurface,
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [      _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+      _AttachBtn(icon: Icons.image_outlined,              label: 'Image',
+          onTap: onImage,  color: XameColors.primary),
+      _AttachBtn(icon: Icons.videocam_outlined,           label: 'Video',
           onTap: onVideo,  color: XameColors.secondary),
       _AttachBtn(icon: Icons.camera_alt_outlined,         label: 'Camera',
           onTap: onCamera, color: context.xMuted),
