@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
+import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -118,6 +120,105 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
 
+  void _showForgotPassword(BuildContext context) {
+    final xameIdCtrl = TextEditingController(text: _xameIdCtrl.text.trim());
+    final otpCtrl    = TextEditingController();
+    final pwCtrl     = TextEditingController();
+    final pw2Ctrl    = TextEditingController();
+    String _step     = 'xameId'; // xameId → otp → reset
+    String _msg      = '';
+    bool   _loading  = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          backgroundColor: XameColors.darkBg,
+          title: Text('Reset Password',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (_step == 'xameId') ...[
+              Text('Enter your Xame-ID to receive a reset code.',
+                style: TextStyle(color: XameColors.darkSurface, fontSize: 13)),
+              SizedBox(height: 12),
+              _dialogField(xameIdCtrl, 'Your Xame-ID', false),
+            ] else if (_step == 'otp') ...[
+              Text(_msg, style: TextStyle(color: XameColors.accent, fontSize: 13)),
+              SizedBox(height: 12),
+              _dialogField(otpCtrl, 'Enter OTP code', false),
+            ] else ...[
+              _dialogField(pwCtrl,  'New password',     true),
+              SizedBox(height: 8),
+              _dialogField(pw2Ctrl, 'Confirm password', true),
+            ],
+            if (_msg.isNotEmpty && _step == 'xameId')
+              Padding(padding: const EdgeInsets.only(top: 8),
+                child: Text(_msg, style: TextStyle(color: XameColors.danger, fontSize: 12))),
+          ])),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: TextStyle(color: XameColors.darkSurface))),
+            TextButton(
+              onPressed: _loading ? null : () async {
+                setS(() { _loading = true; _msg = ''; });
+                final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                try {
+                  if (_step == 'xameId') {
+                    final res = await dio.post('/api/forgot-password/send-otp',
+                      data: {'xameId': xameIdCtrl.text.trim()});
+                    final data = res.data as Map<String, dynamic>;
+                    if (data['noRecovery'] == true) {
+                      setS(() { _msg = data['message']; _loading = false; });
+                    } else {
+                      setS(() { _step = 'otp'; _msg = data['message']; _loading = false; });
+                    }
+                  } else if (_step == 'otp') {
+                    if (otpCtrl.text.trim().length != 6) {
+                      setS(() { _msg = 'Enter the 6-digit code.'; _loading = false; }); return;
+                    }
+                    setS(() { _step = 'reset'; _msg = ''; _loading = false; });
+                  } else {
+                    if (pwCtrl.text != pw2Ctrl.text) {
+                      setS(() { _msg = 'Passwords do not match.'; _loading = false; }); return;
+                    }
+                    final v = ref.read(authServiceProvider).validatePassword(pwCtrl.text);
+                    if (!v.isValid) {
+                      setS(() { _msg = v.errors.join(' · '); _loading = false; }); return;
+                    }
+                    final res = await dio.post('/api/forgot-password/reset', data: {
+                      'xameId':      xameIdCtrl.text.trim(),
+                      'otp':         otpCtrl.text.trim(),
+                      'newPassword': pwCtrl.text,
+                    });
+                    final data = res.data as Map<String, dynamic>;
+                    if (data['success'] == true) {
+                      Navigator.pop(ctx);
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Password reset! Please sign in.'),
+                        backgroundColor: XameColors.accent));
+                    } else {
+                      setS(() { _msg = data['message'] ?? 'Failed.'; _loading = false; });
+                    }
+                  }
+                } on DioException catch (e) {
+                  final msg = (e.response?.data as Map?)?['message'] as String? ?? 'Error. Try again.';
+                  setS(() { _msg = msg; _loading = false; });
+                }
+              },
+              child: _loading
+                ? SizedBox(width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: XameColors.accent))
+                : Text(_step == 'xameId' ? 'Send Code' : _step == 'otp' ? 'Next' : 'Reset Password',
+                    style: TextStyle(color: XameColors.accent, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -223,6 +324,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5))
                     : Text(_needsOTP ? 'Verify & Sign In' : 'Sign In',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              SizedBox(height: 16),
+              Center(
+                child: GestureDetector(
+                  onTap: () => _showForgotPassword(context),
+                  child: Text('Forgot Password?',
+                    style: TextStyle(color: context.xPrimary,
+                      fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
               ),
               SizedBox(height: 20),

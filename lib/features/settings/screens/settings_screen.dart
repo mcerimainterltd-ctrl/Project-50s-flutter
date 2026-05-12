@@ -477,6 +477,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: ref.watch(walletLockProvider).enabled ? 'Enabled' : 'Disabled',
               onTap: () => _showWalletLockSetup(context, ref),
             ),
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.key_rounded,
+              title:    'Change Password',
+              subtitle: 'Update your account password',
+              onTap: () => _showChangePassword(context, ref),
+            ),
           ]),
 
           // ── Help & About ─────────────────────────────────────────────────────
@@ -834,6 +841,96 @@ void _showWalletLockSetup(BuildContext context, WidgetRef ref) {
       onSet: (pin) { notifier.enable(pin); Navigator.pop(context); },
     )));
   }
+}
+
+void _showChangePassword(BuildContext context, WidgetRef ref) {
+  final currentCtrl = TextEditingController();
+  final newCtrl     = TextEditingController();
+  final confirmCtrl = TextEditingController();
+  String _error = '';
+  bool   _loading = false;
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Theme.of(context).cardColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) => StatefulBuilder(
+      builder: (ctx, setS) => Padding(
+        padding: EdgeInsets.fromLTRB(24, 24, 24,
+          MediaQuery.of(ctx).viewInsets.bottom + 24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 36, height: 4,
+            decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(2))),
+          SizedBox(height: 20),
+          Text('Change Password',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
+              color: Theme.of(ctx).textTheme.bodyLarge?.color)),
+          SizedBox(height: 20),
+          TextField(
+            controller: currentCtrl, obscureText: true,
+            decoration: InputDecoration(labelText: 'Current Password',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+          SizedBox(height: 12),
+          TextField(
+            controller: newCtrl, obscureText: true,
+            decoration: InputDecoration(labelText: 'New Password',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+          SizedBox(height: 12),
+          TextField(
+            controller: confirmCtrl, obscureText: true,
+            decoration: InputDecoration(labelText: 'Confirm New Password',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+          if (_error.isNotEmpty)
+            Padding(padding: const EdgeInsets.only(top: 8),
+              child: Text(_error, style: TextStyle(color: Colors.red, fontSize: 12))),
+          SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity, height: 48,
+            child: ElevatedButton(
+              onPressed: _loading ? null : () async {
+                if (newCtrl.text != confirmCtrl.text) {
+                  setS(() => _error = 'Passwords do not match.'); return;
+                }
+                final v = ref.read(authServiceProvider).validatePassword(newCtrl.text);
+                if (!v.isValid) {
+                  setS(() => _error = v.errors.join(' · ')); return;
+                }
+                setS(() { _loading = true; _error = ''; });
+                try {
+                  final user = ref.read(currentUserProvider);
+                  final dio  = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                  final res  = await dio.post('/api/change-password', data: {
+                    'xameId':          user?.xameId,
+                    'currentPassword': currentCtrl.text,
+                    'newPassword':     newCtrl.text,
+                  });
+                  final data = res.data as Map<String, dynamic>;
+                  if (data['success'] == true) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Password changed successfully.')));
+                  } else {
+                    setS(() { _error = data['message'] ?? 'Failed.'; _loading = false; });
+                  }
+                } on DioException catch (e) {
+                  final msg = (e.response?.data as Map?)?['message'] as String? ?? 'Error. Try again.';
+                  setS(() { _error = msg; _loading = false; });
+                }
+              },
+              child: _loading
+                ? const SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Change Password',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ]),
+      ),
+    ),
+  );
 }
 
 void _showDelayPicker(BuildContext context, WidgetRef ref) {
