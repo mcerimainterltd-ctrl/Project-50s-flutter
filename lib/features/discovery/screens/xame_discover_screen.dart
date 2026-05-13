@@ -272,14 +272,14 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   Future<void> _fetchOfficialPosts() async {
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      final res = await dio.get('/api/discover/feed',
-        queryParameters: {'region': 'Global', 'page': 1, 'limit': 10,
-          'authorId': '058000000001'});
+      final res = await dio.get('/api/discover/official');
       final data = res.data as Map<String, dynamic>;
-      final posts = (data['posts'] as List? ?? [])
-        .map((p) => _OfficialPost.fromJson(p as Map<String, dynamic>))
-        .toList();
-      if (mounted) setState(() => _officialPosts = posts);
+      if (data['success'] == true) {
+        final posts = (data['posts'] as List? ?? [])
+          .map((p) => _OfficialPost.fromJson(p as Map<String, dynamic>))
+          .toList();
+        if (mounted) setState(() => _officialPosts = posts);
+      }
     } catch (_) {}
   }
 
