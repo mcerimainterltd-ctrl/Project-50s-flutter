@@ -453,7 +453,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     if (self == null) return;
                     try {
                       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-                      final res = await dio.post('/api/add-request', data: {
+                      final res = await dio.post('/api/send-contact-request', data: {
                         'userId':    self.xameId,
                         'contactId': user.id,
                       });

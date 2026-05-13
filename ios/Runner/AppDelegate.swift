@@ -51,31 +51,15 @@ import PushKit
             }
         }
 
-        // CallKit answer/decline -> Flutter
-        NotificationCenter.default.addObserver(
-            forName: Notification.Name("CallAnswered"),
-            object: nil, queue: .main) { [weak self] _ in
-            self?.callChannel?.invokeMethod("onCallAnswered", arguments: nil)
-        }
-        NotificationCenter.default.addObserver(
-            forName: Notification.Name("CallEnded"),
-            object: nil, queue: .main) { [weak self] _ in
-            self?.callChannel?.invokeMethod("onCallDeclined", arguments: nil)
-        }
-
-        // Notifications
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(
             options: [.alert, .badge, .sound]) { _, _ in }
         application.registerForRemoteNotifications()
-
-        // FCM
         Messaging.messaging().delegate = self
 
-        // Socket keepalive
+        // Start socket keepalive
         SocketKeepaliveService.shared.start(channel: nil)
 
-        // VoIP push
         let voipRegistry = PKPushRegistry(queue: .main)
         voipRegistry.delegate = self
         voipRegistry.desiredPushTypes = [.voIP]
@@ -85,15 +69,11 @@ import PushKit
 
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         guard let token = fcmToken else { return }
-        NotificationCenter.default.post(
-            name: Notification.Name("FCMToken"),
+        NotificationCenter.default.post(name: Notification.Name("FCMToken"),
             object: nil, userInfo: ["token": token])
     }
 
-    func pushRegistry(_ registry: PKPushRegistry, didUpdate credentials: PKPushCredentials, for type: PKPushType) {
-        let token = credentials.token.map { String(format: "%02.2hhx", $0) }.joined()
-        print("[VoIP] Token: \(token)")
-    }
+    func pushRegistry(_ registry: PKPushRegistry, didUpdate credentials: PKPushCredentials, for type: PKPushType) {}
 
     func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload,
                       for type: PKPushType, completion: @escaping () -> Void) {

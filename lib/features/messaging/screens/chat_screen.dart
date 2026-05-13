@@ -493,6 +493,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           if (ok) setState(() => _chatUnlocked = true);
           return ok;
         },
+        onForgot: () async {
+          final confirmed = await showDialog<bool>(
+            context: context, builder: (_) => AlertDialog(
+              title: const Text('Forgot Chat PIN?'),
+              content: const Text('This will remove the lock from this chat. You can set a new one from chat settings.'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('Cancel')),
+                TextButton(onPressed: () => Navigator.pop(_, true),  child: const Text('Remove Lock')),
+              ],
+            ),
+          );
+          if (confirmed == true) {
+            await ref.read(chatLockProvider.notifier).removePin(widget.userId);
+            setState(() => _chatUnlocked = true);
+          }
+        },
       );
     }
     // Auto-scroll whenever message list grows

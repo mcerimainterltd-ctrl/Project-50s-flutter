@@ -5,6 +5,7 @@ import '../../../core/services/wallet_lock_service.dart';
 import '../../../core/services/chat_lock_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../core/services/cache_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../calls/screens/call_history_screen.dart';
 import '../../calls/screens/calls_hub_screen.dart';
@@ -38,6 +39,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   String _filter = '';
   int _tab = 0;
   bool _walletUnlocked = false;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -56,6 +58,23 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _connectSocket());
+    _startAutoRefresh();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      final socket = ref.read(socketServiceProvider);
+      final user   = ref.read(currentUserProvider);
+      if (user == null) return;
+      // Fallback contact/online refresh every 1 min via socket
+      socket.emitGetContacts(user.xameId);
+      socket.emitRequestOnlineUsers();
+      // Refresh discovery dots every 5 min
+      if (DateTime.now().minute % 5 == 0) {
+        ref.read(contactsProvider.notifier).seedDiscoveryDots();
+      }
+    });
   }
 
   void _connectSocket() {
@@ -68,9 +87,26 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _searchCtrl.dispose();
     _tabCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _globalRefresh() async {
+    final socket = ref.read(socketServiceProvider);
+    final user   = ref.read(currentUserProvider);
+    if (user == null) return;
+    // Reconnect socket if disconnected
+    if (socket.currentUserId == null) {
+      socket.connect(user.xameId);
+    } else {
+      socket.emitGetContacts(user.xameId);
+      socket.emitRequestOnlineUsers();
+    }
+    // Invalidate providers to trigger re-fetch
+    ref.invalidate(contactsProvider);
+    ref.invalidate(callHistoryProvider);
   }
 
   @override
@@ -80,7 +116,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       backgroundColor: context.xBg,
       body: SafeArea(child: Column(children: [
         _buildHeader(user),
-        Expanded(child: IndexedStack(index: _tab, children: [
+        Expanded(child: RefreshIndicator(
+        onRefresh: _globalRefresh,
+        color: XameColors.accent,
+        backgroundColor: context.xCard,
+        child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
           const SizedBox.shrink(), // Calls tab opens fullscreen
           Consumer(builder: (_, ref, __) {
@@ -115,6 +155,23 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     if (ok) setState(() => _walletUnlocked = true);
                     return ok;
                   },
+                  onForgot: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: ctx, builder: (_) => AlertDialog(
+                        title: const Text('Forgot Wallet PIN?'),
+                        content: const Text('You will be signed out. Log back in and set a new wallet PIN from Settings.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(_, true),  child: const Text('Sign Out')),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await ref.read(authServiceProvider).logout(u?.xameId ?? '');
+                      ref.read(currentUserProvider.notifier).state = null;
+                      if (ctx.mounted) ctx.go('/login');
+                    }
+                  },
                 );
               }
               return XamePayScreen(
@@ -125,7 +182,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                     .toList(),
               );
             }),
-        ])),
+        ]),
+        )),
       ])),
       bottomNavigationBar: _buildBottomNav(),
       floatingActionButton: _tab == 0 ? FloatingActionButton(
@@ -476,6 +534,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       await ref.read(authServiceProvider).logout(user.xameId);
       ref.read(socketServiceProvider).disconnect();
     }
+    // Clear all local cache so next user sees no previous data
+    await CacheService.clearAll();
     ref.read(currentUserProvider.notifier).state = null;
     if (mounted) context.go('/login');
   }
@@ -588,10 +648,10 @@ class _EmptyChats extends StatelessWidget {
           fontWeight: FontWeight.w900, letterSpacing: 1)),
       SizedBox(height: 4),
       Text('created by Gibson Agbor',
-        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+        style: TextStyle(color: context.xMuted, fontSize: 12)),
       SizedBox(height: 16),
       Text('Tap + to add a contact and start chatting',
-        style: TextStyle(color: XameColors.darkSurface, fontSize: 14),
+        style: TextStyle(color: context.xMuted, fontSize: 14),
         textAlign: TextAlign.center),
     ]),
   );

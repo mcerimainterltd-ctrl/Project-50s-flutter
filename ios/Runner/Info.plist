@@ -69,6 +69,11 @@
 		<string>remote-notification</string>
 		<string>voip</string>
 	</array>
+	<!-- Background task identifiers -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.xamepage.xamepage.socketkeepalive</string>
+	</array>
 	<!-- Firebase -->
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>

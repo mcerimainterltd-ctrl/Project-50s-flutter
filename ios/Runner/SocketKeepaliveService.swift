@@ -8,8 +8,10 @@ class SocketKeepaliveService {
     static let backgroundTaskIdentifier = "com.xamepage.xamepage.socketkeepalive"
 
     private var keepaliveTimer: Timer?
+    private weak var methodChannel: AnyObject?
 
     func start(channel: AnyObject?) {
+        self.methodChannel = channel
         registerBackgroundTask()
         startTimer()
         setupLifecycleObservers()
@@ -61,14 +63,30 @@ class SocketKeepaliveService {
 
     private func setupLifecycleObservers() {
         NotificationCenter.default.addObserver(
-            self, selector: #selector(appDidEnterBackground),
-            name: UIApplication.didEnterBackgroundNotification, object: nil)
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
         NotificationCenter.default.addObserver(
-            self, selector: #selector(appWillEnterForeground),
-            name: UIApplication.willEnterForegroundNotification, object: nil)
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
     }
 
-    @objc private func appDidEnterBackground() { scheduleBackgroundRefresh() }
-    @objc private func appWillEnterForeground() { startTimer(); pingFlutter() }
-    func stop() { keepaliveTimer?.invalidate(); keepaliveTimer = nil }
+    @objc private func appDidEnterBackground() {
+        scheduleBackgroundRefresh()
+    }
+
+    @objc private func appWillEnterForeground() {
+        startTimer()
+        pingFlutter()
+    }
+
+    func stop() {
+        keepaliveTimer?.invalidate()
+        keepaliveTimer = nil
+    }
 }
