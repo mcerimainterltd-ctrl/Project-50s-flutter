@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:xamepage/core/config/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
@@ -58,6 +61,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initShareListener();
     _initContactRequestListener();
     _initWalletRequestListener();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
 
     // App lock — listen to lifecycle
     SystemChannels.lifecycle.setMessageHandler((msg) async {
@@ -237,6 +241,52 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       // Refresh contacts when our request is accepted
       ref.invalidate(contactsProvider);
     });
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final currentBuild = int.tryParse(info.buildNumber) ?? 0;
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res = await dio.get('/api/app/version');
+      final data = res.data as Map<String, dynamic>;
+      final latestBuild = data['buildNumber'] as int? ?? 0;
+      final forceUpdate = data['forceUpdate'] as bool? ?? false;
+      if (latestBuild <= currentBuild) return;
+      if (!mounted) return;
+      final downloadUrl = data['downloadUrl'] as String? ?? '';
+      final changelog   = data['changelog']   as String? ?? '';
+      showDialog(
+        context: context,
+        barrierDismissible: !forceUpdate,
+        builder: (_) => AlertDialog(
+          title: const Text('Update Available 🚀'),
+          content: Column(mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('A new version of XamePage is available.',
+              style: TextStyle(fontSize: 14)),
+            if (changelog.isNotEmpty) ...[
+              SizedBox(height: 8),
+              Text(changelog, style: TextStyle(fontSize: 13, color: Colors.grey)),
+            ],
+          ]),
+          actions: [
+            if (!forceUpdate)
+              TextButton(
+                onPressed: () => Navigator.pop(_),
+                child: const Text('Later')),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(_);
+                launchUrl(Uri.parse(downloadUrl),
+                  mode: LaunchMode.externalApplication);
+              },
+              child: const Text('Download Now',
+                style: TextStyle(fontWeight: FontWeight.w700))),
+          ],
+        ),
+      );
+    } catch (_) {}
   }
 
   void _initShareListener() {

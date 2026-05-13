@@ -89,6 +89,20 @@ jobs:
         with:
           files: build/app/outputs/flutter-apk/XamePage_*.apk
 
+      - name: Notify users of update
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          curl -s -X POST https://project-50s.onrender.com/api/app/notify-update \
+            -H "Content-Type: application/json" \
+            -d '{
+              "secret":      "${{ secrets.ADMIN_SECRET }}",
+              "version":     "2.1.0",
+              "buildNumber": ${{ github.run_number }},
+              "downloadUrl": "https://github.com/mcerimainterltd-ctrl/Project-50s-flutter/releases/latest",
+              "changelog":   "New update available. Download now for the latest improvements.",
+              "forceUpdate": false
+            }'
+
       - name: Cleanup
         if: always()
         run: rm -f android/app/release.jks android/key.properties
