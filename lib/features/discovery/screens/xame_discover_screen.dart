@@ -1,6 +1,10 @@
 import "../widgets/tv_entry_button.dart";
 import "package:go_router/go_router.dart";
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/rendering.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'dart:async';
@@ -750,18 +754,110 @@ class _CreatePostSheet extends StatefulWidget {
 class _CreatePostSheetState extends State<_CreatePostSheet> {
   final _titleCtrl   = TextEditingController();
   final _captionCtrl = TextEditingController();
+  final _quoteCtrl   = TextEditingController();
+  final _authorCtrl  = TextEditingController();
   File?  _mediaFile;
   String _mediaType  = 'image';
   String _category   = 'General';
   bool   _uploading  = false;
   String? _error;
   final _picker = ImagePicker();
+  final _screenshotCtrl = ScreenshotController();
+
+  // Quote composer state
+  bool   _quoteMode    = false;
+  int    _gradientIndex = 0;
+  int    _fontIndex    = 0;
+  int    _alignIndex   = 0;
+  Color  _textColor    = Colors.white;
+
+  static const _gradients = [
+    [Color(0xFF1a1a2e), Color(0xFF16213e)],
+    [Color(0xFF0f3460), Color(0xFF533483)],
+    [Color(0xFF00B0A0), Color(0xFF008A7D)],
+    [Color(0xFF1B4332), Color(0xFF40916C)],
+    [Color(0xFF6A0572), Color(0xFFAB47BC)],
+    [Color(0xFFB5451B), Color(0xFFE8871E)],
+    [Color(0xFF2C3E50), Color(0xFF4CA1AF)],
+    [Color(0xFF000000), Color(0xFF434343)],
+  ];
+
+  static const _gradientNames = ['Midnight','Cosmic','XamePage','Forest','Purple','Sunset','Ocean','Noir'];
+  static const _fonts = ['Default','Serif','Monospace','Cursive'];
+  static const _aligns = [TextAlign.center, TextAlign.left, TextAlign.right];
+  static const _alignIcons = [Icons.format_align_center, Icons.format_align_left, Icons.format_align_right];
+  static const _textColors = [Colors.white, Colors.black, Color(0xFFFFD700), Color(0xFF00B0A0)];
+  static const _textColorNames = ['White','Black','Gold','Teal'];
 
   @override
   void dispose() {
     _titleCtrl.dispose();
     _captionCtrl.dispose();
+    _quoteCtrl.dispose();
+    _authorCtrl.dispose();
     super.dispose();
+  }
+
+  String _fontFamily() {
+    switch (_fontIndex) {
+      case 1: return 'Georgia';
+      case 2: return 'Courier New';
+      case 3: return 'cursive';
+      default: return '';
+    }
+  }
+
+  Widget _buildQuotePreview({bool forCapture = false}) {
+    final gradient = _gradients[_gradientIndex];
+    final align = _aligns[_alignIndex];
+    final font = _fontFamily();
+    return Container(
+      width: 320, height: 320,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: forCapture ? null : BorderRadius.circular(16)),
+      child: Stack(children: [
+        Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text('"', textAlign: align, style: TextStyle(
+              color: _textColor.withOpacity(0.4), fontSize: 60,
+              fontFamily: font.isNotEmpty ? font : null, height: 0.5)),
+            SizedBox(height: 8),
+            Text(
+              _quoteCtrl.text.isEmpty ? 'Your quote here...' : _quoteCtrl.text,
+              textAlign: align,
+              style: TextStyle(
+                color: _quoteCtrl.text.isEmpty ? _textColor.withOpacity(0.4) : _textColor,
+                fontSize: 18, fontWeight: FontWeight.w600, height: 1.5,
+                fontFamily: font.isNotEmpty ? font : null)),
+            if (_authorCtrl.text.isNotEmpty) ...[
+              SizedBox(height: 16),
+              Text('— \${_authorCtrl.text}', textAlign: align,
+                style: TextStyle(color: _textColor.withOpacity(0.7),
+                  fontSize: 13, fontStyle: FontStyle.italic,
+                  fontFamily: font.isNotEmpty ? font : null)),
+            ],
+          ])),
+        Positioned(bottom: 10, right: 14,
+          child: Text('XamePage', style: TextStyle(
+            color: _textColor.withOpacity(0.25), fontSize: 10,
+            fontWeight: FontWeight.w700, letterSpacing: 1))),
+      ]));
+  }
+
+  Future<File?> _renderQuoteToFile() async {
+    final bytes = await _screenshotCtrl.captureFromWidget(
+      MediaQuery(
+        data: const MediaQueryData(),
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: _buildQuotePreview(forCapture: true))));
+    if (bytes == null) return null;
+    final dir = await getTemporaryDirectory();
+    final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
+    await file.writeAsBytes(bytes);
+    return file;
   }
 
   Future<void> _pickMedia() async {
@@ -815,6 +911,29 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   }
 
   Future<void> _submit() async {
+    if (_quoteMode) {
+      if (_quoteCtrl.text.trim().isEmpty) {
+        setState(() => _error = 'Please write your quote'); return;
+      }
+      setState(() { _uploading = true; _error = null; });
+      final file = await _renderQuoteToFile();
+      if (file == null) { setState(() { _uploading = false; _error = 'Failed to render quote'; }); return; }
+      final err = await DiscoveryApiService.createPost(
+        authorId:  widget.userId,
+        title:     _quoteCtrl.text.trim(),
+        caption:   _authorCtrl.text.trim(),
+        region:    widget.region,
+        category:  'Quote',
+        mediaFile: file,
+        mediaType: 'image',
+      );
+      if (!mounted) return;
+      setState(() => _uploading = false);
+      if (err == null) { Navigator.pop(context); widget.onPosted();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Quote published!'), backgroundColor: XameColors.accent));
+      } else { setState(() => _error = err); }
+      return;
+    }
     if (_titleCtrl.text.trim().isEmpty) {
       setState(() => _error = 'Title is required'); return;
     }
@@ -853,9 +972,114 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
       SizedBox(height: 16),
-      Text('Create Post', style: TextStyle(color: context.xText,
+      Text(_quoteMode ? 'Create Quote' : 'Create Post', style: TextStyle(color: context.xText,
           fontSize: 18, fontWeight: FontWeight.w700)),
       SizedBox(height: 16),
+
+      // Mode toggle
+      Container(
+        decoration: BoxDecoration(color: context.xBg, borderRadius: BorderRadius.circular(12)),
+        child: Row(children: [
+          Expanded(child: GestureDetector(
+            onTap: () => setState(() => _quoteMode = false),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: !_quoteMode ? XameColors.accent : Colors.transparent,
+                borderRadius: BorderRadius.circular(12)),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.photo_outlined, size: 16, color: !_quoteMode ? Colors.black : context.xMuted),
+                SizedBox(width: 6),
+                Text('Media', style: TextStyle(color: !_quoteMode ? Colors.black : context.xMuted, fontWeight: FontWeight.w600, fontSize: 13)),
+              ])))),
+          Expanded(child: GestureDetector(
+            onTap: () => setState(() => _quoteMode = true),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: _quoteMode ? XameColors.accent : Colors.transparent,
+                borderRadius: BorderRadius.circular(12)),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.format_quote_rounded, size: 16, color: _quoteMode ? Colors.black : context.xMuted),
+                SizedBox(width: 6),
+                Text('Quote', style: TextStyle(color: _quoteMode ? Colors.black : context.xMuted, fontWeight: FontWeight.w600, fontSize: 13)),
+              ])))),
+        ])),
+      SizedBox(height: 16),
+
+      if (_quoteMode) ...[
+        // Live preview
+        Center(child: Screenshot(controller: _screenshotCtrl, child: _buildQuotePreview())),
+        SizedBox(height: 16),
+        // Quote text input
+        TextField(
+          controller: _quoteCtrl, maxLines: 4,
+          onChanged: (_) => setState(() {}),
+          style: TextStyle(color: context.xText),
+          decoration: InputDecoration(
+            hintText: 'Write your quote or inspiration...',
+            hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.5)),
+            filled: true, fillColor: context.xBg,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: XameColors.accent, width: 1)))),
+        SizedBox(height: 8),
+        TextField(
+          controller: _authorCtrl,
+          onChanged: (_) => setState(() {}),
+          style: TextStyle(color: context.xText),
+          decoration: InputDecoration(
+            hintText: 'Author / Source (optional)',
+            hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.5)),
+            filled: true, fillColor: context.xBg,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: XameColors.accent, width: 1)))),
+        SizedBox(height: 12),
+        // Style options
+        SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
+          // Gradients
+          ...List.generate(_gradients.length, (i) => GestureDetector(
+            onTap: () => setState(() => _gradientIndex = i),
+            child: Container(
+              width: 32, height: 32, margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: _gradients[i]),
+                shape: BoxShape.circle,
+                border: Border.all(color: _gradientIndex == i ? XameColors.accent : Colors.transparent, width: 2))))),
+          SizedBox(width: 8),
+          // Text color
+          ...List.generate(_textColors.length, (i) => GestureDetector(
+            onTap: () => setState(() => _textColor = _textColors[i]),
+            child: Container(
+              width: 28, height: 28, margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                color: _textColors[i], shape: BoxShape.circle,
+                border: Border.all(color: _textColor == _textColors[i] ? XameColors.accent : context.xMuted.withOpacity(0.3), width: 2))))),
+          SizedBox(width: 8),
+          // Alignment
+          ...List.generate(_alignIcons.length, (i) => GestureDetector(
+            onTap: () => setState(() => _alignIndex = i),
+            child: Container(
+              width: 36, height: 36, margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                color: _alignIndex == i ? XameColors.accent.withOpacity(0.15) : context.xBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _alignIndex == i ? XameColors.accent : Colors.transparent)),
+              child: Icon(_alignIcons[i], size: 18, color: _alignIndex == i ? XameColors.accent : context.xMuted)))),
+          SizedBox(width: 8),
+          // Font
+          ...List.generate(_fonts.length, (i) => GestureDetector(
+            onTap: () => setState(() => _fontIndex = i),
+            child: Container(
+              margin: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _fontIndex == i ? XameColors.accent.withOpacity(0.15) : context.xBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _fontIndex == i ? XameColors.accent : Colors.transparent)),
+              child: Text(_fonts[i], style: TextStyle(fontSize: 11, color: _fontIndex == i ? XameColors.accent : context.xMuted, fontWeight: FontWeight.w600))))),
+        ])),
+        SizedBox(height: 16),
+      ] else ...[
 
       // Media picker
       GestureDetector(
@@ -925,9 +1149,11 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               ]),
         ),
       ),
+      ], // end else (media mode)
       SizedBox(height: 12),
 
-      // Title
+      // Title & Caption (shared for both modes — hidden in quote mode)
+      if (!_quoteMode) ...[
       TextField(
         controller: _titleCtrl,
         style: TextStyle(color: context.xText),
@@ -962,6 +1188,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               borderSide: BorderSide(
                   color: XameColors.primary, width: 1))),
       ),
+      ], // end if (!_quoteMode)
       SizedBox(height: 8),
 
       if (_error != null)
