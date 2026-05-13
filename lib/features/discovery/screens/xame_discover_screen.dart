@@ -276,10 +276,10 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   Future<void> _fetchOfficialPosts() async {
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      final res = await dio.get('/api/discover/official');
+      final res = await dio.get('/api/xamepage/announcements');
       final data = res.data as Map<String, dynamic>;
       if (data['success'] == true) {
-        final posts = (data['posts'] as List? ?? [])
+        final posts = (data['announcements'] as List? ?? [])
           .map((p) => _OfficialPost.fromJson(p as Map<String, dynamic>))
           .toList();
         if (mounted) setState(() => _officialPosts = posts);
@@ -507,70 +507,144 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 ),
               ),
 
-            // XamePage Official pinned posts
+            // ── XamePage Official Announcements ─────────────────────────
             if (_officialPosts.isNotEmpty)
               SliverToBoxAdapter(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                    child: Row(children: [
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    // Header
+                    Row(children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: XameColors.accent.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: XameColors.accent.withOpacity(0.4))),
+                          gradient: LinearGradient(colors: [
+                            XameColors.accent.withOpacity(0.25),
+                            XameColors.accent.withOpacity(0.08),
+                          ]),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: XameColors.accent.withOpacity(0.5)),
+                        ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.verified_rounded, color: XameColors.accent, size: 13),
-                          SizedBox(width: 4),
+                          Icon(Icons.verified_rounded, color: XameColors.accent, size: 14),
+                          SizedBox(width: 5),
                           Text('XAMEPAGE OFFICIAL',
                             style: TextStyle(color: XameColors.accent,
-                              fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
-                        ])),
+                              fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+                        ]),
+                      ),
                     ]),
-                  ),
-                  SizedBox(
-                    height: 180,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _officialPosts.length,
-                      itemBuilder: (_, i) {
-                        final p = _officialPosts[i];
-                        return GestureDetector(
-                          onTap: () => p.downloadUrl.isNotEmpty
-                            ? launchUrl(Uri.parse(p.downloadUrl), mode: LaunchMode.externalApplication)
-                            : null,
-                          child: Container(
-                            width: 260, margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              color: context.xCard,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: XameColors.accent.withOpacity(0.2))),
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                                child: CachedNetworkImage(
-                                  imageUrl: p.mediaUrl, height: 110, width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorWidget: (_, __, ___) => Container(
-                                    height: 110, color: context.xSurface,
-                                    child: Icon(Icons.campaign_outlined, color: XameColors.accent, size: 32)))),
-                              Padding(
-                                padding: const EdgeInsets.all(10),
+                    SizedBox(height: 12),
+                    // Announcement cards
+                    ..._officialPosts.map((p) => GestureDetector(
+                      onTap: () => p.downloadUrl.isNotEmpty
+                        ? launchUrl(Uri.parse(p.downloadUrl), mode: LaunchMode.externalApplication)
+                        : null,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: XameColors.accent.withOpacity(0.35), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(color: XameColors.accent.withOpacity(0.12),
+                              blurRadius: 20, spreadRadius: 2),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Stack(children: [
+                            // Media background
+                            if (p.mediaUrl.isNotEmpty)
+                              CachedNetworkImage(
+                                imageUrl: p.mediaUrl,
+                                width: double.infinity, height: 200,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, __, ___) => Container(
+                                  height: 200, color: context.xSurface,
+                                  child: Icon(Icons.campaign_outlined,
+                                    color: XameColors.accent, size: 48))),
+                            // Gradient overlay
+                            Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.85),
+                                  ],
+                                  stops: const [0.3, 1.0],
+                                ),
+                              ),
+                            ),
+                            // Content overlay
+                            Positioned(
+                              left: 0, right: 0, bottom: 0,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
                                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text(p.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: context.xText,
-                                      fontSize: 13, fontWeight: FontWeight.w700)),
-                                  if (p.caption.isNotEmpty)
-                                    Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: context.xMuted, fontSize: 11)),
-                                ])),
-                            ])),
-                        );
-                      }),
-                  ),
-                ])),
+                                  Text(p.title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 17, fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.2)),
+                                  if (p.caption.isNotEmpty) ...[
+                                    SizedBox(height: 4),
+                                    Text(p.caption, maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.75),
+                                        fontSize: 12, height: 1.4)),
+                                  ],
+                                  if (p.downloadUrl.isNotEmpty) ...[
+                                    SizedBox(height: 10),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 7),
+                                      decoration: BoxDecoration(
+                                        color: XameColors.accent,
+                                        borderRadius: BorderRadius.circular(10)),
+                                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                        Icon(Icons.download_rounded,
+                                          color: Colors.white, size: 15),
+                                        SizedBox(width: 6),
+                                        Text('Download Update',
+                                          style: TextStyle(color: Colors.white,
+                                            fontSize: 12, fontWeight: FontWeight.w700)),
+                                      ]),
+                                    ),
+                                  ],
+                                ]),
+                              ),
+                            ),
+                            // Verified badge top-right
+                            Positioned(
+                              top: 12, right: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.55),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: XameColors.accent.withOpacity(0.6)),
+                                ),
+                                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                  Icon(Icons.verified_rounded,
+                                    color: XameColors.accent, size: 12),
+                                  SizedBox(width: 4),
+                                  Text('Official',
+                                    style: TextStyle(color: Colors.white,
+                                      fontSize: 10, fontWeight: FontWeight.w700)),
+                                ]),
+                              ),
+                            ),
+                          ]),
+                        ),
+                      ),
+                    )).toList(),
+                  ]),
+                ),
+              ),
 
             // Section header
             SliverToBoxAdapter(
@@ -1605,12 +1679,11 @@ class _OfficialPost {
   _OfficialPost({required this.postId, required this.title,
     required this.caption, required this.mediaUrl, required this.downloadUrl});
   factory _OfficialPost.fromJson(Map<String, dynamic> j) => _OfficialPost(
-    postId:      j['postId']   as String? ?? '',
-    title:       j['title']    as String? ?? '',
-    caption:     j['caption']  as String? ?? '',
-    mediaUrl:    j['mediaUrl'] as String? ?? '',
-    downloadUrl: (j['category'] as String? ?? '').contains('download')
-      ? j['caption'] as String? ?? '' : '',
+    postId:      j['announcementId'] as String? ?? j['postId'] as String? ?? '',
+    title:       j['title']         as String? ?? '',
+    caption:     j['caption']       as String? ?? '',
+    mediaUrl:    j['mediaUrl']      as String? ?? '',
+    downloadUrl: j['downloadUrl']   as String? ?? '',
   );
 }
 
