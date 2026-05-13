@@ -78,20 +78,31 @@ jobs:
             --split-debug-info=build/debug-info \
             --build-number=${{ github.run_number }}
 
+      - name: Extract version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr -d '[:space:]')
+          echo "full=$VERSION" >> $GITHUB_OUTPUT
+          echo "name=$(echo $VERSION | cut -d'+' -f1)" >> $GITHUB_OUTPUT
+          echo "build=$(echo $VERSION | cut -d'+' -f2)" >> $GITHUB_OUTPUT
+
       - name: Rename APK
-        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/XamePage_${{ github.run_number }}.apk
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk             build/app/outputs/flutter-apk/XamePage_v${{ steps.version.outputs.name }}_build${{ steps.version.outputs.build }}.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: XamePage-APK
+          name: XamePage-v${{ steps.version.outputs.name }}-build${{ steps.version.outputs.build }}
           path: build/app/outputs/flutter-apk/XamePage_*.apk
           retention-days: 30
 
       - name: GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.name }}-build${{ steps.version.outputs.build }}
+          name: XamePage v${{ steps.version.outputs.name }} (build ${{ steps.version.outputs.build }})
           files: build/app/outputs/flutter-apk/XamePage_*.apk
+          generate_release_notes: false
 
       - name: Cleanup
         if: always()
