@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
@@ -200,6 +201,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
   List<DiscoveryItem>           _feed    = [];
   List<DiscoveryUser>           _people  = [];
+  List<_OfficialPost>           _officialPosts = [];
   List<Map<String, dynamic>>    _stories = [];
 
   late AnimationController _searchAnim;
@@ -267,9 +269,24 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   }
 
 
+  Future<void> _fetchOfficialPosts() async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res = await dio.get('/api/discover/feed',
+        queryParameters: {'region': 'Global', 'page': 1, 'limit': 10,
+          'authorId': '058000000001'});
+      final data = res.data as Map<String, dynamic>;
+      final posts = (data['posts'] as List? ?? [])
+        .map((p) => _OfficialPost.fromJson(p as Map<String, dynamic>))
+        .toList();
+      if (mounted) setState(() => _officialPosts = posts);
+    } catch (_) {}
+  }
+
   Future<void> _loadData({bool refresh = false}) async {
     if (refresh) setState(() { _page = 1; _hasMore = true; _feed = []; });
     setState(() => _loading = true);
+    if (refresh || _officialPosts.isEmpty) _fetchOfficialPosts();
     final user = ref.read(currentUserProvider);
     final userId = user?.xameId ?? '';
 
@@ -485,6 +502,71 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                   },
                 ),
               ),
+
+            // XamePage Official pinned posts
+            if (_officialPosts.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                    child: Row(children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: XameColors.accent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: XameColors.accent.withOpacity(0.4))),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.verified_rounded, color: XameColors.accent, size: 13),
+                          SizedBox(width: 4),
+                          Text('XAMEPAGE OFFICIAL',
+                            style: TextStyle(color: XameColors.accent,
+                              fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                        ])),
+                    ]),
+                  ),
+                  SizedBox(
+                    height: 180,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _officialPosts.length,
+                      itemBuilder: (_, i) {
+                        final p = _officialPosts[i];
+                        return GestureDetector(
+                          onTap: () => p.downloadUrl.isNotEmpty
+                            ? launchUrl(Uri.parse(p.downloadUrl), mode: LaunchMode.externalApplication)
+                            : null,
+                          child: Container(
+                            width: 260, margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: context.xCard,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: XameColors.accent.withOpacity(0.2))),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                child: CachedNetworkImage(
+                                  imageUrl: p.mediaUrl, height: 110, width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) => Container(
+                                    height: 110, color: context.xSurface,
+                                    child: Icon(Icons.campaign_outlined, color: XameColors.accent, size: 32)))),
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text(p.title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: context.xText,
+                                      fontSize: 13, fontWeight: FontWeight.w700)),
+                                  if (p.caption.isNotEmpty)
+                                    Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(color: context.xMuted, fontSize: 11)),
+                                ])),
+                            ])),
+                        );
+                      }),
+                  ),
+                ])),
 
             // Section header
             SliverToBoxAdapter(
@@ -1291,6 +1373,20 @@ class _FilterSheetState extends State<_FilterSheet> {
   );
 }
 
+class _OfficialPost {
+  final String postId, title, caption, mediaUrl, downloadUrl;
+  _OfficialPost({required this.postId, required this.title,
+    required this.caption, required this.mediaUrl, required this.downloadUrl});
+  factory _OfficialPost.fromJson(Map<String, dynamic> j) => _OfficialPost(
+    postId:      j['postId']   as String? ?? '',
+    title:       j['title']    as String? ?? '',
+    caption:     j['caption']  as String? ?? '',
+    mediaUrl:    j['mediaUrl'] as String? ?? '',
+    downloadUrl: (j['category'] as String? ?? '').contains('download')
+      ? j['caption'] as String? ?? '' : '',
+  );
+}
+
 // ── Detail video player ──────────────────────────────────────────────────────
 class _DetailVideoPlayer extends StatefulWidget {
   final String url;
@@ -1844,5 +1940,19 @@ class _EmptyState extends StatelessWidget {
         ),
       ]),
     ),
+  );
+}
+
+class _OfficialPost {
+  final String postId, title, caption, mediaUrl, downloadUrl;
+  _OfficialPost({required this.postId, required this.title,
+    required this.caption, required this.mediaUrl, required this.downloadUrl});
+  factory _OfficialPost.fromJson(Map<String, dynamic> j) => _OfficialPost(
+    postId:      j['postId']   as String? ?? '',
+    title:       j['title']    as String? ?? '',
+    caption:     j['caption']  as String? ?? '',
+    mediaUrl:    j['mediaUrl'] as String? ?? '',
+    downloadUrl: (j['category'] as String? ?? '').contains('download')
+      ? j['caption'] as String? ?? '' : '',
   );
 }
