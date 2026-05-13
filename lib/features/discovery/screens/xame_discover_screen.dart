@@ -1943,16 +1943,3 @@ class _EmptyState extends StatelessWidget {
   );
 }
 
-class _OfficialPost {
-  final String postId, title, caption, mediaUrl, downloadUrl;
-  _OfficialPost({required this.postId, required this.title,
-    required this.caption, required this.mediaUrl, required this.downloadUrl});
-  factory _OfficialPost.fromJson(Map<String, dynamic> j) => _OfficialPost(
-    postId:      j['postId']   as String? ?? '',
-    title:       j['title']    as String? ?? '',
-    caption:     j['caption']  as String? ?? '',
-    mediaUrl:    j['mediaUrl'] as String? ?? '',
-    downloadUrl: (j['category'] as String? ?? '').contains('download')
-      ? j['caption'] as String? ?? '' : '',
-  );
-}
