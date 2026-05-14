@@ -922,9 +922,11 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
 
   Future<File?> _renderQuoteToFile() async {
     try {
+      // Give the widget time to fully render
+      await Future.delayed(const Duration(milliseconds: 300));
       final bytes = await _screenshotCtrl.capture(pixelRatio: 2.0)
         .timeout(const Duration(seconds: 15));
-      if (bytes == null) return null;
+      if (bytes == null || bytes.isEmpty) return null;
       final dir = await getTemporaryDirectory();
       final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes);
