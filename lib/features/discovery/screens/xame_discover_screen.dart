@@ -921,17 +921,32 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   }
 
   Future<File?> _renderQuoteToFile() async {
-    final bytes = await _screenshotCtrl.captureFromWidget(
-      MediaQuery(
-        data: const MediaQueryData(),
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: _buildQuotePreview(forCapture: true))));
-    if (bytes == null) return null;
-    final dir = await getTemporaryDirectory();
-    final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
-    await file.writeAsBytes(bytes);
-    return file;
+    try {
+      final bytes = await _screenshotCtrl.captureFromWidget(
+        MediaQuery(
+          data: const MediaQueryData(),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: _buildQuotePreview(forCapture: true))),
+        pixelRatio: 2.0,
+      ).timeout(const Duration(seconds: 10));
+      if (bytes == null) return null;
+      final dir = await getTemporaryDirectory();
+      final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(bytes);
+      return file;
+    } catch (e) {
+      // Fallback: capture from the visible screenshot widget instead
+      try {
+        final bytes = await _screenshotCtrl.capture(pixelRatio: 2.0)
+          .timeout(const Duration(seconds: 10));
+        if (bytes == null) return null;
+        final dir = await getTemporaryDirectory();
+        final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
+        await file.writeAsBytes(bytes);
+        return file;
+      } catch (_) { return null; }
+    }
   }
 
   Future<void> _pickMedia() async {
