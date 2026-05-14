@@ -16,6 +16,7 @@ import 'package:xamepage/core/services/socket_service.dart';
 import 'package:xamepage/core/services/lifecycle_service.dart';
 import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
+import 'package:xamepage/core/services/update_service.dart';
 import 'package:xamepage/shared/models/xame_user.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 import 'package:xamepage/features/contacts/providers/contacts_provider.dart';
@@ -243,49 +244,8 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   }
 
   Future<void> _checkForUpdate() async {
-    try {
-      final info = await PackageInfo.fromPlatform();
-      final currentBuild = int.tryParse(info.buildNumber) ?? 0;
-      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      final res = await dio.get('/api/app/version');
-      final data = res.data as Map<String, dynamic>;
-      final latestBuild = data['buildNumber'] as int? ?? 0;
-      final forceUpdate = data['forceUpdate'] as bool? ?? false;
-      if (latestBuild <= currentBuild) return;
-      if (!mounted) return;
-      final downloadUrl = data['downloadUrl'] as String? ?? '';
-      final changelog   = data['changelog']   as String? ?? '';
-      showDialog(
-        context: context,
-        barrierDismissible: !forceUpdate,
-        builder: (_) => AlertDialog(
-          title: const Text('Update Available 🚀'),
-          content: Column(mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('A new version of XamePage is available.',
-              style: TextStyle(fontSize: 14)),
-            if (changelog.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(changelog, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-            ],
-          ]),
-          actions: [
-            if (!forceUpdate)
-              TextButton(
-                onPressed: () => Navigator.pop(_),
-                child: const Text('Later')),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(_);
-                launchUrl(Uri.parse(downloadUrl),
-                  mode: LaunchMode.externalApplication);
-              },
-              child: const Text('Download Now',
-                style: TextStyle(fontWeight: FontWeight.w700))),
-          ],
-        ),
-      );
-    } catch (_) {}
+    if (!mounted) return;
+    await UpdateService.checkForUpdate(context);
   }
 
   void _initShareListener() {

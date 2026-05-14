@@ -1,6 +1,8 @@
 class AppConstants {
   static const serverUrl             = 'https://project-50s.onrender.com';
-  static const appVersion            = '2.1';
+  static const appVersion            = '2.1.1';
+  static const appBuildNumber         = 478;
+  static const apiAppVersion          = '\$serverUrl/api/app/version';
   static const keyUser               = 'xame:user';
   static const keyContacts           = 'xame:contacts';
   static const keyDrafts             = 'xame:drafts';
