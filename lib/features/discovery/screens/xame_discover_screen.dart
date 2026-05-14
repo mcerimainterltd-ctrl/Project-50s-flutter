@@ -537,8 +537,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     SizedBox(height: 12),
                     // Announcement cards
                     ..._officialPosts.map((p) => GestureDetector(
-                      onTap: () => p.downloadUrl.isNotEmpty
-                        ? launchUrl(Uri.parse(p.downloadUrl), mode: LaunchMode.externalApplication)
+                      onTap: () => p.actionUrl.isNotEmpty
+                        ? launchUrl(Uri.parse(p.actionUrl), mode: LaunchMode.externalApplication)
                         : null,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -597,7 +597,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                                         color: Colors.white.withOpacity(0.75),
                                         fontSize: 12, height: 1.4)),
                                   ],
-                                  if (p.downloadUrl.isNotEmpty) ...[
+                                  if (p.actionUrl.isNotEmpty) ...[
                                     SizedBox(height: 10),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
@@ -606,10 +606,14 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                                         color: XameColors.accent,
                                         borderRadius: BorderRadius.circular(10)),
                                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                        Icon(Icons.download_rounded,
+                                        Icon(
+                                          p.actionLabel.toLowerCase().contains('watch') ? Icons.play_circle_outline_rounded
+                                          : p.actionLabel.toLowerCase().contains('download') ? Icons.download_rounded
+                                          : Icons.open_in_new_rounded,
                                           color: Colors.white, size: 15),
                                         SizedBox(width: 6),
-                                        Text('Download Update',
+                                        Text(
+                                          p.actionLabel.isNotEmpty ? p.actionLabel : 'Learn More',
                                           style: TextStyle(color: Colors.white,
                                             fontSize: 12, fontWeight: FontWeight.w700)),
                                       ]),
@@ -1675,15 +1679,19 @@ class _FilterSheetState extends State<_FilterSheet> {
 }
 
 class _OfficialPost {
-  final String postId, title, caption, mediaUrl, downloadUrl;
+  final String postId, title, caption, mediaUrl, mediaType, actionUrl, actionLabel, version;
   _OfficialPost({required this.postId, required this.title,
-    required this.caption, required this.mediaUrl, required this.downloadUrl});
+    required this.caption, required this.mediaUrl, required this.mediaType,
+    required this.actionUrl, required this.actionLabel, required this.version});
   factory _OfficialPost.fromJson(Map<String, dynamic> j) => _OfficialPost(
-    postId:      j['announcementId'] as String? ?? j['postId'] as String? ?? '',
+    postId:      j['announcementId'] as String? ?? j['postId']     as String? ?? '',
     title:       j['title']         as String? ?? '',
     caption:     j['caption']       as String? ?? '',
     mediaUrl:    j['mediaUrl']      as String? ?? '',
-    downloadUrl: j['downloadUrl']   as String? ?? '',
+    mediaType:   j['mediaType']     as String? ?? 'image',
+    actionUrl:   j['actionUrl']     as String? ?? j['downloadUrl'] as String? ?? '',
+    actionLabel: j['actionLabel']   as String? ?? '',
+    version:     j['version']       as String? ?? '',
   );
 }
 
