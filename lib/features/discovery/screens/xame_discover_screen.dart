@@ -907,7 +907,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                 fontFamily: font.isNotEmpty ? font : null)),
             if (_authorCtrl.text.isNotEmpty) ...[
               SizedBox(height: 16),
-              Text('— \${_authorCtrl.text}', textAlign: align,
+              Text('— ${_authorCtrl.text}', textAlign: align,
                 style: TextStyle(color: _textColor.withOpacity(0.7),
                   fontSize: 13, fontStyle: FontStyle.italic,
                   fontFamily: font.isNotEmpty ? font : null)),
@@ -922,31 +922,14 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
 
   Future<File?> _renderQuoteToFile() async {
     try {
-      final bytes = await _screenshotCtrl.captureFromWidget(
-        MediaQuery(
-          data: const MediaQueryData(),
-          child: Directionality(
-            textDirection: TextDirection.ltr,
-            child: _buildQuotePreview(forCapture: true))),
-        pixelRatio: 2.0,
-      ).timeout(const Duration(seconds: 10));
+      final bytes = await _screenshotCtrl.capture(pixelRatio: 2.0)
+        .timeout(const Duration(seconds: 15));
       if (bytes == null) return null;
       final dir = await getTemporaryDirectory();
       final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes);
       return file;
-    } catch (e) {
-      // Fallback: capture from the visible screenshot widget instead
-      try {
-        final bytes = await _screenshotCtrl.capture(pixelRatio: 2.0)
-          .timeout(const Duration(seconds: 10));
-        if (bytes == null) return null;
-        final dir = await getTemporaryDirectory();
-        final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
-        await file.writeAsBytes(bytes);
-        return file;
-      } catch (_) { return null; }
-    }
+    } catch (_) { return null; }
   }
 
   Future<void> _pickMedia() async {
