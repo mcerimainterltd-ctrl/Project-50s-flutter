@@ -508,147 +508,13 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               ),
 
             // ── XamePage Official Announcements ─────────────────────────
+            // ── XamePage News Channel ─────────────────────────────────────
             if (_officialPosts.isNotEmpty)
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    // Header
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [
-                            XameColors.accent.withOpacity(0.25),
-                            XameColors.accent.withOpacity(0.08),
-                          ]),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: XameColors.accent.withOpacity(0.5)),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.verified_rounded, color: XameColors.accent, size: 14),
-                          SizedBox(width: 5),
-                          Text('XAMEPAGE OFFICIAL',
-                            style: TextStyle(color: XameColors.accent,
-                              fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-                        ]),
-                      ),
-                    ]),
-                    SizedBox(height: 12),
-                    // Announcement cards
-                    ..._officialPosts.map((p) => GestureDetector(
-                      onTap: () => p.actionUrl.isNotEmpty
-                        ? launchUrl(Uri.parse(p.actionUrl), mode: LaunchMode.externalApplication)
-                        : null,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: XameColors.accent.withOpacity(0.35), width: 1.5),
-                          boxShadow: [
-                            BoxShadow(color: XameColors.accent.withOpacity(0.12),
-                              blurRadius: 20, spreadRadius: 2),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Stack(children: [
-                            // Media background
-                            if (p.mediaUrl.isNotEmpty)
-                              CachedNetworkImage(
-                                imageUrl: p.mediaUrl,
-                                width: double.infinity, height: 200,
-                                fit: BoxFit.cover,
-                                errorWidget: (_, __, ___) => Container(
-                                  height: 200, color: context.xSurface,
-                                  child: Icon(Icons.campaign_outlined,
-                                    color: XameColors.accent, size: 48))),
-                            // Gradient overlay
-                            Container(
-                              height: 200,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.85),
-                                  ],
-                                  stops: const [0.3, 1.0],
-                                ),
-                              ),
-                            ),
-                            // Content overlay
-                            Positioned(
-                              left: 0, right: 0, bottom: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text(p.title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 17, fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.2)),
-                                  if (p.caption.isNotEmpty) ...[
-                                    SizedBox(height: 4),
-                                    Text(p.caption, maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.75),
-                                        fontSize: 12, height: 1.4)),
-                                  ],
-                                  if (p.actionUrl.isNotEmpty) ...[
-                                    SizedBox(height: 10),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 7),
-                                      decoration: BoxDecoration(
-                                        color: XameColors.accent,
-                                        borderRadius: BorderRadius.circular(10)),
-                                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                        Icon(
-                                          p.actionLabel.toLowerCase().contains('watch') ? Icons.play_circle_outline_rounded
-                                          : p.actionLabel.toLowerCase().contains('download') ? Icons.download_rounded
-                                          : Icons.open_in_new_rounded,
-                                          color: Colors.white, size: 15),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          p.actionLabel.isNotEmpty ? p.actionLabel : 'Learn More',
-                                          style: TextStyle(color: Colors.white,
-                                            fontSize: 12, fontWeight: FontWeight.w700)),
-                                      ]),
-                                    ),
-                                  ],
-                                ]),
-                              ),
-                            ),
-                            // Verified badge top-right
-                            Positioned(
-                              top: 12, right: 12,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.55),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: XameColors.accent.withOpacity(0.6)),
-                                ),
-                                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Icon(Icons.verified_rounded,
-                                    color: XameColors.accent, size: 12),
-                                  SizedBox(width: 4),
-                                  Text('Official',
-                                    style: TextStyle(color: Colors.white,
-                                      fontSize: 10, fontWeight: FontWeight.w700)),
-                                ]),
-                              ),
-                            ),
-                          ]),
-                        ),
-                      ),
-                    )).toList(),
-                  ]),
-                ),
-              ),
+                child: _XameNewsChannel(
+                  posts: _officialPosts,
+                  context: context,
+                )),
 
             // Section header
             SliverToBoxAdapter(
@@ -1676,6 +1542,264 @@ class _FilterSheetState extends State<_FilterSheet> {
       ]),
     ),
   );
+}
+
+// ── XamePage News Channel Widget ─────────────────────────────────────────────
+class _XameNewsChannel extends StatefulWidget {
+  final List<_OfficialPost> posts;
+  final BuildContext context;
+  const _XameNewsChannel({required this.posts, required this.context});
+  @override
+  State<_XameNewsChannel> createState() => _XameNewsChannelState();
+}
+
+class _XameNewsChannelState extends State<_XameNewsChannel>
+    with SingleTickerProviderStateMixin {
+  int _active = 0;
+  late PageController _pageCtrl;
+  late AnimationController _shimmer;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageCtrl = PageController(viewportFraction: 0.92);
+    _shimmer = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 1500))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    _shimmer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // ── Channel header
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 14),
+        child: Row(children: [
+          // Animated verified badge
+          AnimatedBuilder(
+            animation: _shimmer,
+            builder: (_, __) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    XameColors.accent.withOpacity(0.15 + _shimmer.value * 0.1),
+                    XameColors.accent.withOpacity(0.05),
+                    XameColors.accent.withOpacity(0.15 + _shimmer.value * 0.1),
+                  ],
+                  stops: [0.0, _shimmer.value, 1.0],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: XameColors.accent.withOpacity(0.6), width: 1),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.verified_rounded, color: XameColors.accent, size: 13),
+                const SizedBox(width: 5),
+                Text('XAMEPAGE NEWS',
+                  style: TextStyle(color: XameColors.accent,
+                    fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+              ]),
+            )),
+          const Spacer(),
+          // Post count indicator
+          if (widget.posts.length > 1)
+            Text('\${widget.posts.length} updates',
+              style: TextStyle(color: context.xMuted, fontSize: 11)),
+        ]),
+      ),
+
+      // ── Card carousel
+      SizedBox(
+        height: 260,
+        child: PageView.builder(
+          controller: _pageCtrl,
+          scrollDirection: Axis.horizontal,
+          itemCount: widget.posts.length,
+          onPageChanged: (i) => setState(() => _active = i),
+          itemBuilder: (_, i) {
+            final p = widget.posts[i];
+            final isActive = i == _active;
+            return AnimatedScale(
+              scale: isActive ? 1.0 : 0.95,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              child: GestureDetector(
+                onTap: () {
+                  if (p.mediaType == 'video' && p.mediaUrl.isNotEmpty) {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.black,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                      builder: (_) => SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: _DetailVideoPlayer(url: p.mediaUrl),
+                      ),
+                    );
+                  } else if (p.actionUrl.isNotEmpty) {
+                    launchUrl(Uri.parse(p.actionUrl),
+                      mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: isActive ? [
+                      BoxShadow(color: XameColors.accent.withOpacity(0.25),
+                        blurRadius: 24, spreadRadius: 0, offset: const Offset(0, 8)),
+                    ] : [],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Stack(fit: StackFit.expand, children: [
+                      // Media
+                      p.mediaUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: p.mediaUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(
+                              color: context.xSurface,
+                              child: Center(child: CircularProgressIndicator(
+                                color: XameColors.accent, strokeWidth: 2))),
+                            errorWidget: (_, __, ___) => Container(
+                              color: context.xSurface,
+                              child: Column(mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.campaign_outlined,
+                                    color: XameColors.accent, size: 48),
+                                  const SizedBox(height: 8),
+                                  Text('XamePage News',
+                                    style: TextStyle(color: context.xMuted, fontSize: 13)),
+                                ])))
+                        : Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [const Color(0xFF0D1117), context.xSurface],
+                                begin: Alignment.topLeft, end: Alignment.bottomRight)),
+                            child: Center(child: Icon(Icons.campaign_outlined,
+                              color: XameColors.accent, size: 56))),
+
+                      // Cinematic gradient overlay
+                      Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.3),
+                            Colors.black.withOpacity(0.92),
+                          ],
+                          stops: const [0.2, 0.5, 1.0])))),
+
+                      // Top row: Official badge + version tag
+                      Positioned(top: 14, left: 14, right: 14,
+                        child: Row(children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: XameColors.accent.withOpacity(0.7))),
+                            child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Icon(Icons.verified_rounded, color: XameColors.accent, size: 11),
+                              const SizedBox(width: 4),
+                              Text('XamePage Official',
+                                style: TextStyle(color: Colors.white,
+                                  fontSize: 10, fontWeight: FontWeight.w700)),
+                            ])),
+                          const Spacer(),
+                          if (p.version.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: XameColors.accent.withOpacity(0.9),
+                                borderRadius: BorderRadius.circular(6)),
+                              child: Text('v\${p.version}',
+                                style: const TextStyle(color: Colors.black,
+                                  fontSize: 10, fontWeight: FontWeight.w800))),
+                        ])),
+
+                      // Bottom content
+                      Positioned(left: 16, right: 16, bottom: 16,
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min, children: [
+                          Text(p.title, maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white,
+                              fontSize: 18, fontWeight: FontWeight.w800,
+                              height: 1.2, letterSpacing: 0.1)),
+                          if (p.caption.isNotEmpty) ...[
+                            const SizedBox(height: 5),
+                            Text(p.caption, maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.72),
+                                fontSize: 12, height: 1.4)),
+                          ],
+                          if (p.actionUrl.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Row(children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: XameColors.accent,
+                                  borderRadius: BorderRadius.circular(12)),
+                                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                  Icon(
+                                    p.actionLabel.toLowerCase().contains('watch')
+                                      ? Icons.play_circle_outline_rounded
+                                      : p.actionLabel.toLowerCase().contains('download')
+                                        ? Icons.download_rounded
+                                        : Icons.open_in_new_rounded,
+                                    color: Colors.black, size: 14),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    p.actionLabel.isNotEmpty ? p.actionLabel : 'Learn More',
+                                    style: const TextStyle(color: Colors.black,
+                                      fontSize: 12, fontWeight: FontWeight.w800)),
+                                ])),
+                              const SizedBox(width: 10),
+                              Icon(Icons.touch_app_rounded,
+                                color: Colors.white.withOpacity(0.4), size: 14),
+                              Text(' Tap to open',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.4), fontSize: 11)),
+                            ]),
+                          ],
+                        ])),
+                    ])),
+                )),
+            );
+          }),
+      ),
+
+      // ── Page indicator dots
+      if (widget.posts.length > 1)
+        Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 4),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children:
+            List.generate(widget.posts.length, (i) => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: _active == i ? 20 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: _active == i ? XameColors.accent : XameColors.accent.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(3)),
+            ))),
+        ),
+      const SizedBox(height: 8),
+    ]);
+  }
 }
 
 class _OfficialPost {
