@@ -817,6 +817,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       return file;
     } catch (e) {
       debugPrint('Quote render error: \$e');
+      if (mounted) setState(() => _error = 'Render error: \$e');
       return null;
     }
   }
