@@ -792,17 +792,62 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
 
   Future<File?> _renderQuoteToFile() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      // Try captureFromWidget first — works even if widget is off-screen
-      final bytes = await _screenshotCtrl.captureFromWidget(
-        RepaintBoundary(
-          child: MediaQuery(
-            data: MediaQueryData(size: const Size(320, 320)),
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: Material(
-                color: Colors.transparent,
-                child: _buildQuotePreview(forCapture: true),
+      final gradient   = _gradients[_gradientIndex];
+      final align      = _aligns[_alignIndex];
+      final fontIndex  = _fontIndex;
+      final textColor  = _textColor;
+      final quoteText  = _quoteCtrl.text;
+      final authorText = _authorCtrl.text;
+      String getFont() {
+        switch (fontIndex) {
+          case 1: return 'Georgia';
+          case 2: return 'Courier New';
+          default: return '';
+        }
+      }
+      final f = getFont();
+      final ctrl = ScreenshotController();
+      final bytes = await ctrl.captureFromWidget(
+        MediaQuery(
+          data: const MediaQueryData(),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: 320, height: 320,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: gradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight)),
+                child: Stack(children: [
+                  Padding(
+                    padding: const EdgeInsets.all(28),
+                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Text('"', textAlign: align,
+                        style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 60,
+                          fontFamily: f.isNotEmpty ? f : null, height: 0.5)),
+                      const SizedBox(height: 8),
+                      Text(quoteText.isEmpty ? 'Your quote here...' : quoteText,
+                        textAlign: align,
+                        style: TextStyle(
+                          color: quoteText.isEmpty ? textColor.withOpacity(0.4) : textColor,
+                          fontSize: 18, fontWeight: FontWeight.w600, height: 1.5,
+                          fontFamily: f.isNotEmpty ? f : null)),
+                      if (authorText.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text('— ' + authorText, textAlign: align,
+                          style: TextStyle(color: textColor.withOpacity(0.7),
+                            fontSize: 13, fontStyle: FontStyle.italic,
+                            fontFamily: f.isNotEmpty ? f : null)),
+                      ],
+                    ])),
+                  Positioned(bottom: 10, right: 14,
+                    child: Text('XamePage',
+                      style: TextStyle(color: textColor.withOpacity(0.25),
+                        fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1))),
+                ]),
               ),
             ),
           ),
@@ -811,15 +856,16 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         delay: const Duration(milliseconds: 200),
       ).timeout(const Duration(seconds: 20));
       if (bytes == null || bytes.isEmpty) return null;
-      final dir = await getTemporaryDirectory();
-      final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
+      final dir  = await getTemporaryDirectory();
+      final file = File('${dir.path}/quote_${DateTime.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes);
       return file;
     } catch (e) {
-      debugPrint('Quote render error: \$e');
-      if (mounted) setState(() => _error = 'Render error: \$e');
+      debugPrint('Quote render error: $e');
+      if (mounted) setState(() => _error = 'Render error: $e');
       return null;
     }
+  }
   }
 
   Future<void> _pickMedia() async {
