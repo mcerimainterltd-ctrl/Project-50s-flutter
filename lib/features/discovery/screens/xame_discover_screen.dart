@@ -866,7 +866,6 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       return null;
     }
   }
-  }
 
   Future<void> _pickMedia() async {
     final picked = await _picker.pickImage(
