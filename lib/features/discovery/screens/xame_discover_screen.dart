@@ -792,16 +792,33 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
 
   Future<File?> _renderQuoteToFile() async {
     try {
-      // Give the widget time to fully render
-      await Future.delayed(const Duration(milliseconds: 300));
-      final bytes = await _screenshotCtrl.capture(pixelRatio: 2.0)
-        .timeout(const Duration(seconds: 15));
+      await Future.delayed(const Duration(milliseconds: 500));
+      // Try captureFromWidget first — works even if widget is off-screen
+      final bytes = await _screenshotCtrl.captureFromWidget(
+        RepaintBoundary(
+          child: MediaQuery(
+            data: MediaQueryData(size: const Size(320, 320)),
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Material(
+                color: Colors.transparent,
+                child: _buildQuotePreview(forCapture: true),
+              ),
+            ),
+          ),
+        ),
+        pixelRatio: 2.0,
+        delay: const Duration(milliseconds: 200),
+      ).timeout(const Duration(seconds: 20));
       if (bytes == null || bytes.isEmpty) return null;
       final dir = await getTemporaryDirectory();
       final file = File('\${dir.path}/quote_\${DateTime.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes);
       return file;
-    } catch (_) { return null; }
+    } catch (e) {
+      debugPrint('Quote render error: \$e');
+      return null;
+    }
   }
 
   Future<void> _pickMedia() async {
