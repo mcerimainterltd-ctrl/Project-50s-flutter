@@ -1706,9 +1706,49 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
                         child: _DetailVideoPlayer(url: p.mediaUrl),
                       ),
                     );
-                  } else if (p.actionUrl.isNotEmpty) {
-                    launchUrl(Uri.parse(p.actionUrl),
-                      mode: LaunchMode.externalApplication);
+                  } else if (p.mediaUrl.isNotEmpty && p.mediaType == 'image') {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                        backgroundColor: Colors.black,
+                        body: Stack(children: [
+                          Center(child: InteractiveViewer(
+                            child: CachedNetworkImage(
+                              imageUrl: p.mediaUrl, fit: BoxFit.contain,
+                              errorWidget: (_, __, ___) => const Icon(
+                                Icons.broken_image, color: Colors.white54, size: 64)))),
+                          Positioned(
+                            top: 48, left: 12,
+                            child: IconButton(
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(shape: BoxShape.circle,
+                                  color: Colors.black.withOpacity(0.6)),
+                                child: const Icon(Icons.close_rounded,
+                                  color: Colors.white, size: 20)),
+                              onPressed: () => Navigator.pop(context))),
+                          if (p.actionUrl.isNotEmpty)
+                            Positioned(left: 0, right: 0, bottom: 0,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                    colors: [Colors.black.withOpacity(0.85), Colors.transparent])),
+                                padding: const EdgeInsets.fromLTRB(20, 40, 20, 32),
+                                child: GestureDetector(
+                                  onTap: () => launchUrl(Uri.parse(p.actionUrl),
+                                    mode: LaunchMode.externalApplication),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    decoration: BoxDecoration(color: XameColors.accent,
+                                      borderRadius: BorderRadius.circular(12)),
+                                    child: Text(
+                                      p.actionLabel.isNotEmpty ? p.actionLabel : 'Learn More',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(color: Colors.black,
+                                        fontSize: 13, fontWeight: FontWeight.w800)))))),
+                        ]),
+                      )));
                   }
                 },
                 child: Container(
@@ -1810,7 +1850,11 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
                           if (p.actionUrl.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             Row(children: [
-                              Container(
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => launchUrl(Uri.parse(p.actionUrl),
+                                  mode: LaunchMode.externalApplication),
+                                child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 8),
                                 decoration: BoxDecoration(
@@ -1829,7 +1873,7 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
                                     p.actionLabel.isNotEmpty ? p.actionLabel : 'Learn More',
                                     style: const TextStyle(color: Colors.black,
                                       fontSize: 12, fontWeight: FontWeight.w800)),
-                                ])),
+                                ]))),
                               const SizedBox(width: 10),
                               Icon(Icons.touch_app_rounded,
                                 color: Colors.white.withOpacity(0.4), size: 14),
