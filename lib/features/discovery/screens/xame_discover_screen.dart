@@ -1672,7 +1672,7 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
           const Spacer(),
           // Post count indicator
           if (widget.posts.length > 1)
-            Text('\${widget.posts.length} updates',
+            Text('${widget.posts.length} updates',
               style: TextStyle(color: context.xMuted, fontSize: 11)),
         ]),
       ),
@@ -1765,19 +1765,38 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
                     child: Stack(fit: StackFit.expand, children: [
                       // Media
                       p.mediaUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: p.mediaUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(
-                              color: context.xSurface,
-                              child: Center(child: CircularProgressIndicator(
-                                color: XameColors.accent, strokeWidth: 2))),
-                            errorWidget: (_, __, ___) => Container(
-                              color: context.xSurface,
-                              child: Column(mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.campaign_outlined,
-                                    color: XameColors.accent, size: 48),
+                        ? Builder(builder: (context) {
+                            // YouTube thumbnail
+                            final ytMatch = RegExp(r'(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([\w-]{11})').firstMatch(p.mediaUrl);
+                            final thumbUrl = ytMatch != null
+                              ? 'https://img.youtube.com/vi/\${ytMatch.group(1)}/hqdefault.jpg'
+                              : (p.mediaType == 'video' ? '' : p.mediaUrl);
+                            return Stack(fit: StackFit.expand, children: [
+                              thumbUrl.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: thumbUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (_, __) => Container(color: context.xSurface,
+                                      child: Center(child: CircularProgressIndicator(color: XameColors.accent, strokeWidth: 2))),
+                                    errorWidget: (_, __, ___) => Container(color: context.xSurface,
+                                      child: Icon(Icons.campaign_outlined, color: XameColors.accent, size: 48)))
+                                : Container(color: context.xSurface,
+                                    child: Icon(Icons.play_circle_outline_rounded, color: XameColors.accent, size: 56)),
+                              if (p.mediaType == 'video' || ytMatch != null)
+                                Center(child: Container(
+                                  width: 48, height: 48,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    shape: BoxShape.circle),
+                                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28))),
+                            ]);
+                          })
+                        : Container(
+                            color: context.xSurface,
+                            child: Column(mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.campaign_outlined,
+                                  color: XameColors.accent, size: 48),
                                   const SizedBox(height: 8),
                                   Text('XamePage News',
                                     style: TextStyle(color: context.xMuted, fontSize: 13)),
