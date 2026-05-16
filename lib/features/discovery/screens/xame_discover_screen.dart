@@ -1800,14 +1800,7 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
                                   const SizedBox(height: 8),
                                   Text('XamePage News',
                                     style: TextStyle(color: context.xMuted, fontSize: 13)),
-                                ])))
-                        : Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [const Color(0xFF0D1117), context.xSurface],
-                                begin: Alignment.topLeft, end: Alignment.bottomRight)),
-                            child: Center(child: Icon(Icons.campaign_outlined,
-                              color: XameColors.accent, size: 56))),
+                                ])),
 
                       // Cinematic gradient overlay
                       Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
