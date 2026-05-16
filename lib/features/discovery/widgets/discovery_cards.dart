@@ -285,13 +285,14 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                           ]),
                         SizedBox(height: 6),
 
-                        // Title
-                        Text(widget.title,
-                          style: TextStyle(
-                            color:      context.xText,
-                            fontSize:   20,
-                            fontWeight: FontWeight.w800,
-                            height:     1.2)),
+                        // Title — hide for quotes (text is baked into the image)
+                        if (widget.category.toUpperCase() != 'QUOTE')
+                          Text(widget.title,
+                            style: TextStyle(
+                              color:      context.xText,
+                              fontSize:   20,
+                              fontWeight: FontWeight.w800,
+                              height:     1.2)),
                         SizedBox(height: 12),
 
                         // Stats row

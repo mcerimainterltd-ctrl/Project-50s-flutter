@@ -1950,6 +1950,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
   BetterPlayerController? _ctrl;
   bool   _showControls = true;
   bool   _playing      = true;
+  bool   _isFullscreen = false;
   bool   _muted        = false;
   Duration _position   = Duration.zero;
   Duration _duration   = Duration.zero;
@@ -2139,10 +2140,17 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                       // Fullscreen
                       GestureDetector(
                         onTap: () {
-                          SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
-                          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                          setState(() => _isFullscreen = !_isFullscreen);
+                          if (_isFullscreen) {
+                            SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+                            SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                          } else {
+                            SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+                            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                          }
                         },
-                        child: const Icon(Icons.fullscreen_rounded,
+                        child: Icon(
+                            _isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
                             color: Colors.white, size: 26),
                       ),
                     ]),
