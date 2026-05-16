@@ -1672,7 +1672,7 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
           const Spacer(),
           // Post count indicator
           if (widget.posts.length > 1)
-            Text('\${widget.posts.length} updates',
+            Text('${widget.posts.length} updates',
               style: TextStyle(color: context.xMuted, fontSize: 11)),
         ]),
       ),
@@ -1695,20 +1695,104 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
               child: GestureDetector(
                 onTap: () {
                   if (p.mediaType == 'video' && p.mediaUrl.isNotEmpty) {
-                    showModalBottomSheet(
-                      context: context,
-                      backgroundColor: Colors.black,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                      builder: (_) => SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        child: _DetailVideoPlayer(url: p.mediaUrl),
+                    // Open video fullscreen with close button
+                    Navigator.of(context).push(PageRouteBuilder(
+                      opaque: false,
+                      barrierColor: Colors.black,
+                      pageBuilder: (_, __, ___) => Scaffold(
+                        backgroundColor: Colors.black,
+                        body: Stack(children: [
+                          Center(child: _DetailVideoPlayer(url: p.mediaUrl)),
+                          Positioned(
+                            top: MediaQuery.of(context).padding.top + 8,
+                            left: 12,
+                            child: IconButton(
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black.withOpacity(0.6)),
+                                child: const Icon(Icons.close_rounded,
+                                    color: Colors.white, size: 20)),
+                              onPressed: () => Navigator.pop(context)),
+                          ),
+                        ]),
                       ),
-                    );
-                  } else if (p.actionUrl.isNotEmpty) {
-                    launchUrl(Uri.parse(p.actionUrl),
-                      mode: LaunchMode.externalApplication);
+                    ));
+                  } else if (p.mediaUrl.isNotEmpty && p.mediaType == 'image') {
+                    // Open image fullscreen with close button
+                    Navigator.of(context).push(PageRouteBuilder(
+                      opaque: false,
+                      barrierColor: Colors.black.withOpacity(0.95),
+                      pageBuilder: (_, __, ___) => Scaffold(
+                        backgroundColor: Colors.black,
+                        body: Stack(children: [
+                          Center(child: InteractiveViewer(
+                            child: CachedNetworkImage(
+                              imageUrl: p.mediaUrl,
+                              fit: BoxFit.contain,
+                              errorWidget: (_, __, ___) =>
+                                const Icon(Icons.broken_image,
+                                    color: Colors.white54, size: 64)))),
+                          Positioned(
+                            top: MediaQuery.of(context).padding.top + 8,
+                            left: 12,
+                            child: IconButton(
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black.withOpacity(0.6)),
+                                child: const Icon(Icons.close_rounded,
+                                    color: Colors.white, size: 20)),
+                              onPressed: () => Navigator.pop(context)),
+                          ),
+                          // Show title + action button at bottom
+                          Positioned(
+                            left: 0, right: 0, bottom: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [Colors.black.withOpacity(0.85), Colors.transparent])),
+                              padding: const EdgeInsets.fromLTRB(20, 40, 20, 32),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(p.title,
+                                    style: const TextStyle(color: Colors.white,
+                                        fontSize: 20, fontWeight: FontWeight.w800)),
+                                  if (p.caption.isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    Text(p.caption,
+                                      style: TextStyle(
+                                          color: Colors.white.withOpacity(0.7),
+                                          fontSize: 13)),
+                                  ],
+                                  if (p.actionUrl.isNotEmpty) ...[
+                                    const SizedBox(height: 14),
+                                    GestureDetector(
+                                      onTap: () => launchUrl(Uri.parse(p.actionUrl),
+                                          mode: LaunchMode.externalApplication),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: XameColors.accent,
+                                          borderRadius: BorderRadius.circular(12)),
+                                        child: Text(
+                                          p.actionLabel.isNotEmpty ? p.actionLabel : 'Learn More',
+                                          style: const TextStyle(color: Colors.black,
+                                              fontSize: 13, fontWeight: FontWeight.w800)))),
+                                  ],
+                                ]),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ));
                   }
                 },
                 child: Container(
@@ -1726,7 +1810,9 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
                       // Media
                       p.mediaUrl.isNotEmpty
                         ? CachedNetworkImage(
-                            imageUrl: p.mediaUrl,
+                            imageUrl: p.mediaType == 'video'
+                              ? p.mediaUrl.replaceFirst('/upload/', '/upload/so_0,f_jpg,q_80/').replaceAll(RegExp(r'\.(mp4|mov|avi|webm)$', caseSensitive: false), '.jpg')
+                              : p.mediaUrl,
                             fit: BoxFit.cover,
                             placeholder: (_, __) => Container(
                               color: context.xSurface,
@@ -1749,6 +1835,17 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
                                 begin: Alignment.topLeft, end: Alignment.bottomRight)),
                             child: Center(child: Icon(Icons.campaign_outlined,
                               color: XameColors.accent, size: 56))),
+
+                      // Video play icon overlay
+                      if (p.mediaType == 'video' && p.mediaUrl.isNotEmpty)
+                        Center(child: Container(
+                          width: 52, height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withOpacity(0.6),
+                            border: Border.all(color: Colors.white54)),
+                          child: const Icon(Icons.play_arrow_rounded,
+                              color: Colors.white, size: 32))),
 
                       // Cinematic gradient overlay
                       Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
