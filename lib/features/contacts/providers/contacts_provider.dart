@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
+import '../../messaging/providers/chat_provider.dart';
 import '../../../core/services/cache_service.dart';
 import '../../discovery/screens/xame_discover_screen.dart';
 
@@ -194,7 +195,7 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
       ).toList());
     }));
 
-    // receive-message — update preview + unread
+    // receive-message — update preview + unread + cache for chat screen
     _subs.add(socket.receiveMessage.listen((data) {
       final senderId = data['senderId'] as String?;
       final message  = data['message']  as Map<String, dynamic>?;
@@ -210,6 +211,9 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
           unreadCount: activeId == senderId ? 0 : c.unreadCount + 1,
         );
       }).toList());
+
+      // Invalidate chat provider so it re-fetches when opened
+      ref.invalidate(chatProvider(senderId));
     }));
 
     // typing / stop-typing
