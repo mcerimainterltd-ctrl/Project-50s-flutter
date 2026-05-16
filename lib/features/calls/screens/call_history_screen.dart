@@ -239,18 +239,17 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
       case 'missed':
         // Missed = I was the recipient AND call was never answered
         return calls.where((c) =>
-            (c.recipientId == userId || c.callerId == userId) &&
+            c.recipientId == userId &&
             missedStatuses.contains(c.status)).toList();
       case 'incoming':
-        // Incoming = I was the recipient AND call was answered
+        // Incoming = I was the recipient (answered or missed)
         return calls.where((c) =>
             c.recipientId == userId &&
             answeredStatuses.contains(c.status)).toList();
       case 'outgoing':
-        // Outgoing = I was the caller
+        // Outgoing = I was the caller regardless of status
         return calls.where((c) =>
-            c.callerId == userId &&
-            !missedStatuses.contains(c.status)).toList();
+            c.callerId == userId).toList();
       default:
         return calls;
     }

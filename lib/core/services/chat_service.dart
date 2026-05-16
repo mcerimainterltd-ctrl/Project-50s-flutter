@@ -63,7 +63,7 @@ class ChatService {
     final v = validateFile(file, mimeType);
     if (!v.isValid) throw Exception(v.error);
     final fd  = FormData.fromMap({'file': await MultipartFile.fromFile(file.path), 'userId': await _selfId()});
-    final res = await _dio.post('/api/upload', data: fd);
+    final res = await _dio.post('/api/upload-file', data: fd);
     final url = res.data['url'] as String;
     final msg = XameMessage(
       id: _uuid.v4(), senderId: await _selfId(),
