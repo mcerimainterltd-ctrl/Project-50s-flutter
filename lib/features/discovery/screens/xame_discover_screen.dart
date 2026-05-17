@@ -385,25 +385,6 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     }
   }
 
-  Future<void> _loadMorePeople() async {
-    if (_loadingMorePeople || !_hasMorePeople) return;
-    final userId = ref.read(currentUserProvider)?.xameId;
-    if (userId == null) return;
-    setState(() => _loadingMorePeople = true);
-    try {
-      final nextPage = _peoplePage + 1;
-      final more = await DiscoveryApiService.fetchPeople(userId, page: nextPage);
-      setState(() {
-        _people = [..._people, ...more];
-        _peoplePage = nextPage;
-        _hasMorePeople = more.length >= 30;
-        _loadingMorePeople = false;
-      });
-    } catch (_) {
-      setState(() => _loadingMorePeople = false);
-    }
-  }
-
   void _onRegionSelected(DiscoveryRegion region) {
     HapticFeedback.selectionClick();
     setState(() { _regionCode = region.code; _regionName = region.name; });
