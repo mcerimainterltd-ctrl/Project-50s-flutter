@@ -79,10 +79,10 @@ class DiscoveryApiService {
     } catch (_) { return []; }
   }
 
-  static Future<List<DiscoveryUser>> fetchPeople(String userId, {Set<String> contactIds = const {}}) async {
+  static Future<List<DiscoveryUser>> fetchPeople(String userId, {Set<String> contactIds = const {}, int page = 1}) async {
     try {
       final res = await _dio.get('/api/discover/people',
-          queryParameters: {'userId': userId, 'limit': 20});
+          queryParameters: {'userId': userId, 'limit': 30, 'page': page});
       final data = res.data as Map<String, dynamic>;
       if (data['success'] != true) return [];
       return (data['people'] as List).map((p) {
@@ -204,7 +204,10 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   bool   _hasMore     = true;
 
   List<DiscoveryItem>           _feed    = [];
-  List<DiscoveryUser>           _people  = [];
+  List<DiscoveryUser>           _people      = [];
+  int                           _peoplePage  = 1;
+  bool                          _hasMorePeople = true;
+  bool                          _loadingMorePeople = false;
   List<_OfficialPost>           _officialPosts = [];
   List<Map<String, dynamic>>    _stories = [];
 
@@ -296,7 +299,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
     final results = await Future.wait([
       DiscoveryApiService.fetchFeed(region: _regionCode, page: 1),
-      DiscoveryApiService.fetchPeople(userId, contactIds: ref.read(contactsProvider).valueOrNull?.map((c) => c.id).toSet() ?? {}),
+      DiscoveryApiService.fetchPeople(userId, contactIds: ref.read(contactsProvider).valueOrNull?.map((c) => c.id).toSet() ?? {}, page: 1),
       DiscoveryApiService.fetchStories(userId),
     ]);
 
@@ -315,7 +318,9 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       _feed    = _authorFilter != null
           ? feed.where((i) => i.authorId == _authorFilter).toList()
           : feed;
-      _people  = people;
+      _people     = people;
+      _peoplePage = 1;
+      _hasMorePeople = people.length >= 30;
       _stories = stories;
       _loading = false;
       _page    = 1;
@@ -359,6 +364,44 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
         _searchCtrl.clear();
       });
     });
+  }
+
+  Future<void> _loadMorePeople() async {
+    if (_loadingMorePeople || !_hasMorePeople) return;
+    final userId = ref.read(currentUserProvider)?.xameId;
+    if (userId == null) return;
+    setState(() => _loadingMorePeople = true);
+    try {
+      final nextPage = _peoplePage + 1;
+      final more = await DiscoveryApiService.fetchPeople(userId, page: nextPage);
+      setState(() {
+        _people = [..._people, ...more];
+        _peoplePage = nextPage;
+        _hasMorePeople = more.length >= 30;
+        _loadingMorePeople = false;
+      });
+    } catch (_) {
+      setState(() => _loadingMorePeople = false);
+    }
+  }
+
+  Future<void> _loadMorePeople() async {
+    if (_loadingMorePeople || !_hasMorePeople) return;
+    final userId = ref.read(currentUserProvider)?.xameId;
+    if (userId == null) return;
+    setState(() => _loadingMorePeople = true);
+    try {
+      final nextPage = _peoplePage + 1;
+      final more = await DiscoveryApiService.fetchPeople(userId, page: nextPage);
+      setState(() {
+        _people = [..._people, ...more];
+        _peoplePage = nextPage;
+        _hasMorePeople = more.length >= 30;
+        _loadingMorePeople = false;
+      });
+    } catch (_) {
+      setState(() => _loadingMorePeople = false);
+    }
   }
 
   void _onRegionSelected(DiscoveryRegion region) {
