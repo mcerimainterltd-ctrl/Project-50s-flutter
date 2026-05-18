@@ -7,8 +7,9 @@ import 'package:xamepage/core/theme/app_theme.dart';
 class PeoplePerspectiveCarousel extends StatefulWidget {
   final List<DiscoveryUser> users;
   final Function(DiscoveryUser)? onAdd;
+  final VoidCallback? onSeeAll;
   const PeoplePerspectiveCarousel({
-    Key? key, required this.users, this.onAdd,
+    Key? key, required this.users, this.onAdd, this.onSeeAll,
   }) : super(key: key);
   @override
   State<PeoplePerspectiveCarousel> createState() =>
@@ -41,8 +42,10 @@ class _PeoplePerspectiveCarouselState
           style: TextStyle(color: context.xMuted, fontSize: 11,
               fontWeight: FontWeight.w800, letterSpacing: 1.2)),
         Spacer(),
-        Text('${widget.users.length} suggested',
-          style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 11)),
+        GestureDetector(
+          onTap: widget.onSeeAll,
+          child: Text('See more',
+            style: TextStyle(color: XameColors.accent, fontSize: 11, fontWeight: FontWeight.w700))),
       ]),
     ),
     SizedBox(height: 210,

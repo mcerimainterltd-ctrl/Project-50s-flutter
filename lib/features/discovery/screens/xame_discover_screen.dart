@@ -528,6 +528,20 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       setState(() => user.isAdded = false);
                     }
                   },
+                  onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => _AllPeopleScreen(
+                      initialPeople: _people,
+                      onAdd: (user) async {
+                        final self = ref.read(currentUserProvider);
+                        if (self == null) return;
+                        try {
+                          final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                          await dio.post('/api/send-contact-request', data: {
+                            'userId': self.xameId, 'contactId': user.id});
+                          setState(() => user.isAdded = true);
+                        } catch (_) {}
+                      },
+                    ))),
                 ),
               ),
 
