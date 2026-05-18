@@ -844,7 +844,7 @@ class _AllPeopleScreenState extends State<_AllPeopleScreen> {
                       style: TextStyle(color: context.xText,
                           fontWeight: FontWeight.w600)),
                   subtitle: user.mutualCount > 0
-                      ? Text('\${user.mutualCount} mutual',
+                      ? Text('${user.mutualCount} mutual',
                           style: TextStyle(color: context.xMuted, fontSize: 12))
                       : null,
                   trailing: user.isAdded
