@@ -531,6 +531,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                   onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => _AllPeopleScreen(
                       initialPeople: _people,
+                      userId: user?.xameId ?? '',
                       onAdd: (user) async {
                         final self = ref.read(currentUserProvider);
                         if (self == null) return;
@@ -710,7 +711,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 class _AllPeopleScreen extends StatefulWidget {
   final List<DiscoveryUser> initialPeople;
   final Future<void> Function(DiscoveryUser) onAdd;
-  const _AllPeopleScreen({required this.initialPeople, required this.onAdd});
+  final String userId;
+  const _AllPeopleScreen({required this.initialPeople, required this.onAdd, required this.userId});
   @override
   State<_AllPeopleScreen> createState() => _AllPeopleScreenState();
 }
@@ -750,7 +752,7 @@ class _AllPeopleScreenState extends State<_AllPeopleScreen> {
       // Fetch next page — reuse fetchPeople with page param
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       final res = await dio.get('/api/discover/people',
-          queryParameters: {'page': _page + 1, 'limit': 30});
+          queryParameters: {'userId': widget.userId, 'page': _page + 1, 'limit': 30});
       final data = res.data as Map<String, dynamic>;
       if (data['success'] == true) {
         final more = (data['people'] as List).map((p) {
