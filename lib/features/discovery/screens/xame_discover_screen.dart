@@ -706,6 +706,177 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 }
 
 // ── Post FAB ──────────────────────────────────────────────────────────────────
+// ── All People Screen ────────────────────────────────────────────────────────
+class _AllPeopleScreen extends StatefulWidget {
+  final List<DiscoveryUser> initialPeople;
+  final Future<void> Function(DiscoveryUser) onAdd;
+  const _AllPeopleScreen({required this.initialPeople, required this.onAdd});
+  @override
+  State<_AllPeopleScreen> createState() => _AllPeopleScreenState();
+}
+
+class _AllPeopleScreenState extends State<_AllPeopleScreen> {
+  List<DiscoveryUser> _people = [];
+  bool _loading = false;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  int  _page = 1;
+  final _scrollCtrl = ScrollController();
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _people = List.from(widget.initialPeople);
+    _scrollCtrl.addListener(() {
+      if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200) {
+        _loadMore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      // Fetch next page — reuse fetchPeople with page param
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res = await dio.get('/api/discover/people',
+          queryParameters: {'page': _page + 1, 'limit': 30});
+      final data = res.data as Map<String, dynamic>;
+      if (data['success'] == true) {
+        final more = (data['people'] as List).map((p) {
+          final m = Map<String, dynamic>.from(p);
+          return DiscoveryUser(
+            id:          m['id']          as String? ?? '',
+            name:        m['name']        as String? ?? '',
+            avatarUrl:   m['avatarUrl']   as String? ?? '',
+            mutualCount: (m['mutualCount'] as num?)?.toInt() ?? 0,
+            isOnline:    m['isOnline']    as bool? ?? false,
+            tagline:     m['tagline']     as String?,
+          );
+        }).toList();
+        setState(() {
+          _people.addAll(more);
+          _page++;
+          _hasMore = more.length >= 30;
+          _loadingMore = false;
+        });
+      } else {
+        setState(() { _hasMore = false; _loadingMore = false; });
+      }
+    } catch (_) {
+      setState(() => _loadingMore = false);
+    }
+  }
+
+  List<DiscoveryUser> get _filtered => _query.isEmpty
+      ? _people
+      : _people.where((u) => u.name.toLowerCase().contains(_query.toLowerCase())).toList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.xBg,
+      appBar: AppBar(
+        backgroundColor: context.xBg,
+        elevation: 0,
+        title: Text('People on XamePage',
+            style: TextStyle(color: context.xText, fontWeight: FontWeight.w700)),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: context.xText, size: 18),
+          onPressed: () => Navigator.pop(context)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: TextField(
+              controller: _searchCtrl,
+              style: TextStyle(color: context.xText),
+              decoration: InputDecoration(
+                hintText: 'Search people...',
+                hintStyle: TextStyle(color: context.xMuted),
+                filled: true,
+                fillColor: context.xSurface,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+                prefixIcon: Icon(Icons.search, color: context.xMuted, size: 20),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10)),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+        ),
+      ),
+      body: _loading
+          ? Center(child: CircularProgressIndicator(color: context.xPrimary))
+          : ListView.builder(
+              controller: _scrollCtrl,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: _filtered.length + (_loadingMore ? 1 : 0),
+              itemBuilder: (ctx, i) {
+                if (i == _filtered.length) {
+                  return Center(child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: CircularProgressIndicator(
+                        color: context.xPrimary, strokeWidth: 2)));
+                }
+                final user = _filtered[i];
+                return ListTile(
+                  leading: CircleAvatar(
+                    radius: 24,
+                    backgroundImage: user.avatarUrl.isNotEmpty
+                        ? NetworkImage(user.avatarUrl) : null,
+                    backgroundColor: context.xSurface,
+                    child: user.avatarUrl.isEmpty
+                        ? Text(user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                            style: TextStyle(color: context.xText,
+                                fontWeight: FontWeight.w700)) : null),
+                  title: Text(user.name,
+                      style: TextStyle(color: context.xText,
+                          fontWeight: FontWeight.w600)),
+                  subtitle: user.mutualCount > 0
+                      ? Text('\${user.mutualCount} mutual',
+                          style: TextStyle(color: context.xMuted, fontSize: 12))
+                      : null,
+                  trailing: user.isAdded
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                              color: context.xSurface,
+                              borderRadius: BorderRadius.circular(20)),
+                          child: Text('Requested',
+                              style: TextStyle(color: context.xMuted,
+                                  fontSize: 12, fontWeight: FontWeight.w600)))
+                      : GestureDetector(
+                          onTap: () async {
+                            await widget.onAdd(user);
+                            setState(() => user.isAdded = true);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 7),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                  colors: [context.xPrimary, context.xSecondary]),
+                              borderRadius: BorderRadius.circular(20)),
+                            child: Text('Add',
+                                style: const TextStyle(color: Colors.white,
+                                    fontSize: 13, fontWeight: FontWeight.w700)))),
+                );
+              }),
+    );
+  }
+}
+
 class _PostFAB extends StatelessWidget {
   final VoidCallback onPost;
   _PostFAB({required this.onPost});
