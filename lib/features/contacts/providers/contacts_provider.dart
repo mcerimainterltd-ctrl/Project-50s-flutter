@@ -5,7 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/services/socket_service.dart';
+import '../../../shared/models/message.dart';
 import '../../messaging/providers/chat_provider.dart';
 import '../../../core/services/cache_service.dart';
 import '../../discovery/screens/xame_discover_screen.dart';
@@ -212,8 +214,32 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
         );
       }).toList());
 
-      // Invalidate chat provider so it re-fetches when opened
-      ref.invalidate(chatProvider(senderId));
+      // Directly append message to chat provider if it exists
+      try {
+        final fileObj = message['file'];
+        final hasFile = fileObj != null && fileObj is Map && fileObj['url'] != null;
+        final mime    = hasFile ? (fileObj['type'] as String? ?? '') : '';
+        final msg = XameMessage(
+          id:          message['id']  as String? ?? const Uuid().v4(),
+          senderId:    senderId,
+          recipientId: ref.read(currentUserProvider)?.xameId ?? '',
+          text:        message['text'] as String? ?? '',
+          type:        hasFile ? _typeFromMime(mime) : MessageType.text,
+          direction:   MessageDirection.received,
+          ts:          (message['ts'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+          status:      'delivered',
+          fileUrl:     hasFile ? fileObj['url']  as String? : null,
+          fileName:    hasFile ? fileObj['name'] as String? : null,
+          fileMime:    hasFile ? mime : null,
+          replyToId:   (message['replyTo'] as Map?)?['id']   as String?,
+          replyToText: (message['replyTo'] as Map?)?['text'] as String?,
+          forwarded:   message['forwarded'] as bool? ?? false,
+          viewOnce:    message['viewOnce']  as bool? ?? false,
+          expiresAt:   message['expiresAt'] as int?,
+        );
+        final notifier = ref.read(chatProvider(senderId).notifier);
+        notifier.appendIncoming(msg);
+      } catch (_) {}
     }));
 
     // typing / stop-typing
@@ -387,6 +413,13 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
       }
     } catch (_) {}
   }
+}
+
+MessageType _typeFromMime(String mime) {
+  if (mime.startsWith('image/')) return MessageType.image;
+  if (mime.startsWith('video/')) return MessageType.video;
+  if (mime.startsWith('audio/')) return MessageType.audio;
+  return MessageType.file;
 }
 
 final contactsProvider =

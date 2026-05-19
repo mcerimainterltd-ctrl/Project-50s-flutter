@@ -42,6 +42,12 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     _listenSocket();
   }
 
+  void appendIncoming(XameMessage msg) {
+    if (state.any((m) => m.id == msg.id)) return; // deduplicate
+    state = [...state, msg];
+    CacheService.saveChat(_contactId, state);
+  }
+
   void _listenSocket() {
     final socket = _ref.read(socketServiceProvider);
 
