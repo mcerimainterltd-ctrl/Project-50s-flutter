@@ -1044,7 +1044,7 @@ class _IncomingCallBanner extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             GestureDetector(
-              onTap: () => ref.read(socketServiceProvider).emit('call-reject', {'callerId': call.callerId}),
+              onTap: () => ref.read(socketServiceProvider).emit('call-rejected', {'recipientId': call.callerId, 'reason': 'rejected', 'callId': call.callId}),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(color: XameColors.danger.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
