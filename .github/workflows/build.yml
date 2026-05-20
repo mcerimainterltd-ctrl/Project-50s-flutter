@@ -92,19 +92,19 @@ jobs:
       - name: Rename APK
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
-            build/app/outputs/flutter-apk/XamePage_v${{ steps.version.outputs.name }}_build${{ steps.version.outputs.build }}.apk
+            build/app/outputs/flutter-apk/XamePage_v${{ steps.version.outputs.name }}_build${{ github.run_number }}.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: XamePage-v${{ steps.version.outputs.name }}-build${{ steps.version.outputs.build }}
+          name: XamePage-v${{ steps.version.outputs.name }}-build${{ github.run_number }}
           path: build/app/outputs/flutter-apk/XamePage_*.apk
           retention-days: 30
 
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.name }}-build${{ steps.version.outputs.build }}
-          name: XamePage v${{ steps.version.outputs.name }} (build ${{ steps.version.outputs.build }})
+          tag_name: v${{ steps.version.outputs.name }}-build${{ github.run_number }}
+          name: XamePage v${{ steps.version.outputs.name }} (build ${{ github.run_number }})
           files: build/app/outputs/flutter-apk/XamePage_*.apk
           generate_release_notes: false
 
