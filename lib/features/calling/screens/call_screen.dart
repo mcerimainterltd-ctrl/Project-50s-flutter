@@ -649,7 +649,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   Widget _endBtn(WebRTCService webrtc, {double size = 62}) {
     return GestureDetector(
-      onTap: () { webrtc.endCall(); context.go('/contacts'); },
+      onTap: () { webrtc.endCall(callerCancelled: !widget.isIncoming && !_timerStarted); context.go('/contacts'); },
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
           width: size, height: size,

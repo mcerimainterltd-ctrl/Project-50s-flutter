@@ -281,13 +281,17 @@ class WebRTCService {
     _incomingCallController.add(false);
   }
 
-  void endCall() {
+  void endCall({bool callerCancelled = false}) {
     _callCancelled = true;
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
     try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
     try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
-    _socket.emitCallEnded(currentRemoteUserId ?? "");
+    if (callerCancelled && currentRemoteUserId != null) {
+      _socket.emitCallRejected(currentRemoteUserId!, "cancelled");
+    } else {
+      _socket.emitCallEnded(currentRemoteUserId ?? "");
+    }
     _incomingCallController.add(false);
     _cleanup();
     _callState = CallState.ended; _callStateController.add(CallState.ended);

@@ -227,7 +227,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
   }
 
   List<CallRecord> _filterCalls(List<CallRecord> calls, String userId) {
-    const missedStatuses = ['missed', 'no-answer', 'offline'];
+    const missedStatuses = ['missed', 'no-answer', 'offline', 'cancelled'];
     const answeredStatuses = ['ended', 'accepted'];
     switch (_filter) {
       case 'missed':
@@ -375,7 +375,7 @@ class _CallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMissed   = (call.status == 'missed' || call.status == 'no-answer' || call.status == 'offline') && !isOutgoing;
+    final isMissed   = (call.status == 'missed' || call.status == 'no-answer' || call.status == 'offline' || (call.status == 'cancelled' && !isOutgoing)) && !isOutgoing;
     final isDeclined = call.status == 'rejected';
     final isVideo    = call.callType == 'video';
     final nameColor  = isMissed ? const Color(0xFFE53935)
@@ -470,8 +470,9 @@ class _CallTile extends StatelessWidget {
         case 'accepted':
         case 'ended':    return 'Outgoing';
         case 'rejected': return 'Declined';
-        case 'missed':
+        case 'cancelled': return 'Cancelled';
         case 'no-answer': return 'No answer';
+        case 'missed':   return 'No answer';
         case 'offline':  return 'Unavailable';
         default:         return 'Outgoing';
       }
@@ -479,9 +480,10 @@ class _CallTile extends StatelessWidget {
       switch (call.status) {
         case 'accepted':
         case 'ended':    return 'Incoming';
-        case 'rejected': return 'Declined';
-        case 'missed':
+        case 'rejected': return 'Declined by me';
+        case 'cancelled': return 'Missed';
         case 'no-answer': return 'Missed';
+        case 'missed':   return 'Missed';
         case 'offline':  return 'Missed';
         default:         return 'Incoming';
       }
