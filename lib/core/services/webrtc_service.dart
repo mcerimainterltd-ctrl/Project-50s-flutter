@@ -164,7 +164,7 @@ class WebRTCService {
       if (_callState == CallState.outgoing) {
         callEndReason = 'no-answer';
         _recordMissedCall(userId, isVideo ? 'video' : 'voice');
-        endCall();
+        endCall(isTimeout: true);
       }
     });
   }
@@ -284,17 +284,17 @@ class WebRTCService {
     _incomingCallController.add(false);
   }
 
-  void endCall({bool callerCancelled = false}) {
+  void endCall({bool callerCancelled = false, bool isTimeout = false}) {
     _callCancelled = true;
     if (callerCancelled && callEndReason.isEmpty) callEndReason = 'cancelled';
-    if (!callerCancelled && callEndReason.isEmpty) callEndReason = 'ended';
+    if (!callerCancelled && !isTimeout && callEndReason.isEmpty) callEndReason = 'ended';
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
     try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
     try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
     if (callerCancelled && currentRemoteUserId != null) {
       _socket.emitCallRejected(currentRemoteUserId!, "cancelled");
-    } else {
+    } else if (!isTimeout) {
       _socket.emitCallEnded(currentRemoteUserId ?? "");
     }
     _incomingCallController.add(false);
