@@ -49,6 +49,7 @@ class SocketService {
   final _contactStatusCtrl    = StreamController<ContactStatusData>.broadcast();
   final _forceLogoutCtrl      = StreamController<String>.broadcast();
   final _missedCallCountCtrl  = StreamController<String>.broadcast();
+  final _callUnansweredAckCtrl = StreamController<String>.broadcast();
   final _newDiscoveryPostCtrl = StreamController<String>.broadcast();
   final _reactionUpdateCtrl   = StreamController<Map<String, dynamic>>.broadcast();
   final _walletRequestCtrl     = StreamController<Map<String, dynamic>>.broadcast();
@@ -85,6 +86,7 @@ class SocketService {
   Stream<Map<String, dynamic>>      get contactRequestAccepted => _contactRequestAcceptedCtrl.stream;
   Stream<String>                    get forceLogout      => _forceLogoutCtrl.stream;
   Stream<String>                    get missedCallCount  => _missedCallCountCtrl.stream;
+  Stream<String>                    get callUnansweredAck => _callUnansweredAckCtrl.stream;
   final _confPeerJoinedCtrl    = StreamController<ConferencePeerData>.broadcast();
   final _confPeerLeftCtrl      = StreamController<ConferencePeerData>.broadcast();
   final _confOfferCtrl         = StreamController<ConferenceSignalData>.broadcast();
@@ -339,6 +341,7 @@ class SocketService {
       if (d?['senderId'] != null) _callAcknowledgedCtrl.add(d['senderId']);
     });
     socket.on('call-ended', (d) => _callEndedCtrl.add(d?['senderId'] ?? ''));
+    socket.on('call-unanswered-ack', (d) => _callUnansweredAckCtrl.add(d?['recipientId'] ?? ''));
 
     // ── Wallet ────────────────────────────────────────────────────────────
     socket.on('wallet:debit', (d) {

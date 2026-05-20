@@ -110,6 +110,7 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
     _subs.add(socket.callEnded.listen((_) => refresh()));
     _subs.add(socket.callRejected.listen((_) => refresh()));
     _subs.add(socket.missedCallCount.listen((_) => refresh()));
+    _subs.add(socket.callUnansweredAck.listen((_) => refresh()));
     _subs.add(socket.connectionState.listen((s) {
       if (s == SocketState.connected) refresh();
     }));
