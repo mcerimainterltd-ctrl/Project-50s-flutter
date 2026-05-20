@@ -74,9 +74,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         if (s == CallState.active && !_timerStarted) _startTimer();
         if (s == CallState.ended && mounted) {
           final webrtc = ref.read(webRTCServiceProvider);
-          // Show declined screen only to caller when recipient declines
-          if (!widget.isIncoming && !_timerStarted) {
-            setState(() => _callEndReason = 'Declined');
+          // Show correct end reason to caller
+          final webrtcReason = ref.read(webRTCServiceProvider).callEndReason;
+          if (!widget.isIncoming) {
+            switch (webrtcReason) {
+              case 'declined':  setState(() => _callEndReason = 'Declined');  break;
+              case 'no-answer': setState(() => _callEndReason = 'No Answer'); break;
+              case 'cancelled': setState(() => _callEndReason = 'Cancelled'); break;
+              default:          setState(() => _callEndReason = 'Call Ended');
+            }
           } else {
             setState(() => _callEndReason = 'Call Ended');
           }

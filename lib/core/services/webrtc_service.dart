@@ -40,6 +40,7 @@ class WebRTCService {
   final AudioService _audio = AudioService();
   static const _channel = MethodChannel('com.xamepage.app/call');
   bool _callCancelled = false;
+  String callEndReason = ''; // 'declined', 'no-answer', 'cancelled', 'ended'
   Timer? _callTimeoutTimer;
   String? _currentCallId;
   String? get currentCallId => _currentCallId;
@@ -70,6 +71,7 @@ class WebRTCService {
 
     _socket.callRejected.listen((data) {
       _callCancelled = true;
+      callEndReason = 'declined';
       _callTimeoutTimer?.cancel();
       _audio.stopAll();
       // Record as declined — recipient actively rejected the call
@@ -160,6 +162,7 @@ class WebRTCService {
     _callTimeoutTimer = Timer(
       Duration(seconds: AppConstants.callTimeoutSeconds), () {
       if (_callState == CallState.outgoing) {
+        callEndReason = 'no-answer';
         _recordMissedCall(userId, isVideo ? 'video' : 'voice');
         endCall();
       }
@@ -283,6 +286,8 @@ class WebRTCService {
 
   void endCall({bool callerCancelled = false}) {
     _callCancelled = true;
+    if (callerCancelled && callEndReason.isEmpty) callEndReason = 'cancelled';
+    if (!callerCancelled && callEndReason.isEmpty) callEndReason = 'ended';
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
     try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
@@ -336,6 +341,7 @@ class WebRTCService {
     _pendingOffer = null;
     _pendingIce.clear();
     _callCancelled = false;
+    callEndReason = '';
     _callTimeoutTimer?.cancel();
     _callTimeoutTimer = null;
     _currentCallId = null;
