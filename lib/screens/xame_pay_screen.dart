@@ -1,4 +1,5 @@
 // lib/screens/xame_pay_screen.dart
+import 'dart:async';
 // XamePay — go_router-aware wallet for XamePage 2.1  (Build 264+)
 
 import 'dart:convert';
