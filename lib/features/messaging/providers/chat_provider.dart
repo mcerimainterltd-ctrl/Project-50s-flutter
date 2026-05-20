@@ -112,6 +112,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     _subs.add(socket.messagesDeleted.listen((data) {
       if (data.contactId != _contactId) return;
       state = state.map((m) => data.messageIds.contains(m.id) ? m.copyWith(isDeleted: true) : m).toList();
+      CacheService.saveChat(_contactId, state);
     }));
 
     _subs.add(socket.chatHistory.listen((historyData) {
@@ -400,7 +401,11 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
   // ── Delete messages ───────────────────────────────────────────────────
   Future<void> deleteMessages(List<String> ids,
       {bool deleteForEveryone = false}) async {
-    state = state.where((m) => !ids.contains(m.id)).toList();
+    if (deleteForEveryone) {
+      state = state.map((m) => ids.contains(m.id) ? m.copyWith(isDeleted: true) : m).toList();
+    } else {
+      state = state.where((m) => !ids.contains(m.id)).toList();
+    }
     CacheService.saveChat(_contactId, state);
     _ref.read(socketServiceProvider).emit('sync-deletions', {
       'chat': {
