@@ -162,6 +162,16 @@ class MessageBubble extends ConsumerWidget {
       message.type == MessageType.text || message.type == MessageType.file;
 
   Widget _buildContent(BuildContext context) {
+    if (message.isDeleted) {
+      return Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.block, size: 13, color: context.xMuted),
+        SizedBox(width: 5),
+        Text(
+          isSelf ? "You deleted this message" : "This message was deleted",
+          style: TextStyle(color: context.xMuted, fontSize: 13, fontStyle: FontStyle.italic),
+        ),
+      ]);
+    }
     switch (message.type) {
       case MessageType.image:
         return _ImageBubble(

@@ -22,6 +22,7 @@ class XameMessage {
   final int?             fileSize;
   final String?          localPath;  // local device path — open without download
   final Map<String, String>? reactions;
+  final bool             isDeleted;
 
   const XameMessage({
     required this.id,
@@ -44,9 +45,10 @@ class XameMessage {
     this.fileSize,
     this.localPath,
     this.reactions,
+    this.isDeleted  = false,
   });
 
-  XameMessage copyWith({String? status, Map<String, String>? reactions, String? localPath}) => XameMessage(
+XameMessage copyWith({String? status, Map<String, String>? reactions, String? localPath, bool? isDeleted}) => XameMessage(
     id:             id,             senderId:      senderId,
     recipientId:    recipientId,    text:          text,
     type:           type,           direction:     direction,
@@ -58,6 +60,7 @@ class XameMessage {
     fileMime:       fileMime,       fileSize:      fileSize,
     localPath:      localPath ?? this.localPath,
     reactions:      reactions ?? this.reactions,
+    isDeleted:      isDeleted ?? this.isDeleted,
   );
 
   DateTime get dateTime => DateTime.fromMillisecondsSinceEpoch(ts);

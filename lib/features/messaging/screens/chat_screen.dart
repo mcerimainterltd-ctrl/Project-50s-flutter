@@ -554,6 +554,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
             // Chat UI
             Column(children: [
+        _IncomingCallBanner(contactId: widget.userId),
         Expanded(
           child: GestureDetector(
             onTap: () {
@@ -1005,6 +1006,58 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 }
 
 // ── Message list ──────────────────────────────────────────────────────────
+// ── Incoming call banner ─────────────────────────────────────────────────────
+class _IncomingCallBanner extends ConsumerWidget {
+  final String contactId;
+  const _IncomingCallBanner({required this.contactId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return StreamBuilder<IncomingCallData>(
+      stream: ref.read(socketServiceProvider).incomingCall,
+      builder: (context, snap) {
+        if (!snap.hasData || snap.data == null) return const SizedBox.shrink();
+        final call = snap.data!;
+        if (call.callerId != contactId) return const SizedBox.shrink();
+        return Container(
+          margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: XameColors.primary.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: XameColors.primary.withValues(alpha: 0.4)),
+          ),
+          child: Row(children: [
+            Icon(call.isVideo ? Icons.videocam : Icons.call, color: XameColors.primary, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text(
+              call.isVideo ? 'Incoming video call...' : 'Incoming call...',
+              style: TextStyle(color: context.xText, fontWeight: FontWeight.w600, fontSize: 13),
+            )),
+            GestureDetector(
+              onTap: () => context.go('/call/${call.callerId}?video=${call.isVideo}'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(color: XameColors.primary, borderRadius: BorderRadius.circular(20)),
+                child: Text('Answer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => ref.read(socketServiceProvider).emit('call-reject', {'callerId': call.callerId}),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(color: XameColors.danger.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+                child: Text('Decline', style: TextStyle(color: XameColors.danger, fontWeight: FontWeight.w700, fontSize: 12)),
+              ),
+            ),
+          ]),
+        );
+      },
+    );
+  }
+}
+
 class _MessageList extends StatelessWidget {
   final List<XameMessage>     messages;
   final ScrollController      scrollCtrl;

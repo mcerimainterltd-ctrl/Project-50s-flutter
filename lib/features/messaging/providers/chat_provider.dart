@@ -111,7 +111,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
     _subs.add(socket.messagesDeleted.listen((data) {
       if (data.contactId != _contactId) return;
-      state = state.where((m) => !data.messageIds.contains(m.id)).toList();
+      state = state.map((m) => data.messageIds.contains(m.id) ? m.copyWith(isDeleted: true) : m).toList();
     }));
 
     _subs.add(socket.chatHistory.listen((historyData) {
