@@ -35,6 +35,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Install NDK
+        run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
+
       - name: Cache pub
         uses: actions/cache@v4
         with:
@@ -88,7 +91,8 @@ jobs:
 
       - name: Rename APK
         run: |
-          mv build/app/outputs/flutter-apk/app-release.apk             build/app/outputs/flutter-apk/XamePage_v${{ steps.version.outputs.name }}_build${{ steps.version.outputs.build }}.apk
+          mv build/app/outputs/flutter-apk/app-release.apk \
+            build/app/outputs/flutter-apk/XamePage_v${{ steps.version.outputs.name }}_build${{ steps.version.outputs.build }}.apk
 
       - uses: actions/upload-artifact@v4
         with:
