@@ -8,6 +8,8 @@ import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/socket_service.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -383,15 +385,29 @@ class _XamePayScreenState extends State<XamePayScreen>
   bool   _loading  = true;
   List<WalletTx> _txs = [];
   late TabController _tab;
+  StreamSubscription? _walletSub;
+  StreamSubscription? _walletDebitSub;
 
   @override
   void initState() {
     super.initState();
     _tab = TabController(length: 5, vsync: this);
     _loadPrefs().then((_) => _init());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final socket = ProviderScope.containerOf(context).read(socketServiceProvider);
+      _walletDebitSub = socket.walletDebit.listen((data) {
+        if (!mounted) return;
+        _init(); // refresh sender balance immediately
+      });
+      _walletSub = socket.walletReceive.listen((data) {
+        if (!mounted) return;
+        _snack('❤️ Received \${data.currency} \${data.amount.toStringAsFixed(2)} from \${data.senderName}');
+        _init(); // refresh balance and transactions
+      });
+    });
   }
 
-  @override void dispose() { _tab.dispose(); super.dispose(); }
+  @override void dispose() { _walletDebitSub?.cancel(); _walletSub?.cancel(); _tab.dispose(); super.dispose(); }
 
   Future<void> _loadPrefs() async {
     final p = await SharedPreferences.getInstance();

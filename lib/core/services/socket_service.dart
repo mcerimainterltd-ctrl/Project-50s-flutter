@@ -44,6 +44,7 @@ class SocketService {
   final _messagesDeletedCtrl  = StreamController<MessagesDeletedData>.broadcast();
   final _disappearExpiredCtrl = StreamController<DisappearExpiredData>.broadcast();
   final _walletReceiveCtrl    = StreamController<WalletReceiveData>.broadcast();
+  final _walletDebitCtrl      = StreamController<Map<String,dynamic>>.broadcast();
   final _profileUpdatedCtrl   = StreamController<Map<String, dynamic>>.broadcast();
   final _contactStatusCtrl    = StreamController<ContactStatusData>.broadcast();
   final _forceLogoutCtrl      = StreamController<String>.broadcast();
@@ -76,6 +77,7 @@ class SocketService {
   Stream<MessagesDeletedData>       get messagesDeleted  => _messagesDeletedCtrl.stream;
   Stream<DisappearExpiredData>      get disappearExpired => _disappearExpiredCtrl.stream;
   Stream<WalletReceiveData>         get walletReceive    => _walletReceiveCtrl.stream;
+  Stream<Map<String,dynamic>>       get walletDebit      => _walletDebitCtrl.stream;
   Stream<Map<String, dynamic>>      get profileUpdated   => _profileUpdatedCtrl.stream;
   Stream<ContactStatusData>         get contactStatus    => _contactStatusCtrl.stream;
   Stream<Map<String, dynamic>>      get walletRequest          => _walletRequestCtrl.stream;
@@ -339,6 +341,9 @@ class SocketService {
     socket.on('call-ended', (d) => _callEndedCtrl.add(d?['senderId'] ?? ''));
 
     // ── Wallet ────────────────────────────────────────────────────────────
+    socket.on('wallet:debit', (d) {
+      if (d != null) _walletDebitCtrl.add(Map<String,dynamic>.from(d));
+    });
     socket.on('wallet:receive', (d) {
       if (d != null) _walletReceiveCtrl.add(WalletReceiveData(
         senderId:   d['senderId'],
