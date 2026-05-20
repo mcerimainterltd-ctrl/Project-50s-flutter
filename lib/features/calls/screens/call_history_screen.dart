@@ -103,12 +103,6 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
       if (mounted) {
         ref.invalidate(callHistoryProvider(user.xameId));
         setState(() {});
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            ref.invalidate(callHistoryProvider(user.xameId));
-            setState(() {});
-          }
-        });
       }
     }
 
@@ -242,10 +236,11 @@ class _CallHistoryScreenState extends ConsumerState<CallHistoryScreen>
             c.recipientId == userId &&
             missedStatuses.contains(c.status)).toList();
       case 'incoming':
-        // Incoming = I was the recipient (answered or missed)
+        // Incoming = I was the recipient AND call was answered (not missed)
         return calls.where((c) =>
             c.recipientId == userId &&
-            answeredStatuses.contains(c.status)).toList();
+            answeredStatuses.contains(c.status) &&
+            !missedStatuses.contains(c.status)).toList();
       case 'outgoing':
         // Outgoing = I was the caller regardless of status
         return calls.where((c) =>
