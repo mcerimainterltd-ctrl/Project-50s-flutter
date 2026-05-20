@@ -401,14 +401,13 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
   Future<void> deleteMessages(List<String> ids,
       {bool deleteForEveryone = false}) async {
     state = state.where((m) => !ids.contains(m.id)).toList();
-    if (deleteForEveryone) {
-      _ref.read(socketServiceProvider).emit('sync-deletions', {
-        'chat': {
-          'messageIds': ids, 'contactId': _contactId,
-          'deleteForEveryone': true,
-        },
-      });
-    }
+    CacheService.saveChat(_contactId, state);
+    _ref.read(socketServiceProvider).emit('sync-deletions', {
+      'chat': {
+        'messageIds': ids, 'contactId': _contactId,
+        'deleteForEveryone': deleteForEveryone,
+      },
+    });
   }
 
   // ── Forward messages ──────────────────────────────────────────────────

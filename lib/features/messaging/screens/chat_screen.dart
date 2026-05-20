@@ -1028,14 +1028,14 @@ class _IncomingCallBanner extends ConsumerWidget {
             border: Border.all(color: XameColors.primary.withValues(alpha: 0.4)),
           ),
           child: Row(children: [
-            Icon(call.isVideo ? Icons.videocam : Icons.call, color: XameColors.primary, size: 20),
+            Icon(call.callType == "video" ? Icons.videocam : Icons.call, color: XameColors.primary, size: 20),
             const SizedBox(width: 10),
             Expanded(child: Text(
-              call.isVideo ? 'Incoming video call...' : 'Incoming call...',
+              call.callType == "video" ? 'Incoming video call...' : 'Incoming call...',
               style: TextStyle(color: context.xText, fontWeight: FontWeight.w600, fontSize: 13),
             )),
             GestureDetector(
-              onTap: () => context.go('/call/${call.callerId}?video=${call.isVideo}'),
+              onTap: () => context.go('/call/${call.callerId}?video=${call.callType == "video"}'),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(color: XameColors.primary, borderRadius: BorderRadius.circular(20)),
