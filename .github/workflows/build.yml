@@ -111,3 +111,30 @@ jobs:
       - name: Cleanup
         if: always()
         run: rm -f android/app/release.jks android/key.properties
+
+  promote:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: ver
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr -d '[:space:]')
+          echo "name=$(echo $VERSION | cut -d'+' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Update Render download URL
+        run: |
+          APK_URL="https://github.com/${{ github.repository }}/releases/download/v${{ steps.ver.outputs.name }}-build${{ github.run_number }}/XamePage_v${{ steps.ver.outputs.name }}_build${{ github.run_number }}.apk"
+          curl -s -X PATCH "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/env-vars" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "[{\"key\":\"APP_DOWNLOAD_URL\",\"value\":\"$APK_URL\"}]"
+
+      - name: Notify users via server
+        run: |
+          curl -s -X POST "https://project-50s.onrender.com/api/app/promote" \
+            -H "Content-Type: application/json" \
+            -d "{\"secret\":\"${{ secrets.ADMIN_SECRET }}\",\"version\":\"${{ steps.ver.outputs.name }}\",\"buildNumber\":\"${{ github.run_number }}\",\"downloadUrl\":\"https://project-50s.onrender.com/api/app/download\",\"changelog\":\"Latest improvements and bug fixes.\"}"
