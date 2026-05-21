@@ -33,6 +33,8 @@ class CallScreen extends ConsumerStatefulWidget {
 class _CallScreenState extends ConsumerState<CallScreen> {
   bool _isMicMuted   = false;
   bool _isCamMuted   = false;
+  bool _isHeld       = false; // I put other on hold
+  bool _amHeld       = false; // other put me on hold
   bool _isSpeakerOn  = false;
   bool _isLocalMain  = false;
   bool _isScreenSharing = false;
@@ -92,6 +94,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       });
       service.remoteStream$.listen((_) {
         if (mounted) setState(() {});
+      });
+      ref.read(socketServiceProvider).callHeld.listen((_) {
+        if (mounted) setState(() => _amHeld = true);
+      });
+      ref.read(socketServiceProvider).callResumed.listen((_) {
+        if (mounted) setState(() => _amHeld = false);
       });
     });
   }
@@ -294,6 +302,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      _vBtn(_isHeld ? Icons.play_arrow : Icons.pause,
+                          _isHeld, _isHeld ? 'Resume' : 'Hold', () {
+                        setState(() => _isHeld = !_isHeld);
+                        _isHeld ? webrtc.holdCall() : webrtc.resumeCall();
+                      }),
                       _vBtn(Icons.mic_off, _isMicMuted, 'Mute', () {
                         setState(() => _isMicMuted = !_isMicMuted);
                         webrtc.localStream?.getAudioTracks()
@@ -368,6 +381,31 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             ),
           ),
+
+          // ── On Hold overlay ─────────────────────────────────
+          if (_amHeld)
+            Container(
+              color: Colors.black.withOpacity(0.7),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.pause_circle_outline,
+                        color: Colors.white, size: 64),
+                    SizedBox(height: 16),
+                    Text('Call on Hold',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600)),
+                    SizedBox(height: 8),
+                    Text('Waiting for $name to resume...',
+                        style: TextStyle(
+                            color: Colors.white60, fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
 
           SafeArea(
             child: Column(children: [

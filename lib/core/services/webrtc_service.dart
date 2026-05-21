@@ -299,6 +299,29 @@ class WebRTCService {
   }
 
   
+  bool _isOnHold = false;
+  bool get isOnHold => _isOnHold;
+
+  void holdCall() {
+    if (currentRemoteUserId == null) return;
+    _isOnHold = true;
+    // Disable all local tracks
+    _localStream?.getAudioTracks().forEach((t) => t.enabled = false);
+    _localStream?.getVideoTracks().forEach((t) => t.enabled = false);
+    _socket.emitCallHold(currentRemoteUserId!);
+    _callStateController.add(_callState);
+  }
+
+  void resumeCall() {
+    if (currentRemoteUserId == null) return;
+    _isOnHold = false;
+    // Re-enable local tracks
+    _localStream?.getAudioTracks().forEach((t) => t.enabled = true);
+    _localStream?.getVideoTracks().forEach((t) => t.enabled = true);
+    _socket.emitCallResume(currentRemoteUserId!);
+    _callStateController.add(_callState);
+  }
+
   void rejectCall() {
     _callCancelled = true;
     _audio.stopAll();

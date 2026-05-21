@@ -40,6 +40,8 @@ class SocketService {
   final _callRejectedCtrl     = StreamController<CallRejectedData>.broadcast();
   final _callRingingCtrl      = StreamController<void>.broadcast();
   final _callEndedCtrl        = StreamController<String>.broadcast();
+  final _callHeldCtrl         = StreamController<String>.broadcast();
+  final _callResumedCtrl      = StreamController<String>.broadcast();
   final _callAcknowledgedCtrl = StreamController<String>.broadcast();
   final _messagesDeletedCtrl  = StreamController<MessagesDeletedData>.broadcast();
   final _disappearExpiredCtrl = StreamController<DisappearExpiredData>.broadcast();
@@ -74,6 +76,8 @@ class SocketService {
   Stream<CallRejectedData>          get callRejected     => _callRejectedCtrl.stream;
   Stream<void>                      get callRinging      => _callRingingCtrl.stream;
   Stream<String>                    get callEnded        => _callEndedCtrl.stream;
+  Stream<String>                    get callHeld         => _callHeldCtrl.stream;
+  Stream<String>                    get callResumed      => _callResumedCtrl.stream;
   Stream<String>                    get callAcknowledged => _callAcknowledgedCtrl.stream;
   Stream<MessagesDeletedData>       get messagesDeleted  => _messagesDeletedCtrl.stream;
   Stream<DisappearExpiredData>      get disappearExpired => _disappearExpiredCtrl.stream;
@@ -341,6 +345,8 @@ class SocketService {
       if (d?['senderId'] != null) _callAcknowledgedCtrl.add(d['senderId']);
     });
     socket.on('call-ended', (d) => _callEndedCtrl.add(d?['senderId'] ?? ''));
+    socket.on('call-held', (d) => _callHeldCtrl.add(d?['senderId'] ?? ''));
+    socket.on('call-resumed', (d) => _callResumedCtrl.add(d?['senderId'] ?? ''));
     socket.on('call-unanswered-ack', (d) => _callUnansweredAckCtrl.add(d?['recipientId'] ?? ''));
 
     // ── Wallet ────────────────────────────────────────────────────────────
@@ -433,6 +439,8 @@ class SocketService {
   void emitCallAccepted(String r, {String? callId})=> emit('call-accepted',      {'recipientId': r, if (callId != null) 'callId': callId});
   void emitCallRejected(String r, String reason)   => emit('call-rejected',      {'recipientId': r, 'reason': reason});
   void emitCallEnded(String r)                     => emit('call-ended',         {'recipientId': r});
+  void emitCallHold(String r)                      => emit('call-hold',          {'recipientId': r});
+  void emitCallResume(String r)                    => emit('call-resume',        {'recipientId': r});
   void emitGroupTyping(String g, String u, String n)=> emit('group:typing',      {'groupId': g, 'userId': u, 'name': n});
   void emitReactionToggle(String messageId, String emoji, String userId) => emit('reaction:toggle', {'messageId': messageId, 'emoji': emoji, 'userId': userId});
   void emitMarkDiscoverySeen(String authorId) => emit('mark_discovery_seen', {'authorId': authorId});
