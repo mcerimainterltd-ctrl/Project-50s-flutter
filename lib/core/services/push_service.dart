@@ -67,8 +67,24 @@ class PushService {
 
     // When app opened from notification
     FirebaseMessaging.onMessageOpenedApp.listen((msg) {
-      // Flutter routing handled by app.dart socket listener
+      final type = msg.data['type'];
+      if (type == 'xamepage_news' || type == 'app_update') {
+        _navigatorKey?.currentContext != null
+            ? _navigatorKey!.currentContext!
+                .findRootAncestorStateOfType<NavigatorState>()
+            : null;
+        _pendingRoute = '/discovery';
+      }
     });
+
+    // Check if app was opened from a terminated state via notification
+    final initial = await FirebaseMessaging.instance.getInitialMessage();
+    if (initial != null) {
+      final type = initial.data['type'];
+      if (type == 'xamepage_news' || type == 'app_update') {
+        _pendingRoute = '/discovery';
+      }
+    }
   }
 
   Future<void> _createChannels() async {
@@ -107,6 +123,51 @@ class PushService {
         settings.msgPreview ? (data['message'] ?? 'New message') : 'New message',
       );
     }
+    if (type == 'xamepage_news') {
+      _showNewsNotification(
+        data['title'] ?? 'XamePage News',
+        data['version'] ?? '',
+      );
+    }
+    if (type == 'app_update') {
+      _showUpdateNotification(
+        data['version'] ?? '',
+      );
+    }
+  }
+
+  void _showNewsNotification(String title, String version) {
+    _local.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      '📣 XamePage Official',
+      title,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _msgChannelId, _msgChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+        ),
+      ),
+    );
+  }
+
+  void _showUpdateNotification(String version) {
+    _local.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      '🚀 XamePage Update Available',
+      version.isNotEmpty ? 'Version $version is ready to download' : 'A new update is available',
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _headsUpChannelId, _headsUpChannelName,
+          importance: Importance.max,
+          priority: Priority.max,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+        ),
+      ),
+    );
   }
 
   void _showMessageNotification(String sender, String body) {

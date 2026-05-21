@@ -62,6 +62,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initContactRequestListener();
     _initWalletRequestListener();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initFcmNavigation());
 
     // App lock — listen to lifecycle
     SystemChannels.lifecycle.setMessageHandler((msg) async {
@@ -248,6 +249,27 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   Future<void> _checkForUpdate() async {
     if (!mounted) return;
     await UpdateService.checkForUpdate(context);
+  }
+
+  Future<void> _initFcmNavigation() async {
+    final router = ref.read(routerProvider);
+
+    // App opened from terminated state via notification
+    final initial = await FirebaseMessaging.instance.getInitialMessage();
+    if (initial != null) {
+      final type = initial.data['type'];
+      if (type == 'xamepage_news' || type == 'app_update') {
+        router.go('/discovery');
+      }
+    }
+
+    // App opened from background via notification tap
+    FirebaseMessaging.onMessageOpenedApp.listen((msg) {
+      final type = msg.data['type'];
+      if (type == 'xamepage_news' || type == 'app_update') {
+        router.go('/discovery');
+      }
+    });
   }
 
   void _initShareListener() {
