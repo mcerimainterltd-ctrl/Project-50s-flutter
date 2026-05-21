@@ -1024,9 +1024,7 @@ class _IncomingCallBannerState extends ConsumerState<_IncomingCallBanner> {
     super.initState();
     final socket = ref.read(socketServiceProvider);
     _subs.add(socket.incomingCall.listen((call) {
-      if (call.callerId == widget.contactId) {
-        if (mounted) setState(() => _call = call);
-      }
+      if (mounted) setState(() => _call = call);
     }));
     _subs.add(socket.callEnded.listen((_) {
       if (mounted) setState(() => _call = null);
