@@ -499,6 +499,23 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                             ),
                           ),
                         ),
+                      if (isActive) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _voiceBtn(
+                              icon: _isHeld ? Icons.play_arrow : Icons.pause,
+                              label: _isHeld ? 'Resume' : 'Hold',
+                              active: _isHeld,
+                              onTap: () {
+                                setState(() => _isHeld = !_isHeld);
+                                _isHeld ? webrtc.holdCall() : webrtc.resumeCall();
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
