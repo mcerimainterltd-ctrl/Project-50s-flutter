@@ -64,10 +64,10 @@ class WebRTCService {
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onCallAnswered':
-          await acceptCall();
+          await joinCall(isIncomingVideo);
           break;
         case 'onCallDeclined':
-          await rejectCall();
+          rejectCall();
           break;
       }
     });
