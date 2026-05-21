@@ -306,8 +306,8 @@ class WebRTCService {
     if (currentRemoteUserId == null) return;
     _isOnHold = true;
     // Disable all local tracks
-    _localStream?.getAudioTracks().forEach((t) => t.enabled = false);
-    _localStream?.getVideoTracks().forEach((t) => t.enabled = false);
+    localStream?.getAudioTracks().forEach((t) => t.enabled = false);
+    localStream?.getVideoTracks().forEach((t) => t.enabled = false);
     _socket.emitCallHold(currentRemoteUserId!);
     _callStateController.add(_callState);
   }
@@ -316,8 +316,8 @@ class WebRTCService {
     if (currentRemoteUserId == null) return;
     _isOnHold = false;
     // Re-enable local tracks
-    _localStream?.getAudioTracks().forEach((t) => t.enabled = true);
-    _localStream?.getVideoTracks().forEach((t) => t.enabled = true);
+    localStream?.getAudioTracks().forEach((t) => t.enabled = true);
+    localStream?.getVideoTracks().forEach((t) => t.enabled = true);
     _socket.emitCallResume(currentRemoteUserId!);
     _callStateController.add(_callState);
   }
