@@ -103,7 +103,7 @@ class MainActivity : FlutterFragmentActivity() {
                 val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
                 mgr.cancel(CallService.NOTIF_ID + 1)
                 MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
-                    .invokeMethod("onCallAnswered", null)
+                    .invokeMethod("navigateToIncomingCall", null)
             }
             CallService.ACTION_DECLINE -> {
                 CallService.stop(this)

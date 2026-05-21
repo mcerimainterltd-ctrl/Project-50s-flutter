@@ -63,8 +63,8 @@ class WebRTCService {
   WebRTCService(this._socket) {
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
-        case 'onCallAnswered':
-          await joinCall(isIncomingVideo);
+        case 'navigateToIncomingCall':
+          _incomingCallController.add(true);
           break;
         case 'onCallDeclined':
           rejectCall();

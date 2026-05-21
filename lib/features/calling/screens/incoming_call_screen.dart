@@ -38,11 +38,14 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
     final socket = ref.read(socketServiceProvider);
     final webrtcSvc = ref.read(webRTCServiceProvider);
     _stateSub = webrtcSvc.callState.listen((state) {
-      if (state == CallState.active && mounted && !_isPopping) {
+      if (!mounted || _isPopping) return;
+      if (state == CallState.active) {
         _isPopping = true;
         final userId = webrtcSvc.currentRemoteUserId ?? '';
         final isVideo = webrtcSvc.isIncomingVideo;
         context.pushReplacement('/call/$userId?video=$isVideo&incoming=true');
+      } else if (state == CallState.ended) {
+        _safePop();
       }
     });
     _endedSub = socket.callEnded.listen((_) {
