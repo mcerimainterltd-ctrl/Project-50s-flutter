@@ -130,6 +130,8 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         }
         // Guard: don't push if already on incoming-call screen
         if (location.contains('incoming-call')) return;
+        // Guard: don't push full screen if user is in chat — banner handles it
+        if (location.contains('/chat/')) return;
         router.push("/incoming-call");
       });
     });

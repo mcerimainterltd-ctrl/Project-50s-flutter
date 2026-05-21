@@ -1007,53 +1007,84 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
 // ── Message list ──────────────────────────────────────────────────────────
 // ── Incoming call banner ─────────────────────────────────────────────────────
-class _IncomingCallBanner extends ConsumerWidget {
+class _IncomingCallBanner extends ConsumerStatefulWidget {
   final String contactId;
   const _IncomingCallBanner({required this.contactId});
+  @override
+  ConsumerState<_IncomingCallBanner> createState() => _IncomingCallBannerState();
+}
+
+class _IncomingCallBannerState extends ConsumerState<_IncomingCallBanner> {
+  IncomingCallData? _call;
+  final List<StreamSubscription> _subs = [];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return StreamBuilder<IncomingCallData>(
-      stream: ref.read(socketServiceProvider).incomingCall,
-      builder: (context, snap) {
-        if (!snap.hasData || snap.data == null) return const SizedBox.shrink();
-        final call = snap.data!;
-        if (call.callerId != contactId) return const SizedBox.shrink();
-        return Container(
-          margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: XameColors.primary.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: XameColors.primary.withValues(alpha: 0.4)),
+  void initState() {
+    super.initState();
+    final socket = ref.read(socketServiceProvider);
+    _subs.add(socket.incomingCall.listen((call) {
+      if (call.callerId == widget.contactId) {
+        if (mounted) setState(() => _call = call);
+      }
+    }));
+    _subs.add(socket.callEnded.listen((_) {
+      if (mounted) setState(() => _call = null);
+    }));
+    _subs.add(socket.callRejected.listen((_) {
+      if (mounted) setState(() => _call = null);
+    }));
+  }
+
+  @override
+  void dispose() {
+    for (final s in _subs) s.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_call == null) return const SizedBox.shrink();
+    final call = _call!;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: XameColors.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: XameColors.primary.withValues(alpha: 0.4)),
+      ),
+      child: Row(children: [
+        Icon(call.callType == "video" ? Icons.videocam : Icons.call, color: XameColors.primary, size: 20),
+        const SizedBox(width: 10),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(call.callType == "video" ? 'Incoming video call' : 'Incoming call',
+            style: TextStyle(color: context.xText, fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(call.callerId, style: TextStyle(color: context.xMuted, fontSize: 11)),
+        ])),
+        GestureDetector(
+          onTap: () {
+            setState(() => _call = null);
+            context.push('/incoming-call');
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(color: XameColors.primary, borderRadius: BorderRadius.circular(20)),
+            child: Text('Answer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
           ),
-          child: Row(children: [
-            Icon(call.callType == "video" ? Icons.videocam : Icons.call, color: XameColors.primary, size: 20),
-            const SizedBox(width: 10),
-            Expanded(child: Text(
-              call.callType == "video" ? 'Incoming video call...' : 'Incoming call...',
-              style: TextStyle(color: context.xText, fontWeight: FontWeight.w600, fontSize: 13),
-            )),
-            GestureDetector(
-              onTap: () => context.go('/call/${call.callerId}?video=${call.callType == "video"}'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(color: XameColors.primary, borderRadius: BorderRadius.circular(20)),
-                child: Text('Answer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => ref.read(socketServiceProvider).emit('call-rejected', {'recipientId': call.callerId, 'reason': 'rejected', 'callId': call.callId}),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(color: XameColors.danger.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-                child: Text('Decline', style: TextStyle(color: XameColors.danger, fontWeight: FontWeight.w700, fontSize: 12)),
-              ),
-            ),
-          ]),
-        );
-      },
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: () {
+            ref.read(socketServiceProvider).emitCallRejected(call.callerId, 'rejected');
+            setState(() => _call = null);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(color: XameColors.danger.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+            child: Text('Decline', style: TextStyle(color: XameColors.danger, fontWeight: FontWeight.w700, fontSize: 12)),
+          ),
+        ),
+      ]),
     );
   }
 }
