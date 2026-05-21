@@ -20,6 +20,7 @@ class IncomingCallScreen extends ConsumerStatefulWidget {
 
 class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
   StreamSubscription? _endedSub;
+  StreamSubscription? _stateSub;
   Timer? _timeoutTimer;
 
   bool _isPopping = false;
@@ -35,6 +36,15 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
   void initState() {
     super.initState();
     final socket = ref.read(socketServiceProvider);
+    final webrtcSvc = ref.read(webRTCServiceProvider);
+    _stateSub = webrtcSvc.callState.listen((state) {
+      if (state == CallState.active && mounted && !_isPopping) {
+        _isPopping = true;
+        final userId = webrtcSvc.currentRemoteUserId ?? '';
+        final isVideo = webrtcSvc.isIncomingVideo;
+        context.pushReplacement('/call/$userId?video=$isVideo&incoming=true');
+      }
+    });
     _endedSub = socket.callEnded.listen((_) {
       // Caller ended before recipient answered — record as missed
       final webrtc = ref.read(webRTCServiceProvider);
@@ -63,6 +73,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
   @override
   void dispose() {
     _endedSub?.cancel();
+    _stateSub?.cancel();
     _timeoutTimer?.cancel();
     super.dispose();
   }

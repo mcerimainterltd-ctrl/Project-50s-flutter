@@ -1074,9 +1074,8 @@ class _IncomingCallBannerState extends ConsumerState<_IncomingCallBanner> {
         ),
         const SizedBox(width: 8),
         GestureDetector(
-          onTap: () async {
-            ref.read(socketServiceProvider).emitCallRejected(call.callerId, 'rejected');
-            try { await const MethodChannel('com.xamepage.app/call').invokeMethod('dismissIncomingCall'); } catch (_) {}
+          onTap: () {
+            ref.read(webRTCServiceProvider).rejectCall();
             setState(() => _call = null);
           },
           child: Container(
