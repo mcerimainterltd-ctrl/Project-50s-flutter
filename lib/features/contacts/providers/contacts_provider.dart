@@ -317,8 +317,20 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
       await dio.post('/api/rename-contact',
           data: {'userId': selfId, 'contactId': contactId, 'newName': newName});
       final current = state.valueOrNull ?? [];
-      state = AsyncData(current.map((c) =>
-          c.id == contactId ? c.copyWith(name: newName) : c).toList());
+      final updated = current.map((c) =>
+          c.id == contactId ? c.copyWith(name: newName) : c).toList();
+      state = AsyncData(updated);
+      CacheService.saveContacts(updated.map((c) => {
+        'xameId':               c.id,
+        'name':                 c.name,
+        'profilePic':           c.profilePic,
+        'isOnline':             c.isOnline,
+        'isProfilePicHidden':   c.isProfilePicHidden,
+        'unreadMessagesCount':  c.unreadCount,
+        'missedCallsCount':     c.missedCallsCount,
+        'lastInteractionTs':    c.lastInteractionTs,
+        'lastInteractionPreview': c.lastInteractionPreview,
+      }).toList());
     } catch (_) {}
   }
 
@@ -328,7 +340,19 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
       await dio.post('/api/remove-contact',
           data: {'userId': selfId, 'contactId': contactId});
       final current = state.valueOrNull ?? [];
-      state = AsyncData(current.where((c) => c.id != contactId).toList());
+      final updated = current.where((c) => c.id != contactId).toList();
+      state = AsyncData(updated);
+      CacheService.saveContacts(updated.map((c) => {
+        'xameId':               c.id,
+        'name':                 c.name,
+        'profilePic':           c.profilePic,
+        'isOnline':             c.isOnline,
+        'isProfilePicHidden':   c.isProfilePicHidden,
+        'unreadMessagesCount':  c.unreadCount,
+        'missedCallsCount':     c.missedCallsCount,
+        'lastInteractionTs':    c.lastInteractionTs,
+        'lastInteractionPreview': c.lastInteractionPreview,
+      }).toList());
     } catch (_) {}
   }
 
