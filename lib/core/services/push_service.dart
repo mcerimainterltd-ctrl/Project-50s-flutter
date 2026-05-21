@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
 import 'auth_service.dart';
+import '../../features/settings/screens/settings_screen.dart';
 
 final pushServiceProvider = Provider<PushService>((ref) {
   final user = ref.watch(currentUserProvider);
@@ -99,14 +100,17 @@ class PushService {
     final type = data['type'];
     if (type == 'incoming_call') return; // Handled by socket
     if (type == 'message') {
+      final settings = SettingsNotifier.currentSettings;
+      if (!settings.msgSound && !settings.msgVibration) return;
       _showMessageNotification(
         data['senderName'] ?? 'XamePage',
-        data['message']   ?? 'New message',
+        settings.msgPreview ? (data['message'] ?? 'New message') : 'New message',
       );
     }
   }
 
   void _showMessageNotification(String sender, String body) {
+    final settings = SettingsNotifier.currentSettings;
     _local.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
       sender,
@@ -118,6 +122,8 @@ class PushService {
           priority: Priority.high,
           showWhen: true,
           icon: '@mipmap/ic_launcher',
+          playSound: settings.msgSound,
+          enableVibration: settings.msgVibration,
         ),
       ),
     );

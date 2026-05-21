@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/services/socket_service.dart';
 import 'package:xamepage/core/services/audio_service.dart';
 import 'package:xamepage/core/services/cache_service.dart';
+import 'package:xamepage/features/settings/screens/settings_screen.dart';
 import 'package:xamepage/core/config/constants.dart'; 
 // Assuming socketServiceProvider is defined in socket_service.dart based on your grep
 
@@ -107,10 +108,16 @@ class WebRTCService {
       callerDisplayName = (match?['name'] as String?)?.isNotEmpty == true
           ? match!['name'] as String
           : data.callerId;
+      // Silence unknown callers
+      final settings = SettingsNotifier.currentSettings;
+      if (settings.silenceUnknown && match == null) {
+        rejectCall();
+        return;
+      }
       _incomingCallController.add(true);
       await _audio.stopAll();
       await Helper.setSpeakerphoneOn(true);
-      _audio.playRingtone();
+      if (settings.callSound) _audio.playRingtone();
       // Start foreground service + lock screen notification
       try {
         await _channel.invokeMethod('startCallService', {

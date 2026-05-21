@@ -1,3 +1,4 @@
+import 'package:xamepage/features/settings/screens/settings_screen.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -248,8 +249,8 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     // Get camera + mic
     _localStream = await navigator.mediaDevices.getUserMedia({
       'audio': {
-        'echoCancellation': true,
-        'noiseSuppression': true,
+        'echoCancellation': SettingsNotifier.currentSettings.echoCancellation,
+        'noiseSuppression': SettingsNotifier.currentSettings.noiseSuppression,
         'autoGainControl': true,
       },
       'video': {'facingMode': 'user', 'width': 640, 'height': 480},

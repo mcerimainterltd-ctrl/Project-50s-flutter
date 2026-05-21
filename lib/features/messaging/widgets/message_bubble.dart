@@ -25,7 +25,29 @@ import '../../../core/services/voice_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/message.dart';
 import '../../../core/config/constants.dart';
+import '../../../features/settings/screens/settings_screen.dart';
 
+
+BorderRadius _bubbleBorderRadius(String style, bool isSelf) {
+  switch (style) {
+    case 'classic':
+      return BorderRadius.only(
+        topLeft:     const Radius.circular(4),
+        topRight:    const Radius.circular(4),
+        bottomLeft:  Radius.circular(isSelf ? 4 : 0),
+        bottomRight: Radius.circular(isSelf ? 0 : 4),
+      );
+    case 'minimal':
+      return BorderRadius.circular(24);
+    default: // modern
+      return BorderRadius.only(
+        topLeft:     const Radius.circular(18),
+        topRight:    const Radius.circular(18),
+        bottomLeft:  Radius.circular(isSelf ? 18 : 4),
+        bottomRight: Radius.circular(isSelf ? 4  : 18),
+      );
+  }
+}
 
 // ─── Resolve relative URLs from server ───────────────────────────────────
 String _resolveUrl(String url, {bool forDisplay = false}) {
@@ -72,7 +94,7 @@ class MessageBubble extends ConsumerWidget {
       onTap:             onTap,
       onDoubleTap:       () => _showReactionPicker(context),
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 150),
+        duration: Duration(milliseconds: ref.watch(settingsProvider).reducedMotion ? 0 : 150),
         color: isSelected
             ? context.xPrimary.withValues(alpha: 0.15)
             : Colors.transparent,
@@ -96,12 +118,7 @@ class MessageBubble extends ConsumerWidget {
                       : EdgeInsets.zero,
                   decoration: BoxDecoration(
                     color: isSelf ? context.xBubbleSent : context.xBubbleRecv,
-                    borderRadius: BorderRadius.only(
-                      topLeft:     const Radius.circular(18),
-                      topRight:    const Radius.circular(18),
-                      bottomLeft:  Radius.circular(isSelf ? 18 : 4),
-                      bottomRight: Radius.circular(isSelf ? 4  : 18),
-                    ),
+                    borderRadius: _bubbleBorderRadius(ref.watch(settingsProvider).bubbleStyle, isSelf),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

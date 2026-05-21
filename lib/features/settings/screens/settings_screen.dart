@@ -146,17 +146,23 @@ class SettingsData {
 class SettingsNotifier extends StateNotifier<SettingsData> {
   static const _box = 'xame_prefs';
   static const _key = 'settings_data';
+  static SettingsData _current = const SettingsData();
+  static SettingsData get currentSettings => _current;
 
   SettingsNotifier() : super(const SettingsData()) { _load(); }
 
   Future<void> _load() async {
     final box  = await Hive.openBox(_box);
     final raw  = box.get(_key);
-    if (raw != null) state = SettingsData.fromMap(Map.from(raw));
+    if (raw != null) {
+      state = SettingsData.fromMap(Map.from(raw));
+      _current = state;
+    }
   }
 
   Future<void> update(SettingsData s) async {
     state = s;
+    _current = s;
     final box = await Hive.openBox(_box);
     await box.put(_key, s.toMap());
   }
