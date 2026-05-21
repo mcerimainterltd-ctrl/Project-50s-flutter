@@ -93,6 +93,28 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val engine = FlutterEngineCache.getInstance().get("main") ?: return
+        when (intent.action) {
+            CallService.ACTION_ANSWER -> {
+                CallService.stop(this)
+                val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+                mgr.cancel(CallService.NOTIF_ID + 1)
+                MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
+                    .invokeMethod("onCallAnswered", null)
+            }
+            CallService.ACTION_DECLINE -> {
+                CallService.stop(this)
+                val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+                mgr.cancel(CallService.NOTIF_ID + 1)
+                MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
+                    .invokeMethod("onCallDeclined", null)
+            }
+        }
+    }
+
     override fun onDestroy() {
         FlutterEngineCache.getInstance().remove("main")
         super.onDestroy()

@@ -1059,7 +1059,7 @@ class _IncomingCallBannerState extends ConsumerState<_IncomingCallBanner> {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(call.callType == "video" ? 'Incoming video call' : 'Incoming call',
             style: TextStyle(color: context.xText, fontWeight: FontWeight.w600, fontSize: 13)),
-          Text(call.callerId, style: TextStyle(color: context.xMuted, fontSize: 11)),
+          Text(ref.read(contactsProvider).valueOrNull?.firstWhere((c) => c.id == call.callerId, orElse: () => ContactModel(id: call.callerId, name: call.callerId)).name ?? call.callerId, style: TextStyle(color: context.xMuted, fontSize: 11)),
         ])),
         GestureDetector(
           onTap: () {
@@ -1074,8 +1074,9 @@ class _IncomingCallBannerState extends ConsumerState<_IncomingCallBanner> {
         ),
         const SizedBox(width: 8),
         GestureDetector(
-          onTap: () {
+          onTap: () async {
             ref.read(socketServiceProvider).emitCallRejected(call.callerId, 'rejected');
+            try { await const MethodChannel('com.xamepage.app/call').invokeMethod('dismissIncomingCall'); } catch (_) {}
             setState(() => _call = null);
           },
           child: Container(

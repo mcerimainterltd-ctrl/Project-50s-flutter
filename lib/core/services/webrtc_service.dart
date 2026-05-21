@@ -35,6 +35,7 @@ class WebRTCService {
   RTCPeerConnection? _pc;
   MediaStream? localStream;
   String? currentRemoteUserId;
+  String  callerDisplayName = 'Unknown';
   bool isIncomingVideo = true;
   
   final AudioService _audio = AudioService();
@@ -60,6 +61,16 @@ class WebRTCService {
   Stream<bool> get onIncomingCall => _incomingCallController.stream;
 
   WebRTCService(this._socket) {
+    _channel.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'onCallAnswered':
+          await acceptCall();
+          break;
+        case 'onCallDeclined':
+          await rejectCall();
+          break;
+      }
+    });
     _socket.callEnded.listen((data) {
       _handleRemoteHangup();
     });
@@ -90,6 +101,12 @@ class WebRTCService {
       currentRemoteUserId = data.callerId;
       _pendingOffer = data.offer;
       isIncomingVideo = data.callType == 'video';
+      // Resolve caller display name from contacts cache
+      final contacts = CacheService.loadContacts();
+      final match = contacts.where((c) => c['id'] == data.callerId || c['xameId'] == data.callerId).firstOrNull;
+      callerDisplayName = (match?['name'] as String?)?.isNotEmpty == true
+          ? match!['name'] as String
+          : data.callerId;
       _incomingCallController.add(true);
       await _audio.stopAll();
       await Helper.setSpeakerphoneOn(true);
@@ -97,7 +114,7 @@ class WebRTCService {
       // Start foreground service + lock screen notification
       try {
         await _channel.invokeMethod('startCallService', {
-          'callerName': currentRemoteUserId ?? 'Unknown',
+          'callerName': callerDisplayName,
           'callType': isIncomingVideo ? 'video' : 'voice',
         });
         await _channel.invokeMethod('keepScreenOn');
