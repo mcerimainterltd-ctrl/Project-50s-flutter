@@ -27,6 +27,7 @@ import '../widgets/message_bubble.dart';
 import 'chat_wallpaper.dart';
 import 'message_schedule_screen.dart';
 import '../disappearing.dart';
+import '../../../core/services/webrtc_service.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String userId;
