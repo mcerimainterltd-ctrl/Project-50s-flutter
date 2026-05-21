@@ -130,10 +130,8 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         }
         // Guard: don't push if already on incoming-call screen
         if (location.contains('incoming-call')) return;
-        // Guard: don't push full screen if user is chatting with the caller — banner handles it
-        final webrtc = ref.read(webRTCServiceProvider);
-        final callerId = webrtc.currentRemoteUserId ?? '';
-        if (location.contains('/chat/$callerId')) return;
+        // Guard: don't push full screen if user is in any chat — banner handles it
+        if (location.contains('/chat/')) return;
         router.push("/incoming-call");
       });
     });
