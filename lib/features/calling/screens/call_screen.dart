@@ -170,6 +170,31 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
             ),
 
+            // ── On Hold overlay (video) ──────────────────────────────
+            if (_amHeld)
+              Container(
+                color: Colors.black.withOpacity(0.75),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.pause_circle_outline,
+                          color: Colors.white, size: 64),
+                      SizedBox(height: 16),
+                      Text('Call on Hold',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600)),
+                      SizedBox(height: 8),
+                      Text('Waiting to resume...',
+                          style: TextStyle(
+                              color: Colors.white60, fontSize: 14)),
+                    ],
+                  ),
+                ),
+              ),
+
             // ── Connecting overlay ──────────────────────────────────
             if (!hasRemote)
               Positioned(
@@ -302,29 +327,42 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _vBtn(_isHeld ? Icons.play_arrow : Icons.pause,
-                          _isHeld, _isHeld ? 'Resume' : 'Hold', () {
-                        setState(() => _isHeld = !_isHeld);
-                        _isHeld ? webrtc.holdCall() : webrtc.resumeCall();
-                      }),
-                      _vBtn(Icons.mic_off, _isMicMuted, 'Mute', () {
-                        setState(() => _isMicMuted = !_isMicMuted);
-                        webrtc.localStream?.getAudioTracks()
-                            .forEach((t) => t.enabled = !_isMicMuted);
-                      }),
-                      _vBtn(Icons.videocam_off, _isCamMuted, 'Camera', () {
-                        setState(() => _isCamMuted = !_isCamMuted);
-                        webrtc.localStream?.getVideoTracks()
-                            .forEach((t) => t.enabled = !_isCamMuted);
-                      }),
-                      _vBtn(Icons.flip_camera_ios, false, 'Flip', () =>
-                          webrtc.localStream?.getVideoTracks()[0].switchCamera()),
-                      _vBtn(Icons.volume_up, _isSpeakerOn, 'Speaker', () {
-                        setState(() => _isSpeakerOn = !_isSpeakerOn);
-                        Helper.setSpeakerphoneOn(_isSpeakerOn);
-                      }),
-                      _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
-                      _endBtn(webrtc),
+                      // ── Row 1: Mic, Camera, Flip, Speaker ──
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _vBtn(Icons.mic_off, _isMicMuted, 'Mute', () {
+                            setState(() => _isMicMuted = !_isMicMuted);
+                            webrtc.localStream?.getAudioTracks()
+                                .forEach((t) => t.enabled = !_isMicMuted);
+                          }),
+                          _vBtn(Icons.videocam_off, _isCamMuted, 'Camera', () {
+                            setState(() => _isCamMuted = !_isCamMuted);
+                            webrtc.localStream?.getVideoTracks()
+                                .forEach((t) => t.enabled = !_isCamMuted);
+                          }),
+                          _vBtn(Icons.flip_camera_ios, false, 'Flip', () =>
+                              webrtc.localStream?.getVideoTracks()[0].switchCamera()),
+                          _vBtn(Icons.volume_up, _isSpeakerOn, 'Speaker', () {
+                            setState(() => _isSpeakerOn = !_isSpeakerOn);
+                            Helper.setSpeakerphoneOn(_isSpeakerOn);
+                          }),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // ── Row 2: Hold, Share, End ──
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _vBtn(_isHeld ? Icons.play_arrow : Icons.pause,
+                              _isHeld, _isHeld ? 'Resume' : 'Hold', () {
+                            setState(() => _isHeld = !_isHeld);
+                            _isHeld ? webrtc.holdCall() : webrtc.resumeCall();
+                          }),
+                          _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
+                          _endBtn(webrtc),
+                        ],
+                      ),
                     ],
                   ),
                 ),
