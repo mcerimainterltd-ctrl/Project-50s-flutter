@@ -75,18 +75,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         setState(() {});
         if (s == CallState.active && !_timerStarted) _startTimer();
         if (s == CallState.ended && mounted) {
-          final webrtc = ref.read(webRTCServiceProvider);
-          // Show correct end reason to caller
-          final webrtcReason = ref.read(webRTCServiceProvider).callEndReason;
-          if (!widget.isIncoming) {
-            switch (webrtcReason) {
-              case 'declined':  setState(() => _callEndReason = 'Declined');  break;
-              case 'no-answer': setState(() => _callEndReason = 'No Answer'); break;
-              case 'cancelled': setState(() => _callEndReason = 'Cancelled'); break;
-              default:          setState(() => _callEndReason = 'Call Ended');
-            }
-          } else {
-            setState(() => _callEndReason = 'Call Ended');
+          if (_callEndReason == null) {
+            setState(() => _callEndReason = widget.isIncoming ? 'Call Ended' : 'Call Ended');
           }
           await Future.delayed(const Duration(seconds: 3));
           if (mounted) context.go('/contacts');
@@ -94,6 +84,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       });
       service.remoteStream$.listen((_) {
         if (mounted) setState(() {});
+      });
+      service.callEndReasonStream.listen((reason) {
+        if (!mounted || widget.isIncoming) return;
+        switch (reason) {
+          case 'declined':  setState(() => _callEndReason = 'Declined');  break;
+          case 'no-answer': setState(() => _callEndReason = 'No Answer'); break;
+          case 'cancelled': setState(() => _callEndReason = 'Cancelled'); break;
+          case 'ended':     setState(() => _callEndReason = 'Call Ended'); break;
+        }
       });
       ref.read(socketServiceProvider).callHeld.listen((_) {
         if (mounted) setState(() => _amHeld = true);
