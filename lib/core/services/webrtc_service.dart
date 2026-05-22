@@ -345,8 +345,8 @@ class WebRTCService {
       _socket.emitCallEnded(currentRemoteUserId ?? "");
     }
     _incomingCallController.add(false);
-    _cleanup();
     _callState = CallState.ended; _callStateController.add(CallState.ended);
+    _cleanup();
     _pc?.close();
     _pc = null;
     _remoteDescriptionSet = false;
