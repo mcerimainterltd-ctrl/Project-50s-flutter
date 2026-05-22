@@ -327,7 +327,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ── Row 1: Mic, Camera, Flip, Speaker ──
+                      // ── Row 1: Mic, Camera, Flip, Speaker, Share ──
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -347,19 +347,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                             setState(() => _isSpeakerOn = !_isSpeakerOn);
                             Helper.setSpeakerphoneOn(_isSpeakerOn);
                           }),
+                          _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      // ── Row 2: Hold, Share, End ──
+                      // ── Row 2: Hold (left), End (right) ──
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _vBtn(_isHeld ? Icons.play_arrow : Icons.pause,
                               _isHeld, _isHeld ? 'Resume' : 'Hold', () {
                             setState(() => _isHeld = !_isHeld);
                             _isHeld ? webrtc.holdCall() : webrtc.resumeCall();
                           }),
-                          _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
                           _endBtn(webrtc),
                         ],
                       ),
