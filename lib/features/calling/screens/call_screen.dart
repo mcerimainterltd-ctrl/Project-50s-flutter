@@ -283,28 +283,38 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               ),
             ),
 
-            // ── Add Call button ─────────────────────────────────────
+            // ── Hold (left) + Add Call (right) ───────────────────────
             if (hasRemote)
               Positioned(
-                bottom: botPad + 140, right: 16,
+                bottom: botPad + 140, left: 16, right: 16,
                 child: AnimatedOpacity(
                   opacity: _showControls ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 250),
-                  child: GestureDetector(
-                    onTap: _openAddCall,
-                    child: Container(
-                      width: 44, height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                        boxShadow: [BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 8)],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _vBtn(_isHeld ? Icons.play_arrow : Icons.pause,
+                          _isHeld, _isHeld ? 'Resume' : 'Hold', () {
+                        setState(() => _isHeld = !_isHeld);
+                        _isHeld ? webrtc.holdCall() : webrtc.resumeCall();
+                      }),
+                      GestureDetector(
+                        onTap: _openAddCall,
+                        child: Container(
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                            boxShadow: [BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 8)],
+                          ),
+                          child: const Icon(Icons.person_add_outlined,
+                              color: Colors.white, size: 20),
+                        ),
                       ),
-                      child: const Icon(Icons.person_add_outlined,
-                          color: Colors.white, size: 20),
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -327,7 +337,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ── Row 1: Mic, Camera, Flip, Speaker, Share ──
+                      // ── Bottom row: all controls ──
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -348,18 +358,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                             Helper.setSpeakerphoneOn(_isSpeakerOn);
                           }),
                           _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // ── Row 2: Hold (left), End (right) ──
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _vBtn(_isHeld ? Icons.play_arrow : Icons.pause,
-                              _isHeld, _isHeld ? 'Resume' : 'Hold', () {
-                            setState(() => _isHeld = !_isHeld);
-                            _isHeld ? webrtc.holdCall() : webrtc.resumeCall();
-                          }),
                           _endBtn(webrtc),
                         ],
                       ),
