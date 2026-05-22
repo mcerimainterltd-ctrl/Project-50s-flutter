@@ -1,4 +1,5 @@
 
+import '../../calls/screens/call_history_screen.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
@@ -286,7 +287,13 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
         c.id == senderId
           ? c.copyWith(missedCallsCount: c.missedCallsCount + 1) : c
       ).toList());
+      ref.invalidate(callHistoryProvider);
     }));
+
+    // Keep call history fresh from anywhere in the app
+    _subs.add(socket.callEnded.listen((_) => ref.invalidate(callHistoryProvider)));
+    _subs.add(socket.callRejected.listen((_) => ref.invalidate(callHistoryProvider)));
+    _subs.add(socket.callUnansweredAck.listen((_) => ref.invalidate(callHistoryProvider)));
   }
 
   void markRead(String contactId) {
