@@ -324,8 +324,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                       colors: [Color(0xBB000000), Colors.transparent],
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       // ── Row 1: Mic, Camera, Flip, Speaker ──
                       Row(
