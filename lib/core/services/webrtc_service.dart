@@ -90,9 +90,9 @@ class WebRTCService {
       if (_callState == CallState.outgoing && currentRemoteUserId != null) {
         _recordDeclinedCall(currentRemoteUserId!, isIncomingVideo ? 'video' : 'voice');
       }
-      _cleanup();
       _callState = CallState.ended;
       _callStateController.add(CallState.ended);
+      _cleanup();
     });
      initRenderers();
     // Listening to YOUR existing SocketService streams
