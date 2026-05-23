@@ -602,6 +602,11 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     commentCount: item.commentCount,
                     postId:       item.id,
                     userId:       user?.xameId ?? '',
+                    userAvatar:   user?.profilePic ?? '',
+                    onCountChanged: (n) => setState(() {
+                      final idx = _feed.indexWhere((x) => x.id == item.id);
+                      if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
+                    }),
                     onTap: () {
                       DiscoveryApiService.viewPost(item.id);
                       _openDetail(context, item);

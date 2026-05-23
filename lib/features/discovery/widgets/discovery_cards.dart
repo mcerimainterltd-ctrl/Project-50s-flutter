@@ -25,8 +25,10 @@ class MediaDiscoverCard extends StatefulWidget {
   final int     commentCount;
   final String  postId;
   final String  userId;
+  final String  userAvatar;
   final String? thumbnailUrl;
   final VoidCallback? onTap;
+  final void Function(int)? onCountChanged;
 
   const MediaDiscoverCard({
     Key? key,
@@ -42,8 +44,10 @@ class MediaDiscoverCard extends StatefulWidget {
     this.commentCount = 0,
     this.postId      = '',
     this.userId      = '',
+    this.userAvatar  = '',
     this.thumbnailUrl,
     this.onTap,
+    this.onCountChanged,
   }) : super(key: key);
 
   @override
@@ -410,9 +414,9 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
           postId:        widget.postId,
           userId:        widget.userId,
           authorName:    widget.authorName ?? '',
-          authorAvatar:  widget.authorAvatar ?? '',
+          authorAvatar:  widget.userAvatar,
           initialCount:  _commentCount,
-          onCountChanged: (n) => setState(() => _commentCount = n),
+          onCountChanged: (n) { setState(() => _commentCount = n); widget.onCountChanged?.call(n); },
         ),
       ),
     );

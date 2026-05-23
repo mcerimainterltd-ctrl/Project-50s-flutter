@@ -70,6 +70,33 @@ class DiscoveryItem {
     );
   }
 
+
+  DiscoveryItem copyWith({
+    int? commentCount,
+    int? likeCount,
+    int? viewCount,
+  }) => DiscoveryItem(
+    id:             id,
+    title:          title,
+    subtitle:       subtitle,
+    mediaUrl:       mediaUrl,
+    thumbnailUrl:   thumbnailUrl,
+    authorName:     authorName,
+    authorAvatar:   authorAvatar,
+    authorId:       authorId,
+    region:         region,
+    category:       category,
+    type:           type,
+    mediaType:      mediaType,
+    isLive:         isLive,
+    isAuthorOnline: isAuthorOnline,
+    viewCount:      viewCount  ?? this.viewCount,
+    likeCount:      likeCount  ?? this.likeCount,
+    commentCount:   commentCount ?? this.commentCount,
+    ts:             ts,
+    accentColor:    accentColor,
+  );
+
   Map<String, dynamic> toJson() => {
     'id':             id,
     'title':          title,
@@ -126,6 +153,33 @@ class DiscoveryUser {
       isAdded:     json['isAdded'] as bool? ?? false,
     );
   }
+
+
+  DiscoveryItem copyWith({
+    int? commentCount,
+    int? likeCount,
+    int? viewCount,
+  }) => DiscoveryItem(
+    id:             id,
+    title:          title,
+    subtitle:       subtitle,
+    mediaUrl:       mediaUrl,
+    thumbnailUrl:   thumbnailUrl,
+    authorName:     authorName,
+    authorAvatar:   authorAvatar,
+    authorId:       authorId,
+    region:         region,
+    category:       category,
+    type:           type,
+    mediaType:      mediaType,
+    isLive:         isLive,
+    isAuthorOnline: isAuthorOnline,
+    viewCount:      viewCount  ?? this.viewCount,
+    likeCount:      likeCount  ?? this.likeCount,
+    commentCount:   commentCount ?? this.commentCount,
+    ts:             ts,
+    accentColor:    accentColor,
+  );
 
   Map<String, dynamic> toJson() => {
     'id':          id,
