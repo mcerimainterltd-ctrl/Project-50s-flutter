@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/config/constants.dart';
 import 'live_pulse.dart';
+import 'comments_sheet.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Media Discover Card ───────────────────────────────────────────────────────
@@ -21,6 +22,7 @@ class MediaDiscoverCard extends StatefulWidget {
   final String? authorAvatar;
   final int     viewCount;
   final int     likeCount;
+  final int     commentCount;
   final String  postId;
   final String  userId;
   final String? thumbnailUrl;
@@ -37,6 +39,7 @@ class MediaDiscoverCard extends StatefulWidget {
     this.authorAvatar,
     this.viewCount   = 0,
     this.likeCount   = 0,
+    this.commentCount = 0,
     this.postId      = '',
     this.userId      = '',
     this.thumbnailUrl,
@@ -55,6 +58,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   late Animation<double>   _likeScale;
   bool _liked = false;
   bool _playing = false;
+  late int _commentCount;
   BetterPlayerController? _playerCtrl;
 
   void _playVideo() {
@@ -90,6 +94,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   @override
   void initState() {
     super.initState();
+    _commentCount = widget.commentCount;
     _tapCtrl  = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 120));
     _tapScale = Tween(begin: 1.0, end: 0.97).animate(
@@ -335,6 +340,21 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                             ),
                           ),
 
+                          SizedBox(width: 14),
+
+                          // Comment button
+                          GestureDetector(
+                            onTap: () => _openComments(context),
+                            child: Row(children: [
+                              Icon(Icons.chat_bubble_outline_rounded,
+                                  color: context.xMuted, size: 15),
+                              SizedBox(width: 4),
+                              Text(_fmt(_commentCount),
+                                style: TextStyle(
+                                    color: context.xMuted, fontSize: 12)),
+                            ]),
+                          ),
+
                           Spacer(),
 
                           // Share
@@ -375,7 +395,30 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     );
   }
 
-  Future<void> _sharePost(BuildContext context) async {
+  void _openComments(BuildContext context) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize:     0.4,
+        maxChildSize:     0.92,
+        expand: false,
+        builder: (ctx, scroll) => CommentsSheet(
+          postId:        widget.postId,
+          userId:        widget.userId,
+          authorName:    widget.authorName ?? '',
+          authorAvatar:  widget.authorAvatar ?? '',
+          initialCount:  _commentCount,
+          onCountChanged: (n) => setState(() => _commentCount = n),
+        ),
+      ),
+    );
+  }
+
+    Future<void> _sharePost(BuildContext context) async {
     HapticFeedback.mediumImpact();
     final parts = <String>[];
     if (widget.title.isNotEmpty) parts.add(widget.title);

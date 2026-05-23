@@ -599,6 +599,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     authorAvatar: item.authorAvatar,
                     viewCount:    item.viewCount,
                     likeCount:    item.likeCount,
+                    commentCount: item.commentCount,
                     postId:       item.id,
                     userId:       user?.xameId ?? '',
                     onTap: () {
