@@ -1163,10 +1163,16 @@ class _CallBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isVideo    = callType == 'video';
-    final isNoAnswer = callStatus == 'no-answer';
+    final isMissed   = callStatus == 'no-answer' || callStatus == 'declined';
+    final isCancelled = callStatus == 'cancelled';
+    final isEnded    = callStatus == 'ended';
     final icon       = isVideo ? Icons.videocam_rounded : Icons.call_rounded;
-    final label      = isNoAnswer ? 'No answer' : _formatDuration(callDuration);
-    final color      = isNoAnswer
+    final label      = isEnded
+        ? _formatDuration(callDuration)
+        : isMissed    ? 'No answer'
+        : isCancelled ? 'Cancelled'
+        : '';
+    final color      = (isMissed || isCancelled)
         ? context.xDanger
         : (isSelf ? Colors.white70 : context.xAccent);
 
@@ -1174,7 +1180,7 @@ class _CallBubble extends StatelessWidget {
       Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: isNoAnswer
+          color: (isMissed || isCancelled)
               ? context.xDanger.withOpacity(0.15)
               : context.xAccent.withOpacity(0.15),
           shape: BoxShape.circle,
