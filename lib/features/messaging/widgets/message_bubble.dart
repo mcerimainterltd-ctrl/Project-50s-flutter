@@ -1170,7 +1170,7 @@ class _CallBubble extends StatelessWidget {
     final label      = isEnded
         ? _formatDuration(callDuration)
         : isMissed    ? 'No answer'
-        : isCancelled ? 'Cancelled'
+        : isCancelled ? (isSelf ? 'Cancelled' : 'Missed call')
         : '';
     final color      = (isMissed || isCancelled)
         ? context.xDanger
