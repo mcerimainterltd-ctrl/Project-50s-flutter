@@ -312,7 +312,7 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     CacheService.saveContacts(updated.map((c) => {
       'id':                   c.id,
       'name':                 c.name,
-      'avatar':               c.avatar,
+      'avatar':               c.profilePic ?? '',
       'unreadCount':          0,
       'missedCallsCount':     0,
       'lastInteractionTs':    c.lastInteractionTs,
