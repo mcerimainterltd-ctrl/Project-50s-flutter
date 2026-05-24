@@ -468,7 +468,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
             (m['expiresAt'] == null ||
                 (m['expiresAt'] as int) > now))
         .map((m) {
-          final dirStr  = m['type'] as String? ?? 'received';
+          final dirStr  = m['direction'] as String? ?? m['type'] as String? ?? 'received';
           final isSent  = dirStr == 'sent';
           final fileObj = m['file'];
           final hasFile = fileObj != null &&
