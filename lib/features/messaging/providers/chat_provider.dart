@@ -60,13 +60,14 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       final fileObj = m['file'];
       final hasFile = fileObj != null && fileObj is Map && fileObj['url'] != null;
       final mime    = hasFile ? (fileObj['type'] as String? ?? '') : '';
+      final isCall  = m['type'] == 'call' || data['type'] == 'call';
 
       final msg = XameMessage(
         id:          m['id']  as String? ?? _uuid.v4(),
         senderId:    senderId ?? '',
         recipientId: _ref.read(currentUserProvider)?.xameId ?? '',
         text:        m['text'] as String? ?? '',
-        type:        hasFile ? _typeFromMime(mime) : MessageType.text,
+        type:        isCall ? MessageType.call : (hasFile ? _typeFromMime(mime) : MessageType.text),
         direction:   MessageDirection.received,
         ts:          (m['ts'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
         status:      'delivered',
@@ -78,6 +79,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         fileUrl:     hasFile ? fileObj['url']  as String? : null,
         fileName:    hasFile ? fileObj['name'] as String? : null,
         fileMime:    hasFile ? mime : null,
+        callType:    m['callType']    as String? ?? data['callType']    as String?,
+        callStatus:  m['callStatus']  as String? ?? data['callStatus']  as String?,
+        callDuration:(m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt(),
       );
 
       // Deduplicate — server echo can arrive before socket ack
@@ -471,13 +475,14 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
               fileObj is Map &&
               fileObj['url'] != null;
           final mime    = hasFile ? (fileObj['type'] as String? ?? '') : '';
+          final isCall  = m['type'] == 'call';
 
           return XameMessage(
             id:          m['id'] as String,
             senderId:    isSent ? selfId : _contactId,
             recipientId: isSent ? _contactId : selfId,
             text:        m['text'] as String? ?? '',
-            type:        hasFile ? _typeFromMime(mime) : MessageType.text,
+            type:        isCall ? MessageType.call : (hasFile ? _typeFromMime(mime) : MessageType.text),
             direction:
                 isSent ? MessageDirection.sent : MessageDirection.received,
             ts:          (m['ts'] as num?)?.toInt() ?? 0,
@@ -490,6 +495,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
             fileUrl:     hasFile ? fileObj['url']  as String? : null,
             fileName:    hasFile ? fileObj['name'] as String? : null,
             fileMime:    hasFile ? mime : null,
+            callType:    m['callType']     as String?,
+            callStatus:  m['callStatus']   as String?,
+            callDuration:(m['callDuration'] as num?)?.toInt(),
             reactions: m['reactions'] != null &&
                     (m['reactions'] as Map).isNotEmpty
                 ? Map<String, String>.from(m['reactions'] as Map)

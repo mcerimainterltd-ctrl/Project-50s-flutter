@@ -1,4 +1,4 @@
-enum MessageType      { text, image, video, audio, file }
+enum MessageType      { text, image, video, audio, file, call }
 enum MessageDirection { sent, received }
 
 class XameMessage {
@@ -23,6 +23,9 @@ class XameMessage {
   final String?          localPath;  // local device path — open without download
   final Map<String, String>? reactions;
   final bool             isDeleted;
+  final String?          callType;      // 'voice' | 'video'
+  final String?          callStatus;    // 'ended' | 'no-answer'
+  final int?             callDuration;  // seconds
 
   const XameMessage({
     required this.id,
@@ -46,9 +49,12 @@ class XameMessage {
     this.localPath,
     this.reactions,
     this.isDeleted  = false,
+    this.callType,
+    this.callStatus,
+    this.callDuration,
   });
 
-XameMessage copyWith({String? status, Map<String, String>? reactions, String? localPath, bool? isDeleted}) => XameMessage(
+XameMessage copyWith({String? status, Map<String, String>? reactions, String? localPath, bool? isDeleted, String? callType, String? callStatus, int? callDuration}) => XameMessage(
     id:             id,             senderId:      senderId,
     recipientId:    recipientId,    text:          text,
     type:           type,           direction:     direction,
@@ -61,6 +67,9 @@ XameMessage copyWith({String? status, Map<String, String>? reactions, String? lo
     localPath:      localPath ?? this.localPath,
     reactions:      reactions ?? this.reactions,
     isDeleted:      isDeleted ?? this.isDeleted,
+    callType:       callType ?? this.callType,
+    callStatus:     callStatus ?? this.callStatus,
+    callDuration:   callDuration ?? this.callDuration,
   );
 
   DateTime get dateTime => DateTime.fromMillisecondsSinceEpoch(ts);

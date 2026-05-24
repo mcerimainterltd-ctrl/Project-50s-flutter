@@ -249,6 +249,30 @@ class SocketService {
         _audio.playMessage();
       }
     });
+    socket.on('new_message', (d) {
+      if (d != null) {
+        final data = Map<String,dynamic>.from(d);
+        // Wrap call message in receive-message format for chat_provider
+        _receiveMessageCtrl.add({
+          'senderId': data['senderId'],
+          'message': {
+            'id':           data['id'],
+            'text':         data['text'] ?? '',
+            'ts':           data['ts'],
+            'type':         data['type'],
+            'callType':     data['callType'],
+            'callStatus':   data['callStatus'],
+            'callDuration': data['callDuration'],
+            'status':       data['status'] ?? 'sent',
+            'direction':    data['direction'] ?? 'received',
+          },
+          'type':         data['type'],
+          'callType':     data['callType'],
+          'callStatus':   data['callStatus'],
+          'callDuration': data['callDuration'],
+        });
+      }
+    });
     socket.on('typing', (d) {
       final s = d?['senderId'] as String?;
       if (s != null) _typingCtrl.add(s);

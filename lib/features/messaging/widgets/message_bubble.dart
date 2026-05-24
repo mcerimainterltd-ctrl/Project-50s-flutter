@@ -176,7 +176,7 @@ class MessageBubble extends ConsumerWidget {
   }
 
   bool get _needsPadding =>
-      message.type == MessageType.text || message.type == MessageType.file;
+      message.type == MessageType.text || message.type == MessageType.file || message.type == MessageType.call;
 
   Widget _buildContent(BuildContext context) {
     if (message.isDeleted) {
@@ -215,6 +215,13 @@ class MessageBubble extends ConsumerWidget {
             localPath: message.localPath);
       case MessageType.text:
         return _TextContent(text: message.text, isSelf: isSelf);
+      case MessageType.call:
+        return _CallBubble(
+          callType:     message.callType     ?? 'voice',
+          callStatus:   message.callStatus   ?? 'ended',
+          callDuration: message.callDuration ?? 0,
+          isSelf:       isSelf,
+        );
     }
   }
 
@@ -1128,5 +1135,71 @@ class _ReactionBar extends StatelessWidget {
         )).toList(),
       ),
     );
+  }
+}
+
+// ── Call Bubble ───────────────────────────────────────────────────────────────
+class _CallBubble extends StatelessWidget {
+  final String callType;
+  final String callStatus;
+  final int    callDuration;
+  final bool   isSelf;
+
+  const _CallBubble({
+    required this.callType,
+    required this.callStatus,
+    required this.callDuration,
+    required this.isSelf,
+  });
+
+  String _formatDuration(int seconds) {
+    if (seconds <= 0) return '';
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    if (m > 0) return '$m min${s > 0 ? ' $s sec' : ''}';
+    return '$s sec';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isVideo    = callType == 'video';
+    final isNoAnswer = callStatus == 'no-answer';
+    final icon       = isVideo ? Icons.videocam_rounded : Icons.call_rounded;
+    final label      = isNoAnswer ? 'No answer' : _formatDuration(callDuration);
+    final color      = isNoAnswer
+        ? context.xDanger
+        : (isSelf ? Colors.white70 : context.xAccent);
+
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: isNoAnswer
+              ? context.xDanger.withOpacity(0.15)
+              : context.xAccent.withOpacity(0.15),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
+      const SizedBox(width: 10),
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(
+          isVideo ? 'Video call' : 'Voice call',
+          style: TextStyle(
+            color: isSelf ? Colors.white : context.xText,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (label.isNotEmpty)
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+            ),
+          ),
+      ]),
+    ]);
   }
 }
