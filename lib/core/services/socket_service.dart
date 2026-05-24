@@ -252,21 +252,23 @@ class SocketService {
     socket.on('new_message', (d) {
       if (d != null) {
         final data = Map<String,dynamic>.from(d);
-        // Wrap call message in receive-message format for chat_provider
+        final isSent = data['direction'] == 'sent';
+        // For sent direction, use recipientId as the contact key so chat_provider matches correctly
+        final contactId = isSent ? data['recipientId'] : data['senderId'];
         _receiveMessageCtrl.add({
-          'senderId': data['senderId'],
+          'senderId': contactId,
           'message': {
             'id':           data['id'],
             'text':         data['text'] ?? '',
             'ts':           data['ts'],
-            'type':         data['type'],
+            'type':         'call',
             'callType':     data['callType'],
             'callStatus':   data['callStatus'],
             'callDuration': data['callDuration'],
             'status':       data['status'] ?? 'sent',
             'direction':    data['direction'] ?? 'received',
           },
-          'type':         data['type'],
+          'type':         'call',
           'callType':     data['callType'],
           'callStatus':   data['callStatus'],
           'callDuration': data['callDuration'],
