@@ -1169,7 +1169,7 @@ class _CallBubble extends StatelessWidget {
     final icon       = isVideo ? Icons.videocam_rounded : Icons.call_rounded;
     final label      = isEnded
         ? _formatDuration(callDuration)
-        : isMissed    ? 'No answer'
+        : isMissed    ? (isSelf ? 'No answer' : 'Missed call')
         : isCancelled ? (isSelf ? 'Cancelled' : 'Missed call')
         : '';
     final color      = (isMissed || isCancelled)
