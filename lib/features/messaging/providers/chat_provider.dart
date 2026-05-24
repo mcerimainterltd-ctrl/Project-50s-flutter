@@ -61,14 +61,17 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       final hasFile = fileObj != null && fileObj is Map && fileObj['url'] != null;
       final mime    = hasFile ? (fileObj['type'] as String? ?? '') : '';
       final isCall  = m['type'] == 'call' || data['type'] == 'call';
+      final dir     = m['direction'] as String? ?? data['direction'] as String? ?? 'received';
+      final isSent  = dir == 'sent';
+      final selfId  = _ref.read(currentUserProvider)?.xameId ?? '';
 
       final msg = XameMessage(
         id:          m['id']  as String? ?? _uuid.v4(),
-        senderId:    senderId ?? '',
-        recipientId: _ref.read(currentUserProvider)?.xameId ?? '',
+        senderId:    isSent ? selfId : (senderId ?? ''),
+        recipientId: isSent ? (senderId ?? '') : selfId,
         text:        m['text'] as String? ?? '',
         type:        isCall ? MessageType.call : (hasFile ? _typeFromMime(mime) : MessageType.text),
-        direction:   MessageDirection.received,
+        direction:   isSent ? MessageDirection.sent : MessageDirection.received,
         ts:          (m['ts'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
         status:      'delivered',
         expiresAt:   m['expiresAt'] as int?,
