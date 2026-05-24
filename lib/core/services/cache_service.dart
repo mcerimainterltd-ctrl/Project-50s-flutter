@@ -59,6 +59,9 @@ class CacheService {
       'fileMime':    m.fileMime,
       'reactions':   m.reactions,
       'isDeleted':  m.isDeleted,
+      'callType':    m.callType,
+      'callStatus':  m.callStatus,
+      'callDuration':m.callDuration,
     }).toList();
     // Keep last 100 messages per contact
     final trimmed = data.length > 100 ? data.sublist(data.length - 100) : data;
@@ -94,7 +97,10 @@ class CacheService {
           fileMime:    m['fileMime']    as String?,
           reactions:   m['reactions'] != null
             ? Map<String,String>.from(m['reactions'] as Map) : null,
-          isDeleted:   m['isDeleted'] as bool? ?? false,
+          isDeleted:    m['isDeleted']   as bool? ?? false,
+          callType:     m['callType']    as String?,
+          callStatus:   m['callStatus']  as String?,
+          callDuration: m['callDuration'] as int?,
         ))
         .toList();
     } catch (_) { return []; }
