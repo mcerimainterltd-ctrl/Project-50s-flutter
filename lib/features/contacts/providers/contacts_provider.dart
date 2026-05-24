@@ -305,9 +305,19 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
 
   void clearAllMissedCalls() {
     final current = state.valueOrNull ?? [];
-    state = AsyncData(current.map((c) =>
+    final updated = current.map((c) =>
       c.missedCallsCount > 0 ? c.copyWith(missedCallsCount: 0) : c
-    ).toList());
+    ).toList();
+    state = AsyncData(updated);
+    CacheService.saveContacts(updated.map((c) => {
+      'id':                   c.id,
+      'name':                 c.name,
+      'avatar':               c.avatar,
+      'unreadCount':          0,
+      'missedCallsCount':     0,
+      'lastInteractionTs':    c.lastInteractionTs,
+      'lastInteractionPreview': c.lastInteractionPreview,
+    }).toList());
   }
 
   void clearGalleryDot(String contactId) {
