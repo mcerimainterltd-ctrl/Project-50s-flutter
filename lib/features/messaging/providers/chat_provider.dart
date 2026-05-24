@@ -132,6 +132,30 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           serverMsgs.map((m) => Map<String, dynamic>.from(m))));
       } catch (_) {}
     }));
+
+    _subs.add(socket.callMessage.listen((data) {
+      final selfId      = _ref.read(currentUserProvider)?.xameId ?? '';
+      final senderId    = data['senderId']    as String? ?? '';
+      final recipientId = data['recipientId'] as String? ?? '';
+      final isSent      = data['direction']   == 'sent';
+      final contactId   = isSent ? recipientId : senderId;
+      if (contactId != _contactId) return;
+      final msg = XameMessage(
+        id:           data['id']           as String? ?? _uuid.v4(),
+        senderId:     isSent ? selfId : senderId,
+        recipientId:  isSent ? recipientId : selfId,
+        text:         '',
+        type:         MessageType.call,
+        direction:    isSent ? MessageDirection.sent : MessageDirection.received,
+        ts:           (data['ts'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
+        status:       data['status'] as String? ?? 'sent',
+        callType:     data['callType']     as String?,
+        callStatus:   data['callStatus']   as String?,
+        callDuration: (data['callDuration'] as num?)?.toInt(),
+      );
+      if (state.any((s) => s.id == msg.id)) return;
+      state = [...state, msg];
+    }));
   }
 
   // ── Send text ─────────────────────────────────────────────────────────

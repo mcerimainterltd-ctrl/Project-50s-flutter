@@ -44,6 +44,7 @@ class SocketService {
   final _callResumedCtrl      = StreamController<String>.broadcast();
   final _callAcknowledgedCtrl = StreamController<String>.broadcast();
   final _messagesDeletedCtrl  = StreamController<MessagesDeletedData>.broadcast();
+  final _callMessageCtrl      = StreamController<Map<String, dynamic>>.broadcast();
   final _disappearExpiredCtrl = StreamController<DisappearExpiredData>.broadcast();
   final _walletReceiveCtrl    = StreamController<WalletReceiveData>.broadcast();
   final _walletDebitCtrl      = StreamController<Map<String,dynamic>>.broadcast();
@@ -90,6 +91,7 @@ class SocketService {
   Stream<Map<String, dynamic>>      get contactRequestAccepted => _contactRequestAcceptedCtrl.stream;
   Stream<String>                    get forceLogout      => _forceLogoutCtrl.stream;
   Stream<String>                    get missedCallCount  => _missedCallCountCtrl.stream;
+  Stream<Map<String, dynamic>>      get callMessage      => _callMessageCtrl.stream;
   Stream<String>                    get callUnansweredAck => _callUnansweredAckCtrl.stream;
   final _confPeerJoinedCtrl    = StreamController<ConferencePeerData>.broadcast();
   final _confPeerLeftCtrl      = StreamController<ConferencePeerData>.broadcast();
@@ -251,28 +253,7 @@ class SocketService {
     });
     socket.on('new_message', (d) {
       if (d != null) {
-        final data = Map<String,dynamic>.from(d);
-        final isSent = data['direction'] == 'sent';
-        // For sent direction, use recipientId as the contact key so chat_provider matches correctly
-        final contactId = isSent ? data['recipientId'] : data['senderId'];
-        _receiveMessageCtrl.add({
-          'senderId': contactId,
-          'message': {
-            'id':           data['id'],
-            'text':         data['text'] ?? '',
-            'ts':           data['ts'],
-            'type':         'call',
-            'callType':     data['callType'],
-            'callStatus':   data['callStatus'],
-            'callDuration': data['callDuration'],
-            'status':       data['status'] ?? 'sent',
-            'direction':    data['direction'] ?? 'received',
-          },
-          'type':         'call',
-          'callType':     data['callType'],
-          'callStatus':   data['callStatus'],
-          'callDuration': data['callDuration'],
-        });
+        _callMessageCtrl.add(Map<String,dynamic>.from(d));
       }
     });
     socket.on('typing', (d) {
