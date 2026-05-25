@@ -14,6 +14,7 @@ import '../../../core/services/wallet_lock_service.dart';
 import '../../../shared/widgets/pin_lock_screen.dart';
 import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/socket_service.dart';
 import 'theme_picker_screen.dart';
 import '../../messaging/screens/chat_wallpaper.dart';
 import '../../calling/call_settings.dart';
@@ -310,7 +311,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onChanged: (v) async {
                 save(settings.copyWith(stealthMode: v));
                 final user = ref.read(currentUserProvider);
-                if (user != null) await ref.read(settingsProvider.notifier).syncStealthMode(user.xameId, v);
+                if (user != null) {
+                  await ref.read(settingsProvider.notifier).syncStealthMode(user.xameId, v);
+                  ref.read(socketServiceProvider).emitStealthUpdate(user.xameId, v);
+                }
               },
             ),
           ]),
