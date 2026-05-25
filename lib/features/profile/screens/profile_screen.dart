@@ -13,6 +13,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../settings/screens/theme_picker_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../avatar_builder.dart';
+import '../../../core/services/socket_service.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 final _sessionsProvider = FutureProvider.autoDispose
