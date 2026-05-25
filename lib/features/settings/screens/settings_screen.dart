@@ -49,6 +49,7 @@ class SettingsData {
   final String bubbleStyle;     // 'modern' | 'classic' | 'minimal'
   final bool   reducedMotion;
   final bool   highContrast;
+  final bool   stealthMode;
 
   const SettingsData({
     this.lastSeen        = 'contacts',
@@ -71,6 +72,7 @@ class SettingsData {
     this.bubbleStyle     = 'modern',
     this.reducedMotion   = false,
     this.highContrast    = false,
+    this.stealthMode     = false,
   });
 
   SettingsData copyWith({
@@ -83,6 +85,7 @@ class SettingsData {
     bool? noiseSuppression, bool? echoCancellation,
     String? fontSize, String? bubbleStyle,
     bool? reducedMotion, bool? highContrast,
+    bool? stealthMode,
   }) => SettingsData(
     lastSeen:         lastSeen         ?? this.lastSeen,
     profilePhoto:     profilePhoto     ?? this.profilePhoto,
@@ -104,6 +107,7 @@ class SettingsData {
     bubbleStyle:      bubbleStyle      ?? this.bubbleStyle,
     reducedMotion:    reducedMotion    ?? this.reducedMotion,
     highContrast:     highContrast     ?? this.highContrast,
+    stealthMode:      stealthMode      ?? this.stealthMode,
   );
 
   Map<String, dynamic> toMap() => {
@@ -116,6 +120,7 @@ class SettingsData {
     'noiseSuppression': noiseSuppression, 'echoCancellation': echoCancellation,
     'fontSize': fontSize, 'bubbleStyle': bubbleStyle,
     'reducedMotion': reducedMotion, 'highContrast': highContrast,
+    'stealthMode': stealthMode,
   };
 
   factory SettingsData.fromMap(Map m) => SettingsData(
@@ -139,6 +144,7 @@ class SettingsData {
     bubbleStyle:      m['bubbleStyle']      ?? 'modern',
     reducedMotion:    m['reducedMotion']    ?? false,
     highContrast:     m['highContrast']     ?? false,
+    stealthMode:      m['stealthMode']      ?? false,
   );
 }
 
@@ -165,6 +171,18 @@ class SettingsNotifier extends StateNotifier<SettingsData> {
     _current = s;
     final box = await Hive.openBox(_box);
     await box.put(_key, s.toMap());
+  }
+
+  Future<void> syncStealthMode(String xameId, bool value) async {
+    try {
+      final dio = Dio();
+      await dio.post(
+        '\${AppConstants.serverUrl}/api/settings',
+        data: {'userId': xameId, 'key': 'stealthMode', 'value': value},
+      );
+    } catch (e) {
+      debugPrint('syncStealthMode error: \$e');
+    }
   }
 
   Future<void> syncPrivacyToServer(String xameId) async {
@@ -281,6 +299,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 save(settings.copyWith(typingIndicators: v));
                 final user = ref.read(currentUserProvider);
                 if (user != null) await ref.read(settingsProvider.notifier).syncPrivacyToServer(user.xameId);
+              },
+            ),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.visibility_off_outlined,
+              title:     'Stealth Mode',
+              subtitle:  'Hide your online status from all contacts',
+              value:     settings.stealthMode,
+              onChanged: (v) async {
+                save(settings.copyWith(stealthMode: v));
+                final user = ref.read(currentUserProvider);
+                if (user != null) await ref.read(settingsProvider.notifier).syncStealthMode(user.xameId, v);
               },
             ),
           ]),
