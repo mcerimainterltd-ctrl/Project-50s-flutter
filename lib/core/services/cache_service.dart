@@ -102,6 +102,7 @@ class CacheService {
           callStatus:   m['callStatus']  as String?,
           callDuration: m['callDuration'] as int?,
         ))
+        .where((m) => m.type != MessageType.call || m.callStatus != null)
         .toList();
     } catch (_) { return []; }
   }
