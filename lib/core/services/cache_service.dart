@@ -79,14 +79,14 @@ class CacheService {
         .where((m) =>
           m['expiresAt'] == null || (m['expiresAt'] as int) > now)
         .map((m) => XameMessage(
-          id:          m['id']          as String,
-          senderId:    m['senderId']    as String,
-          recipientId: m['recipientId'] as String,
-          text:        m['text']        as String,
-          type:        MessageType.values[m['type'] as int],
-          direction:   MessageDirection.values[m['direction'] as int],
-          ts:          m['ts']          as int,
-          status:      m['status']      as String,
+          id:          (m['id']          as String?)  ?? '',
+          senderId:    (m['senderId']    as String?)  ?? '',
+          recipientId: (m['recipientId'] as String?)  ?? '',
+          text:        (m['text']        as String?)  ?? '',
+          type:        MessageType.values[(m['type']      as int?) ?? 0],
+          direction:   MessageDirection.values[(m['direction'] as int?) ?? 0],
+          ts:          (m['ts']         as int?)     ?? 0,
+          status:      (m['status']     as String?)  ?? 'sent',
           forwarded:   m['forwarded']   as bool? ?? false,
           viewOnce:    m['viewOnce']    as bool? ?? false,
           expiresAt:   m['expiresAt']   as int?,
