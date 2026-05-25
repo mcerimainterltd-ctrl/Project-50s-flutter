@@ -709,11 +709,18 @@ class _ContactTile extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(children: [
-                Expanded(child: Text(contact.name,
-                  style: TextStyle(color: context.xText, fontSize: 15,
-                    fontWeight: contact.unreadCount > 0
-                      ? FontWeight.w700 : FontWeight.w500),
-                  maxLines: 1, overflow: TextOverflow.ellipsis)),
+                Expanded(child: Row(children: [
+                  Flexible(child: Text(contact.name,
+                    style: TextStyle(color: context.xText, fontSize: 15,
+                      fontWeight: contact.unreadCount > 0
+                        ? FontWeight.w700 : FontWeight.w500),
+                    maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  if ((contact.personalStatusEmoji ?? '').isNotEmpty) ...[
+                    const SizedBox(width: 5),
+                    Text(contact.personalStatusEmoji!,
+                      style: const TextStyle(fontSize: 13)),
+                  ],
+                ])),
                 if (contact.lastInteractionTs > 0)
                   Text(_fmtTime(contact.lastInteractionTs),
                     style: TextStyle(
@@ -726,7 +733,9 @@ class _ContactTile extends ConsumerWidget {
                 isTyping ? 'typing...'
                   : contact.lastInteractionPreview.isNotEmpty
                     ? contact.lastInteractionPreview
-                    : "Hey there I'm on XamePage",
+                    : (contact.personalStatusMessage ?? '').isNotEmpty
+                      ? contact.personalStatusMessage!
+                      : "Hey there I'm on XamePage",
                 style: TextStyle(
                   color: isTyping ? context.xAccent : context.xMuted,
                   fontSize: 13,
