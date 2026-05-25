@@ -752,13 +752,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     fontWeight: FontWeight.w500),
                 maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
-            if (!isTyping && (contact?.personalStatusEmoji ?? '').isNotEmpty || (contact?.personalStatusMessage ?? '').isNotEmpty)
-              Text(
-                '${contact?.personalStatusEmoji ?? ''} ${contact?.personalStatusMessage ?? ''}'.trim(),
-                style: TextStyle(color: context.xMuted, fontSize: 11),
-                maxLines: 1, overflow: TextOverflow.ellipsis,
-              )
-            else
             Text(
               isTyping ? 'typing...'
                   : contact?.isOnline == true ? 'online' : 'offline',
@@ -768,6 +761,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   fontSize: 12,
                   fontStyle: isTyping ? FontStyle.italic : FontStyle.normal),
             ),
+            if (!isTyping && (contact?.personalStatusEmoji ?? '').isNotEmpty || (contact?.personalStatusMessage ?? '').isNotEmpty)
+              Text(
+                '${contact?.personalStatusEmoji ?? ''} ${contact?.personalStatusMessage ?? ''}'.trim(),
+                style: TextStyle(color: context.xMuted, fontSize: 11),
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+              ),
           ])),
         ]),
       ),
