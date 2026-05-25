@@ -424,6 +424,7 @@ class SocketService {
   }
 
   // ── Emit helpers ──────────────────────────────────────────────────────────
+  void emitStatusUpdate(String userId, String emoji, String message) => emit('status-update', {'userId': userId, 'status': {'emoji': emoji, 'message': message}});
   void emitTyping(String r)                        => emit('typing',             {'recipientId': r});
   void emitStopTyping(String r)                    => emit('stop-typing',        {'recipientId': r});
   void emitMessageSeen(String r, List<String> ids) => emit('message-seen',       {'recipientId': r, 'messageIds': ids});

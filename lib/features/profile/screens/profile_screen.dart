@@ -51,6 +51,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   bool   _saving      = false;
   File?  _newImage;
   bool   _removeImage = false;
+  String _statusEmoji   = '';
+  String _statusMessage = '';
   late AnimationController _fadeCtrl;
   late Animation<double>   _fade;
 
@@ -68,6 +70,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final user = ref.read(currentUserProvider);
     if (user == null) return;
     _nameCtrl.text = user.preferredName ?? user.firstName;
+    _statusEmoji   = user.personalStatusEmoji   ?? '';
+    _statusMessage = user.personalStatusMessage ?? '';
     setState(() {
       _hideName = user.hidePreferredName;
       _hidePic  = user.hideProfilePicture;
@@ -168,6 +172,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         'userId':             user.xameId,
         'preferredName':      name,
         'hidePreferredName':  _hideName.toString(),
+        'personalStatusEmoji':   _statusEmoji,
+        'personalStatusMessage': _statusMessage,
         'hideProfilePicture': _hidePic.toString(),
         if (_removeImage) 'removeProfilePic': 'true',
         if (_newImage != null)
@@ -188,13 +194,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           profilePic:         res.data['profilePicUrl'] ?? user.profilePic,
           hidePreferredName:  res.data['hidePreferredName']  ?? _hideName,
           hideProfilePicture: res.data['hideProfilePicture'] ?? _hidePic,
-          personalStatusEmoji:   user.personalStatusEmoji,
-          personalStatusMessage: user.personalStatusMessage,
+          personalStatusEmoji:   _statusEmoji.isEmpty ? null : _statusEmoji,
+          personalStatusMessage: _statusMessage.isEmpty ? null : _statusMessage,
           sessionToken:       user.sessionToken,
         );
         ref.read(currentUserProvider.notifier).state = updated;
         setState(() { _newImage = null; _removeImage = false; });
         _snack('Profile saved successfully ✓', success: true);
+        ref.read(socketServiceProvider).emitStatusUpdate(user.xameId, _statusEmoji, _statusMessage);
       } else {
         _snack(res.data['message'] ?? 'Failed to save profile');
       }
@@ -203,6 +210,133 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     } finally {
       setState(() => _saving = false);
     }
+  }
+
+
+  void _showStatusPicker() {
+    final presets = [
+      {'emoji': '✅', 'message': 'Available'},
+      {'emoji': '💼', 'message': 'At work'},
+      {'emoji': '🔴', 'message': 'Busy'},
+      {'emoji': '🤫', 'message': 'Do not disturb'},
+      {'emoji': '🏠', 'message': 'Working from home'},
+      {'emoji': '📵', 'message': 'Phone off'},
+      {'emoji': '😴', 'message': 'Sleeping'},
+      {'emoji': '🏥', 'message': 'At the hospital'},
+      {'emoji': '✈️', 'message': 'Travelling'},
+      {'emoji': '🎓', 'message': 'In school'},
+      {'emoji': '🙏', 'message': 'In church'},
+      {'emoji': '🏋️', 'message': 'At the gym'},
+      {'emoji': '🍽️', 'message': 'Eating'},
+      {'emoji': '🚗', 'message': 'Driving'},
+      {'emoji': '💤', 'message': 'Away'},
+      {'emoji': '❌', 'message': 'Clear status'},
+    ];
+    final emojiCtrl   = TextEditingController(text: _statusEmoji);
+    final messageCtrl = TextEditingController(text: _statusMessage);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(builder: (ctx, setS) => Container(
+        decoration: BoxDecoration(
+          color: context.xCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4,
+            decoration: BoxDecoration(color: context.xMuted.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Text('Personal Status', style: TextStyle(color: context.xText,
+              fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 16),
+          // Preset grid
+          Wrap(spacing: 8, runSpacing: 8,
+            children: presets.map((p) => GestureDetector(
+              onTap: () {
+                if (p['message'] == 'Clear status') {
+                  setS(() { emojiCtrl.text = ''; messageCtrl.text = ''; });
+                } else {
+                  setS(() { emojiCtrl.text = p['emoji']!; messageCtrl.text = p['message']!; });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: messageCtrl.text == p['message']
+                      ? context.xAccent.withOpacity(0.15) : context.xSurface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: messageCtrl.text == p['message']
+                        ? context.xAccent : context.xMuted.withOpacity(0.2),
+                  ),
+                ),
+                child: Text('${p['emoji']} ${p['message']}',
+                    style: TextStyle(color: context.xText, fontSize: 13)),
+              ),
+            )).toList(),
+          ),
+          const SizedBox(height: 16),
+          // Custom input
+          Row(children: [
+            SizedBox(width: 60,
+              child: TextField(
+                controller: emojiCtrl,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 22),
+                decoration: InputDecoration(
+                  hintText: '😊',
+                  filled: true,
+                  fillColor: context.xSurface,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: messageCtrl,
+                style: TextStyle(color: context.xText, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Custom status...',
+                  hintStyle: TextStyle(color: context.xMuted),
+                  filled: true,
+                  fillColor: context.xSurface,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none),
+                ),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 16),
+          SizedBox(width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.xAccent,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                setState(() {
+                  _statusEmoji   = emojiCtrl.text.trim();
+                  _statusMessage = messageCtrl.text.trim();
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Set Status', style: TextStyle(color: Colors.white,
+                  fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ]),
+      )),
+    );
   }
 
   void _snack(String msg, {bool success = false}) {
@@ -328,6 +462,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   controller: _nameCtrl,
                   hint:       'Your display name',
                   icon:       Icons.person_outline,
+                ),
+
+                SizedBox(height: 24),
+
+                // ── Personal Status ─────────────────────────────────────
+                _sectionTitle('Personal Status'),
+                SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () => _showStatusPicker(),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: context.xSurface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
+                    ),
+                    child: Row(children: [
+                      Text(_statusEmoji.isEmpty ? '😊' : _statusEmoji,
+                          style: const TextStyle(fontSize: 22)),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _statusMessage.isEmpty ? 'Tap to set your status...' : _statusMessage,
+                          style: TextStyle(
+                            color: _statusMessage.isEmpty ? context.xMuted : context.xText,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.edit_outlined, color: context.xMuted, size: 16),
+                    ]),
+                  ),
                 ),
 
                 SizedBox(height: 24),
