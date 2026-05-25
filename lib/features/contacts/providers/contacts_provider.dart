@@ -166,7 +166,7 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
         final existing = current.where((c) => c.id == m['xameId']).firstOrNull;
         final model = ContactModel.fromSocketMap(m,
           existingUnread: existing?.unreadCount,
-          existingMissed: existing?.missedCallsCount);
+          existingMissed: existing?.missedCallsCount ?? 0);
         return existing != null
           ? model.copyWith(hasNewDiscoveryPost: existing.hasNewDiscoveryPost)
           : model;
