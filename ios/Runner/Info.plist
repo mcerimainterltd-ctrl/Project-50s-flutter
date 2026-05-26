@@ -74,6 +74,10 @@
 	<array>
 		<string>com.xamepage.xamepage.socketkeepalive</string>
 	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>XamePage uses Bluetooth for audio devices during calls.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>XamePage needs local network access for peer-to-peer calls.</string>
 	<!-- Firebase -->
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
