@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,8 +20,10 @@ class UpdateService {
       final serverBuild = (data['buildNumber'] as num?)?.toInt() ?? 0;
       final forceUpdate = data['forceUpdate'] as bool? ?? false;
       final downloadUrl = data['downloadUrl'] as String? ?? '';
+      final ipaUrl      = data['ipaUrl']      as String? ?? '';
       final changelog   = data['changelog']   as String? ?? 'Bug fixes and improvements.';
       final version     = data['version']     as String? ?? '';
+      final effectiveUrl = Platform.isIOS && ipaUrl.isNotEmpty ? ipaUrl : downloadUrl;
 
       if (serverBuild <= AppConstants.appBuildNumber) return;
       if (!context.mounted) return;
@@ -31,7 +34,7 @@ class UpdateService {
         builder: (_) => _UpdateDialog(
           version:     version,
           changelog:   changelog,
-          downloadUrl: downloadUrl,
+          downloadUrl: effectiveUrl,
           forceUpdate: forceUpdate,
         ),
       );
