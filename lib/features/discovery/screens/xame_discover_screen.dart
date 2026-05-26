@@ -282,9 +282,15 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       final res = await dio.get('/api/xamepage/announcements');
       final data = res.data as Map<String, dynamic>;
       if (data['success'] == true) {
-        final posts = (data['announcements'] as List? ?? [])
+        final allPosts = (data['announcements'] as List? ?? [])
           .map((p) => _OfficialPost.fromJson(p as Map<String, dynamic>))
           .toList();
+        // Filter by platform
+        final posts = allPosts.where((p) =>
+          p.platform == 'both' ||
+          (Platform.isIOS && p.platform == 'ios') ||
+          (!Platform.isIOS && p.platform == 'android')
+        ).toList();
         if (mounted) setState(() => _officialPosts = posts);
       }
     } catch (_) {}
@@ -2139,20 +2145,29 @@ class _XameNewsChannelState extends State<_XameNewsChannel>
 }
 
 class _OfficialPost {
-  final String postId, title, caption, mediaUrl, mediaType, actionUrl, actionLabel, version;
+  final String postId, title, caption, mediaUrl, mediaType, actionUrl, actionLabel, version, platform, ipaUrl;
   _OfficialPost({required this.postId, required this.title,
     required this.caption, required this.mediaUrl, required this.mediaType,
-    required this.actionUrl, required this.actionLabel, required this.version});
-  factory _OfficialPost.fromJson(Map<String, dynamic> j) => _OfficialPost(
-    postId:      j['announcementId'] as String? ?? j['postId']     as String? ?? '',
-    title:       j['title']         as String? ?? '',
-    caption:     j['caption']       as String? ?? '',
-    mediaUrl:    j['mediaUrl']      as String? ?? '',
-    mediaType:   j['mediaType']     as String? ?? 'image',
-    actionUrl:   j['actionUrl']     as String? ?? j['downloadUrl'] as String? ?? '',
-    actionLabel: j['actionLabel']   as String? ?? '',
-    version:     j['version']       as String? ?? '',
-  );
+    required this.actionUrl, required this.actionLabel, required this.version,
+    required this.platform, required this.ipaUrl});
+  factory _OfficialPost.fromJson(Map<String, dynamic> j) {
+    final platform  = j['platform'] as String? ?? 'both';
+    final ipaUrl    = j['ipaUrl']   as String? ?? '';
+    final apkUrl    = j['actionUrl'] as String? ?? j['downloadUrl'] as String? ?? '';
+    final effectiveUrl = Platform.isIOS && ipaUrl.isNotEmpty ? ipaUrl : apkUrl;
+    return _OfficialPost(
+      postId:      j['announcementId'] as String? ?? j['postId']     as String? ?? '',
+      title:       j['title']         as String? ?? '',
+      caption:     j['caption']       as String? ?? '',
+      mediaUrl:    j['mediaUrl']      as String? ?? '',
+      mediaType:   j['mediaType']     as String? ?? 'image',
+      actionUrl:   effectiveUrl,
+      actionLabel: j['actionLabel']   as String? ?? '',
+      version:     j['version']       as String? ?? '',
+      platform:    platform,
+      ipaUrl:      ipaUrl,
+    );
+  }
 }
 
 // ── Detail video player ──────────────────────────────────────────────────────
