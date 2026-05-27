@@ -1522,6 +1522,14 @@ class _SendTabState extends State<_SendTab> {
         widget.snack('✅ ${widget.fmt(_amount)} sent to $_selContact!'
           '${d['fee'] != null ? '  Fee: ${widget.fmt((d['fee'] as num).toDouble())}' : ''}');
         setState(() { _selContact = null; _amtCtrl.clear(); _amount = 0; });
+        // Reward: wallet payment sent
+        try {
+          http.post(
+            Uri.parse('${widget.serverUrl}/api/rewards/wallet-send'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'userId': widget.userId}),
+          );
+        } catch (_) {}
       } else {
         widget.snack('❌ ${d['message'] ?? 'Transfer failed'}');
       }

@@ -1,4 +1,6 @@
 import 'dart:io' as dart_io;
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -179,6 +181,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
     setState(() => _replyTo = null);
     _scrollToBottom();
+    // Reward: first message of the day
+    try {
+      final user = ref.read(currentUserProvider);
+      if (user != null) {
+        http.post(
+          Uri.parse('${AppConstants.serverUrl}/api/rewards/message'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'userId': user.xameId}),
+        );
+      }
+    } catch (_) {}
   }
 
   Future<void> _pickImage() async {

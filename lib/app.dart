@@ -119,6 +119,14 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       final user = ref.read(currentUserProvider);
       if (user != null) {
         ref.read(socketServiceProvider).startHeartbeat(user.xameId);
+        // Reward: daily login streak
+        try {
+          await http.post(
+            Uri.parse('${AppConstants.serverUrl}/api/rewards/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'userId': user.xameId}),
+          );
+        } catch (_) {}
       }
     });
 

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:ui';
+import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,6 +79,24 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         if (s == CallState.ended && mounted) {
           if (_callEndReason == null) {
             setState(() => _callEndReason = widget.isIncoming ? 'Call Ended' : 'Call Ended');
+          }
+          // Reward: credit call minutes
+          if (_seconds >= 60) {
+            try {
+              final user = ref.read(currentUserProvider);
+              if (user != null) {
+                await http.post(
+                  Uri.parse('${AppConstants.serverUrl}/api/rewards/call'),
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode({
+                    'userId':          user.xameId,
+                    'peerId':          widget.userId,
+                    'durationSeconds': _seconds,
+                    'callId':          ref.read(webRTCServiceProvider).currentCallId ?? '',
+                  }),
+                );
+              }
+            } catch (_) {}
           }
           await Future.delayed(const Duration(seconds: 3));
           if (mounted) context.go('/contacts');
