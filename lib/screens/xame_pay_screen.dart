@@ -392,7 +392,7 @@ class _XamePayScreenState extends State<XamePayScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 5, vsync: this);
+    _tab = TabController(length: 6, vsync: this);
     _loadPrefs().then((_) => _init());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final socket = ProviderScope.containerOf(context).read(socketServiceProvider);
@@ -402,7 +402,7 @@ class _XamePayScreenState extends State<XamePayScreen>
       });
       _walletSub = socket.walletReceive.listen((data) {
         if (!mounted) return;
-        _snack('❤️ Received \${data.currency} \${data.amount.toStringAsFixed(2)} from \${data.senderName}');
+        _snack('❤️ Received ${data.currency} ${data.amount.toStringAsFixed(2)} from ${data.senderName ?? data.senderId}');
         _init(); // refresh balance and transactions
       });
     });
@@ -570,6 +570,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                         onSuccess: _loadWallet, snack: _snack,
                         contacts: widget.xameContacts),
                     _HistoryTab(txs: _txs, fmt: _fmt),
+                    _RewardsTab(userId: widget.userId, serverUrl: widget.serverUrl),
                   ],
                 )),
               ]),
@@ -666,6 +667,7 @@ class _XamePayScreenState extends State<XamePayScreen>
         Tab(text: '🧾 Bills'),
         Tab(text: '💸 Send'),
         Tab(text: '📊 History'),
+        Tab(text: '🪙 Rewards'),
       ],
     ),
   );
@@ -3395,3 +3397,290 @@ Widget _xf(TextEditingController c, String hint, TextInputType kt,
       ),
       onChanged: fn,
     );
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REWARDS TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _RewardsTab extends StatefulWidget {
+  final String userId, serverUrl;
+  const _RewardsTab({required this.userId, required this.serverUrl});
+  @override State<_RewardsTab> createState() => _RewardsTabState();
+}
+
+class _RewardsTabState extends State<_RewardsTab> {
+  Map<String, dynamic>? _account;
+  List<dynamic> _txs = [];
+  bool _loading = true;
+  bool _withdrawing = false;
+
+  @override void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final r = await http.get(Uri.parse('${widget.serverUrl}/api/rewards/${widget.userId}'));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true && mounted) {
+        setState(() {
+          _account = d['account'];
+          _txs     = d['transactions'] ?? [];
+          _loading = false;
+        });
+      }
+    } catch (_) { if (mounted) setState(() => _loading = false); }
+  }
+
+  Future<void> _withdraw() async {
+    final coins = _account?['coinBalance'] ?? 0;
+    if (coins < 10000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Minimum withdrawal is 10,000 coins'),
+            behavior: SnackBarBehavior.floating));
+      return;
+    }
+    setState(() => _withdrawing = true);
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}/api/rewards/withdraw'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': widget.userId, 'coins': coins}),
+      );
+      final d = jsonDecode(r.body);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(d['message'] ?? (d['success'] ? 'Withdrawn!' : 'Failed')),
+        behavior: SnackBarBehavior.floating));
+      if (d['success'] == true) _load();
+    } catch (_) {} finally { if (mounted) setState(() => _withdrawing = false); }
+  }
+
+  void _share() {
+    final code = _account?['referralCode'] ?? '';
+    final link = 'https://project-50s.onrender.com/join/$code';
+    Share.share('Join me on XamePage! Download and earn XameCoins together:\n$link');
+  }
+
+  String _tierBadge(String tier) {
+    switch (tier) {
+      case 'silver':  return '🥈 Silver';
+      case 'gold':    return '🥇 Gold';
+      case 'diamond': return '💎 Diamond';
+      default:        return '🥉 Bronze';
+    }
+  }
+
+  String _txIcon(String type) {
+    switch (type) {
+      case 'call_minute':        return '📞';
+      case 'invite_register':    return '👤';
+      case 'invite_active':      return '✅';
+      case 'invite_first_call':  return '🎉';
+      case 'benchmark_weekly':   return '🏆';
+      case 'benchmark_monthly':  return '🎯';
+      case 'login_streak':       return '🔥';
+      case 'first_message':      return '💬';
+      case 'wallet_send':        return '💸';
+      case 'withdrawal':         return '🏦';
+      default:                   return '🪙';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator(color: _kTeal));
+    if (_account == null) return Center(
+      child: TextButton.icon(
+        onPressed: _load,
+        icon: const Icon(Icons.refresh, color: _kTeal),
+        label: const Text('Tap to load rewards', style: TextStyle(color: _kTeal)),
+      ));
+
+    final balance  = _account!['coinBalance']    as int? ?? 0;
+    final earned   = _account!['totalEarned']    as int? ?? 0;
+    final withdrawn= _account!['totalWithdrawn'] as int? ?? 0;
+    final tier     = _account!['tier']           as String? ?? 'bronze';
+    final streak   = _account!['streakDays']     as int? ?? 0;
+    final refs     = _account!['activeReferrals']as int? ?? 0;
+    final naira    = (balance * 0.1).toStringAsFixed(2);
+    final canWithdraw = balance >= 10000;
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      color: _kTeal,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // ── Coin Balance Card ──────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF00B0A0), Color(0xFF007A72)],
+                begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(children: [
+              const Text('🪙 XameCoins Balance',
+                style: TextStyle(color: Colors.white70, fontSize: 13)),
+              const SizedBox(height: 8),
+              Text('$balance coins',
+                style: const TextStyle(color: Colors.white,
+                    fontSize: 36, fontWeight: FontWeight.w800)),
+              Text('≈ ₦$naira',
+                style: const TextStyle(color: Colors.white70, fontSize: 14)),
+              const SizedBox(height: 16),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                Column(children: [
+                  Text('$earned', style: const TextStyle(color: Colors.white,
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+                  const Text('Total Earned', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                ]),
+                Container(width: 1, height: 30, color: Colors.white30),
+                Column(children: [
+                  Text('$withdrawn', style: const TextStyle(color: Colors.white,
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+                  const Text('Withdrawn', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                ]),
+                Container(width: 1, height: 30, color: Colors.white30),
+                Column(children: [
+                  Text(_tierBadge(tier),
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                  const Text('Tier', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                ]),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 12),
+
+          // ── Stats Row ─────────────────────────────────────────────────
+          Row(children: [
+            Expanded(child: _statCard('🔥 Streak', '$streak days')),
+            const SizedBox(width: 8),
+            Expanded(child: _statCard('👥 Referrals', '$refs active')),
+          ]),
+          const SizedBox(height: 12),
+
+          // ── Action Buttons ────────────────────────────────────────────
+          Row(children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _share,
+                icon: const Icon(Icons.share, size: 16),
+                label: const Text('Share Referral'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kCard,
+                  foregroundColor: _kTeal,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: canWithdraw ? _withdraw : null,
+                icon: _withdrawing
+                    ? const SizedBox(width: 16, height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.account_balance_wallet, size: 16),
+                label: const Text('Withdraw'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: canWithdraw ? _kTeal : _kMuted,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          if (!canWithdraw)
+            Text('${10000 - balance} more coins needed to withdraw',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: _kMuted, fontSize: 12)),
+          const SizedBox(height: 16),
+
+          // ── Earn More Section ─────────────────────────────────────────
+          const Text('💡 How to Earn', style: TextStyle(color: Colors.white,
+              fontSize: 14, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          _earnRow('📞 Call XamePage users', '2 coins/min (max 60 mins/day)'),
+          _earnRow('👤 Invite friends', '50 coins per registration'),
+          _earnRow('🎉 Invite makes first call', '100 bonus coins'),
+          _earnRow('✅ Invite active 30 days', '200 bonus coins'),
+          _earnRow('🏆 Call 10 users in a week', '500 bonus coins'),
+          _earnRow('🎯 5 referrals in a month', '1,000 bonus coins'),
+          _earnRow('🔥 7-day login streak', '50 coins'),
+          _earnRow('💬 First message daily', '5 coins'),
+          _earnRow('💸 Send wallet payment', '10 coins'),
+          const SizedBox(height: 16),
+
+          // ── Ledger ────────────────────────────────────────────────────
+          const Text('📒 Coin Ledger', style: TextStyle(color: Colors.white,
+              fontSize: 14, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          if (_txs.isEmpty)
+            const Center(child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text('No transactions yet. Start earning!',
+                style: TextStyle(color: _kMuted, fontSize: 13)),
+            ))
+          else
+            ..._txs.map((tx) {
+              final coins = tx['coins'] as int? ?? 0;
+              final isPositive = coins > 0;
+              final ts = tx['ts'] != null
+                  ? DateTime.tryParse(tx['ts'].toString())?.toLocal()
+                  : null;
+              final dateStr = ts != null
+                  ? '${ts.day}/${ts.month}/${ts.year} ${ts.hour}:${ts.minute.toString().padLeft(2,'0')}'
+                  : '';
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _kCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Row(children: [
+                  Text(_txIcon(tx['type'] ?? ''), style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(tx['description'] ?? tx['type'] ?? '',
+                      style: const TextStyle(color: Colors.white, fontSize: 13,
+                          fontWeight: FontWeight.w500)),
+                    if (dateStr.isNotEmpty)
+                      Text(dateStr, style: const TextStyle(color: _kMuted, fontSize: 11)),
+                  ])),
+                  Text('${isPositive ? '+' : ''}$coins',
+                    style: TextStyle(
+                      color: isPositive ? _kTeal : Colors.redAccent,
+                      fontSize: 14, fontWeight: FontWeight.w700)),
+                ]),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCard(String label, String value) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: _kCard, borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.white10)),
+    child: Column(children: [
+      Text(label, style: const TextStyle(color: _kMuted, fontSize: 12)),
+      const SizedBox(height: 4),
+      Text(value, style: const TextStyle(color: Colors.white,
+          fontSize: 15, fontWeight: FontWeight.w700)),
+    ]));
+
+  Widget _earnRow(String action, String reward) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(children: [
+      Expanded(child: Text(action, style: const TextStyle(color: Colors.white70, fontSize: 13))),
+      Text(reward, style: const TextStyle(color: _kTeal, fontSize: 12, fontWeight: FontWeight.w600)),
+    ]));
+}
