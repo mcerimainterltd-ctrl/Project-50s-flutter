@@ -675,6 +675,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  String _headerSubtitle(dynamic contact) {
+    final onlineLabel = contact?.isOnline == true ? 'online' : 'offline';
+    final emoji = (contact?.personalStatusEmoji as String? ?? '');
+    final message = (contact?.personalStatusMessage as String? ?? '');
+    final personalStatus = '$emoji $message'.trim();
+    return personalStatus.isNotEmpty ? '$onlineLabel · $personalStatus' : onlineLabel;
+  }
+
   PreferredSizeWidget _buildAppBar(
       ContactModel? contact, bool isTyping, List<XameMessage> messages) {
     if (_selectMode) {
@@ -753,20 +761,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             Text(
-              isTyping ? 'typing...'
-                  : contact?.isOnline == true ? 'online' : 'offline',
+              isTyping ? 'typing...' : _headerSubtitle(contact),
               style: TextStyle(
                   color: isTyping ? XameColors.accent
                       : (contact?.isOnline == true ? XameColors.accent : context.xMuted),
                   fontSize: 12,
                   fontStyle: isTyping ? FontStyle.italic : FontStyle.normal),
+              maxLines: 1, overflow: TextOverflow.ellipsis,
             ),
-            if (!isTyping && (contact?.personalStatusEmoji ?? '').isNotEmpty || (contact?.personalStatusMessage ?? '').isNotEmpty)
-              Text(
-                '${contact?.personalStatusEmoji ?? ''} ${contact?.personalStatusMessage ?? ''}'.trim(),
-                style: TextStyle(color: context.xMuted, fontSize: 11),
-                maxLines: 1, overflow: TextOverflow.ellipsis,
-              ),
           ])),
         ]),
       ),
