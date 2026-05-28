@@ -56,7 +56,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: "/tv", name: "tv", builder: (context, state) => const XameTVPage()),
       GoRoute(path: "/people", name: "people", builder: (c, s) => const PeopleDiscoveryScreen()),
       GoRoute(path: '/login',    builder: (c, s) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
+      GoRoute(path: '/register', builder: (c, s) => RegisterScreen(referralCode: s.uri.queryParameters['ref'])),
       GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
       GoRoute(path: '/chat/:userId',
         builder: (c, s) {

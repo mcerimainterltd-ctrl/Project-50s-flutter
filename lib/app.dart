@@ -27,7 +27,8 @@ import 'package:xamepage/core/services/cache_service.dart';
 const _keepaliveChannel = MethodChannel('com.xamepage.app/keepalive');
 
 class XamePageApp extends ConsumerStatefulWidget {
-  const XamePageApp({super.key});
+  final String? initialDeepLink;
+  const XamePageApp({super.key, this.initialDeepLink});
   @override
   ConsumerState<XamePageApp> createState() => _XamePageAppState();
 }
@@ -64,6 +65,11 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initWalletRequestListener();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
     WidgetsBinding.instance.addPostFrameCallback((_) => _initFcmNavigation());
+    if (widget.initialDeepLink != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(routerProvider).go(widget.initialDeepLink!);
+      });
+    }
 
     // App lock — listen to lifecycle
     SystemChannels.lifecycle.setMessageHandler((msg) async {

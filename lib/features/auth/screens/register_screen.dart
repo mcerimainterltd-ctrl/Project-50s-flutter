@@ -9,7 +9,8 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
-  const RegisterScreen({super.key});
+  final String? referralCode;
+  const RegisterScreen({super.key, this.referralCode});
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -30,6 +31,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscure2 = true;
   String? _error;
   String? _returnedXameId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.referralCode != null && widget.referralCode!.isNotEmpty) {
+      _referralCtrl.text = widget.referralCode!;
+    }
+  }
 
   @override
   void dispose() {

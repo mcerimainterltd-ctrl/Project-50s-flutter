@@ -13,6 +13,7 @@ import 'core/config/constants.dart';
 import 'core/services/auth_service.dart';
 import 'shared/models/xame_user.dart';
 import 'app.dart';
+import 'package:app_links/app_links.dart';
 import 'core/services/cache_service.dart';
 
 void main() async {
@@ -79,6 +80,21 @@ void main() async {
     final pushService = PushService();
     pushService.init(savedUser.xameId);
   }
+
+  final appLinks = AppLinks();
+
+  // Handle deep link on cold start
+  try {
+    final uri = await appLinks.getInitialLink();
+    if (uri != null && uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'join') {
+      final code = uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
+      runApp(ProviderScope(
+        overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
+        child: XamePageApp(initialDeepLink: code.isNotEmpty ? '/register?ref=$code' : null),
+      ));
+      return;
+    }
+  } catch (_) {}
 
   runApp(ProviderScope(
     overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
