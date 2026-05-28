@@ -6,6 +6,7 @@ class XameUser {
   final String? phone;
   final String? profilePic;
   final String? preferredName;
+  final String? referralCode;
   final bool    hideProfilePicture;
   final bool    hidePreferredName;
   final String? personalStatusEmoji;
@@ -20,6 +21,7 @@ class XameUser {
     this.phone,
     this.profilePic,
     this.preferredName,
+    this.referralCode,
     this.hideProfilePicture = false,
     this.hidePreferredName  = false,
     this.personalStatusEmoji,
@@ -40,6 +42,7 @@ class XameUser {
     phone:                 m['phone']              as String?,
     profilePic:            m['profilePic']         as String?,
     preferredName:         m['preferredName']      as String?,
+    referralCode:           m['referralCode']       as String?,
     hideProfilePicture:    m['hideProfilePicture'] as bool? ?? false,
     hidePreferredName:     m['hidePreferredName']  as bool? ?? false,
     personalStatusEmoji:   m['personalStatus']?['emoji']   as String?,
@@ -55,6 +58,7 @@ class XameUser {
     'phone':              phone,
     'profilePic':         profilePic,
     'preferredName':      preferredName,
+    'referralCode':       referralCode,
     'hideProfilePicture': hideProfilePicture,
     'hidePreferredName':  hidePreferredName,
     'personalStatus': {

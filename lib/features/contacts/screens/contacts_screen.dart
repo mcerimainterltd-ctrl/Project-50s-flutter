@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'package:dio/dio.dart';
+
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';import 'package:dio/dio.dart';
 import '../../discovery/screens/discovery_aura_feed.dart';
 import '../../../core/services/wallet_lock_service.dart';
 import '../../../core/services/chat_lock_service.dart';
@@ -511,6 +513,20 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               onOpenChat: (group) {
                 debugPrint("Open group chat: ${group.groupId}");
               },
+            );
+          }),
+        ListTile(
+          leading: Icon(Icons.card_giftcard_outlined, color: context.xMuted),
+          title: Text('Invite Friends',
+            style: TextStyle(color: context.xText)),
+          onTap: () {
+            Navigator.pop(context);
+            final user = ref.read(currentUserProvider);
+            if (user == null) return;
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              builder: (_) => _InviteSheet(user: user),
             );
           }),
         ListTile(
