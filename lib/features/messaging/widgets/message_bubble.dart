@@ -180,8 +180,7 @@ class MessageBubble extends ConsumerWidget {
 
   Widget _buildContent(BuildContext context) {
     if (message.isDeleted) {
-      return IntrinsicWidth(
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
+      return Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.block, size: 13, color: context.xMuted),
         SizedBox(width: 5),
         Text(
