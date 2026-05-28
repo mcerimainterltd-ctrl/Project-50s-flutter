@@ -530,19 +530,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _Section(theme: theme, title: 'Help & About', children: [
             _NavTile(
               theme:    theme,
-              icon:     Icons.help_outline_rounded,
-              title:    'FAQ',
-              onTap:    () => launchUrl(Uri.parse('https://xamepage.com/faq'),
-                  mode: LaunchMode.externalApplication),
-            ),
-            _NavTile(
-              theme:    theme,
               icon:     Icons.support_agent_rounded,
-              title:    'Contact Support',
-              onTap:    () => launchUrl(
-                Uri(scheme: 'mailto', path: 'support@xamepage.com',
-                  queryParameters: {'subject': 'XamePage Support'}),
-                mode: LaunchMode.externalApplication),
+              title:    'Support Centre',
+              onTap:    () => launchUrl(Uri.parse('https://xamepage.com/support'),
+                  mode: LaunchMode.externalApplication),
             ),
             _NavTile(
               theme:    theme,
@@ -556,6 +547,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon:     Icons.privacy_tip_outlined,
               title:    'Privacy Policy',
               onTap:    () => launchUrl(Uri.parse('https://xamepage.com/privacy'),
+                  mode: LaunchMode.externalApplication),
+            ),
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.account_balance_wallet_outlined,
+              title:    'Wallet Info',
+              onTap:    () => launchUrl(Uri.parse('https://xamepage.com/wallet-info'),
                   mode: LaunchMode.externalApplication),
             ),
             if (_version.isNotEmpty)
