@@ -1027,3 +1027,86 @@ class _ContactRequestsBadgeState extends ConsumerState<_ContactRequestsBadge> {
     ]);
   }
 }
+
+// ── Invite Friends Sheet ──────────────────────────────────────────────────────
+class _InviteSheet extends StatelessWidget {
+  final dynamic user;
+  const _InviteSheet({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final code = (user.referralCode as String?) ?? (user.xameId as String?) ?? '';
+    final link = 'https://project-50s.onrender.com/join/$code';
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF13131A),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 40, height: 4, decoration: BoxDecoration(
+          color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 20),
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFF00E5FF), Color(0xFF7C4DFF)]),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Invite Friends', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+            const Text('Earn XameCoins for every signup', style: TextStyle(color: Colors.white54, fontSize: 13)),
+          ])),
+          IconButton(icon: const Icon(Icons.close, color: Colors.white38), onPressed: () => Navigator.pop(context)),
+        ]),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Your referral code', style: TextStyle(color: Colors.white38, fontSize: 11)),
+              const SizedBox(height: 4),
+              Text(code, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
+            ])),
+            IconButton(
+              icon: const Icon(Icons.copy_rounded, color: Color(0xFF00E5FF), size: 20),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: code));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Referral code copied!'), behavior: SnackBarBehavior.floating));
+              },
+            ),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(width: double.infinity,
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.share_rounded),
+            label: const Text('Share Invite Link'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00E5FF),
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            onPressed: () {
+              Share.share('Join me on XamePage! Download and earn XameCoins together:\n$link');
+            },
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
