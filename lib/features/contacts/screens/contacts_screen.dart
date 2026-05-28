@@ -1101,7 +1101,7 @@ class _InviteSheet extends StatelessWidget {
               textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
             onPressed: () {
-              Share.share('Join me on XamePage! Download and earn XameCoins together:\n$link');
+              Share.share('Join me on XamePage! Download and earn XameCoins together:\nhttps://project-50s.onrender.com/api/app/download\nUse my referral code: $code');
             },
           ),
         ),
