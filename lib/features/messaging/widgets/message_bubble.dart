@@ -180,7 +180,8 @@ class MessageBubble extends ConsumerWidget {
 
   Widget _buildContent(BuildContext context) {
     if (message.isDeleted) {
-      return Row(mainAxisSize: MainAxisSize.min, children: [
+      return IntrinsicWidth(
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.block, size: 13, color: context.xMuted),
         SizedBox(width: 5),
         Text(
@@ -1176,36 +1177,41 @@ class _CallBubble extends StatelessWidget {
         ? context.xDanger
         : (isSelf ? Colors.white70 : context.xAccent);
 
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: (isMissed || isCancelled)
-              ? context.xDanger.withOpacity(0.15)
-              : context.xAccent.withOpacity(0.15),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 16, color: color),
-      ),
-      const SizedBox(width: 10),
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(
-          isVideo ? 'Video call' : 'Voice call',
-          style: TextStyle(
-            color: isSelf ? Colors.white : context.xText,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+    return IntrinsicWidth(
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: (isMissed || isCancelled)
+                ? context.xDanger.withOpacity(0.15)
+                : context.xAccent.withOpacity(0.15),
+            shape: BoxShape.circle,
           ),
+          child: Icon(icon, size: 16, color: color),
         ),
-        if (label.isNotEmpty)
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isVideo ? 'Video call' : 'Voice call',
+              style: TextStyle(
+                color: isSelf ? Colors.white : context.xText,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
+            Text(
+              label.isNotEmpty ? label : (isEnded ? 'Ended' : ''),
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
       ]),
-    ]);
+    );
   }
 }
