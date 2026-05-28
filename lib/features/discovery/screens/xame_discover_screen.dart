@@ -209,6 +209,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   bool                          _hasMorePeople = true;
   bool                          _loadingMorePeople = false;
   List<_OfficialPost>           _officialPosts = [];
+  List<Map<String,dynamic>>      _leaderboard   = [];
   List<Map<String, dynamic>>    _stories = [];
 
   late AnimationController _searchAnim;
@@ -296,10 +297,22 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     } catch (_) {}
   }
 
+  Future<void> _fetchLeaderboard() async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res  = await dio.get('/api/rewards/leaderboard');
+      if (res.data['success'] == true && mounted) {
+        setState(() => _leaderboard = List<Map<String,dynamic>>.from(res.data['leaderboard'] ?? []));
+      }
+    } catch (_) {}
+  }
+
+
   Future<void> _loadData({bool refresh = false}) async {
     if (refresh) setState(() { _page = 1; _hasMore = true; _feed = []; });
     setState(() => _loading = true);
     if (refresh || _officialPosts.isEmpty) _fetchOfficialPosts();
+    if (refresh || _leaderboard.isEmpty) _fetchLeaderboard();
     final user = ref.read(currentUserProvider);
     final userId = user?.xameId ?? '';
 
@@ -551,6 +564,11 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     ))),
                 ),
               ),
+
+            // ── Rewards Leaderboard Ticker ───────────────────────────────
+            if (_leaderboard.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _RewardsTicker(leaderboard: _leaderboard)),
 
             // ── XamePage Official Announcements ─────────────────────────
             // ── XamePage News Channel ─────────────────────────────────────
@@ -2734,3 +2752,94 @@ class _EmptyState extends StatelessWidget {
   );
 }
 
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REWARDS TICKER
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _RewardsTicker extends StatefulWidget {
+  final List<Map<String,dynamic>> leaderboard;
+  const _RewardsTicker({required this.leaderboard});
+  @override State<_RewardsTicker> createState() => _RewardsTickerState();
+}
+
+class _RewardsTickerState extends State<_RewardsTicker>
+    with SingleTickerProviderStateMixin {
+  late ScrollController _scrollCtrl;
+  late AnimationController _animCtrl;
+
+  String _tierBadge(String tier) {
+    switch (tier) {
+      case 'diamond': return '💎';
+      case 'gold':    return '🥇';
+      case 'silver':  return '🥈';
+      default:        return '🥉';
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl = ScrollController();
+    _animCtrl   = AnimationController(vsync: this, duration: const Duration(seconds: 30))
+      ..addListener(_scroll)
+      ..repeat();
+  }
+
+  void _scroll() {
+    if (!_scrollCtrl.hasClients) return;
+    final max = _scrollCtrl.position.maxScrollExtent;
+    if (max <= 0) return;
+    // Rightward scroll — from 0 to max
+    final pos = _animCtrl.value * max;
+    _scrollCtrl.jumpTo(pos);
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.leaderboard;
+    return Container(
+      height: 36,
+      color: const Color(0xFF0A1A28),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          color: const Color(0xFF00B0A0),
+          child: const Text('🏆 TOP', style: TextStyle(
+              color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+        ),
+        Expanded(
+          child: ListView.builder(
+            controller:    _scrollCtrl,
+            scrollDirection: Axis.horizontal,
+            physics:       const NeverScrollableScrollPhysics(),
+            itemCount:     items.length * 10, // repeat for infinite feel
+            itemBuilder:   (_, i) {
+              final item = items[i % items.length];
+              final name  = item['name']        as String? ?? '';
+              final coins = item['weeklyCoins'] as int?    ?? 0;
+              final tier  = item['tier']        as String? ?? 'bronze';
+              final rank  = (i % items.length) + 1;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                alignment: Alignment.center,
+                child: Text(
+                  '#$rank ${_tierBadge(tier)} $name · $coins coins  ·',
+                  style: const TextStyle(color: Color(0xFF8AAFC8), fontSize: 12),
+                ),
+              );
+            },
+          ),
+        ),
+      ]),
+    );
+  }
+}
