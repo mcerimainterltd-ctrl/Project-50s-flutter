@@ -1036,7 +1036,7 @@ class _InviteSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final code = (user.referralCode as String?) ?? (user.xameId as String?) ?? '';
-    final link = 'https://project-50s.onrender.com/join/$code';
+    final link = 'https://project-50s.onrender.com/api/app/download?ref=$code';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF13131A),
@@ -1101,7 +1101,7 @@ class _InviteSheet extends StatelessWidget {
               textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
             onPressed: () {
-              Share.share('Join me on XamePage! Download and earn XameCoins together:\nhttps://project-50s.onrender.com/api/app/download\nUse my referral code: $code');
+              Share.share('Join me on XamePage and earn XameCoins together!\nDownload ⬇️ https://project-50s.onrender.com/api/app/download?ref=$code');
             },
           ),
         ),
