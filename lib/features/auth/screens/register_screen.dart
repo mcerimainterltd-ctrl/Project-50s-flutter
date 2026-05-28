@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../../core/config/constants.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,7 +21,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmCtrl   = TextEditingController();
   final _dobDayCtrl    = TextEditingController();
   final _dobMonthCtrl  = TextEditingController();
-  final _dobYearCtrl   = TextEditingController();
+  final _dobYearCtrl    = TextEditingController();
+  final _referralCtrl   = TextEditingController();
   final _monthFocus    = FocusNode();
   final _yearFocus     = FocusNode();
   bool _loading  = false;
@@ -29,6 +33,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
+    _referralCtrl.dispose();
     for (final c in [_firstNameCtrl,_lastNameCtrl,_passwordCtrl,
                      _confirmCtrl,_dobDayCtrl,_dobMonthCtrl,_dobYearCtrl]) c.dispose();
     for (final f in [_monthFocus,_yearFocus]) f.dispose();
@@ -67,6 +72,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         password:  _passwordCtrl.text,
       );
       setState(() => _returnedXameId = user.xameId);
+      // Credit referrer if referral code provided
+      final refCode = _referralCtrl.text.trim();
+      if (refCode.isNotEmpty) {
+        try {
+          await http.post(
+            Uri.parse('${AppConstants.serverUrl}/api/rewards/register-referral'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'newUserId': user.xameId, 'referralCode': refCode}),
+          );
+        } catch (_) {}
+      }
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
@@ -214,6 +230,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   Text('· One special character',                          style: TextStyle(color: context.xMuted, fontSize: 11)),
                 ]),
               ),
+              SizedBox(height: 12),
+              _section('Referral Code (optional)',
+                _field(_referralCtrl, 'Enter referral code if you have one', Icons.card_giftcard_outlined)),
               SizedBox(height: 16),
               if (_error != null)
                 Container(
