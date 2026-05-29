@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -306,18 +307,65 @@ class AvatarBuilderSheet extends StatefulWidget {
 }
 
 class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
-  AvatarConfig _config = AvatarConfig.defaults;
   bool _saving = false;
+  String _seed = '';
+  final List<String> _backgrounds = ['b6e3f4','c0aede','d1d4f9','ffd5dc','ffdfbf','f0e6ff','e8f4f8'];
+  int _bgIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _seed = widget.xameId;
+  }
+
+  String get _avatarUrl =>
+    'https://api.dicebear.com/7.x/notionists/svg?seed=$_seed&backgroundColor=${_backgrounds[_bgIndex]}&radius=50';
+
+  void _randomize() => setState(() {
+    _seed = DateTime.now().millisecondsSinceEpoch.toString();
+    _bgIndex = (_bgIndex + 1) % _backgrounds.length;
+  });
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final url = 'https://api.dicebear.com/7.x/notionists/png?seed=$_seed&backgroundColor=${_backgrounds[_bgIndex]}&radius=50&size=200';
+      final res = await http.get(Uri.parse(url));
+      if (res.statusCode == 200) {
+        final req = http.MultipartRequest('POST',
+            Uri.parse('\${widget.serverUrl}/api/update-profile'));
+        req.fields['xameId'] = widget.xameId;
+        req.files.add(http.MultipartFile.fromBytes('profilePic', res.bodyBytes,
+            filename: 'avatar.png'));
+        final upload = await req.send();
+        final body   = jsonDecode(await upload.stream.bytesToString());
+        if (body['success'] == true) {
+          widget.onSaved?.call(body['profilePicUrl'] ?? _avatarUrl);
+          if (mounted) Navigator.pop(context);
+          return;
+        }
+      }
+      widget.onSaved?.call(_avatarUrl);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      debugPrint('[AvatarBuilder] Save error: \$e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Failed to save avatar'),
+        behavior: SnackBarBehavior.floating));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.92,
-      maxChildSize: 0.95,
+      initialChildSize: 0.6,
+      maxChildSize: 0.7,
       builder: (_, ctrl) => Container(
         decoration: BoxDecoration(
           color: context.xSurface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(children: [
           // Handle + header
@@ -340,87 +388,71 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                       end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(Icons.face_outlined,
-                      color: Colors.black, size: 20),
+                  child: const Icon(Icons.face_outlined, color: Colors.black, size: 20),
                 ),
-                SizedBox(width: 12),
-                Column(crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                const SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Avatar Builder', style: TextStyle(color: context.xText,
                       fontSize: 16, fontWeight: FontWeight.w700)),
-                  Text('Design your unique avatar',
+                  Text('Your unique Notionists avatar',
                       style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
-                Spacer(),
+                const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Icon(Icons.close, color: context.xMuted)),
               ]),
             ]),
           ),
+          const SizedBox(height: 24),
           // Preview
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                Container(
+          Center(child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                width: 140, height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.xPrimary, width: 3),
+                  boxShadow: [BoxShadow(
+                    color: context.xPrimary.withValues(alpha: 0.3),
+                    blurRadius: 20)],
+                ),
+                child: ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: _avatarUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2)),
+                    errorWidget: (_, __, ___) => const Icon(Icons.person),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: _randomize,
+                child: Container(
+                  width: 36, height: 36,
                   decoration: BoxDecoration(
+                    color: context.xPrimary,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                        color: context.xPrimary, width: 3),
-                    boxShadow: [BoxShadow(
-                      color: context.xPrimary.withValues(alpha: 0.3),
-                      blurRadius: 20)],
+                    border: Border.all(color: context.xSurface, width: 2),
                   ),
-                  child: AvatarPainter(config: _config, size: 100),
+                  child: const Icon(Icons.shuffle_rounded, color: Colors.black, size: 16),
                 ),
-                GestureDetector(
-                  onTap: () => setState(() =>
-                      _config = AvatarConfig.random()),
-                  child: Container(
-                    width: 32, height: 32,
-                    decoration: BoxDecoration(
-                      color: context.xCard,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: context.xSurface, width: 2),
-                    ),
-                    child: Icon(Icons.casino_outlined,
-                        color: context.xText.withValues(alpha: 0.7), size: 14),
-                  ),
-                ),
-              ],
-            )),
-          ),
-          // Options
-          Expanded(
-            child: ListView(
-              controller: ctrl,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _colorRow('Skin Tone',  _skinColors,  'skin'),
-                _styleRow('Hair Style',
-                    _hairStyles.map((h) => h.id).toList(),
-                    _hairStyles.map((h) => h.label).toList(), 'hairStyle'),
-                _colorRow('Hair Color', _hairColors,  'hairColor'),
-                _colorRow('Eye Color',  _eyeColors,   'eyeColor'),
-                _colorRow('Lip Color',  _lipColors,   'lipColor'),
-                _styleRow('Accessory',
-                    _accessories.map((a) => a.id).toList(),
-                    _accessories.map((a) => a.label).toList(), 'accessory'),
-                _colorRow('Background', _bgColors,    'bgColor'),
-                SizedBox(height: 16),
-              ],
-            ),
-          ),
+              ),
+            ],
+          )),
+          const SizedBox(height: 8),
+          Text('Tap 🔀 to generate a new avatar',
+              style: TextStyle(color: context.xMuted, fontSize: 12)),
+          const Spacer(),
           // Save button
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
             child: GestureDetector(
               onTap: _saving ? null : _save,
               child: AnimatedContainer(
-                duration: Duration(milliseconds: 150),
+                duration: const Duration(milliseconds: 150),
                 width: double.infinity, height: 52,
                 decoration: BoxDecoration(
                   gradient: _saving ? null : LinearGradient(
@@ -428,164 +460,17 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
                   color: _saving ? context.xCard : null,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                alignment: Alignment.center,
-                child: _saving
-                    ? SizedBox(width: 20, height: 20,
-                        child: CircularProgressIndicator(
-                            color: context.xPrimary, strokeWidth: 2))
-                    : Text('✓ Use This Avatar',
-                        style: TextStyle(color: Colors.black, fontSize: 15,
-                            fontWeight: FontWeight.w700)),
+                child: Center(child: _saving
+                  ? const SizedBox(width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('✓ Use This Avatar',
+                      style: TextStyle(color: Colors.black,
+                          fontSize: 15, fontWeight: FontWeight.w700))),
               ),
             ),
           ),
         ]),
       ),
     );
-  }
-
-  Widget _colorRow(String label, List<String> colors, String key) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: Colors.white60,
-              fontSize: 12, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8,
-            children: colors.map((c) {
-              final sel = _getVal(key) == c;
-              return GestureDetector(
-                onTap: () => setState(() => _setVal(key, c)),
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 150),
-                  width: 30, height: 30,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(int.parse(
-                        'FF${c.replaceAll('#', '')}', radix: 16)),
-                    border: Border.all(
-                      color: sel ? XameColors.primary : Colors.transparent,
-                      width: 3),
-                    boxShadow: sel ? [BoxShadow(
-                        color: XameColors.primary.withValues(alpha: 0.4),
-                        blurRadius: 8)] : null,
-                  ),
-                ),
-              );
-            }).toList()),
-        ]),
-      );
-
-  Widget _styleRow(String label, List<String> ids,
-      List<String> labels, String key) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(color: Colors.white60,
-              fontSize: 12, fontWeight: FontWeight.w600)),
-          SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8,
-            children: List.generate(ids.length, (i) {
-              final sel = _getVal(key) == ids[i];
-              return GestureDetector(
-                onTap: () => setState(() => _setVal(key, ids[i])),
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 7),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: sel
-                        ? XameColors.primary.withValues(alpha: 0.15)
-                        : XameColors.darkCard,
-                    border: Border.all(
-                      color: sel
-                          ? XameColors.primary.withValues(alpha: 0.5)
-                          : XameColors.darkSurface),
-                  ),
-                  child: Text(labels[i], style: TextStyle(
-                    color: sel ? XameColors.primary : XameColors.darkBg.withValues(alpha: 0.54),
-                    fontSize: 12,
-                    fontWeight: sel ? FontWeight.w600 : FontWeight.normal)),
-                ),
-              );
-            })),
-        ]),
-      );
-
-  String _getVal(String key) {
-    switch (key) {
-      case 'skin':      return _config.skin;
-      case 'hairColor': return _config.hairColor;
-      case 'hairStyle': return _config.hairStyle;
-      case 'eyeColor':  return _config.eyeColor;
-      case 'lipColor':  return _config.lipColor;
-      case 'accessory': return _config.accessory;
-      case 'bgColor':   return _config.bgColor;
-      default:          return '';
-    }
-  }
-
-  void _setVal(String key, String val) {
-    _config = _config.copyWith(
-      skin:      key == 'skin'      ? val : null,
-      hairColor: key == 'hairColor' ? val : null,
-      hairStyle: key == 'hairStyle' ? val : null,
-      eyeColor:  key == 'eyeColor'  ? val : null,
-      lipColor:  key == 'lipColor'  ? val : null,
-      accessory: key == 'accessory' ? val : null,
-      bgColor:   key == 'bgColor'   ? val : null,
-    );
-  }
-
-  Future<void> _save() async {
-    setState(() => _saving = true);
-    try {
-      final svg     = buildAvatarSvg(_config);
-      final dataUrl = 'data:image/svg+xml;base64,'
-          '${base64Encode(utf8.encode(svg))}';
-      final bytes   = await _svgToPng();
-      if (bytes != null) {
-        final req = http.MultipartRequest('POST',
-            Uri.parse('${widget.serverUrl}/api/update-profile'));
-        req.fields['xameId'] = widget.xameId;
-        req.files.add(http.MultipartFile.fromBytes('profilePic', bytes,
-            filename: 'avatar.png'));
-        final res  = await req.send();
-        final body = jsonDecode(await res.stream.bytesToString());
-        if (body['success'] == true) {
-          widget.onSaved?.call(body['profilePicUrl'] ?? dataUrl);
-          if (mounted) Navigator.pop(context);
-          return;
-        }
-      }
-      widget.onSaved?.call(dataUrl);
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      debugPrint('[AvatarBuilder] Save error: $e');
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Failed to save avatar'),
-        backgroundColor: XameColors.darkCard,
-        behavior: SnackBarBehavior.floating));
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  Future<Uint8List?> _svgToPng() async {
-    try {
-      final recorder = ui.PictureRecorder();
-      final canvas   = Canvas(recorder,
-          const Rect.fromLTWH(0, 0, 200, 200));
-      _AvatarCanvasPainter(_config).paint(canvas, const Size(200, 200));
-      final picture = recorder.endRecording();
-      final img     = await picture.toImage(200, 200);
-      final data    = await img.toByteData(
-          format: ui.ImageByteFormat.png);
-      return data?.buffer.asUint8List();
-    } catch (e) {
-      debugPrint('[AvatarBuilder] PNG error: $e');
-      return null;
-    }
   }
 }
