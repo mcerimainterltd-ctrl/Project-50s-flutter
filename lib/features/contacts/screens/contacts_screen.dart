@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';import 'package:dio/dio.dart';
 import '../../discovery/screens/discovery_aura_feed.dart';
@@ -1029,13 +1031,42 @@ class _ContactRequestsBadgeState extends ConsumerState<_ContactRequestsBadge> {
 }
 
 // ── Invite Friends Sheet ──────────────────────────────────────────────────────
-class _InviteSheet extends StatelessWidget {
+class _InviteSheet extends StatefulWidget {
   final dynamic user;
   const _InviteSheet({required this.user});
+  @override
+  State<_InviteSheet> createState() => _InviteSheetState();
+}
+
+class _InviteSheetState extends State<_InviteSheet> {
+  String _code = '';
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCode();
+  }
+
+  Future<void> _fetchCode() async {
+    try {
+      final r = await http.get(Uri.parse(AppConstants.serverUrl + '/api/rewards/' + widget.user.xameId));
+      final d = jsonDecode(r.body);
+      if (mounted) setState(() {
+        _code = (d['account']?['referralCode'] as String?) ?? (widget.user.xameId as String?) ?? '';
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() {
+        _code = (widget.user.xameId as String?) ?? '';
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final code = (user.referralCode as String?) ?? (user.xameId as String?) ?? '';
+    final code = _code;
     final link = 'https://project-50s.onrender.com/api/app/download?ref=$code';
     return Container(
       decoration: BoxDecoration(
@@ -1076,7 +1107,7 @@ class _InviteSheet extends StatelessWidget {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Your referral code', style: TextStyle(color: Colors.white38, fontSize: 11)),
               const SizedBox(height: 4),
-              Text(code, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
+              _loading ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00E5FF))) : Text(code, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
             ])),
             IconButton(
               icon: const Icon(Icons.copy_rounded, color: Color(0xFF00E5FF), size: 20),
