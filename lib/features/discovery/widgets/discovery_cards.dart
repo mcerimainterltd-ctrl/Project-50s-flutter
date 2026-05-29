@@ -1,5 +1,7 @@
 import 'dart:ui';
-import 'package:better_player_enhanced/better_player.dart';
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;import 'package:better_player_enhanced/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
@@ -27,6 +29,7 @@ class MediaDiscoverCard extends StatefulWidget {
   final String  userId;
   final String  userAvatar;
   final String? thumbnailUrl;
+  final String? authorId;
   final VoidCallback? onTap;
   final void Function(int)? onCountChanged;
 
@@ -45,6 +48,7 @@ class MediaDiscoverCard extends StatefulWidget {
     this.postId      = '',
     this.userId      = '',
     this.userAvatar  = '',
+    this.authorId,
     this.thumbnailUrl,
     this.onTap,
     this.onCountChanged,
@@ -291,6 +295,11 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                   color:      context.xText.withValues(alpha: 0.6),
                                   fontSize:   12,
                                   fontWeight: FontWeight.w500)),
+                            if (widget.authorId != null && widget.authorId != widget.userId)
+                              _FollowButton(
+                                authorId: widget.authorId!,
+                                followerId: widget.userId,
+                              ),
                           ]),
                         SizedBox(height: 6),
 
@@ -504,3 +513,75 @@ class DiscoveryCardSkeleton extends StatelessWidget {
         width: double.infinity, height: 420, radius: 28),
   );
 }
+
+
+// ── Follow Button ─────────────────────────────────────────────────────────────
+class _FollowButton extends StatefulWidget {
+  final String authorId;
+  final String followerId;
+  const _FollowButton({required this.authorId, required this.followerId});
+  @override
+  State<_FollowButton> createState() => _FollowButtonState();
+}
+
+class _FollowButtonState extends State<_FollowButton> {
+  bool _following = false;
+  bool _loading   = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkStatus();
+  }
+
+  Future<void> _checkStatus() async {
+    try {
+      final r = await http.get(Uri.parse(
+        AppConstants.serverUrl + '/api/discover/follow-status/' + widget.authorId + '?followerId=' + widget.followerId));
+      final d = jsonDecode(r.body);
+      if (mounted) setState(() { _following = d['isFollowing'] ?? false; _loading = false; });
+    } catch (_) { if (mounted) setState(() => _loading = false); }
+  }
+
+  Future<void> _toggle() async {
+    final wasFollowing = _following;
+    setState(() => _following = !_following);
+    try {
+      final endpoint = wasFollowing ? 'unfollow' : 'follow';
+      await http.post(
+        Uri.parse(AppConstants.serverUrl + '/api/discover/' + endpoint + '/' + widget.authorId),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'followerId': widget.followerId}),
+      );
+    } catch (_) { if (mounted) setState(() => _following = wasFollowing); }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const SizedBox(width: 12, height: 12,
+      child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white54));
+    return GestureDetector(
+      onTap: _toggle,
+      child: Container(
+        margin: const EdgeInsets.only(left: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: _following ? Colors.white12 : const Color(0xFF00E5FF).withOpacity(0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _following ? Colors.white24 : const Color(0xFF00E5FF),
+            width: 1),
+        ),
+        child: Text(
+          _following ? 'Following' : '+ Follow',
+          style: TextStyle(
+            color: _following ? Colors.white54 : const Color(0xFF00E5FF),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
