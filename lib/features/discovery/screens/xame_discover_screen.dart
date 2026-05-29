@@ -2590,26 +2590,6 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                 color: Colors.white.withOpacity(0.6), fontSize: 12)),
           ]),
           const Spacer(),
-          GestureDetector(
-            onTap: _toggleFollow,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(colors: _following
-                    ? [Colors.white24, Colors.white24]
-                    : [context.xPrimary, context.xSecondary]),
-              ),
-              child: _followLoading
-                  ? const SizedBox(width: 14, height: 14,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 1.5, color: Colors.white))
-                  : Text(_following ? 'Following' : 'Follow',
-                      style: const TextStyle(color: Colors.white,
-                          fontSize: 13, fontWeight: FontWeight.w700)),
-            ),
-          ),
         ]),
       ]),
     );
