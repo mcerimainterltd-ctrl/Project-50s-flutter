@@ -28,6 +28,7 @@ class MediaDiscoverCard extends StatefulWidget {
   final String  postId;
   final String  userId;
   final String  userAvatar;
+  final String  userName;
   final String? thumbnailUrl;
   final String? authorId;
   final VoidCallback? onTap;
@@ -48,6 +49,7 @@ class MediaDiscoverCard extends StatefulWidget {
     this.postId      = '',
     this.userId      = '',
     this.userAvatar  = '',
+    this.userName    = '',
     this.authorId,
     this.thumbnailUrl,
     this.onTap,
@@ -422,7 +424,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
         builder: (ctx, scroll) => CommentsSheet(
           postId:        widget.postId,
           userId:        widget.userId,
-          authorName:    widget.authorName ?? '',
+          authorName:    widget.userName,
           authorAvatar:  widget.userAvatar,
           initialCount:  _commentCount,
           onCountChanged: (n) { setState(() => _commentCount = n); widget.onCountChanged?.call(n); },
