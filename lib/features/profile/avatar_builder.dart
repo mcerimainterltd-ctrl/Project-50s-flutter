@@ -319,7 +319,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
   }
 
   String get _avatarUrl =>
-    'https://api.dicebear.com/7.x/notionists/svg?seed=$_seed&backgroundColor=${_backgrounds[_bgIndex]}&radius=50';
+    'https://api.dicebear.com/7.x/notionists/png?seed=$_seed&backgroundColor=${_backgrounds[_bgIndex]}&radius=50&size=200';
 
   void _randomize() => setState(() {
     _seed = DateTime.now().millisecondsSinceEpoch.toString();
