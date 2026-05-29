@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -139,7 +140,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     AvatarBuilderSheet.show(
       context,
       xameId: user.xameId,
-      onSaved: (dataUrl) {
+      onSaved: (dataUrl) async {
         final updated = XameUser(
           xameId:               user.xameId,
           firstName:            user.firstName,
@@ -153,8 +154,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           personalStatusEmoji:  user.personalStatusEmoji,
           personalStatusMessage: user.personalStatusMessage,
           sessionToken:         user.sessionToken,
+          referralCode:         user.referralCode,
         );
         ref.read(currentUserProvider.notifier).state = updated;
+        const storage = FlutterSecureStorage();
+        await storage.write(key: AppConstants.keyUser, value: jsonEncode(updated.toMap()));
         _snack("Avatar saved!", success: true);
       },
     );

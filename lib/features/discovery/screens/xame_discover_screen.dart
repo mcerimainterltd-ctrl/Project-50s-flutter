@@ -2782,7 +2782,7 @@ class _RewardsTickerState extends State<_RewardsTicker>
   void initState() {
     super.initState();
     _scrollCtrl = ScrollController();
-    _animCtrl   = AnimationController(vsync: this, duration: const Duration(seconds: 30))
+    _animCtrl   = AnimationController(vsync: this, duration: const Duration(seconds: 60))
       ..addListener(_scroll)
       ..repeat();
   }
