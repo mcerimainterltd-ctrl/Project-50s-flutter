@@ -13,6 +13,18 @@ import 'live_pulse.dart';
 import 'comments_sheet.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 
+// ── XameScore ────────────────────────────────────────────────────────────────
+// Score = engagement quality ratio (likes+comments per view)
+// Gold ≥ 0.15 · Silver ≥ 0.07 · Bronze ≥ 0.02 · None below
+({String emoji, Color color, String label})? _xameScore(int views, int likes, int comments) {
+  if (views < 3) return null;
+  final ratio = (likes + comments) / views;
+  if (ratio >= 0.15) return (emoji: '👑', color: const Color(0xFFFFB300), label: 'Gold');
+  if (ratio >= 0.07) return (emoji: '⭐', color: const Color(0xFFB0BEC5), label: 'Silver');
+  if (ratio >= 0.02) return (emoji: '🥉', color: const Color(0xFFBF6B3A), label: 'Bronze');
+  return null;
+}
+
 // ── Aura Reactions ───────────────────────────────────────────────────────────
 enum AuraType { fire, ice, energy, love, crown, wave }
 
@@ -448,6 +460,37 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                   color:      context.xText.withValues(alpha: 0.6),
                                   fontSize:   12,
                                   fontWeight: FontWeight.w500)),
+                            // XameScore badge
+                            Builder(builder: (ctx) {
+                              final score = _xameScore(
+                                  widget.viewCount, widget.likeCount, widget.commentCount);
+                              if (score == null) return const SizedBox.shrink();
+                              return Tooltip(
+                                message: '\${score.label} Creator',
+                                child: Container(
+                                  margin: const EdgeInsets.only(left: 5),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: score.color.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: score.color.withOpacity(0.5), width: 0.8),
+                                  ),
+                                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                    Text(score.emoji,
+                                        style: const TextStyle(fontSize: 9)),
+                                    const SizedBox(width: 2),
+                                    Text(score.label,
+                                      style: TextStyle(
+                                        color: score.color,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.3)),
+                                  ]),
+                                ),
+                              );
+                            }),
                             if (widget.authorId != null && widget.authorId != widget.userId)
                               _FollowButton(
                                 authorId: widget.authorId!,
