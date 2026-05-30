@@ -333,7 +333,7 @@ class _AvatarBuilderSheetState extends State<AvatarBuilderSheet> {
       final res = await http.get(Uri.parse(url));
       if (res.statusCode == 200) {
         final req = http.MultipartRequest('POST',
-            Uri.parse('\${widget.serverUrl}/api/update-profile'));
+            Uri.parse('${widget.serverUrl}/api/update-profile'));
         req.fields['userId'] = widget.xameId;
         req.files.add(http.MultipartFile.fromBytes('profilePic', res.bodyBytes,
             filename: 'avatar.png'));
