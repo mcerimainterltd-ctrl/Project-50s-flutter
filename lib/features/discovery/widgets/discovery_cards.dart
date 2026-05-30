@@ -13,6 +13,20 @@ import 'live_pulse.dart';
 import 'comments_sheet.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 
+// ── Aura Reactions ───────────────────────────────────────────────────────────
+enum AuraType { fire, ice, energy, love, crown, wave }
+
+const _auraEmoji  = { AuraType.fire:'🔥', AuraType.ice:'❄️', AuraType.energy:'⚡', AuraType.love:'💜', AuraType.crown:'👑', AuraType.wave:'🌊' };
+const _auraLabel  = { AuraType.fire:'Fire', AuraType.ice:'Ice', AuraType.energy:'Energy', AuraType.love:'Love', AuraType.crown:'Crown', AuraType.wave:'Wave' };
+const _auraColor  = {
+  AuraType.fire:   Color(0xFFFF5722),
+  AuraType.ice:    Color(0xFF29B6F6),
+  AuraType.energy: Color(0xFFFFD600),
+  AuraType.love:   Color(0xFFCE93D8),
+  AuraType.crown:  Color(0xFFFFB300),
+  AuraType.wave:   Color(0xFF26C6DA),
+};
+
 // ── Media Discover Card ───────────────────────────────────────────────────────
 class MediaDiscoverCard extends StatefulWidget {
   final String  mediaUrl;
@@ -61,7 +75,7 @@ class MediaDiscoverCard extends StatefulWidget {
 }
 
 class _MediaDiscoverCardState extends State<MediaDiscoverCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _tapCtrl;
   late Animation<double>   _tapScale;
   late AnimationController _likeCtrl;
@@ -70,6 +84,10 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   bool _playing = false;
   late int _commentCount;
   BetterPlayerController? _playerCtrl;
+  AuraType? _myAura;
+  bool _showAuraPicker = false;
+  late AnimationController _auraPickerCtrl;
+  late Animation<double> _auraPickerScale;
 
   void _playVideo() {
     _playerCtrl?.dispose();
@@ -116,6 +134,11 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
       TweenSequenceItem(tween: Tween(begin: 1.5, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _likeCtrl, curve: Curves.easeInOut));
     _loadLike();
+    _auraPickerCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 200));
+    _auraPickerScale = CurvedAnimation(
+        parent: _auraPickerCtrl, curve: Curves.easeOutBack);
+    _loadAura();
   }
 
   Future<void> _loadLike() async {
@@ -123,6 +146,50 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
       final box = await Hive.openBox<bool>(_boxName);
       if (mounted) setState(() => _liked = box.get(widget.postId.isNotEmpty ? widget.postId : widget.title) ?? false);
     } catch (_) {}
+  }
+
+  Future<void> _loadAura() async {
+    try {
+      final box = await Hive.openBox<String>('xame_auras');
+      final stored = box.get(widget.postId.isNotEmpty ? widget.postId : widget.title);
+      if (stored != null && mounted) {
+        setState(() => _myAura = AuraType.values.firstWhere(
+            (a) => a.name == stored, orElse: () => AuraType.fire));
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _selectAura(AuraType aura) async {
+    HapticFeedback.mediumImpact();
+    setState(() { _myAura = aura; _showAuraPicker = false; _liked = true; });
+    _auraPickerCtrl.reverse();
+    _likeCtrl.forward(from: 0);
+    // Persist locally
+    try {
+      final box = await Hive.openBox<String>('xame_auras');
+      await box.put(widget.postId.isNotEmpty ? widget.postId : widget.title, aura.name);
+      final likeBox = await Hive.openBox<bool>('xame_discovery_likes');
+      await likeBox.put(widget.postId.isNotEmpty ? widget.postId : widget.title, true);
+    } catch (_) {}
+    // Sync to server
+    if (widget.postId.isNotEmpty && widget.userId.isNotEmpty) {
+      try {
+        final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+        await dio.post('/api/discover/like',
+            data: {'userId': widget.userId, 'postId': widget.postId, 'aura': aura.name});
+      } catch (_) {}
+    }
+    widget.onCountChanged?.call(widget.likeCount + 1);
+  }
+
+  void _toggleAuraPicker() {
+    HapticFeedback.lightImpact();
+    setState(() => _showAuraPicker = !_showAuraPicker);
+    if (_showAuraPicker) {
+      _auraPickerCtrl.forward();
+    } else {
+      _auraPickerCtrl.reverse();
+    }
   }
 
   Future<void> _toggleLike() async {
@@ -149,6 +216,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   void dispose() {
     _tapCtrl.dispose();
     _likeCtrl.dispose();
+    _auraPickerCtrl.dispose();
     _playerCtrl?.dispose();
     super.dispose();
   }
@@ -176,11 +244,17 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
+              border: _myAura != null ? Border.all(
+                color: _auraColor[_myAura]!.withOpacity(0.6),
+                width: 1.5,
+              ) : null,
               boxShadow: [
                 BoxShadow(
-                  color:      Colors.black.withOpacity(0.45),
-                  blurRadius: 24,
-                  offset:     Offset(0, 10)),
+                  color: _myAura != null
+                      ? _auraColor[_myAura]!.withOpacity(0.35)
+                      : Colors.black.withOpacity(0.45),
+                  blurRadius: _myAura != null ? 32 : 24,
+                  offset: const Offset(0, 10)),
               ],
             ),
             child: ClipRRect(
@@ -328,31 +402,82 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                           ]),
                           SizedBox(width: 14),
 
-                          // Like button — persistent
-                          ScaleTransition(
-                            scale: _likeScale,
-                            child: GestureDetector(
-                              onTap: _toggleLike,
-                              child: Row(children: [
-                                Icon(
-                                  _liked
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                  color: _liked
-                                    ? context.xDanger
-                                    : context.xMuted,
-                                  size: 16),
-                                SizedBox(width: 4),
-                                Text(_fmt(likeCount),
-                                  style: TextStyle(
-                                    color: _liked
-                                      ? context.xDanger
-                                      : context.xMuted,
-                                    fontSize:   12,
-                                    fontWeight: _liked
-                                      ? FontWeight.w700 : FontWeight.normal)),
-                              ]),
-                            ),
+                          // Aura Reaction button
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              // Aura picker popup
+                              if (_showAuraPicker)
+                                Positioned(
+                                  bottom: 32, left: -60,
+                                  child: ScaleTransition(
+                                    scale: _auraPickerScale,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1A1A2E),
+                                        borderRadius: BorderRadius.circular(24),
+                                        border: Border.all(color: Colors.white12),
+                                        boxShadow: [BoxShadow(
+                                            color: Colors.black54,
+                                            blurRadius: 16,
+                                            offset: Offset(0, 4))],
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: AuraType.values.map((aura) =>
+                                          GestureDetector(
+                                            onTap: () => _selectAura(aura),
+                                            child: AnimatedContainer(
+                                              duration: const Duration(milliseconds: 150),
+                                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: _myAura == aura
+                                                    ? _auraColor[aura]!.withOpacity(0.25)
+                                                    : Colors.transparent,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Text(
+                                                _auraEmoji[aura]!,
+                                                style: TextStyle(
+                                                  fontSize: _myAura == aura ? 22 : 18)),
+                                            ),
+                                          ),
+                                        ).toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              // Aura button
+                              ScaleTransition(
+                                scale: _likeScale,
+                                child: GestureDetector(
+                                  onTap: _myAura != null
+                                      ? _toggleAuraPicker
+                                      : _toggleAuraPicker,
+                                  onLongPress: _toggleAuraPicker,
+                                  child: Row(children: [
+                                    _myAura != null
+                                        ? Text(_auraEmoji[_myAura]!,
+                                            style: const TextStyle(fontSize: 16))
+                                        : Icon(Icons.auto_awesome_outlined,
+                                            color: context.xMuted, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(_fmt(likeCount),
+                                      style: TextStyle(
+                                        color: _myAura != null
+                                            ? _auraColor[_myAura]!
+                                            : context.xMuted,
+                                        fontSize: 12,
+                                        fontWeight: _myAura != null
+                                            ? FontWeight.w700
+                                            : FontWeight.normal)),
+                                  ]),
+                                ),
+                              ),
+                            ],
                           ),
 
                           SizedBox(width: 14),
