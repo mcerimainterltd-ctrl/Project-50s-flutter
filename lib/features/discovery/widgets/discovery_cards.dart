@@ -182,13 +182,89 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     widget.onCountChanged?.call(widget.likeCount + 1);
   }
 
-  void _toggleAuraPicker() {
+  OverlayEntry? _auraOverlay;
+
+  void _removeAuraOverlay() {
+    _auraOverlay?.remove();
+    _auraOverlay = null;
+  }
+
+  void _showAuraOverlay(BuildContext context) {
     HapticFeedback.lightImpact();
-    setState(() => _showAuraPicker = !_showAuraPicker);
-    if (_showAuraPicker) {
-      _auraPickerCtrl.forward();
-    } else {
-      _auraPickerCtrl.reverse();
+    _removeAuraOverlay();
+
+    final overlay = Overlay.of(context);
+    final box = context.findRenderObject() as RenderBox?;
+    final pos = box?.localToGlobal(Offset.zero) ?? Offset.zero;
+    final size = box?.size ?? Size.zero;
+
+    _auraOverlay = OverlayEntry(
+      builder: (_) => Stack(children: [
+        // Dismiss tap area
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: _removeAuraOverlay,
+            behavior: HitTestBehavior.opaque,
+            child: const SizedBox.expand(),
+          ),
+        ),
+        // Picker positioned above the tap point
+        Positioned(
+          left: pos.dx,
+          top:  pos.dy - 70,
+          child: ScaleTransition(
+            scale: _auraPickerScale,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A2E),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: Colors.white12),
+                  boxShadow: const [BoxShadow(
+                      color: Colors.black54, blurRadius: 20,
+                      offset: Offset(0, 6))],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: AuraType.values.map((aura) =>
+                    GestureDetector(
+                      onTap: () {
+                        _removeAuraOverlay();
+                        _selectAura(aura);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: _myAura == aura
+                              ? _auraColor[aura]!.withOpacity(0.3)
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(_auraEmoji[aura]!,
+                            style: TextStyle(
+                                fontSize: _myAura == aura ? 24 : 20)),
+                      ),
+                    ),
+                  ).toList(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
+
+    _auraPickerCtrl.forward(from: 0);
+    overlay.insert(_auraOverlay!);
+  }
+
+  void _toggleAuraPicker() {
+    if (_auraOverlay != null) {
+      _removeAuraOverlay();
     }
   }
 
@@ -217,6 +293,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     _tapCtrl.dispose();
     _likeCtrl.dispose();
     _auraPickerCtrl.dispose();
+    _removeAuraOverlay();
     _playerCtrl?.dispose();
     super.dispose();
   }
@@ -403,81 +480,28 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                           SizedBox(width: 14),
 
                           // Aura Reaction button
-                          Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              // Aura picker popup
-                              if (_showAuraPicker)
-                                Positioned(
-                                  bottom: 32, left: -60,
-                                  child: ScaleTransition(
-                                    scale: _auraPickerScale,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1A1A2E),
-                                        borderRadius: BorderRadius.circular(24),
-                                        border: Border.all(color: Colors.white12),
-                                        boxShadow: [BoxShadow(
-                                            color: Colors.black54,
-                                            blurRadius: 16,
-                                            offset: Offset(0, 4))],
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: AuraType.values.map((aura) =>
-                                          GestureDetector(
-                                            onTap: () => _selectAura(aura),
-                                            child: AnimatedContainer(
-                                              duration: const Duration(milliseconds: 150),
-                                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                                              padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
-                                                color: _myAura == aura
-                                                    ? _auraColor[aura]!.withOpacity(0.25)
-                                                    : Colors.transparent,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Text(
-                                                _auraEmoji[aura]!,
-                                                style: TextStyle(
-                                                  fontSize: _myAura == aura ? 22 : 18)),
-                                            ),
-                                          ),
-                                        ).toList(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              // Aura button
-                              ScaleTransition(
-                                scale: _likeScale,
-                                child: GestureDetector(
-                                  onTap: _myAura != null
-                                      ? _toggleAuraPicker
-                                      : _toggleAuraPicker,
-                                  onLongPress: _toggleAuraPicker,
-                                  child: Row(children: [
-                                    _myAura != null
-                                        ? Text(_auraEmoji[_myAura]!,
-                                            style: const TextStyle(fontSize: 16))
-                                        : Icon(Icons.auto_awesome_outlined,
-                                            color: context.xMuted, size: 16),
-                                    const SizedBox(width: 4),
-                                    Text(_fmt(likeCount),
-                                      style: TextStyle(
-                                        color: _myAura != null
-                                            ? _auraColor[_myAura]!
-                                            : context.xMuted,
-                                        fontSize: 12,
-                                        fontWeight: _myAura != null
-                                            ? FontWeight.w700
-                                            : FontWeight.normal)),
-                                  ]),
-                                ),
-                              ),
-                            ],
+                          ScaleTransition(
+                            scale: _likeScale,
+                            child: GestureDetector(
+                              onTap: () => _showAuraOverlay(context),
+                              child: Row(children: [
+                                _myAura != null
+                                    ? Text(_auraEmoji[_myAura]!,
+                                        style: const TextStyle(fontSize: 16))
+                                    : Icon(Icons.auto_awesome_outlined,
+                                        color: context.xMuted, size: 16),
+                                const SizedBox(width: 4),
+                                Text(_fmt(likeCount),
+                                  style: TextStyle(
+                                    color: _myAura != null
+                                        ? _auraColor[_myAura]!
+                                        : context.xMuted,
+                                    fontSize: 12,
+                                    fontWeight: _myAura != null
+                                        ? FontWeight.w700
+                                        : FontWeight.normal)),
+                              ]),
+                            ),
                           ),
 
                           SizedBox(width: 14),
