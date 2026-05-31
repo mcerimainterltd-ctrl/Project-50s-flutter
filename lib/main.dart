@@ -86,13 +86,20 @@ void main() async {
   // Handle deep link on cold start
   try {
     final uri = await appLinks.getInitialLink();
-    if (uri != null && uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'join') {
-      final code = uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
-      runApp(ProviderScope(
-        overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
-        child: XamePageApp(initialDeepLink: code.isNotEmpty ? '/register?ref=$code' : null),
-      ));
-      return;
+    if (uri != null) {
+      String code = '';
+      if (uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'join') {
+        code = uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
+      } else if (uri.queryParameters.containsKey('ref')) {
+        code = uri.queryParameters['ref'] ?? '';
+      }
+      if (code.isNotEmpty) {
+        runApp(ProviderScope(
+          overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
+          child: XamePageApp(initialDeepLink: '/register?ref=$code'),
+        ));
+        return;
+      }
     }
   } catch (_) {}
 
