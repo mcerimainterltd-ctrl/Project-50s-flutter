@@ -953,6 +953,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   String _mediaType  = 'image';
   String _category   = 'General';
   bool   _uploading  = false;
+  bool   _isWhisper  = false;
   String? _error;
   final _picker = ImagePicker();
   final _screenshotCtrl = ScreenshotController();
