@@ -24,6 +24,13 @@ class DiscoveryItem {
   final DateTime          ts;
   final Color?            accentColor;
   final bool              isWhisper;
+  final bool              isCollabOpen;
+  final String            collabStatus;
+  final String            collabPartnerId;
+  final String            collabPartnerName;
+  final String            collabPartnerAvatar;
+  final String            collabMediaUrl;
+  final String            collabMediaType;
 
   const DiscoveryItem({
     required this.id,
@@ -45,7 +52,14 @@ class DiscoveryItem {
     required this.commentCount,
     required this.ts,
     this.accentColor,
-    this.isWhisper    = false,
+    this.isWhisper          = false,
+    this.isCollabOpen       = false,
+    this.collabStatus       = 'none',
+    this.collabPartnerId    = '',
+    this.collabPartnerName  = '',
+    this.collabPartnerAvatar = '',
+    this.collabMediaUrl     = '',
+    this.collabMediaType    = 'image',
   });
 
   factory DiscoveryItem.fromJson(Map<String, dynamic> json) {
@@ -69,7 +83,14 @@ class DiscoveryItem {
       commentCount:   json['commentCount'] as int,
       ts:             DateTime.parse(json['ts'] as String),
       accentColor:    json['accentColor'] != null ? Color(json['accentColor'] as int) : null,
-      isWhisper:      json['isWhisper'] as bool? ?? false,
+      isWhisper:           json['isWhisper']           as bool?   ?? false,
+      isCollabOpen:        json['isCollabOpen']        as bool?   ?? false,
+      collabStatus:        json['collabStatus']        as String? ?? 'none',
+      collabPartnerId:     json['collabPartnerId']     as String? ?? '',
+      collabPartnerName:   json['collabPartnerName']   as String? ?? '',
+      collabPartnerAvatar: json['collabPartnerAvatar'] as String? ?? '',
+      collabMediaUrl:      json['collabMediaUrl']      as String? ?? '',
+      collabMediaType:     json['collabMediaType']     as String? ?? 'image',
     );
   }
 
@@ -98,7 +119,14 @@ class DiscoveryItem {
     commentCount:   commentCount ?? this.commentCount,
     ts:             ts,
     accentColor:    accentColor,
-    isWhisper:      isWhisper,
+    isWhisper:           isWhisper,
+    isCollabOpen:        isCollabOpen,
+    collabStatus:        collabStatus,
+    collabPartnerId:     collabPartnerId,
+    collabPartnerName:   collabPartnerName,
+    collabPartnerAvatar: collabPartnerAvatar,
+    collabMediaUrl:      collabMediaUrl,
+    collabMediaType:     collabMediaType,
   );
 
 
@@ -122,7 +150,14 @@ class DiscoveryItem {
     'commentCount':   commentCount,
     'ts':             ts.toIso8601String(),
     'accentColor':    accentColor?.value,
-    'isWhisper':      isWhisper,
+    'isWhisper':           isWhisper,
+    'isCollabOpen':        isCollabOpen,
+    'collabStatus':        collabStatus,
+    'collabPartnerId':     collabPartnerId,
+    'collabPartnerName':   collabPartnerName,
+    'collabPartnerAvatar': collabPartnerAvatar,
+    'collabMediaUrl':      collabMediaUrl,
+    'collabMediaType':     collabMediaType,
   };
 }
 

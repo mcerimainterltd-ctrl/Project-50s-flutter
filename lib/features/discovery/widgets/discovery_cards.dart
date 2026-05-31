@@ -170,6 +170,13 @@ class MediaDiscoverCard extends StatefulWidget {
   final void Function(int)? onCountChanged;
   final DateTime? ts;
   final bool isWhisper;
+  final bool   isCollabOpen;
+  final String collabStatus;
+  final String collabPartnerId;
+  final String collabPartnerName;
+  final String collabPartnerAvatar;
+  final String collabMediaUrl;
+  final String collabMediaType;
 
   const MediaDiscoverCard({
     Key? key,
@@ -192,7 +199,14 @@ class MediaDiscoverCard extends StatefulWidget {
     this.onTap,
     this.onCountChanged,
     this.ts,
-    this.isWhisper = false,
+    this.isWhisper           = false,
+    this.isCollabOpen        = false,
+    this.collabStatus        = 'none',
+    this.collabPartnerId     = '',
+    this.collabPartnerName   = '',
+    this.collabPartnerAvatar = '',
+    this.collabMediaUrl      = '',
+    this.collabMediaType     = 'image',
   }) : super(key: key);
 
   @override
@@ -469,8 +483,24 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28),
               child: Stack(fit: StackFit.expand, children: [
-                // Media
-                if (widget.mediaType == 'video' && _playing && _playerCtrl != null)
+                // Media — split screen for accepted collabs
+                if (widget.collabStatus == 'accepted' && widget.collabMediaUrl.isNotEmpty)
+                  Row(children: [
+                    Expanded(child: SizedBox.expand(
+                      child: CachedNetworkImage(
+                          imageUrl: widget.mediaUrl, fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) =>
+                              Container(color: const Color(0xFF1A1A2E))),
+                    )),
+                    Container(width: 2, color: Colors.white24),
+                    Expanded(child: SizedBox.expand(
+                      child: CachedNetworkImage(
+                          imageUrl: widget.collabMediaUrl, fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) =>
+                              Container(color: const Color(0xFF1A2E1A))),
+                    )),
+                  ])
+                else if (widget.mediaType == 'video' && _playing && _playerCtrl != null)
                   BetterPlayer(controller: _playerCtrl!)
                 else if (widget.mediaType == 'video')
                   GestureDetector(
@@ -599,20 +629,44 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                 // Category chip
                 Positioned(
                   top: 18, left: 18,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color:        Colors.black.withOpacity(0.55),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
-                    child: Text(widget.category.toUpperCase(),
-                      style: TextStyle(
-                        color:       context.xPrimary,
-                        fontSize:    10,
-                        fontWeight:  FontWeight.w800,
-                        letterSpacing: 1.2)),
-                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color:        Colors.black.withOpacity(0.55),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: context.xMuted.withValues(alpha: 0.25))),
+                      child: Text(widget.collabStatus == 'accepted'
+                              ? 'COLLAB'
+                              : widget.category.toUpperCase(),
+                        style: TextStyle(
+                          color: widget.collabStatus == 'accepted'
+                              ? const Color(0xFF00E5FF)
+                              : context.xPrimary,
+                          fontSize:    10,
+                          fontWeight:  FontWeight.w800,
+                          letterSpacing: 1.2)),
+                    ),
+                    if (widget.isCollabOpen && widget.collabStatus == 'none') ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00E5FF).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: const Color(0xFF00E5FF).withOpacity(0.5))),
+                        child: const Text('🤝 OPEN',
+                          style: TextStyle(
+                            color: Color(0xFF00E5FF),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8)),
+                      ),
+                    ],
+                  ]),
                 ),
 
                 // Bottom content
@@ -686,6 +740,32 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                                 followerId: widget.userId,
                               ),
                           ]),
+                        // Collab partner row
+                        if (widget.collabStatus == 'accepted' &&
+                            widget.collabPartnerName.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Row(children: [
+                              const Text('🤝',
+                                  style: TextStyle(fontSize: 11)),
+                              const SizedBox(width: 4),
+                              if (widget.collabPartnerAvatar.isNotEmpty)
+                                Container(
+                                  width: 20, height: 20,
+                                  margin: const EdgeInsets.only(right: 5),
+                                  child: ClipOval(child: CachedNetworkImage(
+                                      imageUrl: widget.collabPartnerAvatar,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, __, ___) =>
+                                          Container(color: const Color(0xFF1A2E2E)))),
+                                ),
+                              Text(widget.collabPartnerName,
+                                style: const TextStyle(
+                                    color: Color(0xFF00E5FF),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600)),
+                            ]),
+                          ),
                         SizedBox(height: 6),
 
                         // Title — hide for quotes (text is baked into the image)
@@ -753,6 +833,38 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
 
                           Spacer(),
 
+                          // Collab button — show if open and not own post
+                          if (widget.isCollabOpen &&
+                              widget.collabStatus == 'none' &&
+                              widget.userId.isNotEmpty &&
+                              widget.userId != widget.authorId) ...[
+                            GestureDetector(
+                              onTap: () => _requestCollab(context),
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(18),
+                                  color: const Color(0xFF00E5FF).withOpacity(0.12),
+                                  border: Border.all(
+                                      color: const Color(0xFF00E5FF).withOpacity(0.4),
+                                      width: 0.8)),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('🤝', style: TextStyle(fontSize: 11)),
+                                    SizedBox(width: 4),
+                                    Text('Collab',
+                                      style: TextStyle(
+                                          color: Color(0xFF00E5FF),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600)),
+                                  ]),
+                              ),
+                            ),
+                          ],
+
                           // Share
                           GestureDetector(
                             onTap: () => _sharePost(context),
@@ -814,7 +926,70 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     );
   }
 
-    Future<void> _sharePost(BuildContext context) async {
+    Future<void> _requestCollab(BuildContext context) async {
+    HapticFeedback.mediumImpact();
+    // Pick media for collab contribution
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null || !context.mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Send Collab Request',
+            style: TextStyle(color: Colors.white, fontSize: 16,
+                fontWeight: FontWeight.w700)),
+        content: Text(
+            'Send your media to collab with ${widget.authorName ?? 'this creator'}?',
+            style: const TextStyle(color: Colors.white60, fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel',
+                  style: TextStyle(color: Colors.white38))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00E5FF)),
+            child: const Text('Send 🤝',
+                style: TextStyle(color: Colors.black,
+                    fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+
+    try {
+      final req = http.MultipartRequest('POST',
+          Uri.parse('${AppConstants.serverUrl}/api/discover/collab/request'));
+      req.fields['postId']     = widget.postId;
+      req.fields['requesterId'] = widget.userId;
+      req.fields['mediaType']  = 'image';
+      req.files.add(await http.MultipartFile.fromPath('media', picked.path));
+      final res  = await req.send();
+      final body = jsonDecode(await res.stream.bytesToString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(body['success'] == true
+              ? '🤝 Collab request sent!'
+              : body['message'] ?? 'Failed'),
+          backgroundColor: body['success'] == true
+              ? const Color(0xFF1A3A3A) : Colors.redAccent,
+        ));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to send collab request'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    }
+  }
+
+  Future<void> _sharePost(BuildContext context) async {
     HapticFeedback.mediumImpact();
     final parts = <String>[];
     if (widget.title.isNotEmpty) parts.add(widget.title);
