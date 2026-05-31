@@ -13,6 +13,82 @@ import 'live_pulse.dart';
 import 'comments_sheet.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 
+// ── Pulse Posts ──────────────────────────────────────────────────────────────
+// Engagement velocity: total interactions per hour since post was created
+// Returns 0.0 (dead) → 1.0 (viral)
+double _pulseVelocity(DateTime ts, int views, int likes, int comments) {
+  final ageHours = DateTime.now().difference(ts).inMinutes / 60.0;
+  if (ageHours < 0.1) return 0.8; // brand new post
+  final velocity = (views + (likes * 3) + (comments * 5)) / (ageHours * 10);
+  return velocity.clamp(0.0, 1.0);
+}
+
+Color _pulseColor(double v) {
+  if (v >= 0.7) return const Color(0xFFFF5722); // viral — fire orange
+  if (v >= 0.4) return const Color(0xFFFFB300); // trending — gold
+  if (v >= 0.15) return const Color(0xFF29B6F6); // active — blue
+  return const Color(0xFF37474F);                // fading — grey
+}
+
+class _PulseArcPainter extends CustomPainter {
+  final double velocity;
+  final double animValue;
+  _PulseArcPainter(this.velocity, this.animValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (velocity < 0.05) return; // don't draw for dead posts
+    final color = _pulseColor(velocity);
+    final rect  = Rect.fromLTWH(2, 2, size.width - 4, size.height - 4);
+    final radius = 28.0;
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+
+    // Background track
+    canvas.drawRRect(rrect, Paint()
+      ..color = color.withOpacity(0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5);
+
+    // Active arc — sweeps based on velocity
+    final sweep = 2 * 3.14159 * velocity;
+    canvas.drawArc(
+      rect.inflate(-0.5),
+      -3.14159 / 2 + (animValue * 0.3), // slight rotation animation
+      sweep,
+      false,
+      Paint()
+        ..color = color.withOpacity(0.75 + animValue * 0.25)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Pulse dot at arc tip
+    if (velocity >= 0.15) {
+      final angle = -3.14159 / 2 + sweep + (animValue * 0.3);
+      final cx = rect.center.dx + (rect.width / 2) * (1 - 0.01) * 0.985 *
+          (1 * (angle > 0 ? 1 : 1)) * _cos(angle);
+      final cy = rect.center.dy + (rect.height / 2) * 0.985 * _sin(angle);
+      canvas.drawCircle(
+          Offset(cx, cy), 3.5 + animValue * 1.5,
+          Paint()..color = color);
+    }
+  }
+
+  double _cos(double a) => a == 0 ? 1 : (a > 0
+      ? (1 - a * a / 2 + a * a * a * a / 24)
+      : _cos(-a));
+  double _sin(double a) {
+    // Simple Taylor approximation good enough for small angles
+    double x = a % (2 * 3.14159);
+    return x - x*x*x/6 + x*x*x*x*x/120;
+  }
+
+  @override
+  bool shouldRepaint(_PulseArcPainter old) =>
+      old.velocity != velocity || old.animValue != animValue;
+}
+
 // ── XameScore ────────────────────────────────────────────────────────────────
 // Score = engagement quality ratio (likes+comments per view)
 // Gold ≥ 0.15 · Silver ≥ 0.07 · Bronze ≥ 0.02 · None below
@@ -59,6 +135,7 @@ class MediaDiscoverCard extends StatefulWidget {
   final String? authorId;
   final VoidCallback? onTap;
   final void Function(int)? onCountChanged;
+  final DateTime? ts;
 
   const MediaDiscoverCard({
     Key? key,
@@ -80,6 +157,7 @@ class MediaDiscoverCard extends StatefulWidget {
     this.thumbnailUrl,
     this.onTap,
     this.onCountChanged,
+    this.ts,
   }) : super(key: key);
 
   @override
@@ -100,6 +178,8 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   bool _showAuraPicker = false;
   late AnimationController _auraPickerCtrl;
   late Animation<double> _auraPickerScale;
+  late AnimationController _pulseCtrl;
+  late Animation<double>   _pulseAnim;
 
   void _playVideo() {
     _playerCtrl?.dispose();
@@ -150,6 +230,10 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
         vsync: this, duration: const Duration(milliseconds: 200));
     _auraPickerScale = CurvedAnimation(
         parent: _auraPickerCtrl, curve: Curves.easeOutBack);
+    _pulseCtrl = AnimationController(
+        vsync: this, duration: const Duration(seconds: 3))
+      ..repeat();
+    _pulseAnim = CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut);
     _loadAura();
   }
 
@@ -305,6 +389,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
     _tapCtrl.dispose();
     _likeCtrl.dispose();
     _auraPickerCtrl.dispose();
+    _pulseCtrl.dispose();
     _removeAuraOverlay();
     _playerCtrl?.dispose();
     super.dispose();
@@ -400,6 +485,23 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                     ),
                   ),
                 ),
+
+                // Pulse arc — engagement velocity ring
+                if (widget.ts != null)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: AnimatedBuilder(
+                        animation: _pulseAnim,
+                        builder: (_, __) => CustomPaint(
+                          painter: _PulseArcPainter(
+                            _pulseVelocity(widget.ts!, widget.viewCount,
+                                widget.likeCount, widget.commentCount),
+                            _pulseAnim.value,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
 
                 // Live badge
                 if (widget.isLive)

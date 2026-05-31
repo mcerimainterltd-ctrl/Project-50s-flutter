@@ -633,6 +633,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       final idx = _feed.indexWhere((x) => x.id == item.id);
                       if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
                     }),
+                    ts:   item.ts,
                     onTap: () {
                       DiscoveryApiService.viewPost(item.id);
                       _openDetail(context, item);
