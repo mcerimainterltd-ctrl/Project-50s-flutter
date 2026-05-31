@@ -171,6 +171,7 @@ class MediaDiscoverCard extends StatefulWidget {
   final void Function(int)? onCountChanged;
   final DateTime? ts;
   final bool isWhisper;
+  final bool   isImmortal;
   final bool   isCollabOpen;
   final String collabStatus;
   final String collabPartnerId;
@@ -201,6 +202,7 @@ class MediaDiscoverCard extends StatefulWidget {
     this.onCountChanged,
     this.ts,
     this.isWhisper           = false,
+    this.isImmortal          = false,
     this.isCollabOpen        = false,
     this.collabStatus        = 'none',
     this.collabPartnerId     = '',
@@ -617,6 +619,33 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                             ),
                           ],
                         )),
+                      ]),
+                    ),
+                  ),
+
+                // Immortal badge
+                if (widget.isImmortal)
+                  Positioned(
+                    top: 18, right: widget.isLive ? 50 : 18,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: const Color(0xFFFFD700).withOpacity(0.6)),
+                        boxShadow: [BoxShadow(
+                            color: const Color(0xFFFFD700).withOpacity(0.3),
+                            blurRadius: 8)],
+                      ),
+                      child: const Row(mainAxisSize: MainAxisSize.min,
+                          children: [
+                        Text('✨', style: TextStyle(fontSize: 10)),
+                        SizedBox(width: 3),
+                        Text('IMMORTAL', style: TextStyle(
+                            color: Color(0xFFFFD700), fontSize: 8,
+                            fontWeight: FontWeight.w900, letterSpacing: 0.8)),
                       ]),
                     ),
                   ),

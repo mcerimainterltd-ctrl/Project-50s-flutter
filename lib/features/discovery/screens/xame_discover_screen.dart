@@ -777,6 +777,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     }),
                     ts:        item.ts,
                     isWhisper:           item.isWhisper,
+                    isImmortal:          item.isImmortal,
                     isCollabOpen:        item.isCollabOpen,
                     collabStatus:        item.collabStatus,
                     collabPartnerId:     item.collabPartnerId,

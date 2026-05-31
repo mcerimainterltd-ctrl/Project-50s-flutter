@@ -24,6 +24,7 @@ class DiscoveryItem {
   final DateTime          ts;
   final Color?            accentColor;
   final bool              isWhisper;
+  final bool              isImmortal;
   final bool              isCollabOpen;
   final String            collabStatus;
   final String            collabPartnerId;
@@ -53,6 +54,7 @@ class DiscoveryItem {
     required this.ts,
     this.accentColor,
     this.isWhisper          = false,
+    this.isImmortal         = false,
     this.isCollabOpen       = false,
     this.collabStatus       = 'none',
     this.collabPartnerId    = '',
@@ -84,6 +86,7 @@ class DiscoveryItem {
       ts:             DateTime.parse(json['ts'] as String),
       accentColor:    json['accentColor'] != null ? Color(json['accentColor'] as int) : null,
       isWhisper:           json['isWhisper']           as bool?   ?? false,
+      isImmortal:          json['isImmortal']          as bool?   ?? false,
       isCollabOpen:        json['isCollabOpen']        as bool?   ?? false,
       collabStatus:        json['collabStatus']        as String? ?? 'none',
       collabPartnerId:     json['collabPartnerId']     as String? ?? '',
@@ -120,6 +123,7 @@ class DiscoveryItem {
     ts:             ts,
     accentColor:    accentColor,
     isWhisper:           isWhisper,
+    isImmortal:          isImmortal,
     isCollabOpen:        isCollabOpen,
     collabStatus:        collabStatus,
     collabPartnerId:     collabPartnerId,
@@ -151,6 +155,7 @@ class DiscoveryItem {
     'ts':             ts.toIso8601String(),
     'accentColor':    accentColor?.value,
     'isWhisper':           isWhisper,
+    'isImmortal':          isImmortal,
     'isCollabOpen':        isCollabOpen,
     'collabStatus':        collabStatus,
     'collabPartnerId':     collabPartnerId,
