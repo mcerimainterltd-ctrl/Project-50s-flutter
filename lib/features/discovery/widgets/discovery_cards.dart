@@ -37,41 +37,74 @@ class _PulseArcPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (velocity < 0.05) return; // don't draw for dead posts
+    if (velocity < 0.02) return; // draw for almost all posts
     final color = _pulseColor(velocity);
-    final rect  = Rect.fromLTWH(2, 2, size.width - 4, size.height - 4);
+    final rect  = Rect.fromLTWH(3, 3, size.width - 6, size.height - 6);
     final radius = 28.0;
     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
 
-    // Background track
+    // Background track — subtle
     canvas.drawRRect(rrect, Paint()
-      ..color = color.withOpacity(0.12)
+      ..color = color.withOpacity(0.15)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5);
+      ..strokeWidth = 4.0);
 
-    // Active arc — sweeps based on velocity
     final sweep = 2 * 3.14159 * velocity;
+    final startAngle = -3.14159 / 2 + (animValue * 0.4);
+
+    // Outer glow layer 1 — widest, most transparent
     canvas.drawArc(
-      rect.inflate(-0.5),
-      -3.14159 / 2 + (animValue * 0.3), // slight rotation animation
-      sweep,
-      false,
+      rect.inflate(2),
+      startAngle, sweep, false,
       Paint()
-        ..color = color.withOpacity(0.75 + animValue * 0.25)
+        ..color = color.withOpacity(0.15 + animValue * 0.1)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
+        ..strokeWidth = 10.0
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+
+    // Outer glow layer 2 — medium
+    canvas.drawArc(
+      rect.inflate(1),
+      startAngle, sweep, false,
+      Paint()
+        ..color = color.withOpacity(0.25 + animValue * 0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6.0
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
+
+    // Core arc — sharp and bright
+    canvas.drawArc(
+      rect, startAngle, sweep, false,
+      Paint()
+        ..color = color.withOpacity(0.85 + animValue * 0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.0
         ..strokeCap = StrokeCap.round,
     );
 
-    // Pulse dot at arc tip
-    if (velocity >= 0.15) {
-      final angle = -3.14159 / 2 + sweep + (animValue * 0.3);
-      final cx = rect.center.dx + (rect.width / 2) * (1 - 0.01) * 0.985 *
-          (1 * (angle > 0 ? 1 : 1)) * _cos(angle);
-      final cy = rect.center.dy + (rect.height / 2) * 0.985 * _sin(angle);
+    // Pulse dot at arc tip — glowing
+    if (velocity >= 0.05) {
+      final angle = startAngle + sweep;
+      final cx = rect.center.dx + (rect.width / 2) * _cos(angle);
+      final cy = rect.center.dy + (rect.height / 2) * _sin(angle);
+      // Outer glow dot
       canvas.drawCircle(
-          Offset(cx, cy), 3.5 + animValue * 1.5,
-          Paint()..color = color);
+          Offset(cx, cy), 8 + animValue * 3,
+          Paint()
+            ..color = color.withOpacity(0.2 + animValue * 0.2)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+      // Core dot
+      canvas.drawCircle(
+          Offset(cx, cy), 4.5 + animValue * 2,
+          Paint()..color = color.withOpacity(0.9 + animValue * 0.1));
+      // White hot center
+      canvas.drawCircle(
+          Offset(cx, cy), 2.0,
+          Paint()..color = Colors.white.withOpacity(0.8 + animValue * 0.2));
     }
   }
 
