@@ -198,6 +198,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     with TickerProviderStateMixin {
   final _scrollCtrl  = ScrollController();
   final _searchCtrl  = TextEditingController();
+  StreamSubscription? _collabRequestSub;
+  StreamSubscription? _collabAcceptedSub;
   bool  _searchOpen  = false;
   bool  _loading     = true;
   bool  _loadingMore = false;
@@ -239,6 +241,27 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
         final isContact = contacts.any((c) => c.id == authorId);
         if (isContact) _loadData(refresh: true);
       });
+
+      // Collab request — show accept/decline sheet to post author
+      _collabRequestSub = ref.read(socketServiceProvider)
+          .collabRequest
+          .listen((data) {
+        if (!mounted) return;
+        _showCollabRequestSheet(data);
+      });
+
+      // Collab accepted — notify requester
+      _collabAcceptedSub = ref.read(socketServiceProvider)
+          .collabAccepted
+          .listen((data) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('🤝 Your collab on "${data['postTitle']}" was accepted!'),
+          backgroundColor: const Color(0xFF1A3A3A),
+          duration: const Duration(seconds: 4),
+        ));
+        _loadData(refresh: true);
+      });
     });
     if (widget.authorId != null && widget.authorId!.isNotEmpty) {
       _authorFilter = widget.authorId;
@@ -252,6 +275,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   @override
   void dispose() {
     _discoverySub?.cancel();
+    _collabRequestSub?.cancel();
+    _collabAcceptedSub?.cancel();
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
     _searchAnim.dispose();
@@ -408,6 +433,117 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     } catch (_) {
       setState(() => _loadingMorePeople = false);
     }
+  }
+
+  void _showCollabRequestSheet(Map<String, dynamic> data) {
+    final postId        = data['postId']         as String? ?? '';
+    final postTitle     = data['postTitle']       as String? ?? 'your post';
+    final requesterId   = data['requesterId']     as String? ?? '';
+    final requesterName = data['requesterName']   as String? ?? 'Someone';
+    final requesterAvatar = data['requesterAvatar'] as String? ?? '';
+    final mediaUrl      = data['mediaUrl']        as String? ?? '';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF12121E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 36, height: 4,
+              decoration: BoxDecoration(color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          const Text('🤝 Collab Request',
+              style: TextStyle(color: Colors.white, fontSize: 18,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 16),
+          // Requester info
+          Row(children: [
+            Container(width: 48, height: 48,
+              decoration: BoxDecoration(shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF00E5FF), width: 1.5)),
+              child: ClipOval(child: requesterAvatar.isNotEmpty
+                  ? CachedNetworkImage(imageUrl: requesterAvatar, fit: BoxFit.cover)
+                  : Container(color: const Color(0xFF1A2E2E),
+                      child: const Icon(Icons.person, color: Colors.white54)))),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+              Text(requesterName, style: const TextStyle(color: Colors.white,
+                  fontSize: 15, fontWeight: FontWeight.w700)),
+              Text('wants to collab on "$postTitle"',
+                  style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            ])),
+          ]),
+          // Preview of their media
+          if (mediaUrl.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            ClipRRect(borderRadius: BorderRadius.circular(12),
+              child: CachedNetworkImage(imageUrl: mediaUrl,
+                  height: 160, width: double.infinity, fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(height: 160,
+                      color: const Color(0xFF1A1A2E),
+                      child: const Icon(Icons.image_outlined,
+                          color: Colors.white24, size: 40)))),
+          ],
+          const SizedBox(height: 20),
+          Row(children: [
+            // Decline
+            Expanded(child: OutlinedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                // No server action needed — just dismiss, post stays open
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white54,
+                side: const BorderSide(color: Colors.white12),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Decline'),
+            )),
+            const SizedBox(width: 12),
+            // Accept
+            Expanded(flex: 2, child: ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final user = ref.read(currentUserProvider);
+                if (user == null) return;
+                try {
+                  final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                  final res = await dio.post('/api/discover/collab/accept',
+                      data: {'postId': postId, 'authorId': user.xameId});
+                  if (res.data['success'] == true) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('🤝 Collab accepted! Post updated.'),
+                        backgroundColor: Color(0xFF1A3A3A),
+                      ));
+                      _loadData(refresh: true);
+                    }
+                  }
+                } catch (_) {}
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00E5FF),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Accept Collab 🤝',
+                  style: TextStyle(fontWeight: FontWeight.w800)),
+            )),
+          ]),
+        ]),
+      ),
+    );
   }
 
   void _onRegionSelected(DiscoveryRegion region) {

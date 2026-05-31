@@ -47,6 +47,8 @@ class SocketService {
   final _callMessageCtrl      = StreamController<Map<String, dynamic>>.broadcast();
   final _disappearExpiredCtrl = StreamController<DisappearExpiredData>.broadcast();
   final _walletReceiveCtrl    = StreamController<WalletReceiveData>.broadcast();
+  final _collabRequestCtrl   = StreamController<Map<String,dynamic>>.broadcast();
+  final _collabAcceptedCtrl  = StreamController<Map<String,dynamic>>.broadcast();
   final _walletDebitCtrl      = StreamController<Map<String,dynamic>>.broadcast();
   final _profileUpdatedCtrl   = StreamController<Map<String, dynamic>>.broadcast();
   final _contactStatusCtrl    = StreamController<ContactStatusData>.broadcast();
@@ -83,6 +85,8 @@ class SocketService {
   Stream<MessagesDeletedData>       get messagesDeleted  => _messagesDeletedCtrl.stream;
   Stream<DisappearExpiredData>      get disappearExpired => _disappearExpiredCtrl.stream;
   Stream<WalletReceiveData>         get walletReceive    => _walletReceiveCtrl.stream;
+  Stream<Map<String,dynamic>>       get collabRequest   => _collabRequestCtrl.stream;
+  Stream<Map<String,dynamic>>       get collabAccepted  => _collabAcceptedCtrl.stream;
   Stream<Map<String,dynamic>>       get walletDebit      => _walletDebitCtrl.stream;
   Stream<Map<String, dynamic>>      get profileUpdated   => _profileUpdatedCtrl.stream;
   Stream<ContactStatusData>         get contactStatus    => _contactStatusCtrl.stream;
@@ -366,6 +370,14 @@ class SocketService {
         senderName: d['senderName'],
         amount:     (d['amount'] as num).toDouble(),
         currency:   d['currency'] ?? 'USD'));
+    });
+
+    // ── Collab ───────────────────────────────────────────────────────────
+    socket.on('collab_request', (d) {
+      if (d != null) _collabRequestCtrl.add(Map<String,dynamic>.from(d as Map));
+    });
+    socket.on('collab_accepted', (d) {
+      if (d != null) _collabAcceptedCtrl.add(Map<String,dynamic>.from(d as Map));
     });
 
     // ── Force logout ──────────────────────────────────────────────────────
