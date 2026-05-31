@@ -148,16 +148,18 @@ class DiscoveryApiService {
     required File   mediaFile,
     required String mediaType,
     bool isWhisper = false,
+    bool isCollabOpen = false,
   }) async {
     try {
       final formData = FormData.fromMap({
-        'authorId':  authorId,
-        'title':     title,
-        'caption':   caption,
-        'region':    region,
-        'category':  category,
-        'mediaType': mediaType,
-        'isWhisper': isWhisper.toString(),
+        'authorId':     authorId,
+        'title':        title,
+        'caption':      caption,
+        'region':       region,
+        'category':     category,
+        'mediaType':    mediaType,
+        'isWhisper':    isWhisper.toString(),
+        'isCollabOpen': isCollabOpen.toString(),
         'media': await MultipartFile.fromFile(mediaFile.path),
       });
       final res  = await _dio.post('/api/discover/post', data: formData);
@@ -638,7 +640,14 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
                     }),
                     ts:        item.ts,
-                    isWhisper: item.isWhisper,
+                    isWhisper:           item.isWhisper,
+                    isCollabOpen:        item.isCollabOpen,
+                    collabStatus:        item.collabStatus,
+                    collabPartnerId:     item.collabPartnerId,
+                    collabPartnerName:   item.collabPartnerName,
+                    collabPartnerAvatar: item.collabPartnerAvatar,
+                    collabMediaUrl:      item.collabMediaUrl,
+                    collabMediaType:     item.collabMediaType,
                     onTap: () {
                       DiscoveryApiService.viewPost(item.id);
                       _openDetail(context, item);
@@ -953,7 +962,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   String _mediaType  = 'image';
   String _category   = 'General';
   bool   _uploading  = false;
-  bool   _isWhisper  = false;
+  bool   _isWhisper    = false;
+  bool   _isCollabOpen = false;
   String? _error;
   final _picker = ImagePicker();
   final _screenshotCtrl = ScreenshotController();
@@ -1207,7 +1217,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       category:  _category,
       mediaFile: _mediaFile!,
       mediaType: _mediaType,
-      isWhisper: _isWhisper,
+      isWhisper:    _isWhisper,
+      isCollabOpen: _isCollabOpen,
     );
     if (!mounted) return;
     setState(() => _uploading = false);
@@ -1501,6 +1512,71 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 200),
                 alignment: _isWhisper
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                child: Container(
+                  width: 16, height: 16,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: const BoxDecoration(
+                      color: Colors.white, shape: BoxShape.circle),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ),
+
+      // Collab toggle
+      GestureDetector(
+        onTap: () => setState(() => _isCollabOpen = !_isCollabOpen),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _isCollabOpen
+                ? const Color(0xFF00E5FF).withOpacity(0.08)
+                : Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isCollabOpen
+                  ? const Color(0xFF00E5FF).withOpacity(0.4)
+                  : Colors.white.withOpacity(0.08),
+            ),
+          ),
+          child: Row(children: [
+            Text(_isCollabOpen ? '🤝' : '🔒',
+                style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_isCollabOpen ? 'Open for Collab' : 'Solo Post',
+                    style: TextStyle(
+                      color: _isCollabOpen
+                          ? const Color(0xFF00E5FF)
+                          : Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700)),
+                Text(_isCollabOpen
+                    ? 'Others can add their media to this post'
+                    : 'Only you can post this content',
+                    style: const TextStyle(
+                        color: Colors.white38, fontSize: 11)),
+              ],
+            )),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 36, height: 20,
+              decoration: BoxDecoration(
+                color: _isCollabOpen
+                    ? const Color(0xFF00E5FF)
+                    : Colors.white12,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 200),
+                alignment: _isCollabOpen
                     ? Alignment.centerRight
                     : Alignment.centerLeft,
                 child: Container(
