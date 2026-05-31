@@ -41,11 +41,12 @@ class DiscoveryApiService {
   ));
 
   static Future<List<DiscoveryItem>> fetchFeed({
-    String region = 'global', int page = 1, int limit = 20,
+    String region = 'global', int page = 1, int limit = 20, String? userId,
   }) async {
     try {
       final res = await _dio.get('/api/discover/feed', queryParameters: {
         'region': region, 'page': page, 'limit': limit,
+        if (userId != null) 'userId': userId,
       });
       final data = res.data as Map<String, dynamic>;
       if (data['success'] != true) return [];
@@ -319,7 +320,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     final userId = user?.xameId ?? '';
 
     final results = await Future.wait([
-      DiscoveryApiService.fetchFeed(region: _regionCode, page: 1),
+      DiscoveryApiService.fetchFeed(region: _regionCode, page: 1, userId: userId),
       DiscoveryApiService.fetchPeople(userId, contactIds: ref.read(contactsProvider).valueOrNull?.map((c) => c.id).toSet() ?? {}, page: 1),
       DiscoveryApiService.fetchStories(userId),
     ]);
@@ -352,8 +353,9 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   Future<void> _loadMore() async {
     if (_loadingMore || !_hasMore || _loading) return;
     setState(() => _loadingMore = true);
+    final user2 = ref.read(currentUserProvider);
     final more = await DiscoveryApiService.fetchFeed(
-      region: _regionCode, page: _page + 1);
+      region: _regionCode, page: _page + 1, userId: user2?.xameId);
     if (!mounted) return;
     setState(() {
       _feed.addAll(more);
