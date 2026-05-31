@@ -133,7 +133,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           }),
           Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return PhoneScreen(
                     userId:       u?.xameId ?? '',
-                    serverUrl:    'https://project-50s.onrender.com',
+                    serverUrl:    'https://app.xamepage.com',
                     xameContacts: (ref.watch(contactsProvider).valueOrNull ?? [])
                         .map((c) => XameContact(
                               id:         c.id,
@@ -1067,7 +1067,7 @@ class _InviteSheetState extends State<_InviteSheet> {
   @override
   Widget build(BuildContext context) {
     final code = _code;
-    final link = 'https://project-50s.onrender.com/api/app/download?ref=$code';
+    final link = 'https://app.xamepage.com/api/app/download?ref=$code';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF13131A),
@@ -1132,7 +1132,7 @@ class _InviteSheetState extends State<_InviteSheet> {
               textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
             onPressed: () {
-              Share.share('Join me on XamePage and earn XameCoins together!\nDownload ⬇️ https://project-50s.onrender.com/api/app/download?ref=$code');
+              Share.share('Join me on XamePage and earn XameCoins together!\nDownload ⬇️ https://app.xamepage.com/api/app/download?ref=$code');
             },
           ),
         ),

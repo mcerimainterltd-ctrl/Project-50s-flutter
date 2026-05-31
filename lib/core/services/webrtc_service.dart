@@ -222,7 +222,7 @@ class WebRTCService {
   Future<List<Map<String, dynamic>>> _fetchIceServers() async {
     try {
       final res = await http.get(
-        Uri.parse('https://project-50s.onrender.com/api/ice-servers'),
+        Uri.parse('https://app.xamepage.com/api/ice-servers'),
       ).timeout(const Duration(seconds: 5));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);

@@ -35,7 +35,7 @@ class _ConferencePeer {
 Future<Map<String, dynamic>> _buildRtcConfig() async {
   try {
     final res = await http.get(
-        Uri.parse('https://project-50s.onrender.com/api/ice-servers'));
+        Uri.parse('https://app.xamepage.com/api/ice-servers'));
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
       return {'iceServers': data['iceServers']};

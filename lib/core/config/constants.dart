@@ -1,5 +1,5 @@
 class AppConstants {
-  static const serverUrl             = 'https://project-50s.onrender.com';
+  static const serverUrl             = 'https://app.xamepage.com';
   static const appVersion            = '2.1.1';
   static const appBuildNumber         = 478;
   static const apiAppVersion          = '\$serverUrl/api/app/version';

@@ -3464,7 +3464,7 @@ class _RewardsTabState extends State<_RewardsTab> {
 
   void _share() {
     final code = _account?['referralCode'] ?? '';
-    final link = 'https://project-50s.onrender.com/join/$code';
+    final link = 'https://app.xamepage.com/join/$code';
     Share.share('Join me on XamePage! Download and earn XameCoins together:\n$link');
   }
 
