@@ -1067,7 +1067,7 @@ class _InviteSheetState extends State<_InviteSheet> {
   @override
   Widget build(BuildContext context) {
     final code = _code;
-    final link = 'https://app.xamepage.com/api/app/download?ref=$code';
+    final link = 'https://app.xamepage.com/join/$code';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF13131A),
@@ -1132,7 +1132,7 @@ class _InviteSheetState extends State<_InviteSheet> {
               textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
             onPressed: () {
-              Share.share('Join me on XamePage and earn XameCoins together!\nDownload ⬇️ https://app.xamepage.com/api/app/download?ref=$code');
+              Share.share('Join me on XamePage and earn XameCoins together!\nDownload ⬇️ https://app.xamepage.com/join/$code');
             },
           ),
         ),
