@@ -169,6 +169,7 @@ class MediaDiscoverCard extends StatefulWidget {
   final VoidCallback? onTap;
   final void Function(int)? onCountChanged;
   final DateTime? ts;
+  final bool isWhisper;
 
   const MediaDiscoverCard({
     Key? key,
@@ -191,6 +192,7 @@ class MediaDiscoverCard extends StatefulWidget {
     this.onTap,
     this.onCountChanged,
     this.ts,
+    this.isWhisper = false,
   }) : super(key: key);
 
   @override
@@ -533,6 +535,58 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                           ),
                         ),
                       ),
+                    ),
+                  ),
+
+                // Whisper blur overlay
+                if (widget.isWhisper)
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Stack(fit: StackFit.expand, children: [
+                        // Blur layer
+                        BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          child: Container(
+                            color: Colors.black.withOpacity(0.35)),
+                        ),
+                        // Whisper badge
+                        Center(child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6A1B9A).withOpacity(0.85),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: const Color(0xFFCE93D8)
+                                        .withOpacity(0.4)),
+                              ),
+                              child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                Text('🤫', style: TextStyle(fontSize: 20)),
+                                SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Whisper Post',
+                                      style: TextStyle(
+                                          color: Color(0xFFCE93D8),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700)),
+                                    Text('Mutual contacts only',
+                                      style: TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 10)),
+                                  ]),
+                              ]),
+                            ),
+                          ],
+                        )),
+                      ]),
                     ),
                   ),
 

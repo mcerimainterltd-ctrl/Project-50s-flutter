@@ -23,6 +23,7 @@ class DiscoveryItem {
   final int               commentCount;
   final DateTime          ts;
   final Color?            accentColor;
+  final bool              isWhisper;
 
   const DiscoveryItem({
     required this.id,
@@ -44,6 +45,7 @@ class DiscoveryItem {
     required this.commentCount,
     required this.ts,
     this.accentColor,
+    this.isWhisper    = false,
   });
 
   factory DiscoveryItem.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,7 @@ class DiscoveryItem {
       commentCount:   json['commentCount'] as int,
       ts:             DateTime.parse(json['ts'] as String),
       accentColor:    json['accentColor'] != null ? Color(json['accentColor'] as int) : null,
+      isWhisper:      json['isWhisper'] as bool? ?? false,
     );
   }
 
@@ -95,6 +98,7 @@ class DiscoveryItem {
     commentCount:   commentCount ?? this.commentCount,
     ts:             ts,
     accentColor:    accentColor,
+    isWhisper:      isWhisper,
   );
 
 
@@ -118,6 +122,7 @@ class DiscoveryItem {
     'commentCount':   commentCount,
     'ts':             ts.toIso8601String(),
     'accentColor':    accentColor?.value,
+    'isWhisper':      isWhisper,
   };
 }
 

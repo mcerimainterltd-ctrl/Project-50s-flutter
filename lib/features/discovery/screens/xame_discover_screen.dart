@@ -146,15 +146,17 @@ class DiscoveryApiService {
     required String category,
     required File   mediaFile,
     required String mediaType,
+    bool isWhisper = false,
   }) async {
     try {
       final formData = FormData.fromMap({
-        'authorId': authorId,
-        'title':    title,
-        'caption':  caption,
-        'region':   region,
-        'category': category,
+        'authorId':  authorId,
+        'title':     title,
+        'caption':   caption,
+        'region':    region,
+        'category':  category,
         'mediaType': mediaType,
+        'isWhisper': isWhisper.toString(),
         'media': await MultipartFile.fromFile(mediaFile.path),
       });
       final res  = await _dio.post('/api/discover/post', data: formData);
@@ -633,7 +635,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       final idx = _feed.indexWhere((x) => x.id == item.id);
                       if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
                     }),
-                    ts:   item.ts,
+                    ts:        item.ts,
+                    isWhisper: item.isWhisper,
                     onTap: () {
                       DiscoveryApiService.viewPost(item.id);
                       _openDetail(context, item);
@@ -1177,6 +1180,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         category:  'Quote',
         mediaFile: file,
         mediaType: 'image',
+        isWhisper: _isWhisper,
       );
       if (!mounted) return;
       setState(() => _uploading = false);
@@ -1200,6 +1204,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       category:  _category,
       mediaFile: _mediaFile!,
       mediaType: _mediaType,
+      isWhisper: _isWhisper,
     );
     if (!mounted) return;
     setState(() => _uploading = false);
@@ -1441,6 +1446,71 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       ),
       ], // end if (!_quoteMode)
       SizedBox(height: 8),
+
+      // Whisper toggle
+      GestureDetector(
+        onTap: () => setState(() => _isWhisper = !_isWhisper),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _isWhisper
+                ? const Color(0xFF6A1B9A).withOpacity(0.15)
+                : Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isWhisper
+                  ? const Color(0xFFCE93D8).withOpacity(0.5)
+                  : Colors.white.withOpacity(0.08),
+            ),
+          ),
+          child: Row(children: [
+            Text(_isWhisper ? '🤫' : '👁️',
+                style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_isWhisper ? 'Whisper Post' : 'Public Post',
+                    style: TextStyle(
+                      color: _isWhisper
+                          ? const Color(0xFFCE93D8)
+                          : Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700)),
+                Text(_isWhisper
+                    ? 'Only mutual contacts can see this'
+                    : 'Visible to everyone on Discovery',
+                    style: const TextStyle(
+                        color: Colors.white38, fontSize: 11)),
+              ],
+            )),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 36, height: 20,
+              decoration: BoxDecoration(
+                color: _isWhisper
+                    ? const Color(0xFF9C27B0)
+                    : Colors.white12,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 200),
+                alignment: _isWhisper
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                child: Container(
+                  width: 16, height: 16,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: const BoxDecoration(
+                      color: Colors.white, shape: BoxShape.circle),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ),
 
       if (_error != null)
         Padding(padding: const EdgeInsets.only(bottom: 8),
