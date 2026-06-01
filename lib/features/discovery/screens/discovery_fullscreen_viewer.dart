@@ -562,9 +562,11 @@ class _VideoPageState extends State<_VideoPage> {
     super.initState();
     _ctrl = BetterPlayerController(
       BetterPlayerConfiguration(
-        autoPlay: widget.isActive,
-        looping:  true,
-        fit:      BoxFit.cover,
+        autoPlay:    widget.isActive,
+        looping:     true,
+        fit:         BoxFit.contain,
+        aspectRatio: 9 / 16,
+        fullScreenByDefault: false,
         controlsConfiguration: const BetterPlayerControlsConfiguration(
             showControls: false),
       ),
