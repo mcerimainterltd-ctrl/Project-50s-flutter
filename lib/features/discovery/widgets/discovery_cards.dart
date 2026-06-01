@@ -800,9 +800,11 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
                         // Title — hide for quotes (text is baked into the image)
                         if (widget.category.toUpperCase() != 'QUOTE')
                           Text(widget.title,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color:      context.xText,
-                              fontSize:   20,
+                              fontSize:   15,
                               fontWeight: FontWeight.w800,
                               height:     1.2)),
                         SizedBox(height: 12),

@@ -792,9 +792,9 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount:   2,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing:  8,
-                    childAspectRatio: 0.62,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing:  10,
+                    childAspectRatio: 0.58,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (_, i) {
