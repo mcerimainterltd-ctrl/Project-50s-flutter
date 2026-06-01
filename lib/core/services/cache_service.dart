@@ -100,7 +100,7 @@ class CacheService {
           isDeleted:    m['isDeleted']   as bool? ?? false,
           callType:     m['callType']    as String?,
           callStatus:   m['callStatus']  as String?,
-          callDuration: m['callDuration'] as int?,
+          callDuration: m['callDuration'] == null ? null : ((m['callDuration'] as num).toInt() > 86400 ? (m['callDuration'] as num).toInt() ~/ 1000 : (m['callDuration'] as num).toInt()),
         ))
         .where((m) => m.type != MessageType.call || m.callStatus != null)
         .toList();

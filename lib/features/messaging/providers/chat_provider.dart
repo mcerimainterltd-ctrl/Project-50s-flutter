@@ -84,7 +84,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         fileMime:    hasFile ? mime : null,
         callType:    m['callType']    as String? ?? data['callType']    as String?,
         callStatus:  m['callStatus']  as String? ?? data['callStatus']  as String?,
-        callDuration:((((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt()) ?? 0) > 1000000 ? (((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt())! ~/ 1000) : ((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt())),
+        callDuration:((((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt()) ?? 0) > 86400 ? (((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt())! ~/ 1000) : ((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt())),
       );
 
       // Deduplicate — server echo can arrive before socket ack
@@ -151,7 +151,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         status:       data['status'] as String? ?? 'sent',
         callType:     data['callType']     as String?,
         callStatus:   data['callStatus']   as String?,
-        callDuration: ((data['callDuration'] as num?)?.toInt() ?? 0) > 1000000 ? ((data['callDuration'] as num?)!.toInt() ~/ 1000) : (data['callDuration'] as num?)?.toInt(),
+        callDuration: ((data['callDuration'] as num?)?.toInt() ?? 0) > 86400 ? ((data['callDuration'] as num?)!.toInt() ~/ 1000) : (data['callDuration'] as num?)?.toInt(),
       );
       if (state.any((s) => s.id == msg.id)) return;
       state = [...state, msg];
@@ -524,7 +524,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
             fileMime:    hasFile ? mime : null,
             callType:    m['callType']     as String?,
             callStatus:  m['callStatus']   as String?,
-            callDuration:((((m['callDuration'] as num?)?.toInt()) ?? 0) > 1000000 ? (((m['callDuration'] as num?)?.toInt())! ~/ 1000) : ((m['callDuration'] as num?)?.toInt())),
+            callDuration:((((m['callDuration'] as num?)?.toInt()) ?? 0) > 86400 ? (((m['callDuration'] as num?)?.toInt())! ~/ 1000) : ((m['callDuration'] as num?)?.toInt())),
             reactions: m['reactions'] != null &&
                     (m['reactions'] as Map).isNotEmpty
                 ? Map<String, String>.from(m['reactions'] as Map)
