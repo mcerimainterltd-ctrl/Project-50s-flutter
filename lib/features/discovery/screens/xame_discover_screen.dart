@@ -9,6 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'dart:async';
+import 'package:geolocator/geolocator.dart';
+import '../../../features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:video_compress/video_compress.dart';
@@ -1134,6 +1136,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   bool   _uploading  = false;
   bool   _isWhisper    = false;
   bool   _isCollabOpen = false;
+  String? _detectedRegion;
+  bool   _locating     = false;
   String? _error;
   final _picker = ImagePicker();
   final _screenshotCtrl = ScreenshotController();
@@ -1162,6 +1166,63 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   static const _alignIcons = [Icons.format_align_center, Icons.format_align_left, Icons.format_align_right];
   static const _textColors = [Colors.white, Colors.black, Color(0xFFFFD700), Color(0xFF00B0A0)];
   static const _textColorNames = ['White','Black','Gold','Teal'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tryAutoLocate();
+  }
+
+  // Map lat/lng to nearest discoveryRegion code
+  String _coordsToRegion(double lat, double lng) {
+    // Simple bounding box matching
+    if (lat >= 4  && lat <= 14  && lng >= 3   && lng <= 15)  return 'ng';  // Nigeria
+    if (lat >= 5  && lat <= 11  && lng >= -3  && lng <= 1)   return 'gh';  // Ghana
+    if (lat >= -5 && lat <= 5   && lng >= 33  && lng <= 42)  return 'ke';  // Kenya
+    if (lat >= -35 && lat <= -22 && lng >= 16 && lng <= 33)  return 'za';  // South Africa
+    if (lat >= 25  && lat <= 50  && lng >= -125 && lng <= -65) return 'us'; // USA
+    if (lat >= 50  && lat <= 60  && lng >= -8  && lng <= 2)  return 'gb';  // UK
+    if (lat >= 36  && lat <= 71  && lng >= -10 && lng <= 40) return 'eu';  // Europe
+    if (lat >= 8   && lat <= 37  && lng >= 68  && lng <= 97) return 'in';  // India
+    if (lat >= 22  && lat <= 26  && lng >= 51  && lng <= 56) return 'ae';  // UAE
+    if (lat >= 1   && lat <= 2   && lng >= 103 && lng <= 104) return 'sg'; // Singapore
+    if (lat >= 30  && lat <= 46  && lng >= 129 && lng <= 146) return 'jp'; // Japan
+    if (lat >= -34 && lat <= 5   && lng >= -74 && lng <= -34) return 'br'; // Brazil
+    if (lat >= 42  && lat <= 84  && lng >= -141 && lng <= -52) return 'ca'; // Canada
+    if (lat >= -44 && lat <= -10 && lng >= 113 && lng <= 154) return 'au'; // Australia
+    return 'global';
+  }
+
+  Future<void> _tryAutoLocate() async {
+    // Check if autoLocate is enabled in settings
+    final autoLocate = SettingsNotifier.currentSettings.autoLocate;
+    if (!autoLocate) return;
+
+    setState(() => _locating = true);
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        final req = await Geolocator.requestPermission();
+        if (req == LocationPermission.denied ||
+            req == LocationPermission.deniedForever) {
+          setState(() => _locating = false);
+          return;
+        }
+      }
+      final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.low,
+          timeLimit: const Duration(seconds: 8));
+      final code = _coordsToRegion(pos.latitude, pos.longitude);
+      if (mounted) {
+        setState(() {
+          _detectedRegion = code;
+          _locating = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -1359,7 +1420,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         authorId:  widget.userId,
         title:     _quoteCtrl.text.trim(),
         caption:   _authorCtrl.text.trim(),
-        region:    widget.region,
+        region:    _detectedRegion ?? widget.region,
         category:  'Quote',
         mediaFile: file,
         mediaType: 'image',
@@ -1383,7 +1444,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       authorId:  widget.userId,
       title:     _titleCtrl.text.trim(),
       caption:   _captionCtrl.text.trim(),
-      region:    widget.region,
+      region:    _detectedRegion ?? widget.region,
       category:  _category,
       mediaFile: _mediaFile!,
       mediaType: _mediaType,
@@ -1630,6 +1691,48 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       ),
       ], // end if (!_quoteMode)
       SizedBox(height: 8),
+
+      // Auto-locate indicator
+      if (_locating || _detectedRegion != null)
+        Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: _detectedRegion != null
+                ? const Color(0xFF1B3A2A)
+                : Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: _detectedRegion != null
+                  ? const Color(0xFF00E5A0).withOpacity(0.4)
+                  : Colors.white12),
+          ),
+          child: Row(children: [
+            _locating
+                ? const SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 1.5, color: Colors.white54))
+                : const Text('📍', style: TextStyle(fontSize: 14)),
+            const SizedBox(width: 8),
+            Expanded(child: Text(
+              _locating
+                  ? 'Detecting your location...'
+                  : 'Posting to ${_detectedRegion == 'global' ? 'Global' : (discoveryRegions.firstWhere((r) => r.code == _detectedRegion, orElse: () => discoveryRegions.first).name)} ${discoveryRegions.firstWhere((r) => r.code == (_detectedRegion ?? 'global'), orElse: () => discoveryRegions.first).flag}',
+              style: TextStyle(
+                color: _detectedRegion != null
+                    ? const Color(0xFF00E5A0)
+                    : Colors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w500),
+            )),
+            if (_detectedRegion != null)
+              GestureDetector(
+                onTap: () => setState(() => _detectedRegion = null),
+                child: const Icon(Icons.close_rounded,
+                    color: Colors.white38, size: 16),
+              ),
+          ]),
+        ),
 
       // Whisper toggle
       GestureDetector(
