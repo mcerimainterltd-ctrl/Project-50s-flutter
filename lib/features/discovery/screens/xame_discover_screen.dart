@@ -1,4 +1,5 @@
 import "../widgets/tv_entry_button.dart";
+import "discovery_map_screen.dart";
 import "package:go_router/go_router.dart";
 import 'dart:io';
 import 'dart:typed_data';
@@ -594,6 +595,38 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               ]),
               actions: [
           TVEntryButton(onTap: () => context.push("/tv")),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => DiscoveryMapScreen(
+                        posts:    _feed,
+                        regions:  discoveryRegions,
+                        currentRegion: _regionCode,
+                        onRegionSelected: _onRegionSelected,
+                      ),
+                    ));
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: const Row(mainAxisSize: MainAxisSize.min,
+                        children: [
+                      Text('🌍', style: TextStyle(fontSize: 13)),
+                      SizedBox(width: 4),
+                      Text('Map', style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5)),
+                    ]),
+                  ),
+                ),
                 IconButton(
                   icon: AnimatedSwitcher(
                     duration: Duration(milliseconds: 200),
