@@ -466,8 +466,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
         child: Hero(
           tag: 'discover_${widget.title}',
           child: Container(
-            height: 420,
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
               border: _myAura != null ? Border.all(

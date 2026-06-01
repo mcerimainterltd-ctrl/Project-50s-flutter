@@ -787,47 +787,64 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 region: _regionName,
                 onPost: () => _showPostDialog(context, user?.xameId ?? '')))
             else
-              SliverList(delegate: SliverChildBuilderDelegate(
-                (_, i) {
-                  final item = _filtered[i];
-                  return MediaDiscoverCard(
-                    mediaType:    item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
-                    mediaUrl:     item.mediaUrl,
-                    thumbnailUrl: item.thumbnailUrl,
-                    title:        item.title,
-                    category:     item.category,
-                    isLive:       item.isLive,
-                    authorName:   item.authorName,
-                    authorAvatar: item.authorAvatar,
-                    authorId:     item.authorId,
-                    userName:     user?.displayName ?? '',
-                    viewCount:    item.viewCount,
-                    likeCount:    item.likeCount,
-                    commentCount: item.commentCount,
-                    postId:       item.id,
-                    userId:       user?.xameId ?? '',
-                    userAvatar:   user?.profilePic ?? '',
-                    onCountChanged: (n) => setState(() {
-                      final idx = _feed.indexWhere((x) => x.id == item.id);
-                      if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
-                    }),
-                    ts:        item.ts,
-                    isWhisper:           item.isWhisper,
-                    isImmortal:          item.isImmortal,
-                    isCollabOpen:        item.isCollabOpen,
-                    collabStatus:        item.collabStatus,
-                    collabPartnerId:     item.collabPartnerId,
-                    collabPartnerName:   item.collabPartnerName,
-                    collabPartnerAvatar: item.collabPartnerAvatar,
-                    collabMediaUrl:      item.collabMediaUrl,
-                    collabMediaType:     item.collabMediaType,
-                    onTap: () {
-                      DiscoveryApiService.viewPost(item.id);
-                      _openDetail(context, item);
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount:   2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing:  8,
+                    childAspectRatio: 0.62,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (_, i) {
+                      final item = _filtered[i];
+                      // Stagger: odd-index cards taller via an inner container
+                      final isOdd = i.isOdd;
+                      return Padding(
+                        padding: EdgeInsets.only(top: isOdd ? 24 : 0, bottom: isOdd ? 0 : 24),
+                        child: MediaDiscoverCard(
+                          mediaType:    item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
+                          mediaUrl:     item.mediaUrl,
+                          thumbnailUrl: item.thumbnailUrl,
+                          title:        item.title,
+                          category:     item.category,
+                          isLive:       item.isLive,
+                          authorName:   item.authorName,
+                          authorAvatar: item.authorAvatar,
+                          authorId:     item.authorId,
+                          userName:     user?.displayName ?? '',
+                          viewCount:    item.viewCount,
+                          likeCount:    item.likeCount,
+                          commentCount: item.commentCount,
+                          postId:       item.id,
+                          userId:       user?.xameId ?? '',
+                          userAvatar:   user?.profilePic ?? '',
+                          onCountChanged: (n) => setState(() {
+                            final idx = _feed.indexWhere((x) => x.id == item.id);
+                            if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
+                          }),
+                          ts:        item.ts,
+                          isWhisper:           item.isWhisper,
+                          isImmortal:          item.isImmortal,
+                          isCollabOpen:        item.isCollabOpen,
+                          collabStatus:        item.collabStatus,
+                          collabPartnerId:     item.collabPartnerId,
+                          collabPartnerName:   item.collabPartnerName,
+                          collabPartnerAvatar: item.collabPartnerAvatar,
+                          collabMediaUrl:      item.collabMediaUrl,
+                          collabMediaType:     item.collabMediaType,
+                          onTap: () {
+                            DiscoveryApiService.viewPost(item.id);
+                            _openDetail(context, item);
+                          },
+                        ),
+                      );
                     },
-                  );
-                },
-                childCount: _filtered.length)),
+                    childCount: _filtered.length,
+                  ),
+                ),
+              ),
 
             // Load more indicator
             if (_loadingMore)
