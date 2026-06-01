@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import '../../../features/settings/screens/settings_screen.dart';
+import 'discovery_fullscreen_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:video_compress/video_compress.dart';
@@ -856,10 +857,33 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   }
 
   void _openDetail(BuildContext context, DiscoveryItem item) {
+    final user = ref.read(currentUserProvider);
+    final posts = _filtered.map((e) => {
+      'id':            e.id,
+      'authorId':      e.authorId,
+      'authorName':    e.authorName,
+      'authorAvatar':  e.authorAvatar,
+      'mediaUrl':      e.mediaUrl,
+      'mediaType':     e.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
+      'title':         e.title,
+      'category':      e.category,
+      'likeCount':     e.likeCount,
+      'commentCount':  e.commentCount,
+      'viewCount':     e.viewCount,
+      'ts':            e.ts?.toIso8601String(),
+    }).toList();
+    final idx = _filtered.indexWhere((e) => e.id == item.id);
     Navigator.of(context).push(PageRouteBuilder(
       pageBuilder: (_, anim, __) => FadeTransition(
-          opacity: anim, child: _DetailScreen(item: item)),
-      transitionDuration: const Duration(milliseconds: 300),
+        opacity: anim,
+        child: DiscoveryFullscreenViewer(
+          posts:            posts,
+          initialIndex:     idx < 0 ? 0 : idx,
+          currentUserId:    user?.xameId ?? '',
+          currentUserAvatar: user?.profilePic ?? '',
+        ),
+      ),
+      transitionDuration: const Duration(milliseconds: 250),
     ));
   }
 
