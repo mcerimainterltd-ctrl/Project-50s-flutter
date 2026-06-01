@@ -182,9 +182,12 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => CommentsSheet(
-        postId: postId,
-        userId: widget.currentUserId,
-        userAvatar: widget.currentUserAvatar,
+        postId:       postId,
+        userId:       widget.currentUserId,
+        authorName:   post['authorName'] as String? ?? '',
+        authorAvatar: post['authorAvatar'] as String? ?? '',
+        initialCount: (post['commentCount'] as int?) ?? 0,
+        onCountChanged: (_) {},
       ),
     );
   }
