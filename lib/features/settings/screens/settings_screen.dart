@@ -45,6 +45,9 @@ class SettingsData {
   final bool   noiseSuppression;
   final bool   echoCancellation;
 
+  // Discovery
+  final bool   autoLocate;      // auto-detect location for posts
+
   // Appearance
   final String fontSize;        // 'small' | 'normal' | 'large'
   final String bubbleStyle;     // 'modern' | 'classic' | 'minimal'
@@ -74,6 +77,7 @@ class SettingsData {
     this.reducedMotion   = false,
     this.highContrast    = false,
     this.stealthMode     = false,
+    this.autoLocate      = true,
   });
 
   SettingsData copyWith({
@@ -86,7 +90,7 @@ class SettingsData {
     bool? noiseSuppression, bool? echoCancellation,
     String? fontSize, String? bubbleStyle,
     bool? reducedMotion, bool? highContrast,
-    bool? stealthMode,
+    bool? stealthMode, bool? autoLocate,
   }) => SettingsData(
     lastSeen:         lastSeen         ?? this.lastSeen,
     profilePhoto:     profilePhoto     ?? this.profilePhoto,
@@ -109,6 +113,7 @@ class SettingsData {
     reducedMotion:    reducedMotion    ?? this.reducedMotion,
     highContrast:     highContrast     ?? this.highContrast,
     stealthMode:      stealthMode      ?? this.stealthMode,
+    autoLocate:       autoLocate       ?? this.autoLocate,
   );
 
   Map<String, dynamic> toMap() => {
@@ -122,6 +127,7 @@ class SettingsData {
     'fontSize': fontSize, 'bubbleStyle': bubbleStyle,
     'reducedMotion': reducedMotion, 'highContrast': highContrast,
     'stealthMode': stealthMode,
+    'autoLocate':  autoLocate,
   };
 
   factory SettingsData.fromMap(Map m) => SettingsData(
@@ -146,6 +152,7 @@ class SettingsData {
     reducedMotion:    m['reducedMotion']    ?? false,
     highContrast:     m['highContrast']     ?? false,
     stealthMode:      m['stealthMode']      ?? false,
+    autoLocate:       m['autoLocate']       ?? true,
   );
 }
 
@@ -436,6 +443,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ]),
 
           // ── Appearance ───────────────────────────────────────────────────────
+          _Section(theme: theme, title: 'Discovery', children: [
+            _ToggleTile(
+              theme:    theme,
+              icon:     Icons.my_location_rounded,
+              title:    'Auto-Locate Posts',
+              subtitle: 'Automatically tag your posts with your current region',
+              value:    settings.autoLocate,
+              onChanged: (v) => save(settings.copyWith(autoLocate: v)),
+            ),
+          ]),
+
           _Section(theme: theme, title: 'Appearance', children: [
             _NavTile(
               theme:    theme,
