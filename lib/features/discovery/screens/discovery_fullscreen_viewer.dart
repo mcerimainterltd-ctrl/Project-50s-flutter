@@ -464,7 +464,7 @@ class _ImagePageState extends State<_ImagePage>
   void initState() {
     super.initState();
     _zoom = AnimationController(vsync: this, duration: const Duration(seconds: 8));
-    _scale = Tween(begin: 1.0, end: 1.08)
+    _scale = Tween(begin: 1.0, end: 1.03)
         .animate(CurvedAnimation(parent: _zoom, curve: Curves.easeInOut));
     _zoom.repeat(reverse: true);
   }
@@ -482,7 +482,7 @@ class _ImagePageState extends State<_ImagePage>
       builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: CachedNetworkImage(
         imageUrl: widget.url,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         width: double.infinity,
         height: double.infinity,
         errorWidget: (_, __, ___) => Container(
