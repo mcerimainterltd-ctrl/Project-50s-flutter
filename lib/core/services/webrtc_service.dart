@@ -344,7 +344,7 @@ class WebRTCService {
     if (callerCancelled && currentRemoteUserId != null) {
       _socket.emitCallRejected(currentRemoteUserId!, "cancelled");
     } else if (!isTimeout) {
-      _socket.emitCallEnded(currentRemoteUserId ?? "");
+      _socket.emitCallEnded(currentRemoteUserId ?? '', callId: _currentCallId);
     }
     _incomingCallController.add(false);
     _callState = CallState.ended; _callStateController.add(CallState.ended);

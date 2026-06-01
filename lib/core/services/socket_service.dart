@@ -459,7 +459,7 @@ class SocketService {
   void emitIceCandidate(String r, dynamic c)       => emit('ice-candidate',      {'recipientId': r, 'candidate': c});
   void emitCallAccepted(String r, {String? callId})=> emit('call-accepted',      {'recipientId': r, if (callId != null) 'callId': callId});
   void emitCallRejected(String r, String reason)   => emit('call-rejected',      {'recipientId': r, 'reason': reason});
-  void emitCallEnded(String r)                     => emit('call-ended',         {'recipientId': r});
+  void emitCallEnded(String r, {String? callId})       => emit('call-ended',         {'recipientId': r, if (callId != null) 'callId': callId});
   void emitCallHold(String r)                      => emit('call-hold',          {'recipientId': r});
   void emitCallResume(String r)                    => emit('call-resume',        {'recipientId': r});
   void emitGroupTyping(String g, String u, String n)=> emit('group:typing',      {'groupId': g, 'userId': u, 'name': n});
