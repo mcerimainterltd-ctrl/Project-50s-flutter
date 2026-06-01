@@ -32,6 +32,8 @@ class _DiscoveryFullscreenViewerState
     extends State<DiscoveryFullscreenViewer> {
   late PageController _verticalCtrl;
   int _currentIndex = 0;
+  late List<String> _authorOrder;
+  late Map<String, List<Map<String, dynamic>>> _postsByAuthor;
 
   @override
   void initState() {
