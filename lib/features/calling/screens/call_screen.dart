@@ -8,6 +8,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/services/webrtc_service.dart';
+import '../../../core/services/cache_service.dart';
 import '../../contacts/providers/contacts_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
@@ -98,6 +99,23 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               }
             } catch (_) {}
           }
+          // Record completed call bubble
+          try {
+            final user = ref.read(currentUserProvider);
+            final service = ref.read(webRTCServiceProvider);
+            if (user != null) {
+              await CacheService.addCallRecord({
+                'callId':      service.currentCallId ?? 'local_${DateTime.now().millisecondsSinceEpoch}',
+                'callerId':   widget.isIncoming ? widget.userId : user.xameId,
+                'recipientId': widget.isIncoming ? user.xameId : widget.userId,
+                'callType':   widget.isVideo ? 'video' : 'voice',
+                'status':     'completed',
+                'startTime':  DateTime.now().subtract(Duration(seconds: _seconds)).toIso8601String(),
+                'duration':   _seconds,
+                'seen':       false,
+              });
+            }
+          } catch (_) {}
           await Future.delayed(const Duration(seconds: 3));
           if (mounted) context.go('/contacts');
         }
