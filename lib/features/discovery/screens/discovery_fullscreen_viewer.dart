@@ -36,8 +36,27 @@ class _DiscoveryFullscreenViewerState
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
-    _verticalCtrl = PageController(initialPage: widget.initialIndex);
+    // Map post index to author index
+    final initialPost = widget.posts.length > widget.initialIndex
+        ? widget.posts[widget.initialIndex]
+        : (widget.posts.isNotEmpty ? widget.posts.first : null);
+    final initialAuthorId = initialPost?['authorId'] as String? ?? '';
+    _currentIndex = 0;
+
+    // Build author-grouped structure first so we can find the author index
+    _authorOrder = [];
+    _postsByAuthor = {};
+    for (final p in widget.posts) {
+      final aId = p['authorId'] as String? ?? '';
+      if (!_postsByAuthor.containsKey(aId)) {
+        _authorOrder.add(aId);
+        _postsByAuthor[aId] = [];
+      }
+      _postsByAuthor[aId]!.add(p);
+    }
+    final authorIdx = _authorOrder.indexOf(initialAuthorId);
+    _currentIndex = authorIdx < 0 ? 0 : authorIdx;
+    _verticalCtrl = PageController(initialPage: _currentIndex);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
@@ -55,10 +74,12 @@ class _DiscoveryFullscreenViewerState
       body: PageView.builder(
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
-        itemCount: widget.posts.length,
+        itemCount: _authorOrder.length,
         onPageChanged: (i) => setState(() => _currentIndex = i),
         itemBuilder: (_, i) {
-          final post = widget.posts[i];
+          final authorId = _authorOrder[i];
+          final authorPosts = _postsByAuthor[authorId]!;
+          final post = authorPosts.first;
           return _FullscreenPostPage(
             post: post,
             isActive: i == _currentIndex,
