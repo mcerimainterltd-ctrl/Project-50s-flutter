@@ -3183,11 +3183,14 @@ class _RewardsTickerState extends State<_RewardsTicker>
     }
   }
 
+  static const double _pixelsPerSecond = 40.0; // lower = slower
+  DateTime? _lastTick;
+
   @override
   void initState() {
     super.initState();
     _scrollCtrl = ScrollController();
-    _animCtrl   = AnimationController(vsync: this, duration: const Duration(seconds: 60))
+    _animCtrl   = AnimationController(vsync: this, duration: const Duration(seconds: 1))
       ..addListener(_scroll)
       ..repeat();
   }
@@ -3196,9 +3199,12 @@ class _RewardsTickerState extends State<_RewardsTicker>
     if (!_scrollCtrl.hasClients) return;
     final max = _scrollCtrl.position.maxScrollExtent;
     if (max <= 0) return;
-    // Rightward scroll — from 0 to max
-    final pos = _animCtrl.value * max;
-    _scrollCtrl.jumpTo(pos);
+    final now = DateTime.now();
+    final elapsed = _lastTick == null ? 0.0
+        : now.difference(_lastTick!).inMicroseconds / 1000000.0;
+    _lastTick = now;
+    final next = _scrollCtrl.offset + (_pixelsPerSecond * elapsed);
+    _scrollCtrl.jumpTo(next >= max ? 0 : next);
   }
 
   @override
