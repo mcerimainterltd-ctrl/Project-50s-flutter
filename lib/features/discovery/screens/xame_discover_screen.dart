@@ -210,6 +210,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   String _regionCode = 'global';
   String _regionName = 'Global';
   String _searchQuery = '';
+  String _moodFilter  = '';
   String? _authorFilter;
   int    _page        = 1;
   bool   _hasMore     = true;
@@ -397,11 +398,20 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   }
 
   List<DiscoveryItem> get _filtered {
-    if (_searchQuery.isEmpty) return _feed;
-    return _feed.where((i) =>
-      i.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      i.category.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+    var list = _feed;
+    if (_searchQuery.isNotEmpty) {
+      list = list.where((i) =>
+        i.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+        i.category.toLowerCase().contains(_searchQuery.toLowerCase())
+      ).toList();
+    }
+    if (_moodFilter.isNotEmpty) {
+      list = list.where((i) =>
+        i.category.toLowerCase().contains(_moodFilter.toLowerCase()) ||
+        i.title.toLowerCase().contains(_moodFilter.toLowerCase())
+      ).toList();
+    }
+    return list;
   }
 
   void _openSearch() {
@@ -775,6 +785,15 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       child: CircularProgressIndicator(
                           color: context.xPrimary, strokeWidth: 1.5)),
                 ]),
+              ),
+            ),
+
+            // Mood filter bar
+            SliverToBoxAdapter(
+              child: _MoodFilterBar(
+                selected: _moodFilter,
+                onSelect: (m) => setState(() =>
+                    _moodFilter = _moodFilter == m ? '' : m),
               ),
             ),
 
@@ -3292,6 +3311,79 @@ class _RewardsTickerState extends State<_RewardsTicker>
           ),
         ),
       ]),
+    );
+  }
+}
+
+// ── Mood Filter Bar ───────────────────────────────────────────────────────────
+class _MoodFilterBar extends StatelessWidget {
+  final String selected;
+  final void Function(String) onSelect;
+  const _MoodFilterBar({required this.selected, required this.onSelect});
+
+  static const _moods = [
+    ('🔥', 'Hot'),
+    ('😂', 'Funny'),
+    ('🎵', 'Music'),
+    ('💼', 'Business'),
+    ('🏆', 'Sport'),
+    ('🎨', 'Art'),
+    ('💡', 'Tech'),
+    ('🙏', 'Faith'),
+    ('❤️', 'Love'),
+    ('🌍', 'Culture'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: _moods.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final mood     = _moods[i];
+          final isActive = selected == mood.$2;
+          return GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onSelect(mood.$2);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? const Color(0xFF00E5FF).withOpacity(0.15)
+                    : Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isActive
+                      ? const Color(0xFF00E5FF)
+                      : Colors.white12,
+                  width: isActive ? 1.2 : 0.8,
+                ),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(mood.$1, style: const TextStyle(fontSize: 13)),
+                const SizedBox(width: 5),
+                Text(mood.$2,
+                    style: TextStyle(
+                      color: isActive
+                          ? const Color(0xFF00E5FF)
+                          : Colors.white60,
+                      fontSize:   12,
+                      fontWeight: isActive
+                          ? FontWeight.w700
+                          : FontWeight.normal,
+                    )),
+              ]),
+            ),
+          );
+        },
+      ),
     );
   }
 }
