@@ -20,6 +20,14 @@ class _RegionFilterBarState extends State<RegionFilterBar> {
   void initState() { super.initState(); _selected = widget.initialCode; }
 
   @override
+  void didUpdateWidget(RegionFilterBar old) {
+    super.didUpdateWidget(old);
+    if (old.initialCode != widget.initialCode) {
+      setState(() => _selected = widget.initialCode);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start, children: [
     SizedBox(height: 44,
