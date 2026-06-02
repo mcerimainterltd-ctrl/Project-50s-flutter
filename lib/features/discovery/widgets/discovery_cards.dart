@@ -169,6 +169,7 @@ class MediaDiscoverCard extends StatefulWidget {
   final String? authorId;
   final VoidCallback? onTap;
   final void Function(int)? onCountChanged;
+  final void Function(bool)? onVisibilityChanged;
   final DateTime? ts;
   final bool isWhisper;
   final bool   isImmortal;
@@ -200,6 +201,7 @@ class MediaDiscoverCard extends StatefulWidget {
     this.thumbnailUrl,
     this.onTap,
     this.onCountChanged,
+    this.onVisibilityChanged,
     this.ts,
     this.isWhisper           = false,
     this.isImmortal          = false,
@@ -213,10 +215,10 @@ class MediaDiscoverCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MediaDiscoverCard> createState() => _MediaDiscoverCardState();
+  State<MediaDiscoverCard> createState() => MediaDiscoverCardState();
 }
 
-class _MediaDiscoverCardState extends State<MediaDiscoverCard>
+class MediaDiscoverCardState extends State<MediaDiscoverCard>
     with TickerProviderStateMixin {
   late AnimationController _tapCtrl;
   late Animation<double>   _tapScale;
@@ -224,6 +226,7 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   late Animation<double>   _likeScale;
   bool _liked = false;
   bool _playing = false;
+  bool _autoPlay = false;
   late int _commentCount;
   BetterPlayerController? _playerCtrl;
   AuraType? _myAura;
@@ -232,6 +235,22 @@ class _MediaDiscoverCardState extends State<MediaDiscoverCard>
   late Animation<double> _auraPickerScale;
   late AnimationController _pulseCtrl;
   late Animation<double>   _pulseAnim;
+
+  void _onVisibilityChanged(bool visible) {
+    setAutoPlay(visible);
+  }
+
+  // Called externally via onVisibilityChanged
+  void setAutoPlay(bool visible) {
+    if (!mounted) return;
+    if (widget.mediaType != 'video') return;
+    if (visible && !_playing) {
+      _playVideo();
+    } else if (!visible && _playing) {
+      setState(() { _playing = false; });
+      _playerCtrl?.pause();
+    }
+  }
 
   void _playVideo() {
     _playerCtrl?.dispose();
@@ -1174,3 +1193,51 @@ class _FollowButtonState extends State<_FollowButton> {
   }
 }
 
+
+// ── Visibility Detector ───────────────────────────────────────────────────────
+class VisibilityDetectorWidget extends StatefulWidget {
+  final Widget child;
+  final void Function(bool visible) onVisibilityChanged;
+  const VisibilityDetectorWidget({
+    Key? key,
+    required this.child,
+    required this.onVisibilityChanged,
+  }) : super(key: key);
+
+  @override
+  State<VisibilityDetectorWidget> createState() =>
+      _VisibilityDetectorWidgetState();
+}
+
+class _VisibilityDetectorWidgetState extends State<VisibilityDetectorWidget> {
+  final _key = GlobalKey();
+  bool _wasVisible = false;
+
+  void _checkVisibility() {
+    if (!mounted) return;
+    final ctx = _key.currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final pos    = box.localToGlobal(Offset.zero);
+    final size   = box.size;
+    final screen = MediaQuery.of(context).size;
+    final visible = pos.dy < screen.height * 0.85 &&
+        pos.dy + size.height > screen.height * 0.15;
+    if (visible != _wasVisible) {
+      _wasVisible = visible;
+      widget.onVisibilityChanged(visible);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _checkVisibility());
+        return false;
+      },
+      child: KeyedSubtree(key: _key, child: widget.child),
+    );
+  }
+}

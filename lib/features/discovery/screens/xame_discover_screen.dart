@@ -216,6 +216,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   bool   _hasMore     = true;
 
   List<DiscoveryItem>           _feed    = [];
+  final Map<String, GlobalKey<MediaDiscoverCardState>> _videoKeys = {};
   List<DiscoveryUser>           _people      = [];
   int                           _peoplePage  = 1;
   bool                          _hasMorePeople = true;
@@ -834,41 +835,52 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       final isOdd = i.isOdd;
                       return Padding(
                         padding: EdgeInsets.only(top: isOdd ? 24 : 0, bottom: isOdd ? 0 : 24),
-                        child: MediaDiscoverCard(
-                          mediaType:    item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
-                          mediaUrl:     item.mediaUrl,
-                          thumbnailUrl: item.thumbnailUrl,
-                          title:        item.title,
-                          category:     item.category,
-                          isLive:       item.isLive,
-                          authorName:   item.authorName,
-                          authorAvatar: item.authorAvatar,
-                          authorId:     item.authorId,
-                          userName:     user?.displayName ?? '',
-                          viewCount:    item.viewCount,
-                          likeCount:    item.likeCount,
-                          commentCount: item.commentCount,
-                          postId:       item.id,
-                          userId:       user?.xameId ?? '',
-                          userAvatar:   user?.profilePic ?? '',
-                          onCountChanged: (n) => setState(() {
-                            final idx = _feed.indexWhere((x) => x.id == item.id);
-                            if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
-                          }),
-                          ts:        item.ts,
-                          isWhisper:           item.isWhisper,
-                          isImmortal:          item.isImmortal,
-                          isCollabOpen:        item.isCollabOpen,
-                          collabStatus:        item.collabStatus,
-                          collabPartnerId:     item.collabPartnerId,
-                          collabPartnerName:   item.collabPartnerName,
-                          collabPartnerAvatar: item.collabPartnerAvatar,
-                          collabMediaUrl:      item.collabMediaUrl,
-                          collabMediaType:     item.collabMediaType,
-                          onTap: () {
-                            DiscoveryApiService.viewPost(item.id);
-                            _openDetail(context, item);
+                        child: VisibilityDetectorWidget(
+                          onVisibilityChanged: (visible) {
+                            if (item.mediaType == DiscoveryMediaType.video) {
+                              _videoKeys[item.id]?.currentState?.setAutoPlay(visible);
+                            }
                           },
+                          child: MediaDiscoverCard(
+                            key: item.mediaType == DiscoveryMediaType.video
+                                ? (_videoKeys[item.id] ??= GlobalKey<MediaDiscoverCardState>())
+                                : null,
+                            mediaType:    item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
+                            mediaUrl:     item.mediaUrl,
+                            thumbnailUrl: item.thumbnailUrl,
+                            title:        item.title,
+                            category:     item.category,
+                            isLive:       item.isLive,
+                            authorName:   item.authorName,
+                            authorAvatar: item.authorAvatar,
+                            authorId:     item.authorId,
+                            userName:     user?.displayName ?? '',
+                            viewCount:    item.viewCount,
+                            likeCount:    item.likeCount,
+                            commentCount: item.commentCount,
+                            postId:       item.id,
+                            userId:       user?.xameId ?? '',
+                            userAvatar:   user?.profilePic ?? '',
+                            onCountChanged: (n) => setState(() {
+                              final idx = _feed.indexWhere((x) => x.id == item.id);
+                              if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
+                            }),
+                            ts:        item.ts,
+                            isWhisper:           item.isWhisper,
+                            isImmortal:          item.isImmortal,
+                            isCollabOpen:        item.isCollabOpen,
+                            collabStatus:        item.collabStatus,
+                            collabPartnerId:     item.collabPartnerId,
+                            collabPartnerName:   item.collabPartnerName,
+                            collabPartnerAvatar: item.collabPartnerAvatar,
+                            collabMediaUrl:      item.collabMediaUrl,
+                            collabMediaType:     item.collabMediaType,
+                            onVisibilityChanged: (v) => _videoKeys[item.id]?.currentState?.setAutoPlay(v),
+                            onTap: () {
+                              DiscoveryApiService.viewPost(item.id);
+                              _openDetail(context, item);
+                            },
+                          ),
                         ),
                       );
                     },
