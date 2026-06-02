@@ -695,6 +695,18 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 initialCode:      _regionCode),
             ),
 
+            // Trending pulse strip
+            if (!_loading && _feed.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _TrendingPulseStrip(
+                  posts: _feed.where((p) => p.isLive || p.viewCount > 10).take(12).toList(),
+                  onTap: (item) {
+                    DiscoveryApiService.viewPost(item.id);
+                    _openDetail(context, item);
+                  },
+                ),
+              ),
+
             // People carousel — live from API
             if (!_loading && _people.isNotEmpty)
               SliverToBoxAdapter(
@@ -3385,5 +3397,167 @@ class _MoodFilterBar extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+// ── Trending Pulse Strip ──────────────────────────────────────────────────────
+class _TrendingPulseStrip extends StatefulWidget {
+  final List<DiscoveryItem> posts;
+  final void Function(DiscoveryItem) onTap;
+  const _TrendingPulseStrip({required this.posts, required this.onTap});
+
+  @override
+  State<_TrendingPulseStrip> createState() => _TrendingPulseStripState();
+}
+
+class _TrendingPulseStripState extends State<_TrendingPulseStrip>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ripple;
+
+  @override
+  void initState() {
+    super.initState();
+    _ripple = AnimationController(
+        vsync: this, duration: const Duration(seconds: 2))
+      ..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ripple.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.posts.isEmpty) return const SizedBox.shrink();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+        child: Row(children: [
+          AnimatedBuilder(
+            animation: _ripple,
+            builder: (_, __) => Container(
+              width: 8, height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFFF1744),
+                boxShadow: [BoxShadow(
+                  color: const Color(0xFFFF1744)
+                      .withOpacity(0.6 * (1 - _ripple.value)),
+                  blurRadius: 8 + 8 * _ripple.value,
+                  spreadRadius: 2 * _ripple.value,
+                )],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text('TRENDING NOW',
+              style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2)),
+        ]),
+      ),
+      SizedBox(
+        height: 90,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          itemCount: widget.posts.length,
+          itemBuilder: (_, i) {
+            final post = widget.posts[i];
+            return GestureDetector(
+              onTap: () => widget.onTap(post),
+              child: Container(
+                margin: const EdgeInsets.only(right: 14),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  AnimatedBuilder(
+                    animation: _ripple,
+                    builder: (_, child) {
+                      final glow = post.isLive
+                          ? const Color(0xFFFF1744)
+                          : const Color(0xFF00E5FF);
+                      return Container(
+                        width: 58, height: 58,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(
+                            color: glow.withOpacity(
+                                post.isLive
+                                    ? 0.5 * (0.5 + 0.5 * _ripple.value)
+                                    : 0.3),
+                            blurRadius: post.isLive
+                                ? 10 + 8 * _ripple.value
+                                : 8,
+                            spreadRadius: post.isLive
+                                ? 2 * _ripple.value
+                                : 0,
+                          )],
+                        ),
+                        child: child,
+                      );
+                    },
+                    child: Container(
+                      width: 58, height: 58,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: post.isLive
+                              ? const Color(0xFFFF1744)
+                              : const Color(0xFF00E5FF),
+                          width: 2,
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: post.authorAvatar,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => Container(
+                            color: const Color(0xFF1A1A2E),
+                            child: const Icon(Icons.person,
+                                color: Colors.white38, size: 24)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  SizedBox(
+                    width: 58,
+                    child: Text(
+                      post.authorName,
+                      style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  if (post.isLive)
+                    Container(
+                      margin: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF1744),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text('LIVE',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5)),
+                    ),
+                ]),
+              ),
+            );
+          },
+        ),
+      ),
+    ]);
   }
 }
