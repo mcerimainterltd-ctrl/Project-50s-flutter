@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/constants.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../shared/models/xame_user.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
@@ -51,7 +53,20 @@ class AuthService {
   Future<LoginResult> login(String xameId, String password, {String? otp}) async {
     final body = <String, dynamic>{'xameId': xameId.trim(), 'password': password};
     if (otp != null) body['otp'] = otp;
-    final res  = await _dio.post('/api/login', data: body);
+    // Build rich device User-Agent
+    String ua = 'XamePage/2.1';
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (Platform.isAndroid) {
+        final parts = Platform.operatingSystemVersion.split(' ');
+        final osVer = parts.length > 1 ? parts[1] : Platform.operatingSystemVersion;
+        ua = 'XamePage/${info.version} Android/$osVer (${Platform.localHostname})';
+      } else if (Platform.isIOS) {
+        ua = 'XamePage/${info.version} iPhone iOS/${Platform.operatingSystemVersion}';
+      }
+    } catch (_) {}
+    final res  = await _dio.post('/api/login', data: body,
+        options: Options(headers: {'User-Agent': ua}));
     final data = res.data as Map<String, dynamic>;
     if (data['requiresPasswordSetup'] == true)
       return LoginResult.needsPasswordSetup(XameUser.fromMap(data['user'] as Map<String, dynamic>));

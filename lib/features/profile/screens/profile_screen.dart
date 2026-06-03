@@ -703,6 +703,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             Text('Logged in: ${_fmtDate(date)}',
                               style: TextStyle(color: context.xMuted,
                                   fontSize: 11)),
+                            if (location.isNotEmpty) ...[
+                              SizedBox(height: 2),
+                              Row(children: [
+                                Icon(Icons.location_on_rounded,
+                                    color: context.xMuted, size: 10),
+                                SizedBox(width: 3),
+                                Flexible(child: Text(location,
+                                  style: TextStyle(color: context.xMuted,
+                                      fontSize: 10),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis)),
+                              ]),
+                            ],
                           ],
                         )),
                         GestureDetector(
