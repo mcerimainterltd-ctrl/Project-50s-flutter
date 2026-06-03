@@ -5,6 +5,7 @@ import 'socket_service.dart';
 import 'webrtc_service.dart';
 import 'audio_service.dart';
 import 'auth_service.dart';
+import 'push_service.dart';
 
 final lifecycleServiceProvider = Provider<LifecycleService>((ref) {
   return LifecycleService(ref);
@@ -39,13 +40,18 @@ class LifecycleService with WidgetsBindingObserver {
         // App coming to foreground
         if (user != null) {
           if (socket.isConnected) {
+            socket.emitUserOnline(user.xameId);
             socket.emitRequestOnlineUsers();
             socket.startHeartbeat(user.xameId);
           } else {
             // Reconnect and restart heartbeat
             socket.connect(user.xameId);
             socket.startHeartbeat(user.xameId);
+            socket.emitUserOnline(user.xameId);
           }
+          // Always re-save FCM token on foreground
+          final push = _ref.read(pushServiceProvider);
+          push.reRegisterToken(user.xameId);
         }
         debugPrint('XamePage: App foregrounded — refreshing presence');
         break;
@@ -73,6 +79,10 @@ class LifecycleService with WidgetsBindingObserver {
         if (user != null) {
           if (!socket.isConnected) socket.connect(user.xameId);
           socket.startHeartbeat(user.xameId);
+          socket.emitUserOnline(user.xameId);
+          // Re-save FCM token so push works immediately after reconnect
+          final push = _ref.read(pushServiceProvider);
+          push.reRegisterToken(user.xameId);
         }
       } else if (!isOnline && _wasConnected) {
         // Network lost

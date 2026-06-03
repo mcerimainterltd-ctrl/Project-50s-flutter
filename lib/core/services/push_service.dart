@@ -193,6 +193,13 @@ class PushService {
     );
   }
 
+  Future<void> reRegisterToken(String userId) async {
+    try {
+      final token = await _fcm.getToken();
+      if (token != null) await _saveToken(userId, token);
+    } catch (_) {}
+  }
+
   Future<void> _saveToken(String userId, String token) async {
     try {
       await http.post(
