@@ -649,9 +649,6 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       key: ValueKey(_searchOpen), color: context.xText.withValues(alpha: 0.7))),
                   onPressed: _searchOpen ? _closeSearch : _openSearch),
                 IconButton(
-                  icon: Icon(Icons.tune_rounded, color: context.xText.withValues(alpha: 0.7)),
-                  onPressed: () => _showFilterSheet(context)),
-                IconButton(
                   icon: Icon(Icons.refresh_rounded, color: context.xText.withValues(alpha: 0.7)),
                   onPressed: () => _loadData(refresh: true)),
                 const SizedBox(width: 4),
@@ -689,11 +686,14 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                   ),
             ),
 
-            // Region filter
-            SliverToBoxAdapter(
-              child: RegionFilterBar(
-                onRegionSelected: _onRegionSelected,
-                initialCode:      _regionCode),
+            // Region filter — sticky
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _StickyRegionBarDelegate(
+                child: RegionFilterBar(
+                  onRegionSelected: _onRegionSelected,
+                  initialCode:      _regionCode),
+              ),
             ),
 
             // Trending pulse strip
@@ -3653,4 +3653,26 @@ class _TrendingPulseStripState extends State<_TrendingPulseStrip>
       ),
     ]);
   }
+}
+
+// ── Sticky Region Bar Delegate ────────────────────────────────────────────────
+class _StickyRegionBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  const _StickyRegionBarDelegate({required this.child});
+
+  @override
+  double get minExtent => 52;
+  @override
+  double get maxExtent => 52;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: context.xBg,
+      child: child,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_StickyRegionBarDelegate old) => old.child != child;
 }
