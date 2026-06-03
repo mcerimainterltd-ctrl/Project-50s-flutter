@@ -40,6 +40,8 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     final cached = CacheService.loadChat(_contactId);
     if (cached.isNotEmpty) state = cached;
     _listenSocket();
+    // Fetch fresh history on init so chat is always up to date after reboot
+    Future.microtask(() => fetchHistory());
   }
 
   void appendIncoming(XameMessage msg) {
