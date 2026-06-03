@@ -1,5 +1,6 @@
 import "../widgets/tv_entry_button.dart";
 import "discovery_map_screen.dart";
+import "xame_space_screen.dart";
 import "package:go_router/go_router.dart";
 import 'dart:io';
 import 'dart:typed_data';
@@ -297,7 +298,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   }
 
   void _loadCached() {
-    final cachedFeed = CacheService.loadDiscoveryFeed(_regionCode);
+    final cachedFeed = CacheService.loadDiscoveryFeed(_regionName);
     final cachedPeople = CacheService.loadDiscoveryPeople();
     if (cachedFeed.isNotEmpty || cachedPeople.isNotEmpty) {
       setState(() {
@@ -353,7 +354,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     final userId = user?.xameId ?? '';
 
     final results = await Future.wait([
-      DiscoveryApiService.fetchFeed(region: _regionCode, page: 1, userId: userId),
+      DiscoveryApiService.fetchFeed(region: _regionName, page: 1, userId: userId),
       DiscoveryApiService.fetchPeople(userId, contactIds: ref.read(contactsProvider).valueOrNull?.map((c) => c.id).toSet() ?? {}, page: 1),
       DiscoveryApiService.fetchStories(userId),
     ]);
@@ -364,7 +365,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     final stories = results[2] as List<Map<String, dynamic>>;
 
     // Cache for instant load next time
-    CacheService.saveDiscoveryFeed(_regionCode,
+    CacheService.saveDiscoveryFeed(_regionName,
         feed.map((i) => i.toJson()).toList());
     CacheService.saveDiscoveryPeople(
         people.map((p) => p.toJson()).toList());
@@ -388,7 +389,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     setState(() => _loadingMore = true);
     final user2 = ref.read(currentUserProvider);
     final more = await DiscoveryApiService.fetchFeed(
-      region: _regionCode, page: _page + 1, userId: user2?.xameId);
+      region: _regionName, page: _page + 1, userId: user2?.xameId);
     if (!mounted) return;
     setState(() {
       _feed.addAll(more);
@@ -3098,12 +3099,35 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
                 color: Colors.white.withOpacity(0.6), fontSize: 12)),
           ]),
           const Spacer(),
+          // Follow button
+          if (!isOwnerCheck)
+            GestureDetector(
+              onTap: _toggleFollow,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  gradient: _following ? null : const LinearGradient(
+                      colors: [Color(0xFF2196F3), Color(0xFF7B2FFF)]),
+                  color: _following ? Colors.white12 : null,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: _followLoading
+                    ? const SizedBox(width: 14, height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 1.5, color: Colors.white))
+                    : Text(_following ? 'Following' : '+ Follow',
+                        style: const TextStyle(color: Colors.white,
+                            fontSize: 12, fontWeight: FontWeight.w700)),
+              ),
+            ),
         ]),
       ]),
     );
 
     final self = ref.read(currentUserProvider);
     final isOwner = self?.xameId == item.authorId;
+    final isOwnerCheck = self?.xameId == item.authorId;
 
     final backBtn = Positioned(
       top: topPad + 4, left: 4,
