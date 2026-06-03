@@ -181,11 +181,11 @@ class _XameTvScreenState extends State<XameTvScreen>
         child: Stack(fit:StackFit.expand, children: [
           _videoLayer(),
           if (_buffering && !_error) _bufferingOverlay(),
-          if (_error)                _errorOverlay(),
           _gradientLayer(),
           FadeTransition(opacity:_oFade, child:Column(children:[
             _topBar(), _catStrip(), const Spacer(), _bottomBar(),
           ])),
+          if (_error)                _errorOverlay(),
           if (_showOverlay && !_showList) _swipeHint(),
           if (_showList)   _listPanel(),
           if (_showSearch) _searchPanel(),
