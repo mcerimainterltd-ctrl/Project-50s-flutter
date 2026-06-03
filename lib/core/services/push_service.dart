@@ -93,6 +93,13 @@ class PushService {
   }
 
   Future<void> _createChannels() async {
+    // Delete old channels so Android picks up new silent settings
+    final plugin0 = _local.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    for (final oldId in ['xamepage_call_channel', 'xamepage_headsup_v2']) {
+      await plugin0?.deleteNotificationChannel(oldId);
+    }
+
     const headsUp = AndroidNotificationChannel(
       _headsUpChannelId,
       _headsUpChannelName,
