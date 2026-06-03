@@ -40,6 +40,24 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
             "call_ended" -> {
                 CallService.stop(this)
             }
+            "contact_request" -> {
+                val fromName = data["fromName"] ?: "Someone"
+                showAlertNotification("👤 Contact Request", "$fromName wants to connect with you")
+            }
+            "wallet_request" -> {
+                val fromName = data["fromName"] ?: "Someone"
+                val amount   = data["amount"]   ?: ""
+                val currency = data["currency"] ?: ""
+                showAlertNotification("🙏 Payment Request", "$fromName is requesting $currency $amount")
+            }
+            "wallet_credit" -> {
+                val message = data["message"] ?: "Your wallet has been credited"
+                showAlertNotification("💰 Wallet Credited", message)
+            }
+            "wallet_debit" -> {
+                val message = data["message"] ?: "A debit was made from your wallet"
+                showAlertNotification("💸 Wallet Debited", message)
+            }
         }
     }
 
@@ -47,8 +65,38 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
     }
 
+    private fun showAlertNotification(title: String, body: String) {
+        val channelId = "xamepage_alerts"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId, "XamePage Alerts", NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                setShowBadge(true)
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 200)
+            }
+            val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            mgr.createNotificationChannel(channel)
+        }
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pi = PendingIntent.getActivity(this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pi)
+            .build()
+        val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        mgr.notify(System.currentTimeMillis().toInt(), notification)
+    }
+
     private fun showHeadsUpNotification(callerName: String, callType: String) {
-        val channelId = "xamepage_headsup_v2"
+        val channelId = "xamepage_headsup_v3"
         val isVideo   = callType == "video"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
