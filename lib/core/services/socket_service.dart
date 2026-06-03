@@ -131,6 +131,11 @@ class SocketService {
       debugPrint('✅ Socket already connected for: $xameId');
       return;
     }
+    // Also guard against reconnecting state — don't tear down mid-reconnect
+    if (_socket != null && !(_socket!.disconnected)) {
+      debugPrint('⏳ Socket already connecting/reconnecting for: $xameId');
+      return;
+    }
     if (_socket != null) {
       _socket!.clearListeners();
       _socket!.disconnect();

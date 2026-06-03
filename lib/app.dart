@@ -18,6 +18,7 @@ import 'package:xamepage/core/services/lifecycle_service.dart';
 import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
 import 'package:xamepage/core/services/update_service.dart';
+import 'package:xamepage/core/services/push_service.dart';
 import 'package:xamepage/shared/models/xame_user.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 import 'package:xamepage/features/contacts/providers/contacts_provider.dart';
@@ -364,6 +365,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         try {
           ref.read(contactsProvider);
           ref.read(callHistoryProvider(user.xameId));
+          ref.read(pushServiceProvider);
         } catch (_) {}
       });
     }
