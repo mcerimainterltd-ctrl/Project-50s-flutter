@@ -1493,6 +1493,60 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
     });
   }
 
+  void _pickRegion(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF12121E),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 12),
+          Container(width: 36, height: 4,
+              decoration: BoxDecoration(color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 12),
+          const Text('Post to Region',
+              style: TextStyle(color: Colors.white,
+                  fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 320,
+            child: ListView.builder(
+              itemCount: discoveryRegions.length,
+              itemBuilder: (_, i) {
+                final r = discoveryRegions[i];
+                final isSel = _detectedRegion == r.code ||
+                    (_detectedRegion == null && widget.region == r.name);
+                return ListTile(
+                  leading: Text(r.flag,
+                      style: const TextStyle(fontSize: 22)),
+                  title: Text(r.name,
+                      style: TextStyle(
+                          color: isSel
+                              ? const Color(0xFF00E5FF)
+                              : Colors.white,
+                          fontWeight: isSel
+                              ? FontWeight.w700
+                              : FontWeight.normal)),
+                  trailing: isSel
+                      ? const Icon(Icons.check_circle_rounded,
+                          color: Color(0xFF00E5FF), size: 18)
+                      : null,
+                  onTap: () {
+                    setState(() => _detectedRegion = r.code);
+                    Navigator.pop(context);
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     if (_quoteMode) {
       if (_quoteCtrl.text.trim().isEmpty) {
@@ -1777,9 +1831,10 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       ], // end if (!_quoteMode)
       SizedBox(height: 8),
 
-      // Auto-locate indicator
-      if (_locating || _detectedRegion != null)
-        Container(
+      // Region indicator — always visible
+      GestureDetector(
+        onTap: _locating ? null : () => _pickRegion(context),
+        child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
@@ -1802,14 +1857,16 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
             Expanded(child: Text(
               _locating
                   ? 'Detecting your location...'
-                  : 'Posting to ${_detectedRegion == 'global' ? 'Global' : (discoveryRegions.firstWhere((r) => r.code == _detectedRegion, orElse: () => discoveryRegions.first).name)} ${discoveryRegions.firstWhere((r) => r.code == (_detectedRegion ?? 'global'), orElse: () => discoveryRegions.first).flag}',
+                  : 'Posting to ${_detectedRegion != null ? (discoveryRegions.firstWhere((r) => r.code == _detectedRegion, orElse: () => discoveryRegions.first).name) : widget.region} ${discoveryRegions.firstWhere((r) => r.code == (_detectedRegion ?? 'global') || r.name == widget.region, orElse: () => discoveryRegions.first).flag}',
               style: TextStyle(
                 color: _detectedRegion != null
                     ? const Color(0xFF00E5A0)
-                    : Colors.white54,
+                    : const Color(0xFF00E5FF),
                 fontSize: 12,
                 fontWeight: FontWeight.w500),
             )),
+            const Icon(Icons.arrow_drop_down_rounded,
+                color: Colors.white38, size: 18),
             if (_detectedRegion != null)
               GestureDetector(
                 onTap: () => setState(() => _detectedRegion = null),
@@ -1818,6 +1875,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               ),
           ]),
         ),
+      ),
 
       // Whisper toggle
       GestureDetector(
