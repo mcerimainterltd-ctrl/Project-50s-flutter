@@ -20,6 +20,7 @@ class SocketService {
   IO.Socket? _socket;
   int    _reconnectAttempts = 0;
   Timer? _heartbeatTimer;
+  Timer? _watchdogTimer;
   Timer? _stealthTimer;
   Timer? _offlineTimer;
 
@@ -474,13 +475,26 @@ class SocketService {
 
   void startHeartbeat(String xameId, {bool stealth = false}) {
     stopHeartbeat();
+    // Watchdog — checks every 10s and reconnects if socket is dead
+    _watchdogTimer?.cancel();
+    _watchdogTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (!isConnected) {
+        debugPrint('🐕 Watchdog: socket dead — reconnecting');
+        _socket?.clearListeners();
+        _socket?.disconnect();
+        _socket = null;
+        connect(xameId, stealth: stealth);
+      }
+    });
     _heartbeatTimer = Timer.periodic(
       Duration(milliseconds: AppConstants.heartbeatIntervalMs),
-      (_) { if (isConnected && !stealth) emitHeartbeat(xameId); });
+      (_) {
+        if (isConnected && !stealth) emitHeartbeat(xameId);
+      });
     if (isConnected && !stealth) emitHeartbeat(xameId);
   }
 
-  void stopHeartbeat() { _heartbeatTimer?.cancel(); _heartbeatTimer = null; }
+  void stopHeartbeat() { _heartbeatTimer?.cancel(); _heartbeatTimer = null; _watchdogTimer?.cancel(); _watchdogTimer = null; }
 
   void startStealthMode(String xameId) {
     stopStealthMode();
