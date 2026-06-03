@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
+import 'package:http/http.dart' as http;
 import '../data/tv_channels.dart';
 
 class XameTvScreen extends StatefulWidget {
@@ -32,6 +33,9 @@ class _XameTvScreenState extends State<XameTvScreen>
   VideoPlayerController? _ctrl;
   bool _ready=false, _error=false, _buffering=true;
   int  _retries=0;
+  final Set<String> _deadUrls={};
+  bool _liveOnly=false;
+  Timer? _retryTimer;
 
   late AnimationController _oAnim, _sAnim;
   late Animation<double>   _oFade;
@@ -52,11 +56,13 @@ class _XameTvScreenState extends State<XameTvScreen>
     _oAnim.forward();
     _fetch();
     _startTimer();
+    _retryTimer = Timer.periodic(const Duration(minutes:5), (_) => _retryDead());
   }
 
   @override
   void dispose() {
     _overlayTimer?.cancel();
+    _retryTimer?.cancel();
     _oAnim.dispose(); _sAnim.dispose();
     _ctrl?.dispose();
     _searchCtrl.dispose(); _listCtrl.dispose();
@@ -106,6 +112,18 @@ class _XameTvScreenState extends State<XameTvScreen>
       setState(() { _ready=true; _buffering=false; _retries=0; });
     } catch(_) {
       if (!mounted || _ctrl!=c) return;
+      // Mark dead and auto-skip if liveOnly is on
+      final failedUrl = url;
+      _deadUrls.add(failedUrl);
+      if (_liveOnly) {
+        // find next non-dead channel
+        final start = _index;
+        int next = (_index+1) % _filtered.length;
+        while (_deadUrls.contains(_filtered[next].streamUrl) && next != start) {
+          next = (next+1) % _filtered.length;
+        }
+        if (next != start) { setState(() { _index=next; }); _initPlayer(_filtered[next].streamUrl); return; }
+      }
       setState(() { _error=true; _buffering=false; });
     }
   }
@@ -125,6 +143,22 @@ class _XameTvScreenState extends State<XameTvScreen>
   void _next() { if (_filtered.isEmpty) return; _switchTo((_index+1)%_filtered.length); }
   void _prev() { if (_filtered.isEmpty) return; _switchTo((_index-1+_filtered.length)%_filtered.length); }
   void _retry() { if (_retries>=3){_next();return;} _retries++; if(_cur!=null) _initPlayer(_cur!.streamUrl); }
+
+  // ── Retry dead channels in background ───────────────────────────────
+  Future<void> _retryDead() async {
+    if (_deadUrls.isEmpty) return;
+    final toRetry = Set<String>.from(_deadUrls);
+    for (final url in toRetry) {
+      try {
+        final res = await http.head(Uri.parse(url))
+            .timeout(const Duration(seconds:6));
+        if (res.statusCode < 400) {
+          _deadUrls.remove(url);
+          if (mounted) setState((){});
+        }
+      } catch(_) {}
+    }
+  }
 
   // ── Overlay ───────────────────────────────────────────────────────────
   void _startTimer() {
@@ -335,6 +369,27 @@ class _XameTvScreenState extends State<XameTvScreen>
           (){_toggleFullscreen();_showBriefly();}),
       const SizedBox(width:5),
       _ib(Icons.refresh_rounded, (){TvChannelService.clearCache();_fetch(force:true);}),
+      const SizedBox(width:5),
+      GestureDetector(
+        onTap:(){ setState(()=>_liveOnly=!_liveOnly); _showBriefly(); },
+        child:AnimatedContainer(
+          duration:const Duration(milliseconds:200),
+          padding:const EdgeInsets.symmetric(horizontal:8,vertical:4),
+          decoration:BoxDecoration(
+            color:_liveOnly?Colors.red.withOpacity(0.85):Colors.black45,
+            borderRadius:BorderRadius.circular(10),
+            border:Border.all(color:_liveOnly?Colors.red:Colors.white12),
+          ),
+          child:Row(mainAxisSize:MainAxisSize.min, children:[
+            Icon(Icons.sensors_rounded,
+                color:_liveOnly?Colors.white:Colors.white38, size:11),
+            const SizedBox(width:3),
+            Text('LIVE',style:TextStyle(
+                color:_liveOnly?Colors.white:Colors.white38,
+                fontSize:8,fontWeight:FontWeight.w800,letterSpacing:0.8)),
+          ]),
+        ),
+      ),
     ]),
   ));
 
@@ -420,20 +475,39 @@ class _XameTvScreenState extends State<XameTvScreen>
             color:(kCategoryColors[_cur?.category]??Colors.blue).withOpacity(0.8),
             fontSize:10,fontWeight:FontWeight.w500)),
       ])),
-      GestureDetector(
-        onTap:(){setState(()=>_showList=true);_showBriefly();},
-        child:Container(
-          padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),
-          decoration:BoxDecoration(color:Colors.white12,borderRadius:BorderRadius.circular(18),
-              border:Border.all(color:Colors.white.withOpacity(0.18))),
-          child:Row(mainAxisSize:MainAxisSize.min, children:[
-            const Icon(Icons.list_rounded,color:Colors.white,size:14),
-            const SizedBox(width:4),
-            Text('${_index+1}/${_filtered.length}',
-                style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.w600)),
-          ]),
+      Row(mainAxisSize:MainAxisSize.min, children:[
+        GestureDetector(
+          onTap:_prev,
+          child:Container(width:34,height:34,
+            decoration:BoxDecoration(color:Colors.white10,shape:BoxShape.circle,
+                border:Border.all(color:Colors.white12)),
+            child:const Icon(Icons.skip_previous_rounded,color:Colors.white70,size:18)),
         ),
-      ),
+        const SizedBox(width:6),
+        GestureDetector(
+          onTap:(){setState(()=>_showList=true);_showBriefly();},
+          onLongPress:(){setState((){_showSearch=true;_showList=false;});_showBriefly();},
+          child:Container(
+            padding:const EdgeInsets.symmetric(horizontal:10,vertical:7),
+            decoration:BoxDecoration(color:Colors.white12,borderRadius:BorderRadius.circular(18),
+                border:Border.all(color:Colors.white.withOpacity(0.18))),
+            child:Row(mainAxisSize:MainAxisSize.min, children:[
+              const Icon(Icons.list_rounded,color:Colors.white,size:14),
+              const SizedBox(width:4),
+              Text('\${_index+1}/\${_filtered.length}',
+                  style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.w600)),
+            ]),
+          ),
+        ),
+        const SizedBox(width:6),
+        GestureDetector(
+          onTap:_next,
+          child:Container(width:34,height:34,
+            decoration:BoxDecoration(color:Colors.white10,shape:BoxShape.circle,
+                border:Border.all(color:Colors.white12)),
+            child:const Icon(Icons.skip_next_rounded,color:Colors.white70,size:18)),
+        ),
+      ]),
     ]),
   ));
 
