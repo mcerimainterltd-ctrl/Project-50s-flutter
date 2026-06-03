@@ -218,8 +218,8 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     try {
       final postId = widget.post['id'] ?? widget.post['_id'] ?? '';
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      await dio.post('/api/discover/like/$postId',
-          data: {'userId': widget.currentUserId});
+      await dio.post('/api/discover/like',
+          data: {'userId': widget.currentUserId, 'postId': postId});
     } catch (_) {}
   }
 
