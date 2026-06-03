@@ -153,6 +153,7 @@ class DiscoveryApiService {
     required String mediaType,
     bool isWhisper = false,
     bool isCollabOpen = false,
+    void Function(int, int)? onProgress,
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -166,7 +167,11 @@ class DiscoveryApiService {
         'isCollabOpen': isCollabOpen.toString(),
         'media': await MultipartFile.fromFile(mediaFile.path),
       });
-      final res  = await _dio.post('/api/discover/post', data: formData);
+      final res = await _dio.post(
+        '/api/discover/post',
+        data: formData,
+        onSendProgress: onProgress,
+      );
       final data = res.data as Map<String, dynamic>;
       return data['success'] == true ? null : data['message'] as String?;
     } catch (e) { return 'Upload failed: \$e'; }
@@ -1218,6 +1223,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   String _mediaType  = 'image';
   String _category   = 'General';
   bool   _uploading  = false;
+  double _uploadProgress = 0;
   bool   _isWhisper    = false;
   bool   _isCollabOpen = false;
   String? _detectedRegion;
@@ -1457,33 +1463,14 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
     );
     if (picked == null) return;
 
-    File videoFile = File(picked.path);
+    final videoFile = File(picked.path);
     final size = await videoFile.length();
-    const maxBytes = 25 * 1024 * 1024; // 25MB safe limit for discover endpoint
+    const maxBytes = 100 * 1024 * 1024; // 100MB limit
 
     if (size > maxBytes) {
-      setState(() => _error = 'Compressing video...');
-      try {
-        final info = await VideoCompress.compressVideo(
-          picked.path,
-          quality: VideoQuality.MediumQuality,
-          deleteOrigin: false,
-          includeAudio: true,
-        );
-        if (info?.file != null) {
-          final compressedSize = await info!.file!.length();
-          if (compressedSize <= maxBytes) {
-            videoFile = info.file!;
-          } else {
-            setState(() => _error =
-                'Video too large (${(compressedSize/1024/1024).toStringAsFixed(1)}MB). Try a shorter clip.');
-            return;
-          }
-        }
-      } catch (e) {
-        setState(() => _error = 'Compression failed: $e');
-        return;
-      }
+      setState(() => _error =
+          'Video too large (${(size/1024/1024).toStringAsFixed(1)}MB). Maximum is 100MB.');
+      return;
     }
     setState(() {
       _mediaFile = videoFile;
@@ -1588,6 +1575,11 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
       mediaType: _mediaType,
       isWhisper:    _isWhisper,
       isCollabOpen: _isCollabOpen,
+      onProgress: (sent, total) {
+        if (total > 0 && mounted) {
+          setState(() => _uploadProgress = sent / total);
+        }
+      },
     );
     if (!mounted) return;
     setState(() => _uploading = false);
@@ -2011,6 +2003,26 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
           child: Text(_error!, style: TextStyle(
               color: XameColors.danger, fontSize: 13))),
 
+      if (_uploading && _mediaType == 'video') ...[
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: _uploadProgress > 0 ? _uploadProgress : null,
+            backgroundColor: Colors.white12,
+            valueColor: AlwaysStoppedAnimation<Color>(XameColors.primary),
+            minHeight: 6,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _uploadProgress > 0
+              ? 'Uploading... ${(_uploadProgress * 100).toInt()}%'
+              : 'Preparing upload...',
+          style: const TextStyle(color: Colors.white54, fontSize: 12),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+      ],
       SizedBox(width: double.infinity, height: 50,
         child: ElevatedButton(
           onPressed: _uploading ? null : _submit,
