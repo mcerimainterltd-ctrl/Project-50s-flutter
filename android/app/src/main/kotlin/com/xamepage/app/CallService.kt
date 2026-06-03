@@ -3,9 +3,7 @@ package com.xamepage.app
 import android.app.*
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
 import android.media.AudioManager
-import android.media.RingtoneManager
 import android.os.*
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
@@ -116,13 +114,8 @@ class CallService : Service() {
                 setShowBadge(true)
                 enableVibration(true)
                 vibrationPattern  = longArrayOf(0, 500, 200, 500)
-                setSound(
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
+                // Silent — XamePage plays its own ringtone via AudioService
+                setSound(null, null)
             }
             val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             mgr.createNotificationChannel(channel)

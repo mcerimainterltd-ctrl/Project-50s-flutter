@@ -33,6 +33,8 @@ class PushService {
   static const _headsUpChannelName = 'XamePage Calls';
   static const _msgChannelId       = 'xamepage_messages';
   static const _msgChannelName     = 'XamePage Messages';
+  static const _alertChannelId     = 'xamepage_alerts';
+  static const _alertChannelName   = 'XamePage Alerts';
 
   Future<void> init(String userId) async {
     // Request permission
@@ -110,8 +112,17 @@ class PushService {
     );
     final plugin = _local.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
+    const alerts = AndroidNotificationChannel(
+      _alertChannelId,
+      _alertChannelName,
+      description: 'Wallet, contact requests and system alerts',
+      importance: Importance.high,
+      playSound: true,
+      showBadge: true,
+    );
     await plugin?.createNotificationChannel(headsUp);
     await plugin?.createNotificationChannel(messages);
+    await plugin?.createNotificationChannel(alerts);
   }
 
   void _handleForeground(RemoteMessage msg) {
@@ -124,6 +135,38 @@ class PushService {
       _showMessageNotification(
         data['senderName'] ?? 'XamePage',
         settings.msgPreview ? (data['message'] ?? 'New message') : 'New message',
+      );
+    }
+    if (type == 'contact_request') {
+      final settings = SettingsNotifier.currentSettings;
+      if (!settings.alertSound) return;
+      _showAlertNotification(
+        '👤 Contact Request',
+        '${data['fromName'] ?? 'Someone'} wants to connect with you',
+      );
+    }
+    if (type == 'wallet_credit') {
+      final settings = SettingsNotifier.currentSettings;
+      if (!settings.alertSound) return;
+      _showAlertNotification(
+        '💰 Wallet Credited',
+        data['message'] ?? 'Your wallet has been credited',
+      );
+    }
+    if (type == 'wallet_debit') {
+      final settings = SettingsNotifier.currentSettings;
+      if (!settings.alertSound) return;
+      _showAlertNotification(
+        '💸 Wallet Debited',
+        data['message'] ?? 'A debit was made from your wallet',
+      );
+    }
+    if (type == 'wallet_request') {
+      final settings = SettingsNotifier.currentSettings;
+      if (!settings.alertSound) return;
+      _showAlertNotification(
+        '🙏 Payment Request',
+        '${data['fromName'] ?? 'Someone'} is requesting ${data['currency'] ?? ''} ${data['amount'] ?? ''}',
       );
     }
     if (type == 'xamepage_news') {
@@ -168,6 +211,24 @@ class PushService {
           priority: Priority.max,
           showWhen: true,
           icon: '@mipmap/ic_launcher',
+        ),
+      ),
+    );
+  }
+
+  void _showAlertNotification(String title, String body) {
+    _local.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _alertChannelId, _alertChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
+          showWhen: true,
+          icon: '@mipmap/ic_launcher',
+          playSound: true,
         ),
       ),
     );

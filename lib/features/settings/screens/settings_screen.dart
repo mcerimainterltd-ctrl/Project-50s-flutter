@@ -45,6 +45,9 @@ class SettingsData {
   final bool   noiseSuppression;
   final bool   echoCancellation;
 
+  // Alerts
+  final bool   alertSound;      // wallet, contact request, system alerts
+
   // Discovery
   final bool   autoLocate;      // auto-detect location for posts
 
@@ -77,6 +80,7 @@ class SettingsData {
     this.reducedMotion   = false,
     this.highContrast    = false,
     this.stealthMode     = false,
+    this.alertSound      = true,
     this.autoLocate      = true,
   });
 
@@ -90,7 +94,7 @@ class SettingsData {
     bool? noiseSuppression, bool? echoCancellation,
     String? fontSize, String? bubbleStyle,
     bool? reducedMotion, bool? highContrast,
-    bool? stealthMode, bool? autoLocate,
+    bool? stealthMode, bool? autoLocate, bool? alertSound,
   }) => SettingsData(
     lastSeen:         lastSeen         ?? this.lastSeen,
     profilePhoto:     profilePhoto     ?? this.profilePhoto,
@@ -114,6 +118,7 @@ class SettingsData {
     highContrast:     highContrast     ?? this.highContrast,
     stealthMode:      stealthMode      ?? this.stealthMode,
     autoLocate:       autoLocate       ?? this.autoLocate,
+    alertSound:       alertSound       ?? this.alertSound,
   );
 
   Map<String, dynamic> toMap() => {
@@ -128,6 +133,7 @@ class SettingsData {
     'reducedMotion': reducedMotion, 'highContrast': highContrast,
     'stealthMode': stealthMode,
     'autoLocate':  autoLocate,
+    'alertSound':  alertSound,
   };
 
   factory SettingsData.fromMap(Map m) => SettingsData(
@@ -147,6 +153,7 @@ class SettingsData {
     lowData:          m['lowData']          ?? false,
     noiseSuppression: m['noiseSuppression'] ?? true,
     echoCancellation: m['echoCancellation'] ?? true,
+    alertSound:       m['alertSound']       ?? true,
     fontSize:         m['fontSize']         ?? 'normal',
     bubbleStyle:      m['bubbleStyle']      ?? 'modern',
     reducedMotion:    m['reducedMotion']    ?? false,
@@ -373,6 +380,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle:  'Show call UI on lock screen',
               value:     settings.callFullscreen,
               onChanged: (v) => save(settings.copyWith(callFullscreen: v)),
+            ),
+            _SectionSubtitle(theme: theme, text: 'Alerts'),
+            _ToggleTile(
+              theme:     theme,
+              icon:      Icons.notifications_active_outlined,
+              title:     'Alert Sound',
+              subtitle:  'Wallet, contact requests & system alerts',
+              value:     settings.alertSound,
+              onChanged: (v) => save(settings.copyWith(alertSound: v)),
             ),
             _NavTile(
               theme:    theme,
