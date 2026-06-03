@@ -1,6 +1,5 @@
 import "../widgets/tv_entry_button.dart";
 import "discovery_map_screen.dart";
-import "xame_space_screen.dart";
 import "package:go_router/go_router.dart";
 import 'dart:io';
 import 'dart:typed_data';
@@ -3110,6 +3109,10 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     final screenW = MediaQuery.of(context).size.width;
     final isVideo = item.mediaType == DiscoveryMediaType.video;
 
+    final self = ref.read(currentUserProvider);
+    final isOwner = self?.xameId == item.authorId;
+    final isOwnerCheck = self?.xameId == item.authorId;
+
     final infoPanel = Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -3182,10 +3185,6 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         ]),
       ]),
     );
-
-    final self = ref.read(currentUserProvider);
-    final isOwner = self?.xameId == item.authorId;
-    final isOwnerCheck = self?.xameId == item.authorId;
 
     final backBtn = Positioned(
       top: topPad + 4, left: 4,
