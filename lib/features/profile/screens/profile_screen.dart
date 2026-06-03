@@ -680,7 +680,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     final s      = list[i];
                     final date   = DateTime.tryParse(
                         s['createdAt']?.toString() ?? '') ?? DateTime.now();
-                    final device = _parseDevice(s['deviceInfo'] ?? '');
+                    final device   = _parseDevice(s['deviceInfo'] ?? '');
+                    final location = (s['location'] ?? '') as String;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(16),
