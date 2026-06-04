@@ -1337,7 +1337,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
     final align = _aligns[_alignIndex];
     final font = _fontFamily();
     return Container(
-      width: 320, height: 320,
+      width: 320,
+      constraints: const BoxConstraints(minHeight: 320),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: forCapture ? null : BorderRadius.circular(16)),
@@ -1352,6 +1353,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
             Text(
               _quoteCtrl.text.isEmpty ? 'Your quote here...' : _quoteCtrl.text,
               textAlign: align,
+              maxLines: null,
               style: TextStyle(
                 color: _quoteCtrl.text.isEmpty ? _textColor.withOpacity(0.4) : _textColor,
                 fontSize: 18, fontWeight: FontWeight.w600, height: 1.5,

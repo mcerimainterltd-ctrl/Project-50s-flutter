@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BatteryGuideScreen extends StatefulWidget {
   const BatteryGuideScreen({Key? key}) : super(key: key);
@@ -221,13 +222,25 @@ class _BatteryGuideScreenState extends State<BatteryGuideScreen> {
           SizedBox(width: double.infinity, height: 50,
             child: ElevatedButton.icon(
               onPressed: () async {
+                // Try direct Android intent via url_launcher
+                final uri = Uri.parse('package:com.xamepage.app');
+                bool opened = false;
+                // ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
                 try {
-                  await _bridge.invokeMethod('openBatterySettings');
-                } catch (e) {
-                  debugPrint('openBatterySettings error: \$e');
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Could not open settings: \$e')));
+                  opened = await launchUrl(
+                    Uri.parse('android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'),
+                    mode: LaunchMode.externalApplication,
+                  );
+                } catch (_) {}
+                // Fallback: open app info page
+                if (!opened) {
+                  try {
+                    await _bridge.invokeMethod('openBatterySettings');
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please go to Settings > Apps > XamePage > Battery and set to Unrestricted')));
+                    }
                   }
                 }
               },

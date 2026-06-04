@@ -755,19 +755,23 @@ class _ImagePageState extends State<_ImagePage>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _zoom,
-      builder: (_, child) => Transform.scale(
-        scale: _scale.value, alignment: _align.value, child: child),
-      child: CachedNetworkImage(
-        imageUrl: widget.url,
-        fit:      BoxFit.contain,
-        width:    double.infinity,
-        height:   double.infinity,
-        errorWidget: (_, __, ___) => Container(
-          color: Colors.grey[900],
-          child: const Icon(Icons.broken_image,
-              color: Colors.white30, size: 64),
+    return InteractiveViewer(
+      minScale: 0.8,
+      maxScale: 5.0,
+      child: AnimatedBuilder(
+        animation: _zoom,
+        builder: (_, child) => Transform.scale(
+          scale: _scale.value, alignment: _align.value, child: child),
+        child: CachedNetworkImage(
+          imageUrl: widget.url,
+          fit:      BoxFit.contain,
+          width:    double.infinity,
+          height:   double.infinity,
+          errorWidget: (_, __, ___) => Container(
+            color: Colors.grey[900],
+            child: const Icon(Icons.broken_image,
+                color: Colors.white30, size: 64),
+          ),
         ),
       ),
     );
