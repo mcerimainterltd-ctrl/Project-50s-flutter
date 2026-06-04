@@ -85,7 +85,7 @@ class WebRTCService {
 
     _socket.callRejected.listen((data) {
       _callCancelled = true;
-      if (callEndReason.isEmpty) { callEndReason = data?['reason'] as String? ?? 'declined'; _callEndReasonCtrl.add(callEndReason); }
+      if (callEndReason.isEmpty) { callEndReason = data?.reason ?? 'declined'; _callEndReasonCtrl.add(callEndReason); }
       _callTimeoutTimer?.cancel();
       _audio.stopAll();
       // Record as declined — recipient actively rejected the call
