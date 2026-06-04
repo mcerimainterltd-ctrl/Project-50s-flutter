@@ -295,9 +295,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
           Text('Stay Reachable', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
         ]),
         content: const Text(
-          'To receive calls and messages at all times, allow XamePage to run in the background.
-
-Tap "Fix Now" and follow the steps — it takes less than a minute.',
+          'To receive calls and messages at all times, allow XamePage to run in the background.\n\nTap \'Fix Now\' and follow the steps - it takes less than a minute.',
           style: TextStyle(color: Colors.white60, fontSize: 13, height: 1.5)),
         actions: [
           TextButton(
