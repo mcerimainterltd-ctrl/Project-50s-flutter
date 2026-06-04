@@ -758,20 +758,15 @@ class _ImagePageState extends State<_ImagePage>
     return InteractiveViewer(
       minScale: 0.8,
       maxScale: 5.0,
-      child: AnimatedBuilder(
-        animation: _zoom,
-        builder: (_, child) => Transform.scale(
-          scale: _scale.value, alignment: _align.value, child: child),
-        child: CachedNetworkImage(
-          imageUrl: widget.url,
-          fit:      BoxFit.contain,
-          width:    double.infinity,
-          height:   double.infinity,
-          errorWidget: (_, __, ___) => Container(
-            color: Colors.grey[900],
-            child: const Icon(Icons.broken_image,
-                color: Colors.white30, size: 64),
-          ),
+      child: CachedNetworkImage(
+        imageUrl: widget.url,
+        fit:      BoxFit.contain,
+        width:    double.infinity,
+        height:   double.infinity,
+        errorWidget: (_, __, ___) => Container(
+          color: Colors.grey[900],
+          child: const Icon(Icons.broken_image,
+              color: Colors.white30, size: 64),
         ),
       ),
     );
@@ -846,7 +841,7 @@ class _ActionColumnState extends State<_ActionColumn>
     if (confirm != true) return;
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      final postId = widget.post['postId'] as String? ?? '';
+      final postId = widget.post['id'] as String? ?? widget.post['postId'] as String? ?? '';
       final r = await dio.delete('/api/discover/post/\$postId',
           data: {'userId': widget.currentUserId});
       if (r.data['success'] == true && context.mounted) {
