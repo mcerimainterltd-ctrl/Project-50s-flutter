@@ -915,6 +915,34 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                             ),
                           ],
 
+                          // Delete — only for post owner
+                          if (widget.userId == widget.authorId && widget.userId.isNotEmpty)
+                            GestureDetector(
+                              onTap: () => _deletePost(context),
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(18),
+                                  color: Colors.red.withOpacity(0.1),
+                                  border: Border.all(
+                                      color: Colors.red.withOpacity(0.3), width: 0.5)),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.delete_outline_rounded,
+                                        color: Colors.red, size: 13),
+                                    SizedBox(width: 4),
+                                    Text('Delete',
+                                      style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600)),
+                                  ]),
+                              ),
+                            ),
+
                           // Share
                           GestureDetector(
                             onTap: () => _sharePost(context),
@@ -929,7 +957,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.share_outlined,
+                                  Icon(Icons.ios_share_rounded,
                                       color: context.xText.withValues(alpha: 0.6), size: 13),
                                   SizedBox(width: 4),
                                   Text('Share',
@@ -1037,6 +1065,38 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
         ));
       }
     }
+  }
+
+  Future<void> _deletePost(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF12121A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Post', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: const Text('This will permanently delete your post. Are you sure?',
+            style: TextStyle(color: Colors.white60, fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              child: const Text('Delete', style: TextStyle(color: Colors.white))),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final r = await dio.delete('/api/discover/post/\${widget.postId}',
+          data: {'userId': widget.userId});
+      if (r.data['success'] == true && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Post deleted'), backgroundColor: Colors.red));
+        widget.onCountChanged(0); // signal parent to refresh
+      }
+    } catch (_) {}
   }
 
   Future<void> _sharePost(BuildContext context) async {
