@@ -126,10 +126,13 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       service.callEndReasonStream.listen((reason) {
         if (!mounted || widget.isIncoming) return;
         switch (reason) {
-          case 'declined':  setState(() => _callEndReason = 'Declined');  break;
-          case 'no-answer': setState(() => _callEndReason = 'No Answer'); break;
-          case 'cancelled': setState(() => _callEndReason = 'Cancelled'); break;
-          case 'ended':     setState(() => _callEndReason = 'Call Ended'); break;
+          case 'declined':     setState(() => _callEndReason = 'Declined');            break;
+          case 'no-answer':    setState(() => _callEndReason = 'No Answer');           break;
+          case 'cancelled':    setState(() => _callEndReason = 'Cancelled');           break;
+          case 'ended':        setState(() => _callEndReason = 'Call Ended');          break;
+          case 'busy':         setState(() => _callEndReason = 'On Another Call');     break;
+          case 'offline':      setState(() => _callEndReason = 'Unavailable');         break;
+          case 'unreachable':  setState(() => _callEndReason = 'Not Reachable');       break;
         }
       });
       ref.read(socketServiceProvider).callHeld.listen((_) {
