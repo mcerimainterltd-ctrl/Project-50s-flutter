@@ -18,6 +18,7 @@ import '../../../core/services/socket_service.dart';
 import 'theme_picker_screen.dart';
 import '../../messaging/screens/chat_wallpaper.dart';
 import '../../calling/call_settings.dart';
+import 'battery_guide_screen.dart';
 
 // ── Settings state ────────────────────────────────────────────────────────────
 class SettingsData {
@@ -562,6 +563,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ── Help & About ─────────────────────────────────────────────────────
           _Section(theme: theme, title: 'Help & About', children: [
+            _NavTile(
+              theme:    theme,
+              icon:     Icons.battery_charging_full_rounded,
+              title:    'Stay Connected 24/7',
+              subtitle: 'Fix background & battery settings for your device',
+              onTap:    () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => const BatteryGuideScreen())),
+            ),
             _NavTile(
               theme:    theme,
               icon:     Icons.support_agent_rounded,

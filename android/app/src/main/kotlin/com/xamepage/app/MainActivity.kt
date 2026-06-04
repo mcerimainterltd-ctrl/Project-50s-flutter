@@ -88,6 +88,18 @@ class MainActivity : FlutterFragmentActivity() {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                         result.success(null)
                     }
+                    "openBatterySettings" -> {
+                        try {
+                            val intent = android.content.Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                            startActivity(intent)
+                            result.success(null)
+                        } catch (e: Exception) {
+                            result.error("ERROR", e.message, null)
+                        }
+                    }
+                    "getDeviceBrand" -> {
+                        result.success(android.os.Build.MANUFACTURER)
+                    }
                     else -> result.notImplemented()
                 }
             }
