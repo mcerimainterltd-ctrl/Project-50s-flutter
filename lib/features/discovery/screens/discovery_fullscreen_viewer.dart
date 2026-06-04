@@ -738,13 +738,12 @@ class _ImagePageState extends State<_ImagePage>
     super.initState();
     _zoom  = AnimationController(
         vsync: this, duration: const Duration(seconds: 10));
-    _scale = Tween(begin: 1.0, end: 1.08)
-        .animate(CurvedAnimation(parent: _zoom, curve: Curves.easeInOut));
+    _scale = Tween(begin: 1.0, end: 1.0)
+        .animate(_zoom);
     _align = AlignmentTween(
-      begin: Alignment.centerLeft,
-      end:   Alignment.centerRight,
-    ).animate(CurvedAnimation(parent: _zoom, curve: Curves.easeInOut));
-    _zoom.repeat(reverse: true);
+      begin: Alignment.center,
+      end:   Alignment.center,
+    ).animate(_zoom);
   }
 
   @override
@@ -756,8 +755,11 @@ class _ImagePageState extends State<_ImagePage>
   @override
   Widget build(BuildContext context) {
     return InteractiveViewer(
-      minScale: 0.8,
+      minScale: 1.0,
       maxScale: 5.0,
+      panEnabled: true,
+      scaleEnabled: true,
+      boundaryMargin: const EdgeInsets.all(double.infinity),
       child: CachedNetworkImage(
         imageUrl: widget.url,
         fit:      BoxFit.contain,
@@ -842,7 +844,7 @@ class _ActionColumnState extends State<_ActionColumn>
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       final postId = widget.post['id'] as String? ?? widget.post['postId'] as String? ?? '';
-      final r = await dio.delete('/api/discover/post/\$postId',
+      final r = await dio.delete('/api/discover/post/' + postId,
           data: {'userId': widget.currentUserId});
       if (r.data['success'] == true && context.mounted) {
         Navigator.pop(context); // close fullscreen viewer
