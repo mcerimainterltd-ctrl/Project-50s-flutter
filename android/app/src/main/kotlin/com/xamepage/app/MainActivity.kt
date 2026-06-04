@@ -101,6 +101,10 @@ class MainActivity : FlutterFragmentActivity() {
                     "getDeviceBrand" -> {
                         result.success(android.os.Build.MANUFACTURER)
                     }
+                    "isBatteryOptimized" -> {
+                        val pm = getSystemService(android.os.PowerManager::class.java)
+                        result.success(!pm.isIgnoringBatteryOptimizations(packageName))
+                    }
                     else -> result.notImplemented()
                 }
             }

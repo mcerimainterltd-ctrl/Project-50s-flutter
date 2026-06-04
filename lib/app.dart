@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:xamepage/core/config/constants.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +66,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initContactRequestListener();
     _initWalletRequestListener();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkBatteryOptimization());
     WidgetsBinding.instance.addPostFrameCallback((_) => _initFcmNavigation());
     if (widget.initialDeepLink != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -265,6 +267,55 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   Future<void> _checkForUpdate() async {
     if (!mounted) return;
     await UpdateService.checkForUpdate(context);
+  }
+
+  Future<void> _checkBatteryOptimization() async {
+    if (!mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final shownVersion = prefs.getString('battery_prompt_version') ?? '';
+    final info = await PackageInfo.fromPlatform();
+    if (shownVersion == info.version) return;
+    // Check if already exempted via native bridge
+    try {
+      const bridge = MethodChannel('com.xamepage.app/android_bridge');
+      final exempt = await bridge.invokeMethod<bool>('isBatteryOptimized') ?? false;
+      if (!exempt) return; // already optimized — skip
+    } catch (_) {}
+    if (!mounted) return;
+    await prefs.setString('battery_prompt_version', info.version);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF12121A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: const [
+          Text('⚡', style: TextStyle(fontSize: 22)),
+          SizedBox(width: 8),
+          Text('Stay Reachable', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        ]),
+        content: const Text(
+          'To receive calls and messages at all times, allow XamePage to run in the background.
+
+Tap "Fix Now" and follow the steps — it takes less than a minute.',
+          style: TextStyle(color: Colors.white60, fontSize: 13, height: 1.5)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Later', style: TextStyle(color: Colors.white38))),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              const MethodChannel('com.xamepage.app/android_bridge')
+                  .invokeMethod('openBatterySettings');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00BCD4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: const Text('Fix Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
   }
 
   Future<void> _initFcmNavigation() async {
