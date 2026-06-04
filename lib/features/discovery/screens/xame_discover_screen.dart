@@ -1598,7 +1598,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.fromLTRB(20, 20, 20,
         MediaQuery.of(context).viewInsets.bottom + 20),
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
+    child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 36, height: 4,
         decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
@@ -2040,7 +2040,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
         ),
       ),
-    ]),
+    ])),
   );
 }
 
