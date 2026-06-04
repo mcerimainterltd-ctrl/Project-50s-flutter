@@ -220,7 +220,17 @@ class _BatteryGuideScreenState extends State<BatteryGuideScreen> {
           // Open battery settings button
           SizedBox(width: double.infinity, height: 50,
             child: ElevatedButton.icon(
-              onPressed: () => _bridge.invokeMethod('openBatterySettings').catchError((_) {}),
+              onPressed: () async {
+                try {
+                  await _bridge.invokeMethod('openBatterySettings');
+                } catch (e) {
+                  debugPrint('openBatterySettings error: \$e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Could not open settings: \$e')));
+                  }
+                }
+              },
               icon: const Icon(Icons.settings_rounded, size: 18),
               label: const Text('Open Battery Settings',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
