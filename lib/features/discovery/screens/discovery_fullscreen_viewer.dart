@@ -133,7 +133,6 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   bool _liked = false;
   int _likeCount = 0;
-  double _scale = 1.0;
 
   static const _reactionEmojis = ['❤️', '🔥', '😍', '👏', '💯', '✨', '🎉', '⚡'];
 
@@ -275,7 +274,6 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
         PageView.builder(
           controller: _horizCtrl,
-          physics: _scale > 1.0 ? const NeverScrollableScrollPhysics() : const PageScrollPhysics(),
           itemCount: _authorPosts.length,
           onPageChanged: (i) => setState(() => _horizIndex = i),
           itemBuilder: (_, i) {
@@ -284,7 +282,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
             final isHorizActive = widget.isActive && i == _horizIndex;
             return isVid
                 ? _VideoPage(url: p['mediaUrl'] as String? ?? '', isActive: isHorizActive)
-                : _ImagePage(url: p['mediaUrl'] as String? ?? '', onScaleChanged: (s) => setState(() => _scale = s));
+                : _ImagePage(url: p['mediaUrl'] as String? ?? '');
           },
         ),
 
@@ -723,8 +721,7 @@ class _VideoPageState extends State<_VideoPage> {
 
 class _ImagePage extends StatefulWidget {
   final String url;
-  final void Function(double scale)? onScaleChanged;
-  const _ImagePage({Key? key, required this.url, this.onScaleChanged}) : super(key: key);
+  const _ImagePage({Key? key, required this.url}) : super(key: key);
 
   @override
   State<_ImagePage> createState() => _ImagePageState();
@@ -763,9 +760,6 @@ class _ImagePageState extends State<_ImagePage>
       panEnabled: true,
       scaleEnabled: true,
       boundaryMargin: const EdgeInsets.all(double.infinity),
-      onInteractionUpdate: (details) {
-        widget.onScaleChanged?.call(details.scale);
-      },
       child: CachedNetworkImage(
         imageUrl: widget.url,
         fit:      BoxFit.contain,
