@@ -20,8 +20,10 @@ class AlarmReceiver : BroadcastReceiver() {
                 context, REQUEST_CODE, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             val triggerAt = System.currentTimeMillis() + INTERVAL_MS
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                // setAlarmClock is guaranteed to fire even in deep Doze
+                val info = AlarmManager.AlarmClockInfo(triggerAt, pi)
+                am.setAlarmClock(info, pi)
             } else {
                 am.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pi)
             }
