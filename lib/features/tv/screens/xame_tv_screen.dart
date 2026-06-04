@@ -34,7 +34,7 @@ class _XameTvScreenState extends State<XameTvScreen>
   bool _ready=false, _error=false, _buffering=true;
   int  _retries=0;
   final Set<String> _deadUrls={};
-  bool _liveOnly=false;
+  bool _liveOnly=true;
   Timer? _retryTimer;
 
   late AnimationController _oAnim, _sAnim;
