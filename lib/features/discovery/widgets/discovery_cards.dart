@@ -915,34 +915,6 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                             ),
                           ],
 
-                          // Delete — only for post owner
-                          if (widget.userId == widget.authorId && widget.userId.isNotEmpty)
-                            GestureDetector(
-                              onTap: () => _deletePost(context),
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 6),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(18),
-                                  color: Colors.red.withOpacity(0.1),
-                                  border: Border.all(
-                                      color: Colors.red.withOpacity(0.3), width: 0.5)),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.delete_outline_rounded,
-                                        color: Colors.red, size: 13),
-                                    SizedBox(width: 4),
-                                    Text('Delete',
-                                      style: TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600)),
-                                  ]),
-                              ),
-                            ),
-
                           // Share
                           GestureDetector(
                             onTap: () => _sharePost(context),

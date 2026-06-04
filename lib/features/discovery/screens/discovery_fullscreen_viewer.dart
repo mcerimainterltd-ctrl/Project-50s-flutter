@@ -820,6 +820,39 @@ class _ActionColumnState extends State<_ActionColumn>
     super.dispose();
   }
 
+  Future<void> _deletePost(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF12121A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Post', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: const Text('This will permanently delete your post. Are you sure?',
+            style: TextStyle(color: Colors.white60, fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              child: const Text('Delete', style: TextStyle(color: Colors.white))),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final postId = widget.post['postId'] as String? ?? '';
+      final r = await dio.delete('/api/discover/post/\$postId',
+          data: {'userId': widget.currentUserId});
+      if (r.data['success'] == true && context.mounted) {
+        Navigator.pop(context); // close fullscreen viewer
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Post deleted'), backgroundColor: Colors.red));
+      }
+    } catch (_) {}
+  }
+
   String _fmt(int n) {
     if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
     if (n >= 1000)    return '${(n / 1000).toStringAsFixed(1)}K';
@@ -857,8 +890,15 @@ class _ActionColumnState extends State<_ActionColumn>
       _ActionBtn(icon: Icons.remove_red_eye_outlined,
           color: Colors.white, label: _fmt(viewCount), onTap: null),
       const SizedBox(height: 22),
-      _ActionBtn(icon: Icons.reply_rounded,
+      _ActionBtn(icon: Icons.ios_share_rounded,
           color: Colors.white, label: 'Share', onTap: widget.onShare),
+      // Delete — only for post owner
+      if (widget.currentUserId.isNotEmpty &&
+          widget.currentUserId == (widget.post['authorId'] as String? ?? '')) ...[
+        const SizedBox(height: 22),
+        _ActionBtn(icon: Icons.delete_outline_rounded,
+            color: Colors.redAccent, label: 'Delete', onTap: () => _deletePost(context)),
+      ],
     ]);
   }
 }
