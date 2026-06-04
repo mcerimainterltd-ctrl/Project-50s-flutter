@@ -1,7 +1,6 @@
 // lib/features/settings/screens/battery_guide_screen.dart
 // Manufacturer-specific battery optimization guide for XamePage 24/7 availability
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -22,13 +21,8 @@ class _BatteryGuideScreenState extends State<BatteryGuideScreen> {
   }
 
   void _detectBrand() {
-    try {
-      final brand = Platform.environment['BRAND'] ?? '';
-      setState(() => _brand = brand.toLowerCase());
-    } catch (_) {}
-    // Fallback via MethodChannel
     _bridge.invokeMethod('getDeviceBrand').then((v) {
-      if (v != null) setState(() => _brand = v.toString().toLowerCase());
+      if (v != null && mounted) setState(() => _brand = v.toString().toLowerCase());
     }).catchError((_) {});
   }
 

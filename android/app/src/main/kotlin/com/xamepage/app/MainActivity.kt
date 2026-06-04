@@ -91,12 +91,26 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                     "openBatterySettings" -> {
                         try {
-                            val intent = android.content.Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                            startActivity(intent)
-                            result.success(null)
-                        } catch (e: Exception) {
-                            result.error("ERROR", e.message, null)
+                            // Try app-specific battery settings first
+                            val appIntent = android.content.Intent(
+                                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                Uri.parse("package:$packageName"))
+                            startActivity(appIntent)
+                        } catch (e1: Exception) {
+                            try {
+                                // Fallback to general battery optimization settings
+                                val genIntent = android.content.Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                startActivity(genIntent)
+                            } catch (e2: Exception) {
+                                try {
+                                    // Last resort — open app settings
+                                    val appSettings = android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.parse("package:$packageName"))
+                                    startActivity(appSettings)
+                                } catch (e3: Exception) {}
+                            }
                         }
+                        result.success(null)
                     }
                     "getDeviceBrand" -> {
                         result.success(android.os.Build.MANUFACTURER)
