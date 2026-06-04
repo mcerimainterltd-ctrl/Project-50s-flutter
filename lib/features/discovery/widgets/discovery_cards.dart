@@ -1094,7 +1094,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
       if (r.data['success'] == true && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Post deleted'), backgroundColor: Colors.red));
-        widget.onCountChanged(0); // signal parent to refresh
+        widget.onCountChanged?.call(0); // signal parent to refresh
       }
     } catch (_) {}
   }
