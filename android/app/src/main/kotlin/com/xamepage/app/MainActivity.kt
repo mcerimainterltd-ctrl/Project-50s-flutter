@@ -31,6 +31,7 @@ class MainActivity : FlutterFragmentActivity() {
         }
         requestOneTimePermissions()
         SocketKeepaliveService.start(this)
+        AlarmReceiver.schedule(this)
     }
 
     private fun requestOneTimePermissions() {
