@@ -62,6 +62,35 @@ class MainActivity : FlutterFragmentActivity() {
                 if (call.method == "heartbeat") result.success(null)
                 else result.notImplemented()
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/android_bridge")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "openBatterySettings" -> {
+                        try {
+                            val appIntent = android.content.Intent(
+                                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                Uri.parse("package:$packageName"))
+                            startActivity(appIntent)
+                        } catch (e1: Exception) {
+                            try {
+                                startActivity(android.content.Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                            } catch (e2: Exception) {
+                                try {
+                                    startActivity(android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.parse("package:$packageName")))
+                                } catch (e3: Exception) {}
+                            }
+                        }
+                        result.success(null)
+                    }
+                    "getDeviceBrand" -> result.success(android.os.Build.MANUFACTURER)
+                    "isBatteryOptimized" -> {
+                        val pm = getSystemService(android.os.PowerManager::class.java)
+                        result.success(!pm.isIgnoringBatteryOptimizations(packageName))
+                    }
+                    else -> result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -88,36 +117,6 @@ class MainActivity : FlutterFragmentActivity() {
                     "releaseScreen" -> {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                         result.success(null)
-                    }
-                    "openBatterySettings" -> {
-                        try {
-                            // Try app-specific battery settings first
-                            val appIntent = android.content.Intent(
-                                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                Uri.parse("package:$packageName"))
-                            startActivity(appIntent)
-                        } catch (e1: Exception) {
-                            try {
-                                // Fallback to general battery optimization settings
-                                val genIntent = android.content.Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                                startActivity(genIntent)
-                            } catch (e2: Exception) {
-                                try {
-                                    // Last resort — open app settings
-                                    val appSettings = android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.parse("package:$packageName"))
-                                    startActivity(appSettings)
-                                } catch (e3: Exception) {}
-                            }
-                        }
-                        result.success(null)
-                    }
-                    "getDeviceBrand" -> {
-                        result.success(android.os.Build.MANUFACTURER)
-                    }
-                    "isBatteryOptimized" -> {
-                        val pm = getSystemService(android.os.PowerManager::class.java)
-                        result.success(!pm.isIgnoringBatteryOptimizations(packageName))
                     }
                     else -> result.notImplemented()
                 }
