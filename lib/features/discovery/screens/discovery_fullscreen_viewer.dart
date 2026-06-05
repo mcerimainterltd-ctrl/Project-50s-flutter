@@ -274,6 +274,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
         PageView.builder(
           controller: _horizCtrl,
+          physics: const NeverScrollableScrollPhysics(),
           itemCount: _authorPosts.length,
           onPageChanged: (i) => setState(() => _horizIndex = i),
           itemBuilder: (_, i) {
@@ -351,14 +352,19 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(_authorPosts.length, (i) {
                       final isActive = i == _horizIndex;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        width:  isActive ? 20 : 5,
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: isActive ? Colors.white : Colors.white38,
-                          borderRadius: BorderRadius.circular(2),
+                      return GestureDetector(
+                        onTap: () => _horizCtrl.animateToPage(i,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width:  isActive ? 20 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: isActive ? Colors.white : Colors.white38,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       );
                     }),
