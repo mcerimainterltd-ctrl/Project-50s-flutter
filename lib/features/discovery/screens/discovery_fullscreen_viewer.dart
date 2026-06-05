@@ -312,7 +312,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
           // Next arrow
           if (_horizIndex < _authorPosts.length - 1)
             Positioned(
-              right: 62, top: 0, bottom: 200,
+              right: 8, top: 0, bottom: 0,
               child: Center(
                 child: GestureDetector(
                   onTap: () => _horizCtrl.animateToPage(_horizIndex + 1,
