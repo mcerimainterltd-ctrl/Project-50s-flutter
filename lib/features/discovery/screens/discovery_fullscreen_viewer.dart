@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
