@@ -222,26 +222,11 @@ class _BatteryGuideScreenState extends State<BatteryGuideScreen> {
           SizedBox(width: double.infinity, height: 50,
             child: ElevatedButton.icon(
               onPressed: () async {
-                // Try direct Android intent via url_launcher
-                final uri = Uri.parse('package:com.xamepage.app');
-                bool opened = false;
-                // ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
                 try {
-                  opened = await launchUrl(
-                    Uri.parse('android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'),
-                    mode: LaunchMode.externalApplication,
-                  );
-                } catch (_) {}
-                // Fallback: open app info page
-                if (!opened) {
-                  try {
-                    await _bridge.invokeMethod('openBatterySettings');
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please go to Settings > Apps > XamePage > Battery and set to Unrestricted')));
-                    }
-                  }
+                  await _bridge.invokeMethod('openBatterySettings');
+                } catch (_) {
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Go to Settings > Apps > XamePage > Battery > Unrestricted')));
                 }
               },
               icon: const Icon(Icons.settings_rounded, size: 18),

@@ -66,20 +66,22 @@ class MainActivity : FlutterFragmentActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "openBatterySettings" -> {
+                        var launched = false
+                        // Try battery optimization settings first
                         try {
-                            val appIntent = android.content.Intent(
-                                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                Uri.parse("package:$packageName"))
-                            startActivity(appIntent)
-                        } catch (e1: Exception) {
+                            val i = android.content.Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                            i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(i)
+                            launched = true
+                        } catch (_: Exception) {}
+                        // Fallback: app details settings
+                        if (!launched) {
                             try {
-                                startActivity(android.content.Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-                            } catch (e2: Exception) {
-                                try {
-                                    startActivity(android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.parse("package:$packageName")))
-                                } catch (e3: Exception) {}
-                            }
+                                val i = android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.parse("package:$packageName"))
+                                i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(i)
+                            } catch (_: Exception) {}
                         }
                         result.success(null)
                     }
