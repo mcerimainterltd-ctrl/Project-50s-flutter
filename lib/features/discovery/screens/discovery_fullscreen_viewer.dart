@@ -133,6 +133,8 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   bool _liked = false;
   int _likeCount = 0;
+  bool _showArrows = true;
+  Timer? _arrowTimer;
 
   static const _reactionEmojis = ['❤️', '🔥', '😍', '👏', '💯', '✨', '🎉', '⚡'];
 
@@ -171,6 +173,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     _spotlightFade = CurvedAnimation(parent: _spotlightAnim, curve: Curves.easeOut);
 
     if (widget.isActive) _triggerSpotlight();
+    _resetArrowTimer();
   }
 
   @override
@@ -190,8 +193,17 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
   void dispose() {
     _horizCtrl.dispose();
     _burstAnim.dispose();
+    _arrowTimer?.cancel();
     _spotlightAnim.dispose();
     super.dispose();
+  }
+
+  void _resetArrowTimer() {
+    _arrowTimer?.cancel();
+    if (!_showArrows && mounted) setState(() => _showArrows = true);
+    _arrowTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _showArrows = false);
+    });
   }
 
   void _onTapForReaction(TapDownDetails details) {
@@ -288,7 +300,14 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
         ),
 
         // ── Cinematic arrow navigation ──────────────────────────
-        if (_authorPosts.length > 1) ...[
+        if (_authorPosts.length > 1)
+          GestureDetector(
+            onTap: _resetArrowTimer,
+            behavior: HitTestBehavior.translucent,
+            child: AnimatedOpacity(
+              opacity: _showArrows ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 400),
+              child: Stack(children: [
           if (_horizIndex > 0)
             Positioned(
               left: 0, top: 0, bottom: 0,
@@ -351,7 +370,9 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                 ),
               ),
             ),
-        ],
+        ]),
+            ),
+          ),
 
         if (_particles.isNotEmpty)
           AnimatedBuilder(
