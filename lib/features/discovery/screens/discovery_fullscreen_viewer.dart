@@ -287,6 +287,50 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
           },
         ),
 
+        // ── Arrow navigation for author's multiple posts ────────────
+        if (_authorPosts.length > 1) ...[
+          // Previous arrow
+          if (_horizIndex > 0)
+            Positioned(
+              left: 8, top: 0, bottom: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: () => _horizCtrl.animateToPage(_horizIndex - 1,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut),
+                  child: Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24)),
+                    child: const Icon(Icons.chevron_left_rounded,
+                        color: Colors.white70, size: 22)),
+                ),
+              ),
+            ),
+          // Next arrow
+          if (_horizIndex < _authorPosts.length - 1)
+            Positioned(
+              right: 52, top: 0, bottom: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: () => _horizCtrl.animateToPage(_horizIndex + 1,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut),
+                  child: Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24)),
+                    child: const Icon(Icons.chevron_right_rounded,
+                        color: Colors.white70, size: 22)),
+                ),
+              ),
+            ),
+        ],
+
         if (_particles.isNotEmpty)
           AnimatedBuilder(
             animation: _burstAnim,
@@ -345,31 +389,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                   ),
                 ]),
               ),
-              if (_authorPosts.length > 1)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_authorPosts.length, (i) {
-                      final isActive = i == _horizIndex;
-                      return GestureDetector(
-                        onTap: () => _horizCtrl.animateToPage(i,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width:  isActive ? 20 : 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: isActive ? Colors.white : Colors.white38,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
+
             ]),
           ),
         ),
@@ -763,9 +783,8 @@ class _ImagePageState extends State<_ImagePage>
     return InteractiveViewer(
       minScale: 1.0,
       maxScale: 5.0,
-      panEnabled: true,
+      panEnabled: false,
       scaleEnabled: true,
-      boundaryMargin: const EdgeInsets.all(double.infinity),
       child: CachedNetworkImage(
         imageUrl: widget.url,
         fit:      BoxFit.contain,
