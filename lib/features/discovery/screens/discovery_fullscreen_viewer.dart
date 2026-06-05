@@ -418,7 +418,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                       ),
                       const SizedBox(height: 6),
                       Row(children: [
-                        const Icon(Icons.swipe_vert_rounded,
+                        const Icon(Icons.swap_vert_rounded,
                             color: Colors.white38, size: 13),
                         const SizedBox(width: 4),
                         Text(
