@@ -38,14 +38,6 @@ class _DiscoveryFullscreenViewerState
   @override
   void initState() {
     super.initState();
-    // Map post index to author index
-    final initialPost = widget.posts.length > widget.initialIndex
-        ? widget.posts[widget.initialIndex]
-        : (widget.posts.isNotEmpty ? widget.posts.first : null);
-    final initialAuthorId = initialPost?['authorId'] as String? ?? '';
-    _currentIndex = 0;
-
-    // Build author-grouped structure first so we can find the author index
     _authorOrder = [];
     _postsByAuthor = {};
     for (final p in widget.posts) {
@@ -56,8 +48,7 @@ class _DiscoveryFullscreenViewerState
       }
       _postsByAuthor[aId]!.add(p);
     }
-    final authorIdx = _authorOrder.indexOf(initialAuthorId);
-    _currentIndex = authorIdx < 0 ? 0 : authorIdx;
+    _currentIndex = widget.initialIndex.clamp(0, widget.posts.length - 1);
     _verticalCtrl = PageController(initialPage: _currentIndex);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
@@ -102,6 +93,9 @@ class _FullscreenPostPage extends StatefulWidget {
   final String currentUserId;
   final String currentUserAvatar;
   final List<Map<String, dynamic>> allPosts;
+  final bool isNewAuthor;
+  final int postIndex;
+  final int totalPosts;
   final VoidCallback onClose;
 
   const _FullscreenPostPage({
@@ -111,6 +105,9 @@ class _FullscreenPostPage extends StatefulWidget {
     required this.currentUserId,
     required this.currentUserAvatar,
     required this.allPosts,
+    this.isNewAuthor = true,
+    this.postIndex = 0,
+    this.totalPosts = 1,
     required this.onClose,
   }) : super(key: key);
 
@@ -120,9 +117,7 @@ class _FullscreenPostPage extends StatefulWidget {
 
 class _FullscreenPostPageState extends State<_FullscreenPostPage>
     with TickerProviderStateMixin {
-  late PageController _horizCtrl;
-  late List<Map<String, dynamic>> _authorPosts;
-  int _horizIndex = 0;
+
 
   final List<_BurstParticle> _particles = [];
   late AnimationController _burstAnim;
@@ -139,15 +134,6 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
   @override
   void initState() {
     super.initState();
-    final authorId = widget.post['authorId'] as String? ?? '';
-    _authorPosts = widget.allPosts
-        .where((p) => (p['authorId'] as String? ?? '') == authorId)
-        .toList();
-    if (_authorPosts.isEmpty) _authorPosts = [widget.post];
-    _horizIndex = _authorPosts.indexWhere(
-        (p) => (p['id'] ?? p['_id']) == (widget.post['id'] ?? widget.post['_id']));
-    if (_horizIndex < 0) _horizIndex = 0;
-    _horizCtrl = PageController(initialPage: _horizIndex);
     _likeCount = (widget.post['likeCount'] as int?) ?? 0;
 
     _burstAnim = AnimationController(
@@ -188,7 +174,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   @override
   void dispose() {
-    _horizCtrl.dispose();
+
     _burstAnim.dispose();
     _spotlightAnim.dispose();
     super.dispose();
@@ -263,7 +249,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     } catch (_) { return ''; }
   }
 
-  Map<String, dynamic> get _currentPost => _authorPosts[_horizIndex];
+  Map<String, dynamic> get _currentPost => widget.post;
 
   @override
   Widget build(BuildContext context) {
@@ -272,19 +258,13 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
       onDoubleTap: () {},
       child: Stack(children: [
 
-        PageView.builder(
-          controller: _horizCtrl,
-          itemCount: _authorPosts.length,
-          onPageChanged: (i) => setState(() => _horizIndex = i),
-          itemBuilder: (_, i) {
-            final p = _authorPosts[i];
-            final isVid = (p['mediaType'] as String? ?? '') == 'video';
-            final isHorizActive = widget.isActive && i == _horizIndex;
-            return isVid
-                ? _VideoPage(url: p['mediaUrl'] as String? ?? '', isActive: isHorizActive)
-                : _ImagePage(url: p['mediaUrl'] as String? ?? '');
-          },
-        ),
+        // Single post media display — no horizontal swipe
+        Builder(builder: (_) {
+          final isVid = (widget.post['mediaType'] as String? ?? '') == 'video';
+          return isVid
+              ? _VideoPage(url: widget.post['mediaUrl'] as String? ?? '', isActive: widget.isActive)
+              : _ImagePage(url: widget.post['mediaUrl'] as String? ?? '');
+        }),
 
         if (_particles.isNotEmpty)
           AnimatedBuilder(
@@ -344,25 +324,27 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                   ),
                 ]),
               ),
-              if (_authorPosts.length > 1)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_authorPosts.length, (i) {
-                      final isActive = i == _horizIndex;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        width:  isActive ? 20 : 5,
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: isActive ? Colors.white : Colors.white38,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      );
-                    }),
+              if (widget.isNewAuthor)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 6, top: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white24),
                   ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    CircleAvatar(radius: 10,
+                      backgroundImage: CachedNetworkImageProvider(
+                          _currentPost['authorAvatar'] as String? ?? ''),
+                      backgroundColor: Colors.grey[800]),
+                    const SizedBox(width: 6),
+                    Text(_currentPost['authorName'] as String? ?? '',
+                        style: const TextStyle(color: Colors.white,
+                            fontSize: 11, fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 6),
+                    const Text('· new', style: TextStyle(color: Colors.white38, fontSize: 10)),
+                  ]),
                 ),
             ]),
           ),
@@ -434,19 +416,17 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (_authorPosts.length > 1) ...[
-                        const SizedBox(height: 6),
-                        Row(children: [
-                          const Icon(Icons.swipe_rounded,
-                              color: Colors.white38, size: 13),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${_horizIndex + 1} / ${_authorPosts.length}  · swipe for more',
-                            style: const TextStyle(
-                                color: Colors.white38, fontSize: 11),
-                          ),
-                        ]),
-                      ],
+                      const SizedBox(height: 6),
+                      Row(children: [
+                        const Icon(Icons.swipe_vert_rounded,
+                            color: Colors.white38, size: 13),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${widget.postIndex + 1} / ${widget.totalPosts}',
+                          style: const TextStyle(
+                              color: Colors.white38, fontSize: 11),
+                        ),
+                      ]),
                     ],
                   ),
                 ),
