@@ -287,45 +287,67 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
           },
         ),
 
-        // ── Arrow navigation for author's multiple posts ────────────
+        // ── Cinematic arrow navigation ──────────────────────────
         if (_authorPosts.length > 1) ...[
-          // Previous arrow
           if (_horizIndex > 0)
             Positioned(
-              left: 8, top: 0, bottom: 0,
+              left: 0, top: 0, bottom: 0,
               child: Center(
                 child: GestureDetector(
                   onTap: () => _horizCtrl.animateToPage(_horizIndex - 1,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOutCubic),
                   child: Container(
-                    width: 36, height: 36,
+                    width: 28,
+                    height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.black45,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24)),
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.black.withOpacity(0.55),
+                          Colors.transparent,
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(40),
+                        bottomRight: Radius.circular(40),
+                      ),
+                    ),
                     child: const Icon(Icons.chevron_left_rounded,
-                        color: Colors.white70, size: 22)),
+                        color: Colors.white, size: 20),
+                  ),
                 ),
               ),
             ),
-          // Next arrow
           if (_horizIndex < _authorPosts.length - 1)
             Positioned(
-              right: 8, top: 0, bottom: 0,
+              right: 0, top: 0, bottom: 0,
               child: Center(
                 child: GestureDetector(
                   onTap: () => _horizCtrl.animateToPage(_horizIndex + 1,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOutCubic),
                   child: Container(
-                    width: 36, height: 36,
+                    width: 28,
+                    height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.black45,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24)),
+                      gradient: LinearGradient(
+                        begin: Alignment.centerRight,
+                        end: Alignment.centerLeft,
+                        colors: [
+                          Colors.black.withOpacity(0.55),
+                          Colors.transparent,
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(40),
+                        bottomLeft: Radius.circular(40),
+                      ),
+                    ),
                     child: const Icon(Icons.chevron_right_rounded,
-                        color: Colors.white70, size: 22)),
+                        color: Colors.white, size: 20),
+                  ),
                 ),
               ),
             ),
