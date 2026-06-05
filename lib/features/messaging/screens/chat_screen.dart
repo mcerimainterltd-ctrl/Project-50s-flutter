@@ -68,8 +68,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         for (final f in widget.sharedFiles!) {
           final path = f.path as String?;
-          final mime = f.mimeType as String? ?? 'application/octet-stream';
           if (path != null) {
+            // Derive MIME from extension — SharedMediaFile.mimeType is unreliable on Android
+            final ext = path.split('.').last.toLowerCase();
+            final mimeFromExt = {
+              'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
+              'gif': 'image/gif', 'webp': 'image/webp', 'heic': 'image/heic',
+              'mp4': 'video/mp4', 'mov': 'video/quicktime', 'avi': 'video/x-msvideo',
+              'mkv': 'video/x-matroska', '3gp': 'video/3gpp',
+              'mp3': 'audio/mpeg', 'aac': 'audio/aac', 'ogg': 'audio/ogg',
+              'wav': 'audio/wav', 'm4a': 'audio/mp4',
+              'pdf': 'application/pdf',
+              'doc': 'application/msword',
+              'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              'xls': 'application/vnd.ms-excel',
+              'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              'txt': 'text/plain', 'zip': 'application/zip',
+            }[ext];
+            final mime = mimeFromExt ?? (f.mimeType as String? ?? 'application/octet-stream');
             await ref.read(chatProvider(widget.userId).notifier)
                 .sendFile(dart_io.File(path), mime);
           }
