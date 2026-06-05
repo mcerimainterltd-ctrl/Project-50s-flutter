@@ -398,12 +398,28 @@ class _XamePayScreenState extends State<XamePayScreen>
       final socket = ProviderScope.containerOf(context).read(socketServiceProvider);
       _walletDebitSub = socket.walletDebit.listen((data) {
         if (!mounted) return;
-        _init(); // refresh sender balance immediately
+        _init();
+        final amount   = data['amount']   ?? '';
+        final currency = data['currency'] ?? 'NGN';
+        final to       = data['toName']   ?? data['recipientName'] ?? '';
+        ProviderScope.containerOf(context).read(pushServiceProvider)
+            .showAlertNotification(
+          '💸 Wallet Debited',
+          to.isNotEmpty ? '$currency $amount sent to $to' : '$currency $amount debited from your wallet',
+        );
       });
       _walletSub = socket.walletReceive.listen((data) {
         if (!mounted) return;
-        _snack('❤️ Received ${data.currency} ${data.amount.toStringAsFixed(2)} from ${data.senderName ?? data.senderId}');
-        _init(); // refresh balance and transactions
+        final senderName = data.senderName ?? data.senderId ?? 'Someone';
+        final amount = data.amount.toStringAsFixed(2);
+        final currency = data.currency;
+        _snack('❤️ Received $currency $amount from $senderName');
+        _init();
+        ProviderScope.containerOf(context).read(pushServiceProvider)
+            .showAlertNotification(
+          '💰 Wallet Credited',
+          'Received $currency $amount from $senderName',
+        );
       });
     });
   }

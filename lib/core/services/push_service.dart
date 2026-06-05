@@ -147,7 +147,7 @@ class PushService {
     if (type == 'contact_request') {
       final settings = SettingsNotifier.currentSettings;
       if (!settings.alertSound) return;
-      _showAlertNotification(
+      showAlertNotification(
         '👤 Contact Request',
         '${data['fromName'] ?? 'Someone'} wants to connect with you',
       );
@@ -155,7 +155,7 @@ class PushService {
     if (type == 'wallet_credit') {
       final settings = SettingsNotifier.currentSettings;
       if (!settings.alertSound) return;
-      _showAlertNotification(
+      showAlertNotification(
         '💰 Wallet Credited',
         data['message'] ?? 'Your wallet has been credited',
       );
@@ -163,7 +163,7 @@ class PushService {
     if (type == 'wallet_debit') {
       final settings = SettingsNotifier.currentSettings;
       if (!settings.alertSound) return;
-      _showAlertNotification(
+      showAlertNotification(
         '💸 Wallet Debited',
         data['message'] ?? 'A debit was made from your wallet',
       );
@@ -171,7 +171,7 @@ class PushService {
     if (type == 'wallet_request') {
       final settings = SettingsNotifier.currentSettings;
       if (!settings.alertSound) return;
-      _showAlertNotification(
+      showAlertNotification(
         '🙏 Payment Request',
         '${data['fromName'] ?? 'Someone'} is requesting ${data['currency'] ?? ''} ${data['amount'] ?? ''}',
       );
@@ -223,7 +223,7 @@ class PushService {
     );
   }
 
-  void _showAlertNotification(String title, String body) {
+  void showAlertNotification(String title, String body) {
     _local.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title,

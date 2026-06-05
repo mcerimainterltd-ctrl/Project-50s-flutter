@@ -169,6 +169,11 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       final fromName = data['fromName'] as String? ?? 'Someone';
       final amount   = data['amount'];
       final currency = data['currency'] as String? ?? 'NGN';
+      // Heads-up notification with sound
+      ref.read(pushServiceProvider).showAlertNotification(
+        '🙏 Payment Request',
+        '$fromName is requesting $currency $amount',
+      );
       final fromId   = data['fromId']  as String? ?? '';
       final note     = data['note']    as String? ?? '';
       final router = ref.read(routerProvider);
@@ -257,10 +262,23 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   }
 
   void _initContactRequestListener() {
+    // Incoming contact request
+    ref.read(socketServiceProvider).contactRequest.listen((data) {
+      final name = data['fromName'] as String? ?? 'Someone';
+      ref.read(pushServiceProvider).showAlertNotification(
+        '👤 Contact Request',
+        '$name wants to connect with you',
+      );
+    });
+    // Contact request accepted
     _contactRequestAcceptedSub = ref.read(socketServiceProvider)
         .contactRequestAccepted.listen((data) {
-      // Refresh contacts when our request is accepted
       ref.invalidate(contactsProvider);
+      final name = data['byName'] as String? ?? 'Someone';
+      ref.read(pushServiceProvider).showAlertNotification(
+        '✅ Contact Request Accepted',
+        '$name accepted your contact request',
+      );
     });
   }
 
