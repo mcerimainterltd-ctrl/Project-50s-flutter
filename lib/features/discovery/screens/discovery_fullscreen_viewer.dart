@@ -763,9 +763,7 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _toggleMute,
-      child: Stack(children: [
+    return Stack(children: [
         BetterPlayer(controller: _ctrl!),
         if (_paused)
           Center(
