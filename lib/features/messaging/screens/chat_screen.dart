@@ -1,4 +1,5 @@
 import 'dart:io' as dart_io;
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import '../../../core/config/constants.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -67,29 +68,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (widget.sharedFiles != null && widget.sharedFiles!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         for (final f in widget.sharedFiles!) {
-          final path = f.path as String?;
-          if (path != null) {
-            // Derive MIME from extension — SharedMediaFile.mimeType is unreliable on Android
-            final ext = path.split('.').last.toLowerCase();
-            final mimeFromExt = {
-              'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
-              'gif': 'image/gif', 'webp': 'image/webp', 'heic': 'image/heic',
-              'mp4': 'video/mp4', 'mov': 'video/quicktime', 'avi': 'video/x-msvideo',
-              'mkv': 'video/x-matroska', '3gp': 'video/3gpp',
-              'mp3': 'audio/mpeg', 'aac': 'audio/aac', 'ogg': 'audio/ogg',
-              'wav': 'audio/wav', 'm4a': 'audio/mp4',
-              'pdf': 'application/pdf',
-              'doc': 'application/msword',
-              'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-              'xls': 'application/vnd.ms-excel',
-              'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-              'txt': 'text/plain', 'zip': 'application/zip',
-            }[ext];
-            final mime = mimeFromExt ?? (f.mimeType as String? ?? 'application/octet-stream');
-            await ref.read(chatProvider(widget.userId).notifier)
-                .sendFile(dart_io.File(path), mime);
+          final filePath = f.path as String?;
+          if (filePath == null) continue;
+          // Check if shared content is text (URL, caption, etc.)
+          final isText = f.type == SharedMediaType.text ||
+              filePath.toLowerCase().endsWith('.txt') ||
+              (f.mimeType as String? ?? '').startsWith('text/');
+          if (isText) {
+            // Read text content and send as text message
+            try {
+              String text = filePath; // path IS the text for SharedMediaType.text
+              if (await dart_io.File(filePath).exists()) {
+                text = await dart_io.File(filePath).readAsString();
+              }
+              if (text.trim().isNotEmpty) {
+                await ref.read(chatProvider(widget.userId).notifier).sendMessage(text.trim());
+              }
+            } catch (_) {}
+            continue;
           }
-        }
+          // Derive MIME from extension — SharedMediaFile.mimeType is unreliable on Android
+          final ext = filePath.split('.').last.toLowerCase();
+          final mimeFromExt = {
+            'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
+            'gif': 'image/gif', 'webp': 'image/webp', 'heic': 'image/heic',
+            'mp4': 'video/mp4', 'mov': 'video/quicktime', 'avi': 'video/x-msvideo',
+            'mkv': 'video/x-matroska', '3gp': 'video/3gpp',
+            'mp3': 'audio/mpeg', 'aac': 'audio/aac', 'ogg': 'audio/ogg',
+            'wav': 'audio/wav', 'm4a': 'audio/mp4',
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls': 'application/vnd.ms-excel',
+            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'zip': 'application/zip',
+          }[ext];
+          final mime = mimeFromExt ?? (f.mimeType as String? ?? 'application/octet-stream');
+          await ref.read(chatProvider(widget.userId).notifier)
+              .sendFile(dart_io.File(filePath), mime);
       });
     }
     _tts.setCompletionHandler(() { if (mounted) setState(() { _isSpeaking = false; _speakingText = ''; }); });
