@@ -3306,6 +3306,56 @@ class _HistoryTabState extends State<_HistoryTab> {
               icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
               label: const Text('PDF', style: TextStyle(fontSize: 13)))),
           ]),
+          const SizedBox(height: 12),
+          SizedBox(width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00B0A0),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+              onPressed: () async {
+                Navigator.pop(context);
+                final image = await _screenshotCtrl.captureFromWidget(
+                  Material(color: Colors.white,
+                    child: Padding(padding: const EdgeInsets.all(24),
+                      child: Column(mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          const Text('XamePay', style: TextStyle(color: _kTeal, fontSize: 20, fontWeight: FontWeight.w800)),
+                          const Spacer(),
+                          const Text('Transaction Receipt', style: TextStyle(color: Color(0xFF888888), fontSize: 11)),
+                        ]),
+                        const SizedBox(height: 16),
+                        Center(child: Text(fmt(tx.amount), style: TextStyle(color: tx.type == 'credit' ? _kTeal : const Color(0xFFFF6464), fontSize: 36, fontWeight: FontWeight.w800))),
+                        Center(child: Text(tx.status, style: TextStyle(color: tx.status == 'Completed' ? _kTeal : const Color(0xFFF0A500), fontSize: 14))),
+                        const SizedBox(height: 16),
+                        const Divider(color: Color(0xFFE0E0E0)),
+                        const SizedBox(height: 8),
+                        if (tx.recipient != null && tx.recipient!.isNotEmpty) _receiptRowLight('Beneficiary', tx.recipient!),
+                        _receiptRowLight('Description', tx.label),
+                        _receiptRowLight('Date & Time', _fmtTs(tx.ts)),
+                        _receiptRowLight('Reference', tx.id),
+                        _receiptRowLight('Status', tx.status),
+                        const SizedBox(height: 16),
+                        const Divider(color: Color(0xFFE0E0E0)),
+                        const SizedBox(height: 8),
+                        Center(child: Text('Powered by XamePage', style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 10))),
+                      ]),
+                    )),
+                  pixelRatio: 2.0,
+                );
+                final dir = Directory('/storage/emulated/0/Pictures/XamePage');
+                if (!await dir.exists()) await dir.create(recursive: true);
+                final file = File('${dir.path}/xamepay_receipt_${tx.id}.png');
+                await file.writeAsBytes(image);
+                await Process.run('am', ['broadcast', '-a', 'android.intent.action.MEDIA_SCANNER_SCAN_FILE', '-d', 'file://${file.path}']);
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Receipt saved to Gallery'), backgroundColor: Color(0xFF00B0A0)));
+              },
+              icon: const Icon(Icons.download_outlined, size: 18),
+              label: const Text('Save to Gallery', style: TextStyle(fontSize: 13)))),
           const SizedBox(height: 8),
         ]),
       ),

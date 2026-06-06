@@ -477,12 +477,11 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
   Future<void> _download() async {
     setState(() { _downloading = true; _progress = 0; });
     try {
-      final dir  = await getExternalStorageDirectory() ??
-                   await getApplicationDocumentsDirectory();
       final name = widget.url.split('/').last.split('?').first;
+      // Save to Pictures/XamePage in external storage
+      final dir = Directory('/storage/emulated/0/Pictures/XamePage');
+      if (!await dir.exists()) await dir.create(recursive: true);
       final path = '${dir.path}/$name';
-      final cached = File(path);
-      if (cached.existsSync() && cached.lengthSync() == 0) await cached.delete();
       await Dio(BaseOptions(
         connectTimeout: Duration(seconds: 30),
         receiveTimeout: Duration(minutes: 5),
@@ -490,10 +489,12 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
           onReceiveProgress: (r, t) {
         if (t > 0 && mounted) setState(() => _progress = r / t);
       });
+      // Trigger media scanner so image appears in gallery
+      await Process.run('am', ['broadcast', '-a', 'android.intent.action.MEDIA_SCANNER_SCAN_FILE', '-d', 'file://$path']);
       if (mounted) {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Saved to $path'),
+            content: Text('Saved to Gallery'),
             backgroundColor: XameColors.darkCard));
       }
     } catch (e) {
@@ -1163,16 +1164,20 @@ class _CallBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isVideo    = callType == 'video';
-    final isMissed   = callStatus == 'no-answer' || callStatus == 'declined';
-    final isCancelled = callStatus == 'cancelled';
-    final isEnded    = callStatus == 'ended';
-    final icon       = isVideo ? Icons.videocam_rounded : Icons.call_rounded;
-    final label      = isEnded
+    final isMissed      = callStatus == 'no-answer' || callStatus == 'declined';
+    final isCancelled   = callStatus == 'cancelled';
+    final isEnded       = callStatus == 'ended';
+    final isUnavailable = callStatus == 'unavailable';
+    final isBusy        = callStatus == 'busy';
+    final icon          = isVideo ? Icons.videocam_rounded : Icons.call_rounded;
+    final label         = isEnded
         ? _formatDuration(callDuration)
-        : isMissed    ? (isSelf ? 'No answer' : 'Missed call')
-        : isCancelled ? (isSelf ? 'Cancelled' : 'Missed call')
+        : isMissed      ? (isSelf ? 'No answer'      : 'Missed call')
+        : isCancelled   ? (isSelf ? 'Cancelled'      : 'Missed call')
+        : isUnavailable ? (isSelf ? 'Unavailable'    : 'Missed call')
+        : isBusy        ? (isSelf ? 'On another call': 'Missed call')
         : '';
-    final color      = (isMissed || isCancelled)
+    final color         = (isMissed || isCancelled || isUnavailable || isBusy)
         ? context.xDanger
         : (isSelf ? Colors.white70 : context.xAccent);
 
