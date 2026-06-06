@@ -513,7 +513,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
     appBar: AppBar(
       backgroundColor: Colors.black54,
       leading: IconButton(
-          icon: Icon(Icons.close, color: XameColors.darkBg),
+          icon: Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context)),
       actions: [
         if (_downloading)
@@ -521,10 +521,10 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
             child: SizedBox(width: 22, height: 22,
               child: CircularProgressIndicator(
                   value: _progress > 0 ? _progress : null,
-                  color: XameColors.darkBg, strokeWidth: 2)))
+                  color: Colors.white, strokeWidth: 2)))
         else
           IconButton(
-              icon: Icon(Icons.download_outlined, color: XameColors.darkBg),
+              icon: Icon(Icons.download_outlined, color: Colors.white),
               onPressed: _download),
       ],
     ),
