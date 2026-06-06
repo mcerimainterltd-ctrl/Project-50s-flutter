@@ -90,6 +90,15 @@ class MainActivity : FlutterFragmentActivity() {
                         val pm = getSystemService(android.os.PowerManager::class.java)
                         result.success(!pm.isIgnoringBatteryOptimizations(packageName))
                     }
+                    "saveMedia" -> {
+                        val url      = call.argument<String>("url")      ?: ""
+                        val fileName = call.argument<String>("fileName")  ?: "xamepage_file"
+                        val mimeType = call.argument<String>("mimeType")  ?: "image/jpeg"
+                        Thread {
+                            val success = MediaSaverService.saveFromUrl(this, url, fileName, mimeType)
+                            runOnUiThread { result.success(success) }
+                        }.start()
+                    }
                     else -> result.notImplemented()
                 }
             }

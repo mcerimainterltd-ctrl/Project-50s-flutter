@@ -255,13 +255,75 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   Future<void> _sharePost(Map<String, dynamic> post) async {
     HapticFeedback.mediumImpact();
-    final parts = <String>[];
-    final title = post['title'] as String? ?? '';
-    final url   = post['mediaUrl'] as String? ?? '';
-    if (title.isNotEmpty) parts.add(title);
-    if (url.isNotEmpty)   parts.add(url);
-    parts.add('Shared via XamePage');
-    await Share.share(parts.join('\n'));
+    final title    = post['title']     as String? ?? '';
+    final mediaUrl = post['mediaUrl']  as String? ?? '';
+    final mimeType = (post['mediaType'] as String? ?? '') == 'video' ? 'video/mp4' : 'image/jpeg';
+    final isVideo  = mimeType.startsWith('video');
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A2E),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 36, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 16),
+              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          _ShareOption(
+            icon: Icons.ios_share_rounded,
+            label: 'Share Post',
+            color: Colors.blue,
+            onTap: () {
+              Navigator.pop(context);
+              final parts = <String>[];
+              if (title.isNotEmpty) parts.add(title);
+              if (mediaUrl.isNotEmpty) parts.add(mediaUrl);
+              parts.add('Shared via XamePage');
+              Share.share(parts.join('\n'));
+            },
+          ),
+          if (mediaUrl.isNotEmpty) _ShareOption(
+            icon: isVideo ? Icons.download_rounded : Icons.save_alt_rounded,
+            label: isVideo ? 'Save Video' : 'Save Image',
+            color: Colors.green,
+            onTap: () async {
+              Navigator.pop(context);
+              try {
+                const bridge = MethodChannel('com.xamepage.app/android_bridge');
+                final ext      = isVideo ? 'mp4' : 'jpg';
+                final fileName = 'xamepage_\${DateTime.now().millisecondsSinceEpoch}.\$ext';
+                final success  = await bridge.invokeMethod<bool>('saveMedia', {
+                  'url': mediaUrl, 'fileName': fileName, 'mimeType': mimeType,
+                });
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(success == true
+                        ? (isVideo ? 'Video saved to Movies/XamePage' : 'Image saved to Pictures/XamePage')
+                        : 'Save failed — please try again'),
+                    backgroundColor: success == true ? Colors.green : Colors.red,
+                  ));
+                }
+              } catch (e) {
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Save failed')));
+              }
+            },
+          ),
+          _ShareOption(
+            icon: Icons.link_rounded,
+            label: 'Copy Link',
+            color: Colors.orange,
+            onTap: () {
+              Navigator.pop(context);
+              Clipboard.setData(ClipboardData(text: mediaUrl));
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Link copied to clipboard')));
+            },
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
   }
 
   String _timeAgo(dynamic ts) {
@@ -993,6 +1055,24 @@ class _ActionBtn extends StatelessWidget {
       ]),
     );
   }
+}
+
+class _ShareOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _ShareOption({required this.icon, required this.label, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: Container(
+      width: 40, height: 40,
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+      child: Icon(icon, color: color, size: 20)),
+    title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+    onTap: onTap,
+  );
 }
 
 class _FollowChip extends StatefulWidget {
