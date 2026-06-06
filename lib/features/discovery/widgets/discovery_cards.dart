@@ -475,11 +475,12 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
   @override
   Widget build(BuildContext context) {
     final likeCount = widget.likeCount + (_liked ? 1 : 0);
+    final videoPlaying = widget.mediaType == 'video' && _playing && _playerCtrl != null;
     return GestureDetector(
-      onTapDown:   (_) => _tapCtrl.forward(),
-      onTapUp:     (_) { _tapCtrl.reverse(); widget.onTap?.call(); },
-      onTapCancel: ()  => _tapCtrl.reverse(),
-      onLongPress: ()  => _showPreview(context),
+      onTapDown:   videoPlaying ? null : (_) => _tapCtrl.forward(),
+      onTapUp:     videoPlaying ? null : (_) { _tapCtrl.reverse(); widget.onTap?.call(); },
+      onTapCancel: videoPlaying ? null : ()  => _tapCtrl.reverse(),
+      onLongPress: videoPlaying ? null : ()  => _showPreview(context),
       child: ScaleTransition(
         scale: _tapScale,
         child: Hero(

@@ -380,24 +380,24 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                       duration: const Duration(milliseconds: 400),
                       curve: Curves.easeOutCubic),
                   child: Container(
-                    width: 28,
-                    height: 80,
+                    width: 44,
+                    height: 96,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                         colors: [
-                          Colors.black.withOpacity(0.55),
+                          Colors.black.withOpacity(0.75),
                           Colors.transparent,
                         ],
                       ),
                       borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(40),
-                        bottomRight: Radius.circular(40),
+                        topRight: Radius.circular(48),
+                        bottomRight: Radius.circular(48),
                       ),
                     ),
                     child: const Icon(Icons.chevron_left_rounded,
-                        color: Colors.white, size: 20),
+                        color: Colors.white, size: 32),
                   ),
                 ),
               ),
@@ -411,24 +411,24 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                       duration: const Duration(milliseconds: 400),
                       curve: Curves.easeOutCubic),
                   child: Container(
-                    width: 28,
-                    height: 80,
+                    width: 44,
+                    height: 96,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.centerRight,
                         end: Alignment.centerLeft,
                         colors: [
-                          Colors.black.withOpacity(0.55),
+                          Colors.black.withOpacity(0.75),
                           Colors.transparent,
                         ],
                       ),
                       borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(40),
-                        bottomLeft: Radius.circular(40),
+                        topLeft: Radius.circular(48),
+                        bottomLeft: Radius.circular(48),
                       ),
                     ),
                     child: const Icon(Icons.chevron_right_rounded,
-                        color: Colors.white, size: 20),
+                        color: Colors.white, size: 32),
                   ),
                 ),
               ),
