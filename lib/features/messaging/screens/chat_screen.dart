@@ -106,6 +106,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           final mime = mimeFromExt ?? (f.mimeType as String? ?? 'application/octet-stream');
           await ref.read(chatProvider(widget.userId).notifier)
               .sendFile(dart_io.File(filePath), mime);
+        }
       });
     }
     _tts.setCompletionHandler(() { if (mounted) setState(() { _isSpeaking = false; _speakingText = ''; }); });
