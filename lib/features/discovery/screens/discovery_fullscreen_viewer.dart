@@ -782,6 +782,7 @@ class _VideoPageState extends State<_VideoPage> {
           top: 80, right: 16,
           child: GestureDetector(
             onTap: _togglePause,
+            behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
@@ -797,6 +798,7 @@ class _VideoPageState extends State<_VideoPage> {
           top: 80, left: 16,
           child: GestureDetector(
             onTap: _toggleMute,
+            behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
