@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../settings/screens/settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -477,31 +478,24 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
   Future<void> _download() async {
     setState(() { _downloading = true; _progress = 0; });
     try {
-      final name = widget.url.split('/').last.split('?').first;
-      // Save to Pictures/XamePage in external storage
-      final dir = Directory('/storage/emulated/0/Pictures/XamePage');
-      if (!await dir.exists()) await dir.create(recursive: true);
-      final path = '${dir.path}/$name';
-      await Dio(BaseOptions(
-        connectTimeout: Duration(seconds: 30),
-        receiveTimeout: Duration(minutes: 5),
-      )).download(_resolveUrl(widget.url), path,
-          onReceiveProgress: (r, t) {
-        if (t > 0 && mounted) setState(() => _progress = r / t);
+      const bridge = MethodChannel('com.xamepage.app/android_bridge');
+      final fileName = 'xamepage_\${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final success = await bridge.invokeMethod<bool>('saveMedia', {
+        'url': _resolveUrl(widget.url),
+        'fileName': fileName,
+        'mimeType': 'image/jpeg',
       });
-      // Trigger media scanner so image appears in gallery
-      await Process.run('am', ['broadcast', '-a', 'android.intent.action.MEDIA_SCANNER_SCAN_FILE', '-d', 'file://$path']);
       if (mounted) {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Saved to Gallery'),
-            backgroundColor: XameColors.darkCard));
+            content: Text(success == true ? 'Image saved to Pictures/XamePage' : 'Save failed — please try again'),
+            backgroundColor: success == true ? Colors.green : Colors.redAccent));
       }
     } catch (e) {
       if (mounted) {
         setState(() => _downloading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Download failed: $e'),
+            content: Text('Save failed'),
             backgroundColor: Colors.redAccent));
       }
     }
