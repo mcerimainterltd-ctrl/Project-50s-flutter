@@ -844,8 +844,7 @@ class _VideoPageState extends State<_VideoPage> {
               ),
             ]),
           ),
-      ]),
-    );
+    ]);
   }
 }
 
