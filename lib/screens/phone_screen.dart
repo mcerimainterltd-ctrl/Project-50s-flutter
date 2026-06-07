@@ -568,8 +568,8 @@ class _PhoneScreenState extends State<PhoneScreen>
   void _snack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: XameColors.darkSurface,
+      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      backgroundColor: const Color(0xFF1E1E2E),
       duration: const Duration(seconds: 2)));
   }
 
