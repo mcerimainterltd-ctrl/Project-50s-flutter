@@ -478,6 +478,7 @@ class _XamePayScreenState extends State<XamePayScreen>
               final db = DateTime.tryParse(b.ts) ?? DateTime(0);
               return db.compareTo(da); // latest first
             });
+          _pinEnabled = d['pinEnabled'] as bool? ?? false;
         });
         if (newDisp.isNotEmpty) {
           final p2 = await SharedPreferences.getInstance();
@@ -486,6 +487,8 @@ class _XamePayScreenState extends State<XamePayScreen>
       }
     } catch (_) {}
   }
+
+  bool _pinEnabled = false;
 
   void _goBack() { if (widget.onBack != null) widget.onBack!(); }
 
@@ -838,7 +841,7 @@ class _XamePayScreenState extends State<XamePayScreen>
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => _BankTransferSheet(
         userId: widget.userId, serverUrl: widget.serverUrl,
-        currency: _currency, onSnack: _snack,
+        currency: _currency, onSnack: _snack, pinEnabled: _pinEnabled,
       ),
     );
   }
@@ -965,7 +968,7 @@ class _XamePayScreenState extends State<XamePayScreen>
 
   // ── SETTINGS ──────────────────────────────────────────────────────────────
 
-  void _showSetPinSheet() {
+  void _showSetPinSheet({bool enableAfterSet = false}) {
     final pinCtrl    = TextEditingController();
     final confirmCtrl = TextEditingController();
     showModalBottomSheet(
@@ -1036,6 +1039,14 @@ class _XamePayScreenState extends State<XamePayScreen>
                       );
                       final d = jsonDecode(r.body);
                       if (d['success'] == true) {
+                        if (enableAfterSet) {
+                          await http.post(
+                            Uri.parse('\${widget.serverUrl}/api/wallet/pin/toggle'),
+                            headers: {'Content-Type': 'application/json'},
+                            body: jsonEncode({'userId': widget.userId, 'enable': true}),
+                          );
+                          setState(() => _pinEnabled = true);
+                        }
                         Navigator.pop(ctx);
                         _snack('✅ Transaction PIN set successfully');
                       } else { _snack('❌ \${d['message'] ?? 'Failed to set PIN'}'); }
@@ -1181,23 +1192,47 @@ class _XamePayScreenState extends State<XamePayScreen>
                         fontSize: 16, fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 12),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.lock_outline_rounded, size: 18),
-                label: const Text('Set Transaction PIN',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E1E2E),
-                  foregroundColor: const Color(0xFF00E5FF),
-                  minimumSize: const Size(double.infinity, 52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: const BorderSide(color: Color(0xFF00E5FF)),
-                  ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E2E),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white12),
                 ),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _showSetPinSheet();
-                },
+                child: Row(children: [
+                  const Icon(Icons.lock_outline_rounded, color: Color(0xFF00E5FF), size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Transaction PIN', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text(_pinEnabled ? 'Enabled — required for transfers' : 'Disabled',
+                        style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  ])),
+                  Switch(
+                    value: _pinEnabled,
+                    activeColor: const Color(0xFF00E5FF),
+                    onChanged: (val) async {
+                      if (val) {
+                        Navigator.pop(ctx);
+                        _showSetPinSheet(enableAfterSet: true);
+                      } else {
+                        // Require current PIN to disable
+                        final pin = await _promptPin(ctx);
+                        if (pin == null) return;
+                        final r = await http.post(
+                          Uri.parse('\${widget.serverUrl}/api/wallet/pin/toggle'),
+                          headers: {'Content-Type': 'application/json'},
+                          body: jsonEncode({'userId': widget.userId, 'enable': false, 'pin': pin}),
+                        );
+                        final d = jsonDecode(r.body);
+                        if (d['success'] == true) {
+                          setState(() => _pinEnabled = false);
+                          ss(() {});
+                          _snack('✅ Transaction PIN disabled');
+                        } else { _snack('❌ \${d['message'] ?? 'Failed'}'); }
+                      }
+                    },
+                  ),
+                ]),
               ),
             ],
           ),
@@ -1238,8 +1273,9 @@ Widget _netGrid(List<NetItem> nets, String? selected, void Function(String) onTa
 class _BankTransferSheet extends StatefulWidget {
   final String userId, serverUrl, currency;
   final void Function(String) onSnack;
+  final bool pinEnabled;
   const _BankTransferSheet({required this.userId, required this.serverUrl,
-      required this.currency, required this.onSnack});
+      required this.currency, required this.onSnack, this.pinEnabled = false});
   @override
   State<_BankTransferSheet> createState() => _BankTransferSheetState();
 }
@@ -1748,17 +1784,20 @@ class _SendTabState extends State<_SendTab> {
     if (_accNum.length < 6)       { widget.snack('Enter account number'); return; }
     if (_amount < 1)              { widget.snack('Enter a valid amount'); return; }
     if (_amount > widget.balance) { widget.snack('Insufficient balance'); return; }
-    // Verify PIN before transfer
-    final pin = await _promptPin(context);
-    if (pin == null) return;
-    final pinRes = await http.post(
-      Uri.parse('\${widget.serverUrl}/api/wallet/pin/verify'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'userId': widget.userId, 'pin': pin}),
-    );
-    final pinData = jsonDecode(pinRes.body);
-    if (pinData['success'] != true) {
-      widget.snack('❌ \${pinData['message'] ?? 'Invalid PIN'}'); return;
+    // Verify PIN before transfer if enabled
+    if (widget.pinEnabled) {
+      final pin = await _promptPin(context);
+      if (pin == null) return;
+      final pinRes = await http.post(
+        Uri.parse('${widget.serverUrl}/api/wallet/pin/verify'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': widget.userId, 'pin': pin}),
+      );
+      final pinData = jsonDecode(pinRes.body);
+      if (pinData['success'] != true) {
+        widget.snack('❌ ${pinData['message'] ?? 'Invalid PIN'}'); return;
+      }
+    }
     }
     widget.snack('Processing transfer…');
     try {
