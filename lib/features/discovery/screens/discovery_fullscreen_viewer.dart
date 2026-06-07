@@ -766,8 +766,9 @@ class _VideoPageState extends State<_VideoPage> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _toggleMute,
+      behavior: HitTestBehavior.opaque,
       child: Stack(children: [
-        BetterPlayer(controller: _ctrl!),
+        IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
         if (_paused)
           Center(
             child: GestureDetector(
