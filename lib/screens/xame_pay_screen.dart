@@ -1603,11 +1603,58 @@ class _SendTabState extends State<_SendTab> {
     }
   }
 
+  Future<String?> _promptPin(BuildContext context) async {
+    final ctrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF13131A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Enter Transaction PIN',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          obscureText: true,
+          maxLength: 6,
+          style: const TextStyle(color: Colors.white, letterSpacing: 8, fontSize: 20),
+          decoration: const InputDecoration(
+            hintText: '••••',
+            hintStyle: TextStyle(color: Colors.white38),
+            counterText: '',
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00E5FF))),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00E5FF), foregroundColor: Colors.black),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _send() async {
     if (_selBank == null)         { widget.snack('Select a bank'); return; }
     if (_accNum.length < 6)       { widget.snack('Enter account number'); return; }
     if (_amount < 1)              { widget.snack('Enter a valid amount'); return; }
     if (_amount > widget.balance) { widget.snack('Insufficient balance'); return; }
+    // Verify PIN before transfer
+    final pin = await _promptPin(context);
+    if (pin == null) return;
+    final pinRes = await http.post(
+      Uri.parse('\${widget.serverUrl}/api/wallet/pin/verify'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'userId': widget.userId, 'pin': pin}),
+    );
+    final pinData = jsonDecode(pinRes.body);
+    if (pinData['success'] != true) {
+      widget.snack('❌ \${pinData['message'] ?? 'Invalid PIN'}'); return;
+    }
     widget.snack('Processing transfer…');
     try {
       final r = await http.post(
