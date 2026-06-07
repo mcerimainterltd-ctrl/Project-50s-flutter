@@ -763,7 +763,9 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
+    return GestureDetector(
+      onTap: _togglePause,
+      child: Stack(children: [
         IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
         if (_paused)
           Center(
@@ -846,7 +848,8 @@ class _VideoPageState extends State<_VideoPage> {
               ),
             ]),
           ),
-    ]);
+      ]),
+    );
   }
 }
 
