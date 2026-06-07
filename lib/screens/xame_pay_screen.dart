@@ -1041,7 +1041,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                       if (d['success'] == true) {
                         if (enableAfterSet) {
                           await http.post(
-                            Uri.parse('\${widget.serverUrl}/api/wallet/pin/toggle'),
+                            Uri.parse('${widget.serverUrl}/api/wallet/pin/toggle'),
                             headers: {'Content-Type': 'application/json'},
                             body: jsonEncode({'userId': widget.userId, 'enable': true}),
                           );
@@ -1049,7 +1049,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                         }
                         Navigator.pop(ctx);
                         _snack('✅ Transaction PIN set successfully');
-                      } else { _snack('❌ \${d['message'] ?? 'Failed to set PIN'}'); }
+                      } else { _snack('❌ ${d["message"] ?? "Failed to set PIN"}'); }
                     } catch (_) { _snack('❌ Network error'); }
                   },
                   child: const Text('Set PIN', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
@@ -1216,10 +1216,16 @@ class _XamePayScreenState extends State<XamePayScreen>
                         _showSetPinSheet(enableAfterSet: true);
                       } else {
                         // Require current PIN to disable
-                        final pin = await _promptPin(ctx);
+                        final ctrl = TextEditingController();
+                        final pin = await showDialog<String>(context: ctx, builder: (_) => AlertDialog(
+                          backgroundColor: const Color(0xFF13131A),
+                          title: const Text('Enter Current PIN', style: TextStyle(color: Colors.white)),
+                          content: TextField(controller: ctrl, keyboardType: TextInputType.number, obscureText: true, maxLength: 6, style: const TextStyle(color: Colors.white)),
+                          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white38))), ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00E5FF), foregroundColor: Colors.black), child: const Text('Confirm'))],
+                        ));
                         if (pin == null) return;
                         final r = await http.post(
-                          Uri.parse('\${widget.serverUrl}/api/wallet/pin/toggle'),
+                          Uri.parse('${widget.serverUrl}/api/wallet/pin/toggle'),
                           headers: {'Content-Type': 'application/json'},
                           body: jsonEncode({'userId': widget.userId, 'enable': false, 'pin': pin}),
                         );
@@ -1228,7 +1234,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                           setState(() => _pinEnabled = false);
                           ss(() {});
                           _snack('✅ Transaction PIN disabled');
-                        } else { _snack('❌ \${d['message'] ?? 'Failed'}'); }
+                        } else { _snack('❌ ${d["message"] ?? "Failed"}'); }
                       }
                     },
                   ),
@@ -1797,7 +1803,6 @@ class _SendTabState extends State<_SendTab> {
       if (pinData['success'] != true) {
         widget.snack('❌ ${pinData['message'] ?? 'Invalid PIN'}'); return;
       }
-    }
     }
     widget.snack('Processing transfer…');
     try {
