@@ -1033,7 +1033,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                     if (pin != confirm)  { _snack('PINs do not match'); return; }
                     try {
                       final r = await http.post(
-                        Uri.parse('\${widget.serverUrl}/api/wallet/pin/set'),
+                        Uri.parse('${widget.serverUrl}/api/wallet/pin/set'),
                         headers: {'Content-Type': 'application/json'},
                         body: jsonEncode({'userId': widget.userId, 'pin': pin}),
                       );
