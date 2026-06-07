@@ -767,7 +767,7 @@ class _VideoPageState extends State<_VideoPage> {
     return GestureDetector(
       onTap: _togglePause,
       child: Stack(children: [
-        IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
+        GestureDetector(onTap: _toggleMute, child: BetterPlayer(controller: _ctrl!)),
         if (_paused)
           Center(
             child: GestureDetector(
