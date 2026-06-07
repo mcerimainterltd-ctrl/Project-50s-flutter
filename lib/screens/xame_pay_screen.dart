@@ -965,6 +965,92 @@ class _XamePayScreenState extends State<XamePayScreen>
 
   // ── SETTINGS ──────────────────────────────────────────────────────────────
 
+  void _showSetPinSheet() {
+    final pinCtrl    = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: const Color(0xFF13131A),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: StatefulBuilder(builder: (ctx, ss) {
+          String? error;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Set Transaction PIN', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              const Text('PIN is required to authorise all transfers', style: TextStyle(color: Colors.white54, fontSize: 13)),
+              const SizedBox(height: 24),
+              TextField(
+                controller: pinCtrl,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 6,
+                style: const TextStyle(color: Colors.white, letterSpacing: 8, fontSize: 20),
+                decoration: const InputDecoration(
+                  labelText: 'New PIN (4-6 digits)',
+                  labelStyle: TextStyle(color: Colors.white54),
+                  counterText: '',
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00E5FF))),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmCtrl,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 6,
+                style: const TextStyle(color: Colors.white, letterSpacing: 8, fontSize: 20),
+                decoration: const InputDecoration(
+                  labelText: 'Confirm PIN',
+                  labelStyle: TextStyle(color: Colors.white54),
+                  counterText: '',
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00E5FF))),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00E5FF),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () async {
+                    final pin     = pinCtrl.text.trim();
+                    final confirm = confirmCtrl.text.trim();
+                    if (pin.length < 4) { _snack('PIN must be at least 4 digits'); return; }
+                    if (pin != confirm)  { _snack('PINs do not match'); return; }
+                    try {
+                      final r = await http.post(
+                        Uri.parse('\${widget.serverUrl}/api/wallet/pin/set'),
+                        headers: {'Content-Type': 'application/json'},
+                        body: jsonEncode({'userId': widget.userId, 'pin': pin}),
+                      );
+                      final d = jsonDecode(r.body);
+                      if (d['success'] == true) {
+                        Navigator.pop(ctx);
+                        _snack('✅ Transaction PIN set successfully');
+                      } else { _snack('❌ \${d['message'] ?? 'Failed to set PIN'}'); }
+                    } catch (_) { _snack('❌ Network error'); }
+                  },
+                  child: const Text('Set PIN', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ]),
+          );
+        }),
+      ),
+    );
+  }
+
   void _showSettings() {
     String tc = _dispCurrency, td = _dispCurrency;
     showModalBottomSheet(
@@ -1093,6 +1179,25 @@ class _XamePayScreenState extends State<XamePayScreen>
                 child: const Text('Save Settings',
                     style: TextStyle(color: Colors.black,
                         fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                label: const Text('Set Transaction PIN',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E1E2E),
+                  foregroundColor: const Color(0xFF00E5FF),
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: const BorderSide(color: Color(0xFF00E5FF)),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showSetPinSheet();
+                },
               ),
             ],
           ),
