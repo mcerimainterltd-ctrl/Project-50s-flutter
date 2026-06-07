@@ -764,8 +764,10 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-        GestureDetector(onTap: _toggleMute, child: BetterPlayer(controller: _ctrl!)),
+    return GestureDetector(
+      onTap: _toggleMute,
+      child: Stack(children: [
+        BetterPlayer(controller: _ctrl!),
         if (_paused)
           Center(
             child: GestureDetector(
@@ -783,7 +785,6 @@ class _VideoPageState extends State<_VideoPage> {
           top: 80, right: 16,
           child: GestureDetector(
             onTap: _togglePause,
-            behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
@@ -799,7 +800,6 @@ class _VideoPageState extends State<_VideoPage> {
           top: 80, left: 16,
           child: GestureDetector(
             onTap: _toggleMute,
-            behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
@@ -847,7 +847,8 @@ class _VideoPageState extends State<_VideoPage> {
               ),
             ]),
           ),
-    ]);
+      ]),
+    );
   }
 }
 
