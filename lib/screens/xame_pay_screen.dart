@@ -588,7 +588,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                         serverUrl: widget.serverUrl, userId: widget.userId,
                         currency: _dispCurrency, fmt: _fmt,
                         onSuccess: _loadWallet, snack: _snack,
-                        contacts: widget.xameContacts),
+                        contacts: widget.xameContacts, pinEnabled: _pinEnabled),
                     _HistoryTab(txs: _txs, fmt: _fmt),
                     _RewardsTab(userId: widget.userId, serverUrl: widget.serverUrl),
                   ],
@@ -1630,10 +1630,11 @@ class _SendTab extends StatefulWidget {
   final Future<void> Function() onSuccess;
   final void Function(String) snack;
   final List<Map<String,String>> contacts;
+  final bool pinEnabled;
   const _SendTab({required this.region, required this.balance,
       required this.serverUrl, required this.userId, required this.currency,
       required this.fmt, required this.onSuccess, required this.snack,
-      this.contacts = const []});
+      this.contacts = const [], this.pinEnabled = false});
   @override State<_SendTab> createState() => _SendTabState();
 }
 
