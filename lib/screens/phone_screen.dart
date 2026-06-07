@@ -339,7 +339,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 Text('Rate / min',
-                    style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
+                    style: TextStyle(color: Colors.white54, fontSize: 11)),
                 SizedBox(height: 4),
                 Text('$_creditsCurr $rate',
                     style: TextStyle(color: XameColors.primary,
@@ -355,7 +355,7 @@ class _PhoneScreenState extends State<PhoneScreen>
               child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                 const Text('Your Balance',
-                    style: TextStyle(color: XameColors.darkSurface, fontSize: 11)),
+                    style: TextStyle(color: Colors.white54, fontSize: 11)),
                 const SizedBox(height: 4),
                 Text('$_creditsCurr ${_credits.toStringAsFixed(2)}',
                     style: TextStyle(
@@ -396,7 +396,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                       borderRadius: BorderRadius.circular(12))),
               onPressed: () => Navigator.pop(_, false),
               child: Text('Cancel',
-                  style: TextStyle(color: XameColors.darkBg)))),
+                  style: TextStyle(color: Colors.white70)))),
             const SizedBox(width: 12),
             Expanded(flex: 2, child: ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -865,7 +865,7 @@ class _RecentsTab extends StatelessWidget {
                     _dur(r.duration),
                   _fmt(r.startTime),
                 ].where((s) => s.isNotEmpty).join(' · '),
-                style: const TextStyle(color: XameColors.darkSurface, fontSize: 12)),
+                style: const TextStyle(color: Colors.white54, fontSize: 12)),
             ]),
             trailing: GestureDetector(
               onTap: () => onCall(peer),
@@ -1076,10 +1076,10 @@ class _ContactTile extends StatelessWidget {
       overflow: TextOverflow.ellipsis),
     subtitle: Row(children: [
       Flexible(child: Text(contact.primary,
-        style: TextStyle(color: XameColors.darkSurface, fontSize: 12),
+        style: TextStyle(color: Colors.white54, fontSize: 12),
         overflow: TextOverflow.ellipsis)),
       if (contact.isOnXame) ...[
-        Text(' · ', style: TextStyle(color: XameColors.darkSurface)),
+        Text(' · ', style: TextStyle(color: Colors.white54)),
         Text('XamePage',
           style: TextStyle(color: XameColors.accent, fontSize: 12,
               fontWeight: FontWeight.w500)),
@@ -1753,7 +1753,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         SizedBox(height: 8),
         Text('Amount will be deducted from your XamePay wallet',
           textAlign: TextAlign.center,
-          style: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5), fontSize: 11)),
+          style: TextStyle(color: Colors.white38, fontSize: 11)),
       ],
 
       if (_error != null) ...[
