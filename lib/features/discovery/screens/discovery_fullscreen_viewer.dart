@@ -345,6 +345,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     return GestureDetector(
       onDoubleTapDown: _onTapForReaction,
       onDoubleTap: () {},
+      behavior: HitTestBehavior.translucent,
       child: Stack(children: [
 
         PageView.builder(
