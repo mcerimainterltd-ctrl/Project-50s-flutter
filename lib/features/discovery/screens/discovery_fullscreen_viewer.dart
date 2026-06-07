@@ -683,7 +683,7 @@ class _VideoPage extends StatefulWidget {
 
 class _VideoPageState extends State<_VideoPage> {
   BetterPlayerController? _ctrl;
-  bool _muted  = true;
+  bool _muted  = false;
   bool _paused = false;
   double _progress = 0;
   Duration _total  = Duration.zero;
@@ -708,7 +708,7 @@ class _VideoPageState extends State<_VideoPage> {
       ),
     );
     _ctrl!.addEventsListener(_onEvent);
-    _ctrl!.setVolume(0);
+    _ctrl!.setVolume(1);
   }
 
   void _onEvent(BetterPlayerEvent e) {
