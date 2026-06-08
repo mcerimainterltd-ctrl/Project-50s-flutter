@@ -997,8 +997,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         Container(width: 36, height: 4,
             decoration: BoxDecoration(color: outerContext.xMuted.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
         SizedBox(height: 8),
-        if (msg.text.isNotEmpty)
-          ListTile(leading: Icon(Icons.reply, color: outerContext.xMuted),
+        ListTile(leading: Icon(Icons.reply, color: outerContext.xMuted),
               title: Text('Reply', style: TextStyle(color: outerContext.xText)),
               onTap: () { Navigator.pop(sheetCtx); setState(() => _replyTo = msg); }),
         if (msg.text.isNotEmpty)
