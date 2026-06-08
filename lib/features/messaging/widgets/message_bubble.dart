@@ -110,7 +110,7 @@ class MessageBubble extends ConsumerWidget {
                   isSelf ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 if (message.replyToId != null)
-                  _ReplyQuote(text: message.replyToText ?? ''),
+                  _ReplyQuote(text: message.replyToText ?? '', fileUrl: message.replyToFileUrl, fileMime: message.replyToFileMime),
                 Container(
                   margin: EdgeInsets.only(
                       left: isSelf ? 40 : 0, right: isSelf ? 0 : 40),
@@ -373,8 +373,15 @@ class _StatusTick extends StatelessWidget {
 
 // ─── Reply quote ──────────────────────────────────────────────────────────
 class _ReplyQuote extends StatelessWidget {
-  final String text;
-  _ReplyQuote({required this.text});
+  final String  text;
+  final String? fileUrl;
+  final String? fileMime;
+  _ReplyQuote({required this.text, this.fileUrl, this.fileMime});
+
+  bool get _isImage => fileMime != null && fileMime!.startsWith('image');
+  bool get _isVideo => fileMime != null && fileMime!.startsWith('video');
+  bool get _isAudio => fileMime != null && fileMime!.startsWith('audio');
+
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 6),
@@ -385,16 +392,49 @@ class _ReplyQuote extends StatelessWidget {
     ),
     child: Padding(
       padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text('Replied message',
-            style: TextStyle(color: XameColors.primary,
-                fontSize: 11, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 2),
-          Text(text.isNotEmpty ? text : '📎 Attachment',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12),
-            maxLines: 2, overflow: TextOverflow.ellipsis),
+          // Media thumbnail
+          if (fileUrl != null && fileUrl!.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: _isImage
+                ? CachedNetworkImage(
+                    imageUrl: fileUrl!,
+                    width: 48, height: 48, fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => Container(
+                      width: 48, height: 48, color: Colors.white12,
+                      child: const Icon(Icons.image, color: Colors.white38, size: 20)))
+                : Container(
+                    width: 48, height: 48, color: Colors.white12,
+                    child: Icon(
+                      _isVideo ? Icons.videocam_rounded
+                        : _isAudio ? Icons.audiotrack_rounded
+                        : Icons.insert_drive_file_rounded,
+                      color: Colors.white54, size: 24)),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Replied message',
+                  style: TextStyle(color: XameColors.primary,
+                      fontSize: 11, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(
+                  text.isNotEmpty ? text
+                    : _isImage ? '📷 Photo'
+                    : _isVideo ? '🎥 Video'
+                    : _isAudio ? '🎵 Audio'
+                    : fileUrl != null ? '📎 Attachment'
+                    : 'Message',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12),
+                  maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
         ],
       ),
     ),

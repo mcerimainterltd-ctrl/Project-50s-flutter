@@ -77,8 +77,10 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         ts:          (m['ts'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch,
         status:      'delivered',
         expiresAt:   m['expiresAt'] as int?,
-        replyToId:   (m['replyTo'] as Map?)?['id']   as String?,
-        replyToText: (m['replyTo'] as Map?)?['text'] as String?,
+        replyToId:      (m['replyTo'] as Map?)?['id']      as String?,
+        replyToText:    (m['replyTo'] as Map?)?['text']    as String?,
+        replyToFileUrl: (m['replyTo'] as Map?)?['fileUrl']  as String?,
+        replyToFileMime:(m['replyTo'] as Map?)?['fileMime'] as String?,
         forwarded:   m['forwarded'] as bool? ?? false,
         viewOnce:    m['viewOnce']  as bool? ?? false,
         fileUrl:     hasFile ? fileObj['url']  as String? : null,
@@ -162,7 +164,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
   // ── Send text ─────────────────────────────────────────────────────────
   Future<void> sendMessage(String text,
-      {String? replyToId, String? replyToText, int? expiresAt}) async {
+      {String? replyToId, String? replyToText, String? replyToFileUrl, String? replyToFileMime, int? expiresAt}) async {
     final self = _ref.read(currentUserProvider);
     if (self == null) return;
 
@@ -173,7 +175,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       id: msgId, senderId: self.xameId, recipientId: _contactId,
       text: text, type: MessageType.text, direction: MessageDirection.sent,
       ts: ts, status: 'sending',
-      replyToId: replyToId, replyToText: replyToText, expiresAt: expiresAt,
+      replyToId: replyToId, replyToText: replyToText,
+      replyToFileUrl: replyToFileUrl, replyToFileMime: replyToFileMime,
+      expiresAt: expiresAt,
     );
 
     state = [...state, msg];
@@ -182,7 +186,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     final socketMsg = <String, dynamic>{'id': msgId, 'text': text, 'ts': ts};
     if (expiresAt != null) socketMsg['expiresAt'] = expiresAt;
     if (replyToId != null)
-      socketMsg['replyTo'] = {'id': replyToId, 'text': replyToText};
+      socketMsg['replyTo'] = {'id': replyToId, 'text': replyToText, 'fileUrl': replyToFileUrl, 'fileMime': replyToFileMime};
 
     _ref.read(socketServiceProvider).emit('send-message', {
       'recipientId': _contactId,
@@ -517,8 +521,10 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
             ts:          (m['ts'] as num?)?.toInt() ?? 0,
             status:      m['status'] as String? ?? 'delivered',
             expiresAt:   m['expiresAt'] as int?,
-            replyToId:   (m['replyTo'] as Map?)?['id']   as String?,
-            replyToText: (m['replyTo'] as Map?)?['text'] as String?,
+            replyToId:      (m['replyTo'] as Map?)?['id']      as String?,
+            replyToText:    (m['replyTo'] as Map?)?['text']    as String?,
+            replyToFileUrl: (m['replyTo'] as Map?)?['fileUrl']  as String?,
+            replyToFileMime:(m['replyTo'] as Map?)?['fileMime'] as String?,
             forwarded:   m['forwarded'] as bool? ?? false,
             viewOnce:    m['viewOnce']  as bool? ?? false,
             fileUrl:     hasFile ? fileObj['url']  as String? : null,

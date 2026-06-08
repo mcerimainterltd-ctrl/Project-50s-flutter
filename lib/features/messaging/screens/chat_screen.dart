@@ -210,8 +210,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.read(socketServiceProvider).emitStopTyping(widget.userId);
     await ref.read(chatProvider(widget.userId).notifier).sendMessage(
       text,
-      replyToId:   _replyTo?.id,
-      replyToText: _replyTo?.text,
+      replyToId:      _replyTo?.id,
+      replyToText:    _replyTo?.text,
+      replyToFileUrl: _replyTo?.fileUrl,
+      replyToFileMime: _replyTo?.fileMime,
     );
     setState(() => _replyTo = null);
     _scrollToBottom();
@@ -1253,13 +1255,42 @@ class _ReplyPreview extends StatelessWidget {
       color: context.xCard,
       border: Border(left: BorderSide(color: XameColors.primary, width: 3))),
     child: Row(children: [
+      // Media thumbnail preview
+      if (message.fileUrl != null && message.fileUrl!.isNotEmpty) ...[
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: message.fileMime?.startsWith('image') == true
+            ? CachedNetworkImage(
+                imageUrl: message.fileUrl!,
+                width: 44, height: 44, fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => Container(
+                  width: 44, height: 44, color: context.xSurface,
+                  child: Icon(Icons.image, color: context.xMuted, size: 20)))
+            : Container(
+                width: 44, height: 44, color: context.xSurface,
+                child: Icon(
+                  message.fileMime?.startsWith('video') == true
+                    ? Icons.videocam_rounded
+                    : message.fileMime?.startsWith('audio') == true
+                      ? Icons.audiotrack_rounded
+                      : Icons.insert_drive_file_rounded,
+                  color: context.xMuted, size: 22)),
+        ),
+        const SizedBox(width: 10),
+      ],
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Replying to',
             style: TextStyle(color: XameColors.primary, fontSize: 11)),
         SizedBox(height: 2),
-        Text(message.text.isNotEmpty ? message.text : '📎 Attachment',
-            style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13),
-            maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(
+          message.text.isNotEmpty ? message.text
+            : message.fileMime?.startsWith('image') == true ? '📷 Photo'
+            : message.fileMime?.startsWith('video') == true ? '🎥 Video'
+            : message.fileMime?.startsWith('audio') == true ? '🎵 Audio'
+            : message.fileUrl != null ? '📎 Attachment'
+            : 'Message',
+          style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13),
+          maxLines: 1, overflow: TextOverflow.ellipsis),
       ])),
       IconButton(
           icon: Icon(Icons.close, color: context.xMuted, size: 18),
