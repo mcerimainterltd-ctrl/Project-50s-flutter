@@ -77,6 +77,7 @@ class MessageBubble extends ConsumerWidget {
   final VoidCallback onLongPress;
   final VoidCallback onTap;
   final void Function(String emoji)? onReact;
+  final void Function(String)? onQuoteTap;
 
   MessageBubble({
     super.key,
@@ -86,6 +87,7 @@ class MessageBubble extends ConsumerWidget {
     required this.onLongPress,
     required this.onTap,
     this.onReact,
+    this.onQuoteTap,
   });
 
   @override
@@ -110,7 +112,10 @@ class MessageBubble extends ConsumerWidget {
                   isSelf ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 if (message.replyToId != null)
-                  _ReplyQuote(text: message.replyToText ?? '', fileUrl: message.replyToFileUrl, fileMime: message.replyToFileMime),
+                  GestureDetector(
+                    onTap: message.replyToId != null ? () => onQuoteTap?.call(message.replyToId!) : null,
+                    child: _ReplyQuote(text: message.replyToText ?? '', fileUrl: message.replyToFileUrl, fileMime: message.replyToFileMime),
+                  ),
                 Container(
                   margin: EdgeInsets.only(
                       left: isSelf ? 40 : 0, right: isSelf ? 0 : 40),

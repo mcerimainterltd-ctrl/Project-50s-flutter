@@ -626,6 +626,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     onTap: (msg) {
                       if (_selectMode) _toggleSelect(msg.id);
                     },
+                    onQuoteTap: (replyToId) {
+                      final idx = messages.indexWhere((m) => m.id == replyToId);
+                      if (idx < 0) return;
+                      final reversed = idx; // list is reversed
+                      final total = messages.length;
+                      final fromBottom = total - 1 - reversed;
+                      // Estimate ~80px per message
+                      final offset = fromBottom * 80.0;
+                      _scrollCtrl.animateTo(
+                        offset.clamp(0.0, _scrollCtrl.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeInOut,
+                      );
+                    },
                     onReact: (msg, emoji) {
                       ref.read(chatProvider(widget.userId).notifier)
                           .toggleReaction(msg.id, emoji);
@@ -1153,6 +1167,7 @@ class _MessageList extends StatelessWidget {
   final Function(XameMessage) onLongPress;
   final Function(XameMessage, String) onReact;
   final Function(XameMessage) onTap;
+  final Function(String)? onQuoteTap;
 
   const _MessageList({
     required this.messages,   required this.scrollCtrl,
@@ -1160,6 +1175,7 @@ class _MessageList extends StatelessWidget {
     required this.selectMode, required this.onLongPress,
     required this.onReact,
     required this.onTap,
+    this.onQuoteTap,
   });
 
   @override
@@ -1183,6 +1199,7 @@ class _MessageList extends StatelessWidget {
             onLongPress: () => onLongPress(msg),
             onTap:       () => onTap(msg),
             onReact:    (emoji) => onReact(msg, emoji),
+            onQuoteTap: onQuoteTap,
           ),
         ]);
       },
