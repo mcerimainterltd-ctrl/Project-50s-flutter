@@ -1813,7 +1813,7 @@ class _SendTabState extends State<_SendTab> {
         body: jsonEncode({'account_bank': _selBank!.code,
             'account_number': _accNum, 'amount': _amount,
             'currency': widget.currency, 'narration': 'XamePay Transfer',
-            'accName': _accName, 'userId': widget.userId}),
+            'accName': _accName, 'bankName': _selBank!.name, 'userId': widget.userId}),
       ).timeout(const Duration(seconds: 20));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
