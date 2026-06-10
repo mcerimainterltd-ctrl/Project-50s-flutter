@@ -1062,7 +1062,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
     if (confirm != true) return;
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      final r = await dio.delete('/api/discover/post/\${widget.postId}',
+      final r = await dio.delete('/api/discover/post/${widget.postId}',
           data: {'userId': widget.userId});
       if (r.data['success'] == true && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -3083,7 +3083,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         if (mounted) setState(() => _following = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Unfollowed \${widget.item.authorName}'),
+            content: Text('Unfollowed ${widget.item.authorName}'),
             backgroundColor: context.xSurface,
           ));
         }
@@ -3096,7 +3096,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
         if (mounted) setState(() => _following = true);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Now following \${widget.item.authorName}'),
+            content: Text('Now following ${widget.item.authorName}'),
             backgroundColor: context.xSurface,
           ));
         }
