@@ -1330,7 +1330,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
     try {
       // Save BVN to server for future use
       await http.post(
-        Uri.parse("\${widget.serverUrl}/api/wallet/save-bvn"),
+        Uri.parse('${widget.serverUrl}/api/wallet/save-bvn'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"userId": widget.userId, "bvn": bvn}),
       ).timeout(const Duration(seconds: 10));
