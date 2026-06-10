@@ -1335,7 +1335,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         body: jsonEncode({"userId": widget.userId, "bvn": bvn}),
       ).timeout(const Duration(seconds: 10));
       final r = await http.post(
-        Uri.parse("\${widget.serverUrl}/api/wallet/flw/virtual-account"),
+        Uri.parse('${widget.serverUrl}/api/wallet/flw/virtual-account'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "userId": widget.userId,
