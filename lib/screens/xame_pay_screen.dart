@@ -1328,8 +1328,14 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
   Future<void> _fetchVirtualAccount(String bvn) async {
     setState(() { _loading = true; _error = null; });
     try {
+      // Save BVN to server for future use
+      await http.post(
+        Uri.parse("\${widget.serverUrl}/api/wallet/save-bvn"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"userId": widget.userId, "bvn": bvn}),
+      ).timeout(const Duration(seconds: 10));
       final r = await http.post(
-        Uri.parse("${widget.serverUrl}/api/wallet/flw/virtual-account"),
+        Uri.parse("\${widget.serverUrl}/api/wallet/flw/virtual-account"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "userId": widget.userId,
@@ -1424,7 +1430,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                 Icon(Icons.lock_outline, color: Colors.orange, size: 14),
                 SizedBox(width: 8),
                 Expanded(child: Text(
-                  "Your BVN is required by Flutterwave to generate a virtual account. It is not stored by XamePage.",
+                  "Your BVN is required to generate a virtual account. It is securely stored and used only for account creation.",
                   style: TextStyle(color: Colors.orange, fontSize: 11))),
               ]),
             ),
