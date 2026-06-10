@@ -394,6 +394,12 @@ class _XamePayScreenState extends State<XamePayScreen>
   void initState() {
     super.initState();
     _tab = TabController(length: 6, vsync: this);
+    _tab.addListener(() {
+      if (!_tab.indexIsChanging) return;
+      final idx = _tab.index;
+      // Reset to no tab selected (show none active)
+      Future.microtask(() => _openTabFullscreen(idx));
+    });
     _loadPrefs().then((_) => _init());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final socket = ProviderScope.containerOf(context).read(socketServiceProvider);
@@ -670,6 +676,38 @@ class _XamePayScreenState extends State<XamePayScreen>
   );
 
   // ── TAB BAR ───────────────────────────────────────────────────────────────
+
+  void _openTabFullscreen(int idx) {
+    final tabs = [
+      ('📱 Airtime',  _AirtimeTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
+      ('📶 Data',     _DataTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
+      ('🧾 Bills',    _BillsTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
+      ('💸 Send',     _SendTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack, contacts: widget.xameContacts, pinEnabled: _pinEnabled)),
+      ('📊 History',  _HistoryTab(txs: _txs, fmt: _fmt)),
+      ('🪙 Rewards',  _RewardsTab(userId: widget.userId, serverUrl: widget.serverUrl)),
+    ];
+    if (idx >= tabs.length) return;
+    final (title, body) = tabs[idx];
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        backgroundColor: _kBg,
+        appBar: AppBar(
+          backgroundColor: _kCard,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Text(_fmt(_displayBalance),
+                style: const TextStyle(color: _kTeal, fontWeight: FontWeight.w800, fontSize: 15)),
+            ),
+          ],
+        ),
+        body: body,
+      ),
+    )).then((_) => _loadWallet());
+  }
 
   Widget _tabBar() => Container(
     color: _kCard,
