@@ -3940,7 +3940,7 @@ class _RewardsTabState extends State<_RewardsTab> {
               ])))),
             const SizedBox(width: 8),
             Expanded(child: _rewardsTabBtn('📒 Coin Ledger', () => _openRewardsFullscreen(
-              '📒 Coin Ledger', _txs.isEmpty
+              '📒 Coin Ledger', Builder(builder: (_) => _txs.isEmpty
                 ? const Center(child: Padding(padding: EdgeInsets.all(24),
                     child: Text('No transactions yet. Start earning!',
                       style: TextStyle(color: _kMuted, fontSize: 13))))
@@ -3965,7 +3965,8 @@ class _RewardsTabState extends State<_RewardsTab> {
                         ]),
                       );
                     }).toList()),
-                ])))),
+                ])),
+              ))),
           ]),
         ],
       ),
