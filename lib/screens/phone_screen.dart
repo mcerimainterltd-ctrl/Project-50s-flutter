@@ -393,6 +393,7 @@ class _PhoneScreenState extends State<PhoneScreen>
       matched.sort((a, b) => b.dial.length.compareTo(a.dial.length));
       if (matched.isNotEmpty && mounted) {
         setState(() => _country = matched.first);
+        _country = matched.first;
       }
     }
 
