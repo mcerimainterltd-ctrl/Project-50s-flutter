@@ -1249,7 +1249,7 @@ class _KeypadTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final rateData = (rates[country.code] as Map?) ??
         (rates['default'] as Map?);
-    final rate = rateData?['rate'] ?? '—';
+    final rate = rateData?['rate']?.toString() ?? (rates.isEmpty ? '...' : '—');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
