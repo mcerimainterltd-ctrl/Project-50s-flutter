@@ -222,20 +222,57 @@ class _PhoneScreenState extends State<PhoneScreen>
   Future<void> _loadCountries() async {
     try {
       final r = await http.get(Uri.parse(
-          'https://restcountries.com/v3.1/all?fields=name,cca2,idd,currencies'))
+          'https://countriesnow.space/api/v0.1/countries/currency'))
           .timeout(const Duration(seconds: 10));
-      final List data = jsonDecode(r.body);
+      final d = jsonDecode(r.body);
+      final List data = d['data'] ?? [];
       final List<_Country> loaded = [];
+      // dial codes map
+      final Map<String,String> dialMap = {
+        'NG':'+234','US':'+1','GB':'+44','GH':'+233','KE':'+254',
+        'ZA':'+27','CM':'+237','SN':'+221','CI':'+225','FR':'+33',
+        'DE':'+49','CA':'+1','AU':'+61','IN':'+91','AE':'+971',
+        'BR':'+55','PH':'+63','ZM':'+260','UG':'+256','TZ':'+255',
+        'RW':'+250','EG':'+20','SA':'+966','JP':'+81','SG':'+65',
+        'MY':'+60','ZW':'+263','ET':'+251','MX':'+52','TR':'+90',
+        'PK':'+92','ID':'+62','QA':'+974','KW':'+965','IT':'+39',
+        'ES':'+34','NL':'+31','SE':'+46','NO':'+47','CH':'+41',
+        'NZ':'+64','AR':'+54','CL':'+56','CO':'+57','PE':'+51',
+        'VE':'+58','UA':'+380','PL':'+48','RU':'+7','CN':'+86',
+        'KR':'+82','TH':'+66','VN':'+84','BD':'+880','LK':'+94',
+        'MM':'+95','KH':'+855','TW':'+886','HK':'+852','IR':'+98',
+        'IQ':'+964','IL':'+972','JO':'+962','LB':'+961','KZ':'+7',
+        'UZ':'+998','AZ':'+994','AM':'+374','GE':'+995','BY':'+375',
+        'LT':'+370','LV':'+371','EE':'+372','MD':'+373','RS':'+381',
+        'HR':'+385','BA':'+387','MK':'+389','AL':'+355','CY':'+357',
+        'MT':'+356','LU':'+352','BE':'+32','AT':'+43','DK':'+45',
+        'FI':'+358','PT':'+351','GR':'+30','CZ':'+420','SK':'+421',
+        'HU':'+36','RO':'+40','BG':'+359','SI':'+386','IS':'+354',
+        'TN':'+216','MA':'+212','DZ':'+213','LY':'+218','SD':'+249',
+        'NG':'+234','GH':'+233','SN':'+221','CI':'+225','CM':'+237',
+        'CD':'+243','AO':'+244','MZ':'+258','MG':'+261','TZ':'+255',
+        'UG':'+256','RW':'+250','ET':'+251','KE':'+254','ZA':'+27',
+        'ZM':'+260','ZW':'+263','BW':'+267','NA':'+264','LS':'+266',
+        'SZ':'+268','MU':'+230','SC':'+248','DJ':'+253','SO':'+252',
+        'ER':'+291','SS':'+211','TD':'+235','CF':'+236','CG':'+242',
+        'GA':'+241','GQ':'+240','ST':'+239','GW':'+245','GN':'+224',
+        'SL':'+232','LR':'+231','ML':'+223','BF':'+226','NE':'+227',
+        'BJ':'+229','TG':'+228','GH':'+233','GM':'+220','CV':'+238',
+        'MR':'+222','NI':'+505','CR':'+506','PA':'+507','CU':'+53',
+        'DO':'+1','HT':'+509','JM':'+1','TT':'+1','BB':'+1',
+        'GY':'+592','SR':'+597','BO':'+591','PY':'+595','UY':'+598',
+        'EC':'+593','GT':'+502','HN':'+504','SV':'+503','BZ':'+501',
+        'MX':'+52','NZ':'+64','FJ':'+679','PG':'+675','SB':'+677',
+        'VU':'+678','WS':'+685','TO':'+676','KI':'+686','FM':'+691',
+        'MH':'+692','PW':'+680','NR':'+674','TV':'+688','CK':'+682',
+      };
       for (final c in data) {
-        final code = c['cca2'] as String? ?? '';
+        final code = c['iso2'] as String? ?? '';
         if (code.isEmpty) continue;
-        final root    = c['idd']?['root'] as String? ?? '';
-        final suffixes = c['idd']?['suffixes'] as List? ?? [];
-        final dial    = suffixes.length == 1 ? '$root${suffixes[0]}' : root;
+        final currency = c['currency'] as String? ?? 'USD';
+        final name = c['name'] as String? ?? code;
+        final dial = dialMap[code] ?? '';
         if (dial.isEmpty) continue;
-        final currencies = c['currencies'] as Map? ?? {};
-        final currency = currencies.isNotEmpty ? currencies.keys.first : 'USD';
-        final name = c['name']?['common'] as String? ?? code;
         loaded.add(_Country(
           code: code, dial: dial,
           flag: _flag(code), name: name,
