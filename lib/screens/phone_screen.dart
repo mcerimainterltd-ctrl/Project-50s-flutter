@@ -255,7 +255,7 @@ class _PhoneScreenState extends State<PhoneScreen>
   Future<void> _loadFxRates() async {
     try {
       final r = await http.get(Uri.parse(
-          'https://api.frankfurter.app/latest?from=NGN'))
+          'https://open.er-api.com/v6/latest/NGN'))
           .timeout(const Duration(seconds: 8));
       final d = jsonDecode(r.body);
       final rates = Map<String, double>.from(
@@ -347,6 +347,17 @@ class _PhoneScreenState extends State<PhoneScreen>
     if (number.isEmpty) { _snack('No number entered'); return; }
     final full = number.startsWith('+')
         ? number : '${_country.dial}$number';
+
+    // Auto-detect country from dialed number
+    if (number.startsWith('+')) {
+      final matched = _countries.where((c) =>
+        c.dial.isNotEmpty && number.startsWith(c.dial)
+      ).toList();
+      matched.sort((a, b) => b.dial.length.compareTo(a.dial.length));
+      if (matched.isNotEmpty && mounted) {
+        setState(() => _country = matched.first);
+      }
+    }
 
     // Get rate for this country from already-loaded _rates map
     final rateData   = _rates[_country.code] ?? _rates['default'];
