@@ -3940,32 +3940,34 @@ class _RewardsTabState extends State<_RewardsTab> {
               ])))),
             const SizedBox(width: 8),
             Expanded(child: _rewardsTabBtn('📒 Coin Ledger', () => _openRewardsFullscreen(
-              '📒 Coin Ledger', Builder(builder: (_) => _txs.isEmpty
-                ? const Center(child: Padding(padding: EdgeInsets.all(24),
-                    child: Text('No transactions yet. Start earning!',
-                      style: TextStyle(color: _kMuted, fontSize: 13))))
-                : ListView(padding: const EdgeInsets.all(16), children:
-                    _txs.map((tx) {
-                      final coins = tx['coins'] as int? ?? 0;
-                      final isPositive = coins > 0;
-                      final ts = tx['ts'] != null ? DateTime.tryParse(tx['ts'].toString())?.toLocal() : null;
-                      final dateStr = ts != null ? '${ts.day}/${ts.month}/${ts.year} ${ts.hour.toString().padLeft(2,"0")}:${ts.minute.toString().padLeft(2,"0")}' : '';
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: _kCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
-                        child: Row(children: [
-                          Text(_txIcon(tx['type'] ?? ''), style: const TextStyle(fontSize: 20)),
-                          const SizedBox(width: 12),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(tx['description'] ?? tx['type'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-                            if (dateStr.isNotEmpty) Text(dateStr, style: const TextStyle(color: _kMuted, fontSize: 11)),
-                          ])),
-                          Text('${isPositive ? "+" : ""}$coins', style: TextStyle(color: isPositive ? _kTeal : Colors.redAccent, fontSize: 14, fontWeight: FontWeight.w700)),
-                        ]),
-                      );
-                    }).toList()),
-                ])),
+                '📒 Coin Ledger',
+                Builder(builder: (_) => _txs.isEmpty
+                  ? const Center(child: Padding(padding: EdgeInsets.all(24),
+                      child: Text('No transactions yet. Start earning!',
+                        style: TextStyle(color: _kMuted, fontSize: 13))))
+                  : ListView(padding: const EdgeInsets.all(16), children:
+                      _txs.map((tx) {
+                        final coins = tx['coins'] as int? ?? 0;
+                        final isPositive = coins > 0;
+                        final ts = tx['ts'] != null ? DateTime.tryParse(tx['ts'].toString())?.toLocal() : null;
+                        final dateStr = ts != null ? '${ts.day}/${ts.month}/${ts.year} ${ts.hour.toString().padLeft(2,"0")}:${ts.minute.toString().padLeft(2,"0")}' : '';
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: _kCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+                          child: Row(children: [
+                            Text(_txIcon(tx['type'] ?? ''), style: const TextStyle(fontSize: 20)),
+                            const SizedBox(width: 12),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(tx['description'] ?? tx['type'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                              if (dateStr.isNotEmpty) Text(dateStr, style: const TextStyle(color: _kMuted, fontSize: 11)),
+                            ])),
+                            Text('${isPositive ? "+" : ""}$coins', style: TextStyle(color: isPositive ? _kTeal : Colors.redAccent, fontSize: 14, fontWeight: FontWeight.w700)),
+                          ]),
+                        );
+                      }).toList()),
+                ),
+              ))),
               ))),
           ]),
         ],
