@@ -235,7 +235,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 horizontal: 12, vertical: 10),
             ),
           )
-        : Text(['Chats','Calls','Discover','Phone','Pay'][_tab],
+        : Text(['Chats','Calls','Discover','Tel','Pay'][_tab],
             style: TextStyle(color: context.xText, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
@@ -277,7 +277,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           }),
           text: 'Calls'),
         Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
-        Tab(icon: Icon(Icons.phone_outlined,              size: 22), text: 'Phone'),
+        Tab(icon: Icon(Icons.phone_outlined,              size: 22), text: 'Tel'),
         Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 22), text: "Pay"),
       ],
     ),

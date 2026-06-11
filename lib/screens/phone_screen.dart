@@ -616,6 +616,18 @@ class _PhoneScreenState extends State<PhoneScreen>
     return Scaffold(
       backgroundColor: XameColors.darkBg,
       body: Column(children: [
+        // ── XameTel header ───────────────────────────────────────
+        Container(
+          color: XameColors.darkBg,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('XameTel',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 2),
+            const Text('Fast & cheap internet calls to all global networks and landlines',
+              style: TextStyle(color: Colors.white54, fontSize: 11)),
+          ]),
+        ),
         // ── Credits bar ──────────────────────────────────────────
         _CreditsBar(
           credits:  _credits,
