@@ -44,12 +44,15 @@ class _CallRecord {
 }
 
 class _Country {
-  final String code, dial, flag, name;
+  final String code, dial, flag, name, currency;
+  final double fxRate; // rate vs NGN
   const _Country({
     required this.code,
     required this.dial,
     required this.flag,
     required this.name,
+    this.currency = 'NGN',
+    this.fxRate   = 1.0,
   });
 }
 
@@ -61,7 +64,7 @@ String _flag(String code) {
          String.fromCharCode(base + code.codeUnitAt(1));
 }
 
-// ── Country data ──────────────────────────────────────────────────────────────
+// ── Country data (populated dynamically from API) ────────────────────────────
 final _kCountries = [
   _Country(code:'NG', dial:'+234', flag:_flag('NG'), name:'Nigeria'),
   _Country(code:'US', dial:'+1',   flag:_flag('US'), name:'United States'),
@@ -147,7 +150,9 @@ class _PhoneScreenState extends State<PhoneScreen>
 
   // Keypad
   String   _dial    = '';
+  List<_Country> _countries = _kCountries;
   _Country _country = _kCountries.first;
+  Map<String, double> _fxRates = {}; // currency -> NGN rate
 
   @override
   void initState() {
@@ -173,6 +178,8 @@ class _PhoneScreenState extends State<PhoneScreen>
     }
     _loadCredits();
     _loadRates();
+    _loadCountries();
+    _loadFxRates();
     _loadCreditsVisibility();
     _loadRecents();
     _loadContacts(); // Refresh from device in background
@@ -209,6 +216,53 @@ class _PhoneScreenState extends State<PhoneScreen>
       final d = jsonDecode(r.body);
       if (d['success'] == true && mounted)
         setState(() => _rates = d['rates'] ?? {});
+    } catch (_) {}
+  }
+
+  Future<void> _loadCountries() async {
+    try {
+      final r = await http.get(Uri.parse(
+          'https://restcountries.com/v3.1/all?fields=name,cca2,idd,currencies'))
+          .timeout(const Duration(seconds: 10));
+      final List data = jsonDecode(r.body);
+      final List<_Country> loaded = [];
+      for (final c in data) {
+        final code = c['cca2'] as String? ?? '';
+        if (code.isEmpty) continue;
+        final root    = c['idd']?['root'] as String? ?? '';
+        final suffixes = c['idd']?['suffixes'] as List? ?? [];
+        final dial    = suffixes.length == 1 ? '$root${suffixes[0]}' : root;
+        if (dial.isEmpty) continue;
+        final currencies = c['currencies'] as Map? ?? {};
+        final currency = currencies.isNotEmpty ? currencies.keys.first : 'USD';
+        final name = c['name']?['common'] as String? ?? code;
+        loaded.add(_Country(
+          code: code, dial: dial,
+          flag: _flag(code), name: name,
+          currency: currency, fxRate: 1.0,
+        ));
+      }
+      loaded.sort((a, b) => a.name.compareTo(b.name));
+      if (mounted) setState(() {
+        _countries = loaded;
+        // Keep current country if still valid
+        final match = loaded.where((c) => c.code == _country.code);
+        if (match.isNotEmpty) _country = match.first;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _loadFxRates() async {
+    try {
+      final r = await http.get(Uri.parse(
+          'https://api.frankfurter.app/latest?from=NGN'))
+          .timeout(const Duration(seconds: 8));
+      final d = jsonDecode(r.body);
+      final rates = Map<String, double>.from(
+        (d['rates'] as Map? ?? {}).map((k, v) => MapEntry(k, (v as num).toDouble()))
+      );
+      rates['NGN'] = 1.0;
+      if (mounted) setState(() => _fxRates = rates);
     } catch (_) {}
   }
 
@@ -295,8 +349,12 @@ class _PhoneScreenState extends State<PhoneScreen>
         ? number : '${_country.dial}$number';
 
     // Get rate for this country from already-loaded _rates map
-    final rateData = _rates[_country.code] ?? _rates['default'];
-    final rate     = (rateData is Map ? rateData['rate'] : rateData) ?? 20;
+    final rateData  = _rates[_country.code] ?? _rates['default'];
+    final rateNGN   = ((rateData is Map ? rateData['rate'] : rateData) ?? 20).toDouble();
+    final currency  = _country.currency;
+    final fxRate    = _fxRates[currency] ?? 1.0;
+    final rateLocal = (rateNGN * fxRate).toStringAsFixed(2);
+    final rate      = '$currency $rateLocal';
 
     // Show confirmation sheet before calling
     if (!mounted) return;
@@ -341,7 +399,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                 Text('Rate / min',
                     style: TextStyle(color: Colors.white54, fontSize: 11)),
                 SizedBox(height: 4),
-                Text('$_creditsCurr $rate',
+                Text(rate,
                     style: TextStyle(color: XameColors.primary,
                         fontSize: 15, fontWeight: FontWeight.w700)),
               ]),
@@ -601,7 +659,7 @@ class _PhoneScreenState extends State<PhoneScreen>
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _CountryPicker(
-        countries: _kCountries,
+        countries: _countries,
         selected:  _country,
         onSelect:  (c) {
           setState(() => _country = c);
