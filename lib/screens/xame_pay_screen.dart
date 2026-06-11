@@ -3820,13 +3820,12 @@ class _RewardsTabState extends State<_RewardsTab> {
     final naira    = (balance * 0.1).toStringAsFixed(2);
     final canWithdraw = balance >= 10000;
 
-    return DefaultTabController(
-      length: 2,
-      child: Column(children: [
-        // ── Static Header ──────────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(children: [
+    return RefreshIndicator(
+      onRefresh: _load,
+      color: _kTeal,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
           // ── Coin Balance Card ──────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(20),
@@ -3937,48 +3936,27 @@ class _RewardsTabState extends State<_RewardsTab> {
                 ? const Center(child: Padding(padding: EdgeInsets.all(24),
                     child: Text('No transactions yet. Start earning!',
                       style: TextStyle(color: _kMuted, fontSize: 13))))
-                : ListView(padding: const EdgeInsets.all(16), children: [
-          if (_txs.isEmpty)
-            const Center(child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('No transactions yet. Start earning!',
-                style: TextStyle(color: _kMuted, fontSize: 13)),
-            ))
-          else
-            ..._txs.map((tx) {
-              final coins = tx['coins'] as int? ?? 0;
-              final isPositive = coins > 0;
-              final ts = tx['ts'] != null
-                  ? DateTime.tryParse(tx['ts'].toString())?.toLocal()
-                  : null;
-              final dateStr = ts != null
-                  ? '${ts.day}/${ts.month}/${ts.year} ${ts.hour}:${ts.minute.toString().padLeft(2,'0')}'
-                  : '';
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _kCard,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: Row(children: [
-                  Text(_txIcon(tx['type'] ?? ''), style: const TextStyle(fontSize: 20)),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(tx['description'] ?? tx['type'] ?? '',
-                      style: const TextStyle(color: Colors.white, fontSize: 13,
-                          fontWeight: FontWeight.w500)),
-                    if (dateStr.isNotEmpty)
-                      Text(dateStr, style: const TextStyle(color: _kMuted, fontSize: 11)),
-                  ])),
-                  Text('${isPositive ? '+' : ''}$coins',
-                    style: TextStyle(
-                      color: isPositive ? _kTeal : Colors.redAccent,
-                      fontSize: 14, fontWeight: FontWeight.w700)),
-                ]),
-              );
-            }),
+                : ListView(padding: const EdgeInsets.all(16), children:
+                    _txs.map((tx) {
+                      final coins = tx['coins'] as int? ?? 0;
+                      final isPositive = coins > 0;
+                      final ts = tx['ts'] != null ? DateTime.tryParse(tx['ts'].toString())?.toLocal() : null;
+                      final dateStr = ts != null ? '\${ts.day}/\${ts.month}/\${ts.year} \${ts.hour}:\${ts.minute.toString().padLeft(2,'0')}' : '';
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: _kCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+                        child: Row(children: [
+                          Text(_txIcon(tx['type'] ?? ''), style: const TextStyle(fontSize: 20)),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(tx['description'] ?? tx['type'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                            if (dateStr.isNotEmpty) Text(dateStr, style: const TextStyle(color: _kMuted, fontSize: 11)),
+                          ])),
+                          Text('\${isPositive ? '+' : ''}\$coins', style: TextStyle(color: isPositive ? _kTeal : Colors.redAccent, fontSize: 14, fontWeight: FontWeight.w700)),
+                        ]),
+                      );
+                    }).toList()),
                 ])))),
           ]),
         ],
