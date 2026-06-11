@@ -3961,7 +3961,7 @@ class _RewardsTabState extends State<_RewardsTab> {
                             Text(tx['description'] ?? tx['type'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
                             if (dateStr.isNotEmpty) Text(dateStr, style: const TextStyle(color: _kMuted, fontSize: 11)),
                           ])),
-                          Text('\${isPositive ? '+' : ''}\$coins', style: TextStyle(color: isPositive ? _kTeal : Colors.redAccent, fontSize: 14, fontWeight: FontWeight.w700)),
+                          Text('${isPositive ? "+" : ""}$coins', style: TextStyle(color: isPositive ? _kTeal : Colors.redAccent, fontSize: 14, fontWeight: FontWeight.w700)),
                         ]),
                       );
                     }).toList()),
