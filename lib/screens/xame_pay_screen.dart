@@ -3968,7 +3968,6 @@ class _RewardsTabState extends State<_RewardsTab> {
                       }).toList()),
                 ),
               ))),
-              ))),
           ]),
         ],
       ),
