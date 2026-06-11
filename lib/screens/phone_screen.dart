@@ -349,12 +349,12 @@ class _PhoneScreenState extends State<PhoneScreen>
         ? number : '${_country.dial}$number';
 
     // Get rate for this country from already-loaded _rates map
-    final rateData  = _rates[_country.code] ?? _rates['default'];
-    final rateNGN   = ((rateData is Map ? rateData['rate'] : rateData) ?? 20).toDouble();
-    final currency  = _country.currency;
-    final fxRate    = _fxRates[currency] ?? 1.0;
-    final rateLocal = (rateNGN * fxRate).toStringAsFixed(2);
-    final rate      = '$currency $rateLocal';
+    final rateData   = _rates[_country.code] ?? _rates['default'];
+    final rate       = ((rateData is Map ? rateData['rate'] : rateData) ?? 20).toDouble();
+    final currency   = _country.currency;
+    final fxRate     = _fxRates[currency] ?? 1.0;
+    final rateLocal  = (rate * fxRate).toStringAsFixed(2);
+    final rateDisplay = '$currency $rateLocal';
 
     // Show confirmation sheet before calling
     if (!mounted) return;
@@ -399,7 +399,7 @@ class _PhoneScreenState extends State<PhoneScreen>
                 Text('Rate / min',
                     style: TextStyle(color: Colors.white54, fontSize: 11)),
                 SizedBox(height: 4),
-                Text(rate,
+                Text(rateDisplay,
                     style: TextStyle(color: XameColors.primary,
                         fontSize: 15, fontWeight: FontWeight.w700)),
               ]),
@@ -496,8 +496,8 @@ class _PhoneScreenState extends State<PhoneScreen>
         // Deduct from local balance to reflect server deduction
         setState(() {
           _credits = (_credits -
-              ((d['deducted'] as num?)?.toDouble() ?? rate))
-              .clamp(0, double.infinity);
+              ((d['deducted'] as num?)?.toDouble() ?? rate.toDouble()))
+              .clamp(0.0, double.infinity);
         });
         _snack('📞 Call connected');
       } else {
