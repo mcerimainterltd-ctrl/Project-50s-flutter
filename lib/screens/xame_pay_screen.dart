@@ -3949,7 +3949,7 @@ class _RewardsTabState extends State<_RewardsTab> {
                       final coins = tx['coins'] as int? ?? 0;
                       final isPositive = coins > 0;
                       final ts = tx['ts'] != null ? DateTime.tryParse(tx['ts'].toString())?.toLocal() : null;
-                      final dateStr = ts != null ? '\${ts.day}/\${ts.month}/\${ts.year} \${ts.hour}:\${ts.minute.toString().padLeft(2,'0')}' : '';
+                      final dateStr = ts != null ? '${ts.day}/${ts.month}/${ts.year} ${ts.hour.toString().padLeft(2,"0")}:${ts.minute.toString().padLeft(2,"0")}' : '';
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
