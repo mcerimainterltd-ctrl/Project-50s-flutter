@@ -3820,12 +3820,13 @@ class _RewardsTabState extends State<_RewardsTab> {
     final naira    = (balance * 0.1).toStringAsFixed(2);
     final canWithdraw = balance >= 10000;
 
-    return RefreshIndicator(
-      onRefresh: _load,
-      color: _kTeal,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+    return DefaultTabController(
+      length: 2,
+      child: Column(children: [
+        // ── Static Header ──────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Column(children: [
           // ── Coin Balance Card ──────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(20),
@@ -3916,25 +3917,27 @@ class _RewardsTabState extends State<_RewardsTab> {
               style: const TextStyle(color: _kMuted, fontSize: 12)),
           const SizedBox(height: 16),
 
-          // ── Earn More Section ─────────────────────────────────────────
-          const Text('💡 How to Earn', style: TextStyle(color: Colors.white,
-              fontSize: 14, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          _earnRow('📞 Call XamePage users', '2 coins/min (max 60 mins/day)'),
-          _earnRow('👤 Invite friends', '50 coins per registration'),
-          _earnRow('🎉 Invite makes first call', '100 bonus coins'),
-          _earnRow('✅ Invite active 30 days', '200 bonus coins'),
-          _earnRow('🏆 Call 10 users in a week', '500 bonus coins'),
-          _earnRow('🎯 5 referrals in a month', '1,000 bonus coins'),
-          _earnRow('🔥 7-day login streak', '50 coins'),
-          _earnRow('💬 First message daily', '5 coins'),
-          _earnRow('💸 Send wallet payment', '10 coins'),
-          const SizedBox(height: 16),
-
-          // ── Ledger ────────────────────────────────────────────────────
-          const Text('📒 Coin Ledger', style: TextStyle(color: Colors.white,
-              fontSize: 14, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
+          // ── Tab Buttons ───────────────────────────────────────────────
+          Row(children: [
+            Expanded(child: _rewardsTabBtn('💡 How to Earn', () => _openRewardsFullscreen(
+              '💡 How to Earn', ListView(padding: const EdgeInsets.all(16), children: [
+                _earnRow('📞 Call XamePage users', '2 coins/min (max 60 mins/day)'),
+                _earnRow('👤 Invite friends', '50 coins per registration'),
+                _earnRow('🎉 Invite makes first call', '100 bonus coins'),
+                _earnRow('✅ Invite active 30 days', '200 bonus coins'),
+                _earnRow('🏆 Call 10 users in a week', '500 bonus coins'),
+                _earnRow('🎯 5 referrals in a month', '1,000 bonus coins'),
+                _earnRow('🔥 7-day login streak', '50 coins'),
+                _earnRow('💬 First message daily', '5 coins'),
+                _earnRow('💸 Send wallet payment', '10 coins'),
+              ])))),
+            const SizedBox(width: 8),
+            Expanded(child: _rewardsTabBtn('📒 Coin Ledger', () => _openRewardsFullscreen(
+              '📒 Coin Ledger', _txs.isEmpty
+                ? const Center(child: Padding(padding: EdgeInsets.all(24),
+                    child: Text('No transactions yet. Start earning!',
+                      style: TextStyle(color: _kMuted, fontSize: 13))))
+                : ListView(padding: const EdgeInsets.all(16), children: [
           if (_txs.isEmpty)
             const Center(child: Padding(
               padding: EdgeInsets.all(24),
@@ -3976,9 +3979,40 @@ class _RewardsTabState extends State<_RewardsTab> {
                 ]),
               );
             }),
+                ])))),
+          ]),
         ],
       ),
     );
+  }
+
+  Widget _rewardsTabBtn(String label, VoidCallback onTap) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: _kCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _kTeal.withOpacity(0.4)),
+      ),
+      child: Text(label, textAlign: TextAlign.center,
+        style: const TextStyle(color: _kTeal, fontSize: 13, fontWeight: FontWeight.w700)),
+    ),
+  );
+
+  void _openRewardsFullscreen(String title, Widget body) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        backgroundColor: _kBg,
+        appBar: AppBar(
+          backgroundColor: _kCard,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        ),
+        body: body,
+      ),
+    ));
   }
 
   Widget _statCard(String label, String value) => Container(
