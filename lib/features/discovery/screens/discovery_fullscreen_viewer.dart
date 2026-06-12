@@ -365,9 +365,8 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
         // ── Cinematic arrow navigation ──────────────────────────
         if (_authorPosts.length > 1)
-          GestureDetector(
-            onTap: _resetArrowTimer,
-            behavior: HitTestBehavior.translucent,
+          IgnorePointer(
+            ignoring: !_showArrows,
             child: AnimatedOpacity(
               opacity: _showArrows ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 400),
