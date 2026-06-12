@@ -77,12 +77,10 @@ class _DiscoveryFullscreenViewerState
       body: PageView.builder(
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
-        itemCount: _authorOrder.length,
+        itemCount: widget.posts.length,
         onPageChanged: (i) => setState(() => _currentIndex = i),
         itemBuilder: (_, i) {
-          final authorId = _authorOrder[i];
-          final authorPosts = _postsByAuthor[authorId]!;
-          final post = authorPosts.first;
+          final post = widget.posts[i];
           return _FullscreenPostPage(
             post: post,
             isActive: i == _currentIndex,
