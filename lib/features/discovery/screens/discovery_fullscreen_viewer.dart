@@ -119,9 +119,6 @@ class _FullscreenPostPage extends StatefulWidget {
 
 class _FullscreenPostPageState extends State<_FullscreenPostPage>
     with TickerProviderStateMixin {
-  late PageController _horizCtrl;
-  late List<Map<String, dynamic>> _authorPosts;
-  int _horizIndex = 0;
 
   final List<_BurstParticle> _particles = [];
   late AnimationController _burstAnim;
@@ -132,8 +129,6 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   bool _liked = false;
   int _likeCount = 0;
-  bool _showArrows = true;
-  Timer? _arrowTimer;
 
   static const _reactionEmojis = ['❤️', '🔥', '😍', '👏', '💯', '✨', '🎉', '⚡'];
 
@@ -141,14 +136,6 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
   void initState() {
     super.initState();
     final authorId = widget.post['authorId'] as String? ?? '';
-    _authorPosts = widget.allPosts
-        .where((p) => (p['authorId'] as String? ?? '') == authorId)
-        .toList();
-    if (_authorPosts.isEmpty) _authorPosts = [widget.post];
-    _horizIndex = _authorPosts.indexWhere(
-        (p) => (p['id'] ?? p['_id']) == (widget.post['id'] ?? widget.post['_id']));
-    if (_horizIndex < 0) _horizIndex = 0;
-    _horizCtrl = PageController(initialPage: _horizIndex);
     _likeCount = (widget.post['likeCount'] as int?) ?? 0;
 
     _burstAnim = AnimationController(
@@ -172,7 +159,6 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     _spotlightFade = CurvedAnimation(parent: _spotlightAnim, curve: Curves.easeOut);
 
     if (widget.isActive) _triggerSpotlight();
-    _resetArrowTimer();
   }
 
   @override
@@ -190,19 +176,9 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   @override
   void dispose() {
-    _horizCtrl.dispose();
     _burstAnim.dispose();
-    _arrowTimer?.cancel();
     _spotlightAnim.dispose();
     super.dispose();
-  }
-
-  void _resetArrowTimer() {
-    _arrowTimer?.cancel();
-    if (!_showArrows && mounted) setState(() => _showArrows = true);
-    _arrowTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _showArrows = false);
-    });
   }
 
   void _onTapForReaction(TapDownDetails details) {
@@ -336,8 +312,6 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     } catch (_) { return ''; }
   }
 
-  Map<String, dynamic> get _currentPost => _authorPosts[_horizIndex];
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -346,94 +320,13 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
       behavior: HitTestBehavior.translucent,
       child: Stack(children: [
 
-        PageView.builder(
-          controller: _horizCtrl,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _authorPosts.length,
-          onPageChanged: (i) => setState(() => _horizIndex = i),
-          itemBuilder: (_, i) {
-            final p = _authorPosts[i];
-            final isVid = (p['mediaType'] as String? ?? '') == 'video';
-            final isHorizActive = widget.isActive && i == _horizIndex;
-            return isVid
-                ? _VideoPage(url: p['mediaUrl'] as String? ?? '', isActive: isHorizActive)
-                : _ImagePage(url: p['mediaUrl'] as String? ?? '');
-          },
-        ),
+        Builder(builder: (_) {
+          final isVid = (widget.post['mediaType'] as String? ?? '') == 'video';
+          return isVid
+              ? _VideoPage(url: widget.post['mediaUrl'] as String? ?? '', isActive: widget.isActive)
+              : _ImagePage(url: widget.post['mediaUrl'] as String? ?? '');
+        }),
 
-        // ── Cinematic arrow navigation ──────────────────────────
-        if (_authorPosts.length > 1)
-          IgnorePointer(
-            ignoring: !_showArrows,
-            child: AnimatedOpacity(
-              opacity: _showArrows ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 400),
-              child: Stack(children: [
-          if (_horizIndex > 0)
-            Positioned(
-              left: 0, top: 0, bottom: 0,
-              child: Center(
-                child: GestureDetector(
-                  onTap: () => _horizCtrl.animateToPage(_horizIndex - 1,
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeOutCubic),
-                  child: Container(
-                    width: 44,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.black.withOpacity(0.75),
-                          Colors.transparent,
-                        ],
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(48),
-                        bottomRight: Radius.circular(48),
-                      ),
-                    ),
-                    child: const Icon(Icons.chevron_left_rounded,
-                        color: Colors.white, size: 32),
-                  ),
-                ),
-              ),
-            ),
-          if (_horizIndex < _authorPosts.length - 1)
-            Positioned(
-              right: 0, top: 0, bottom: 0,
-              child: Center(
-                child: GestureDetector(
-                  onTap: () => _horizCtrl.animateToPage(_horizIndex + 1,
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeOutCubic),
-                  child: Container(
-                    width: 44,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerRight,
-                        end: Alignment.centerLeft,
-                        colors: [
-                          Colors.black.withOpacity(0.75),
-                          Colors.transparent,
-                        ],
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(48),
-                        bottomLeft: Radius.circular(48),
-                      ),
-                    ),
-                    child: const Icon(Icons.chevron_right_rounded,
-                        color: Colors.white, size: 32),
-                  ),
-                ),
-              ),
-            ),
-        ]),
-            ),
-          ),
 
         if (_particles.isNotEmpty)
           AnimatedBuilder(
@@ -486,7 +379,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                       border: Border.all(color: Colors.white24),
                     ),
                     child: Text(
-                      _currentPost['category'] as String? ?? '',
+                      widget.post['category'] as String? ?? '',
                       style: const TextStyle(color: Colors.white,
                           fontSize: 11, fontWeight: FontWeight.w700),
                     ),
@@ -527,7 +420,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                           child: CircleAvatar(
                             radius: 20,
                             backgroundImage: CachedNetworkImageProvider(
-                              _currentPost['authorAvatar'] as String? ?? '',
+                              widget.post['authorAvatar'] as String? ?? '',
                             ),
                             onBackgroundImageError: (_, __) {},
                             backgroundColor: Colors.grey[800],
@@ -539,12 +432,12 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _currentPost['authorName'] as String? ?? '',
+                                widget.post['authorName'] as String? ?? '',
                                 style: const TextStyle(color: Colors.white,
                                     fontWeight: FontWeight.w800, fontSize: 14),
                               ),
                               Text(
-                                _timeAgo(_currentPost['ts']),
+                                _timeAgo(widget.post['ts']),
                                 style: const TextStyle(
                                     color: Colors.white60, fontSize: 11),
                               ),
@@ -552,37 +445,25 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                           ),
                         ),
                         _FollowChip(
-                          authorId:      _currentPost['authorId'] as String? ?? '',
+                          authorId:      widget.post['authorId'] as String? ?? '',
                           currentUserId: widget.currentUserId,
                         ),
                       ]),
                       const SizedBox(height: 10),
                       Text(
-                        _currentPost['title'] as String? ?? '',
+                        widget.post['title'] as String? ?? '',
                         style: const TextStyle(color: Colors.white,
                             fontSize: 13, height: 1.4),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (_authorPosts.length > 1) ...[
-                        const SizedBox(height: 6),
-                        Row(children: [
-                          const Icon(Icons.swipe_rounded,
-                              color: Colors.white38, size: 13),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${_horizIndex + 1} / ${_authorPosts.length}  · swipe for more',
-                            style: const TextStyle(
-                                color: Colors.white38, fontSize: 11),
-                          ),
-                        ]),
-                      ],
+
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
                 _ActionColumn(
-                  post:          _currentPost,
+                  post:          widget.post,
                   liked:         _liked,
                   likeCount:     _likeCount,
                   currentUserId: widget.currentUserId,
@@ -593,8 +474,8 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                     });
                     _toggleLike();
                   },
-                  onComment: () => _openComments(_currentPost),
-                  onShare:   () => _sharePost(_currentPost),
+                  onComment: () => _openComments(widget.post),
+                  onShare:   () => _sharePost(widget.post),
                 ),
               ],
             ),
@@ -608,8 +489,8 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
             child: FadeTransition(
               opacity: _spotlightFade,
               child: _CreatorSpotlight(
-                name:   _currentPost['authorName'] as String? ?? '',
-                region: _currentPost['region']     as String? ?? '',
+                name:   widget.post['authorName'] as String? ?? '',
+                region: widget.post['region']     as String? ?? '',
               ),
             ),
           ),
