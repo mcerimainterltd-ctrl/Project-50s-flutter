@@ -477,6 +477,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
     final likeCount = widget.likeCount + (_liked ? 1 : 0);
     final videoPlaying = widget.mediaType == 'video' && _playing && _playerCtrl != null;
     return GestureDetector(
+      behavior: videoPlaying ? HitTestBehavior.translucent : HitTestBehavior.opaque,
       onTapDown:   videoPlaying ? null : (_) => _tapCtrl.forward(),
       onTapUp:     videoPlaying ? null : (_) { _tapCtrl.reverse(); widget.onTap?.call(); },
       onTapCancel: videoPlaying ? null : ()  => _tapCtrl.reverse(),
