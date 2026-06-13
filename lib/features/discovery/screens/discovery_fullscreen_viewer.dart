@@ -562,7 +562,7 @@ class _VideoPage extends StatefulWidget {
 
 class _VideoPageState extends State<_VideoPage> {
   BetterPlayerController? _ctrl;
-  bool _muted  = false;
+  bool _muted  = true;
   bool _paused = false;
   double _progress = 0;
   Duration _total  = Duration.zero;
@@ -587,7 +587,7 @@ class _VideoPageState extends State<_VideoPage> {
       ),
     );
     _ctrl!.addEventsListener(_onEvent);
-    _ctrl!.setVolume(1);
+    _ctrl!.setVolume(0);
   }
 
   void _onEvent(BetterPlayerEvent e) {
@@ -643,7 +643,7 @@ class _VideoPageState extends State<_VideoPage> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _toggleMute,
+      onTap: _togglePause,
       behavior: HitTestBehavior.opaque,
       child: Stack(children: [
         IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
@@ -968,21 +968,57 @@ class _FollowChip extends StatefulWidget {
 class _FollowChipState extends State<_FollowChip> {
   bool _following = false;
   bool _loading   = false;
+  bool _initLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStatus();
+  }
+
+  Future<void> _loadStatus() async {
+    if (widget.authorId.isEmpty ||
+        widget.authorId == widget.currentUserId) {
+      if (mounted) setState(() => _initLoading = false);
+      return;
+    }
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res = await dio.get(
+        '/api/discover/follow-status/${widget.authorId}',
+        queryParameters: {'followerId': widget.currentUserId},
+      );
+      if (mounted && res.data['success'] == true) {
+        setState(() {
+          _following   = res.data['isFollowing'] == true;
+          _initLoading = false;
+        });
+      } else if (mounted) {
+        setState(() => _initLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _initLoading = false);
+    }
+  }
 
   Future<void> _toggle() async {
     if (_loading || widget.authorId.isEmpty ||
         widget.authorId == widget.currentUserId) return;
     setState(() => _loading = true);
+    final wasFollowing = _following;
     try {
       final dio      = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-      final endpoint = _following
-          ? '/api/discover/unfollow'
-          : '/api/discover/follow';
-      await dio.post(endpoint, data: {
-        'userId':   widget.currentUserId,
-        'authorId': widget.authorId,
+      final endpoint = wasFollowing
+          ? '/api/discover/unfollow/${widget.authorId}'
+          : '/api/discover/follow/${widget.authorId}';
+      final res = await dio.post(endpoint, data: {
+        'followerId': widget.currentUserId,
       });
-      setState(() { _following = !_following; _loading = false; });
+      if (res.data['success'] == true) {
+        setState(() { _following = !wasFollowing; _loading = false; });
+      } else {
+        setState(() => _loading = false);
+      }
     } catch (_) {
       setState(() => _loading = false);
     }
@@ -990,6 +1026,7 @@ class _FollowChipState extends State<_FollowChip> {
 
   @override
   Widget build(BuildContext context) {
+    if (_initLoading) return const SizedBox.shrink();
     if (widget.authorId == widget.currentUserId) return const SizedBox.shrink();
     return GestureDetector(
       onTap: _toggle,
