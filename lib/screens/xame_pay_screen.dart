@@ -422,6 +422,7 @@ class _XamePayScreenState extends State<XamePayScreen>
 
   String _currency = 'NGN', _dispCurrency = 'NGN';
   double _balance  = 0;
+  Map<String, String>? _myVirtualAccount;
   bool _balanceHidden = true; // hidden by default
   bool   _loading  = true;
   List<WalletTx> _txs = [];
@@ -524,6 +525,16 @@ class _XamePayScreenState extends State<XamePayScreen>
               return db.compareTo(da); // latest first
             });
           _pinEnabled = d['pinEnabled'] as bool? ?? false;
+          final va = d['virtualAccount'];
+          if (va != null && (va['accountNumber'] ?? '').toString().isNotEmpty) {
+            _myVirtualAccount = {
+              'accountNumber': va['accountNumber'].toString(),
+              'bankName':      va['bankName']?.toString() ?? '',
+              'accountName':   (va['accountName'] ?? '').toString().isNotEmpty
+                  ? va['accountName'].toString()
+                  : 'XamePay',
+            };
+          }
         });
         if (newDisp.isNotEmpty) {
           final p2 = await SharedPreferences.getInstance();
@@ -634,7 +645,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                         currency: _dispCurrency, fmt: _fmt,
                         onSuccess: _loadWallet, snack: _snack,
                         contacts: widget.xameContacts, pinEnabled: _pinEnabled),
-                    _HistoryTab(txs: _txs, fmt: _fmt),
+                    _HistoryTab(txs: _txs, fmt: _fmt, virtualAccount: _myVirtualAccount),
                     _RewardsTab(userId: widget.userId, serverUrl: widget.serverUrl),
                   ],
                 )),
@@ -722,7 +733,7 @@ class _XamePayScreenState extends State<XamePayScreen>
       ('📶 Data',     _DataTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
       ('🧾 Bills',    _BillsTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
       ('💸 Send',     _SendTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack, contacts: widget.xameContacts, pinEnabled: _pinEnabled)),
-      ('📊 History',  _HistoryTab(txs: _txs, fmt: _fmt)),
+      ('📊 History',  _HistoryTab(txs: _txs, fmt: _fmt, virtualAccount: _myVirtualAccount)),
       ('🪙 Rewards',  _RewardsTab(userId: widget.userId, serverUrl: widget.serverUrl)),
     ];
     if (idx >= tabs.length) return;
@@ -3422,7 +3433,8 @@ class _BillsTabState extends State<_BillsTab> {
 class _HistoryTab extends StatefulWidget {
   final List<WalletTx> txs;
   final String Function(double) fmt;
-  const _HistoryTab({required this.txs, required this.fmt});
+  final Map<String, String>? virtualAccount;
+  const _HistoryTab({required this.txs, required this.fmt, this.virtualAccount});
   @override State<_HistoryTab> createState() => _HistoryTabState();
 }
 
@@ -3492,6 +3504,24 @@ class _HistoryTabState extends State<_HistoryTab> {
 
               widgets.add(_receiptRowLight('Reference', tx.id));
               widgets.add(_receiptRowLight('Status', tx.status));
+
+              // ── Own virtual account — "Recipient Details" for bank transfer credits ──
+              final va = widget.virtualAccount;
+              if (tx.type == 'credit' && parsed.method == 'Bank Transfer' &&
+                  va != null && (va['accountNumber'] ?? '').isNotEmpty) {
+                widgets.add(const SizedBox(height: 12));
+                widgets.add(const Divider(color: Color(0xFFE0E0E0)));
+                widgets.add(const SizedBox(height: 8));
+                widgets.add(const Text('Recipient Details',
+                    style: TextStyle(color: Color(0xFF888888),
+                        fontSize: 12, fontWeight: FontWeight.w600)));
+                widgets.add(const SizedBox(height: 6));
+                widgets.add(Text('${va['accountName']}',
+                    style: const TextStyle(color: Color(0xFF1A1A1A),
+                        fontSize: 14, fontWeight: FontWeight.w700)));
+                widgets.add(Text('${va['bankName']} | ${va['accountNumber']}',
+                    style: const TextStyle(color: Color(0xFF888888), fontSize: 12)));
+              }
 
               // ── Recipient / Sender Details block ─────────────────────
               if ((tx.recipient != null && tx.recipient!.isNotEmpty) ||
@@ -3596,6 +3626,27 @@ class _HistoryTabState extends State<_HistoryTab> {
 
             widgets.add(_receiptRow('Reference', tx.id));
             widgets.add(_receiptRow('Status', tx.status));
+
+            // ── Own virtual account — "Recipient Details" for bank transfer credits ──
+            final va2 = widget.virtualAccount;
+            if (tx.type == 'credit' && parsed.method == 'Bank Transfer' &&
+                va2 != null && (va2['accountNumber'] ?? '').isNotEmpty) {
+              widgets.add(const SizedBox(height: 8));
+              widgets.add(const Divider(color: Colors.white12));
+              widgets.add(const SizedBox(height: 8));
+              widgets.add(const Align(alignment: Alignment.centerLeft,
+                child: Text('Recipient Details',
+                    style: TextStyle(color: Colors.white54,
+                        fontSize: 12, fontWeight: FontWeight.w600))));
+              widgets.add(const SizedBox(height: 6));
+              widgets.add(Align(alignment: Alignment.centerLeft,
+                child: Text('${va2['accountName']}',
+                    style: const TextStyle(color: Colors.white,
+                        fontSize: 14, fontWeight: FontWeight.w700))));
+              widgets.add(Align(alignment: Alignment.centerLeft,
+                child: Text('${va2['bankName']} | ${va2['accountNumber']}',
+                    style: const TextStyle(color: Colors.white54, fontSize: 12))));
+            }
 
             if ((tx.recipient != null && tx.recipient!.isNotEmpty) ||
                 parsed.partyName != null || parsed.partyInfo != null) {
