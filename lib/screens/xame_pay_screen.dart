@@ -1957,7 +1957,7 @@ class _SendTabState extends State<_SendTab> {
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess();
-        widget.snack('✅ Transfer successful!');
+        widget.snack('✅ Transfer successful! XameCoins cashback credited 🎉');
         _saveBeneficiary();
       } else { widget.snack('❌ ${d['message'] ?? 'Transfer failed'}'); }
     } catch (_) { widget.snack('❌ Network error'); }
@@ -2310,7 +2310,7 @@ class _AirtimeTabState extends State<_AirtimeTab> {
           .timeout(const Duration(seconds: 15));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
-        await widget.onSuccess(); widget.snack('✅ Airtime sent!');
+        await widget.onSuccess(); widget.snack('✅ Airtime sent! XameCoins cashback credited 🎉');
       } else { widget.snack('❌ ${d['message'] ?? 'Failed'}'); }
     } catch (_) { widget.snack('❌ Network error'); }
   }
@@ -2932,7 +2932,7 @@ class _DataTabState extends State<_DataTab> {
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess();
-        widget.snack('✅ ${_plan!.size} data sent to $_phone');
+        widget.snack('✅ ${_plan!.size} data sent to $_phone. XameCoins cashback credited 🎉');
       } else {
         widget.snack('❌ ${d['message'] ?? 'Failed'}');
       }
@@ -3242,7 +3242,7 @@ class _BillsTabState extends State<_BillsTab> {
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess();
-        widget.snack('✅ ${_cat!.label} paid!'
+        widget.snack('✅ ${_cat!.label} paid! XameCoins cashback credited 🎉'
             '${d['fee'] != null ? '  Fee: ${widget.fmt((d['fee'] as num).toDouble())}' : ''}');
         // Return to category grid
         setState(() { _cat = null; _biller = null; _billers = []; });
