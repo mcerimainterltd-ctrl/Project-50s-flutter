@@ -3523,7 +3523,7 @@ class _BillsTabState extends State<_BillsTab> {
 class _MoreTab extends StatefulWidget {
   final List<WalletTx> txs;
   final String Function(double) fmt;
-  final Map<String, dynamic>? virtualAccount;
+  final Map<String, String>? virtualAccount;
   final String userId, serverUrl;
   const _MoreTab({required this.txs, required this.fmt, this.virtualAccount,
       required this.userId, required this.serverUrl});
