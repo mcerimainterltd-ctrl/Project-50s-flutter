@@ -1734,6 +1734,7 @@ class _SendTab extends StatefulWidget {
 
 class _SendTabState extends State<_SendTab> {
   bool _bankMode = false, _loadingBanks = true, _bankError = false;
+  bool _benefMode = false;
   List<BankItem> _banks = [], _filtered = [];
   BankItem? _selBank;
   String _accNum = '', _accName = '', _resolved = '';
@@ -1746,17 +1747,61 @@ class _SendTabState extends State<_SendTab> {
   String? _selContact;
   String  _contactQuery = '';
   final _contactSearchCtrl = TextEditingController();
+  // Beneficiaries
+  List<Map<String, dynamic>> _beneficiaries = [];
+  bool _loadingBenef = false;
   List<Map<String,String>> get _filteredContacts => widget.contacts
     .where((c) => _contactQuery.isEmpty ||
       (c['name'] ?? '').toLowerCase().contains(_contactQuery.toLowerCase()) ||
       (c['id']   ?? '').toLowerCase().contains(_contactQuery.toLowerCase()))
     .toList();
 
-  @override void initState() { super.initState(); _fetchBanks(); }
+  @override void initState() { super.initState(); _fetchBanks(); _fetchBeneficiaries(); }
   @override void dispose() {
     _accCtrl.dispose(); _amtCtrl.dispose(); _srchCtrl.dispose();
     _contactSearchCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchBeneficiaries() async {
+    setState(() => _loadingBenef = true);
+    try {
+      final r = await http.get(Uri.parse(
+          '${widget.serverUrl}/api/wallet/beneficiaries/${widget.userId}'))
+          .timeout(const Duration(seconds: 8));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true && mounted) {
+        setState(() => _beneficiaries = List<Map<String, dynamic>>.from(d['beneficiaries'] ?? []));
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingBenef = false);
+  }
+
+  Future<void> _saveBeneficiary() async {
+    if (_selBank == null || _accNum.isEmpty || _accName.isEmpty) return;
+    try {
+      await http.post(
+        Uri.parse('${widget.serverUrl}/api/wallet/beneficiaries/save'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': widget.userId,
+          'accountNumber': _accNum,
+          'bankCode': _selBank!.code,
+          'bankName': _selBank!.name,
+          'accountName': _accName,
+        }),
+      ).timeout(const Duration(seconds: 8));
+      _fetchBeneficiaries();
+    } catch (_) {}
+  }
+
+  Future<void> _deleteBeneficiary(String accountNumber) async {
+    try {
+      await http.delete(Uri.parse(
+          '${widget.serverUrl}/api/wallet/beneficiaries/${widget.userId}/$accountNumber'))
+          .timeout(const Duration(seconds: 8));
+      _fetchBeneficiaries();
+    } catch (_) {}
   }
 
   Future<void> _sendToContact() async {
@@ -1911,7 +1956,9 @@ class _SendTabState extends State<_SendTab> {
       ).timeout(const Duration(seconds: 20));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
-        await widget.onSuccess(); widget.snack('✅ Transfer successful!');
+        await widget.onSuccess();
+        widget.snack('✅ Transfer successful!');
+        _saveBeneficiary();
       } else { widget.snack('❌ ${d['message'] ?? 'Transfer failed'}'); }
     } catch (_) { widget.snack('❌ Network error'); }
   }
@@ -1928,12 +1975,59 @@ class _SendTabState extends State<_SendTab> {
           style: TextStyle(color: _kMuted, fontSize: 13)),
       const SizedBox(height: 16),
       Row(children: [
-        _tog('To Contact', !_bankMode, () => setState(() => _bankMode = false)),
-        const SizedBox(width: 10),
-        _tog('To Bank',    _bankMode,  () => setState(() => _bankMode = true)),
+        _tog('To Contact',    !_bankMode && !_benefMode, () => setState(() { _bankMode = false; _benefMode = false; })),
+        const SizedBox(width: 8),
+        _tog('To Bank',       _bankMode,  () => setState(() { _bankMode = true; _benefMode = false; })),
+        const SizedBox(width: 8),
+        _tog('Beneficiaries', _benefMode, () => setState(() { _bankMode = false; _benefMode = true; })),
       ]),
       const SizedBox(height: 20),
-      if (!_bankMode) ...[
+      if (_benefMode) ...[
+        if (_loadingBenef)
+          const Center(child: CircularProgressIndicator(color: _kTeal))
+        else if (_beneficiaries.isEmpty)
+          const Center(child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text('No saved beneficiaries yet.
+Beneficiaries are saved automatically after transfers.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: _kMuted, fontSize: 13)),
+          ))
+        else
+          ...(_beneficiaries.map((b) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A2E),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white10)),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: _kTeal.withOpacity(0.15),
+                child: Text((b['bankName'] as String? ?? 'B').substring(0,1),
+                  style: const TextStyle(color: _kTeal, fontWeight: FontWeight.w700))),
+              title: Text(b['accountName'] as String? ?? '',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text('${b['bankName']} · ${b['accountNumber']}',
+                style: const TextStyle(color: _kMuted, fontSize: 12)),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, color: _kMuted, size: 18),
+                onPressed: () => _deleteBeneficiary(b['accountNumber'] as String)),
+              onTap: () {
+                final bank = _banks.firstWhere((bk) => bk.code == b['bankCode'],
+                    orElse: () => BankItem(b['bankCode'] as String? ?? '', b['bankName'] as String? ?? ''));
+                setState(() {
+                  _benefMode = false;
+                  _bankMode = true;
+                  _selBank = bank;
+                  _accNum = b['accountNumber'] as String? ?? '';
+                  _accCtrl.text = _accNum;
+                  _accName = b['accountName'] as String? ?? '';
+                  _resolved = '✅ ${b['accountName']}';
+                });
+              },
+            ),
+          ))).toList(),
+      ] else if (!_bankMode) ...[
         // Contact search
         _xf(_contactSearchCtrl, '🔍 Search XamePage contacts…',
             TextInputType.text, (v) => setState(() => _contactQuery = v)),
