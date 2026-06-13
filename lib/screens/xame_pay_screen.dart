@@ -1988,8 +1988,7 @@ class _SendTabState extends State<_SendTab> {
         else if (_beneficiaries.isEmpty)
           const Center(child: Padding(
             padding: EdgeInsets.all(32),
-            child: Text('No saved beneficiaries yet.
-Beneficiaries are saved automatically after transfers.',
+            child: Text('No saved beneficiaries yet. Beneficiaries are saved automatically after transfers.',
               textAlign: TextAlign.center,
               style: TextStyle(color: _kMuted, fontSize: 13)),
           ))
