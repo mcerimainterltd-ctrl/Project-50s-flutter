@@ -1657,7 +1657,7 @@ class _TopUpSheet extends StatefulWidget {
 }
 
 class _TopUpSheetState extends State<_TopUpSheet> {
-  final _tokenCtrl  = TextEditingController();
+  final _tokenCtrl  = TextEditingController(text: 'XAME-');
   final _amountCtrl  = TextEditingController();
   bool   _loading  = false;
   String? _error;
@@ -1710,7 +1710,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
     }
     // Validate format: XAME-XXXX-XXXX-XXXX
     final valid = RegExp(
-      r'^XAME-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$').hasMatch(token);
+      r'^XAME-[0-9]{4}-[0-9]{4}-[0-9]{4}$').hasMatch(token);
     if (!valid) {
       setState(() => _error = 'Invalid format. Use: XAME-XXXX-XXXX-XXXX');
       return;
@@ -1786,21 +1786,22 @@ class _TopUpSheetState extends State<_TopUpSheet> {
             textCapitalization: TextCapitalization.characters,
             textAlign: TextAlign.center,
             onChanged: (v) {
-              // Auto-format as XAME-XXXX-XXXX-XXXX
-              final raw = v.replaceAll('-', '').toUpperCase();
-              String fmt = '';
-              for (int i = 0; i < raw.length && i < 16; i++) {
-                if (i == 4 || i == 8 || i == 12) fmt += '-';
-                fmt += raw[i];
+              // Always keep XAME- prefix, digits only after
+              String digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+              if (digits.length > 12) digits = digits.substring(0, 12);
+              String fmt = 'XAME-';
+              for (int i = 0; i < digits.length; i++) {
+                if (i == 4 || i == 8) fmt += '-';
+                fmt += digits[i];
               }
               if (fmt != v) {
                 _tokenCtrl.value = TextEditingValue(
-                  text:      fmt,
+                  text: fmt,
                   selection: TextSelection.collapsed(offset: fmt.length));
               }
             },
             decoration: InputDecoration(
-              hintText:  'XAME-XXXX-XXXX-XXXX',
+              hintText:  'XAME-0000-0000-0000',
               hintStyle: TextStyle(
                 color:       context.xMuted,
                 fontSize:    18,
