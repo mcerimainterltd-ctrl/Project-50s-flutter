@@ -25,6 +25,45 @@ const _kMuted = Color(0xFF7A9BB5);
 
 // ── MODELS ────────────────────────────────────────────────────────────────────
 
+// Parsed transaction label: splits "Method · Party Info" into
+// a method name and (for bank transfers) sender/recipient name + bank.
+class _ParsedTxLabel {
+  final String method;
+  final String? partyName;
+  final String? partyInfo;
+  const _ParsedTxLabel({required this.method, this.partyName, this.partyInfo});
+}
+
+_ParsedTxLabel _parseTxLabel(String label, String type) {
+  // Expected formats:
+  //  "Card Payment · Visa ****1234"
+  //  "Bank Transfer · GIBSON BERNARD AGBOR (Indulge MFB)"
+  //  "Bank Transfer" / "Card Payment" (no extra info)
+  //  anything else (e.g. "Topped up...", "Call Credits Top-up")
+  final parts = label.split(' · ');
+  final method = parts.isNotEmpty ? parts.first.trim() : label;
+  if (parts.length < 2) {
+    return _ParsedTxLabel(method: method.isEmpty ? label : method);
+  }
+  final rest = parts.sublist(1).join(' · ').trim();
+
+  final isBankTransfer = method.toLowerCase().contains('bank');
+  if (isBankTransfer) {
+    // "GIBSON BERNARD AGBOR (Indulge MFB)" -> name + bank
+    final match = RegExp(r'^(.*?)(?:\s*\((.+)\))?\$').firstMatch(rest);
+    final name  = match?.group(1)?.trim();
+    final bank  = match?.group(2)?.trim();
+    return _ParsedTxLabel(
+      method: 'Bank Transfer',
+      partyName: (name != null && name.isNotEmpty) ? name : null,
+      partyInfo: bank,
+    );
+  }
+
+  // Card payment — "Visa ****1234"
+  return _ParsedTxLabel(method: method, partyInfo: rest);
+}
+
 class WalletTx {
   final String id, label, icon, type, status, ts;
   final double amount;
@@ -3432,18 +3471,57 @@ class _HistoryTabState extends State<_HistoryTab> {
             const SizedBox(height: 16),
             const Divider(color: Color(0xFFE0E0E0)),
             const SizedBox(height: 8),
-            if (tx.recipient != null && tx.recipient!.isNotEmpty)
-              _receiptRowLight('Beneficiary', tx.recipient!),
-            _receiptRowLight('Description', tx.label),
-            _receiptRowLight('Date & Time', _fmtTs(tx.ts)),
-            if (tx.sentCurrency != null && tx.recvCurrency != null &&
-                tx.sentCurrency != tx.recvCurrency) ...[
-              _receiptRowLight('Sent', '${tx.sentCurrency} ${tx.sentAmount?.toStringAsFixed(2)}'),
-              _receiptRowLight('Received', '${tx.recvCurrency} ${tx.recvAmount?.toStringAsFixed(2)}'),
-              _receiptRowLight('FX Rate', '1 ${tx.sentCurrency} = ${tx.fxRate?.toStringAsFixed(4)} ${tx.recvCurrency}'),
-            ],
-            _receiptRowLight('Reference', tx.id),
-            _receiptRowLight('Status', tx.status),
+
+            // ── Parse label into method + party details ─────────────────
+            ...(() {
+              final parsed = _parseTxLabel(tx.label, tx.type);
+              final widgets = <Widget>[];
+
+              widgets.add(_receiptRowLight('Description', parsed.method));
+              widgets.add(_receiptRowLight('Date & Time', _fmtTs(tx.ts)));
+
+              if (tx.sentCurrency != null && tx.recvCurrency != null &&
+                  tx.sentCurrency != tx.recvCurrency) {
+                widgets.add(_receiptRowLight('Sent',
+                    '${tx.sentCurrency} ${tx.sentAmount?.toStringAsFixed(2)}'));
+                widgets.add(_receiptRowLight('Received',
+                    '${tx.recvCurrency} ${tx.recvAmount?.toStringAsFixed(2)}'));
+                widgets.add(_receiptRowLight('FX Rate',
+                    '1 ${tx.sentCurrency} = ${tx.fxRate?.toStringAsFixed(4)} ${tx.recvCurrency}'));
+              }
+
+              widgets.add(_receiptRowLight('Reference', tx.id));
+              widgets.add(_receiptRowLight('Status', tx.status));
+
+              // ── Recipient / Sender Details block ─────────────────────
+              if ((tx.recipient != null && tx.recipient!.isNotEmpty) ||
+                  parsed.partyName != null || parsed.partyInfo != null) {
+                widgets.add(const SizedBox(height: 12));
+                widgets.add(const Divider(color: Color(0xFFE0E0E0)));
+                widgets.add(const SizedBox(height: 8));
+                widgets.add(Text(
+                  tx.type == 'credit' ? 'Sender Details' : 'Recipient Details',
+                  style: const TextStyle(color: Color(0xFF888888),
+                      fontSize: 12, fontWeight: FontWeight.w600),
+                ));
+                widgets.add(const SizedBox(height: 6));
+                if (tx.recipient != null && tx.recipient!.isNotEmpty)
+                  widgets.add(Text(tx.recipient!,
+                      style: const TextStyle(color: Color(0xFF1A1A1A),
+                          fontSize: 14, fontWeight: FontWeight.w700)));
+                if (parsed.partyName != null)
+                  widgets.add(Text(parsed.partyName!,
+                      style: const TextStyle(color: Color(0xFF1A1A1A),
+                          fontSize: 14, fontWeight: FontWeight.w700)));
+                if (parsed.partyInfo != null)
+                  widgets.add(Text(parsed.partyInfo!,
+                      style: const TextStyle(color: Color(0xFF888888),
+                          fontSize: 12)));
+              }
+
+              return widgets;
+            })(),
+
             const SizedBox(height: 16),
             const Divider(color: Color(0xFFE0E0E0)),
             const SizedBox(height: 8),
@@ -3498,19 +3576,66 @@ class _HistoryTabState extends State<_HistoryTab> {
           const SizedBox(height: 20),
           const Divider(color: Colors.white12),
           const SizedBox(height: 12),
-          if (tx.recipient != null && tx.recipient!.isNotEmpty)
-            _receiptRow('Beneficiary', tx.recipient!),
-          _receiptRow('Description', tx.label),
-          _receiptRow('Date & Time', _fmtTs(tx.ts)),
-          if (tx.sentAmount != null && tx.sentCurrency != null &&
-              tx.recvAmount != null && tx.recvCurrency != null &&
-              tx.sentCurrency != tx.recvCurrency) ...[
-            _receiptRow('Sent', '${tx.sentCurrency} ${tx.sentAmount!.toStringAsFixed(2)}'),
-            _receiptRow('Received', '${tx.recvCurrency} ${tx.recvAmount!.toStringAsFixed(2)}'),
-            _receiptRow('FX Rate', '1 ${tx.sentCurrency} = ${tx.fxRate?.toStringAsFixed(4)} ${tx.recvCurrency}'),
-          ],
-          _receiptRow('Reference', tx.id),
-          _receiptRow('Status', tx.status),
+          ...(() {
+            final parsed = _parseTxLabel(tx.label, tx.type);
+            final widgets = <Widget>[
+              _receiptRow('Description', parsed.method),
+              _receiptRow('Date & Time', _fmtTs(tx.ts)),
+            ];
+
+            if (tx.sentAmount != null && tx.sentCurrency != null &&
+                tx.recvAmount != null && tx.recvCurrency != null &&
+                tx.sentCurrency != tx.recvCurrency) {
+              widgets.add(_receiptRow('Sent',
+                  '${tx.sentCurrency} ${tx.sentAmount!.toStringAsFixed(2)}'));
+              widgets.add(_receiptRow('Received',
+                  '${tx.recvCurrency} ${tx.recvAmount!.toStringAsFixed(2)}'));
+              widgets.add(_receiptRow('FX Rate',
+                  '1 ${tx.sentCurrency} = ${tx.fxRate?.toStringAsFixed(4)} ${tx.recvCurrency}'));
+            }
+
+            widgets.add(_receiptRow('Reference', tx.id));
+            widgets.add(_receiptRow('Status', tx.status));
+
+            if ((tx.recipient != null && tx.recipient!.isNotEmpty) ||
+                parsed.partyName != null || parsed.partyInfo != null) {
+              widgets.add(const SizedBox(height: 8));
+              widgets.add(const Divider(color: Colors.white12));
+              widgets.add(const SizedBox(height: 8));
+              widgets.add(Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  tx.type == 'credit' ? 'Sender Details' : 'Recipient Details',
+                  style: const TextStyle(color: Colors.white54,
+                      fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ));
+              widgets.add(const SizedBox(height: 6));
+              if (tx.recipient != null && tx.recipient!.isNotEmpty)
+                widgets.add(Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(tx.recipient!,
+                      style: const TextStyle(color: Colors.white,
+                          fontSize: 14, fontWeight: FontWeight.w700)),
+                ));
+              if (parsed.partyName != null)
+                widgets.add(Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(parsed.partyName!,
+                      style: const TextStyle(color: Colors.white,
+                          fontSize: 14, fontWeight: FontWeight.w700)),
+                ));
+              if (parsed.partyInfo != null)
+                widgets.add(Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(parsed.partyInfo!,
+                      style: const TextStyle(color: Colors.white54,
+                          fontSize: 12)),
+                ));
+            }
+
+            return widgets;
+          })(),
           const SizedBox(height: 20),
           const Divider(color: Colors.white12),
           const SizedBox(height: 16),
