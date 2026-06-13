@@ -433,7 +433,7 @@ class _XamePayScreenState extends State<XamePayScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 6, vsync: this);
+    _tab = TabController(length: 5, vsync: this);
     _tab.addListener(() {
       if (!_tab.indexIsChanging) return;
       final idx = _tab.index;
@@ -645,8 +645,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                         currency: _dispCurrency, fmt: _fmt,
                         onSuccess: _loadWallet, snack: _snack,
                         contacts: widget.xameContacts, pinEnabled: _pinEnabled),
-                    _HistoryTab(txs: _txs, fmt: _fmt, virtualAccount: _myVirtualAccount),
-                    _RewardsTab(userId: widget.userId, serverUrl: widget.serverUrl),
+                    _MoreTab(txs: _txs, fmt: _fmt, virtualAccount: _myVirtualAccount, userId: widget.userId, serverUrl: widget.serverUrl),
                   ],
                 )),
               ]),
@@ -702,7 +701,7 @@ class _XamePayScreenState extends State<XamePayScreen>
           const SizedBox(width: 8),
           _cBtn('↗ Send',     () => _tab.animateTo(3)),
           const SizedBox(width: 8),
-          _cBtn('📊 History', () => _tab.animateTo(4)),
+          _cBtn('⋯ More', () => _tab.animateTo(4)),
         ]),
       ]),
     );
@@ -733,8 +732,7 @@ class _XamePayScreenState extends State<XamePayScreen>
       ('📶 Data',     _DataTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
       ('🧾 Bills',    _BillsTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
       ('💸 Send',     _SendTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack, contacts: widget.xameContacts, pinEnabled: _pinEnabled)),
-      ('📊 History',  _HistoryTab(txs: _txs, fmt: _fmt, virtualAccount: _myVirtualAccount)),
-      ('🪙 Rewards',  _RewardsTab(userId: widget.userId, serverUrl: widget.serverUrl)),
+      ('⋯ More',     _MoreTab(txs: _txs, fmt: _fmt, virtualAccount: _myVirtualAccount, userId: widget.userId, serverUrl: widget.serverUrl)),
     ];
     if (idx >= tabs.length) return;
     final (title, body) = tabs[idx];
@@ -774,8 +772,7 @@ class _XamePayScreenState extends State<XamePayScreen>
         Tab(text: '📶 Data'),
         Tab(text: '🧾 Bills'),
         Tab(text: '💸 Send'),
-        Tab(text: '📊 History'),
-        Tab(text: '🪙 Rewards'),
+        Tab(text: '⋯ More'),
       ],
     ),
   );
@@ -3522,6 +3519,56 @@ class _BillsTabState extends State<_BillsTab> {
 
 
 // ── HISTORY TAB ───────────────────────────────────────────────────────────────
+
+class _MoreTab extends StatefulWidget {
+  final List<WalletTx> txs;
+  final String Function(double) fmt;
+  final Map<String, dynamic>? virtualAccount;
+  final String userId, serverUrl;
+  const _MoreTab({required this.txs, required this.fmt, this.virtualAccount,
+      required this.userId, required this.serverUrl});
+  @override State<_MoreTab> createState() => _MoreTabState();
+}
+
+class _MoreTabState extends State<_MoreTab> with SingleTickerProviderStateMixin {
+  late TabController _innerTab;
+
+  @override
+  void initState() {
+    super.initState();
+    _innerTab = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() { _innerTab.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Container(
+        color: const Color(0xFF1A1A2E),
+        child: TabBar(
+          controller: _innerTab,
+          indicatorColor: _kTeal,
+          labelColor: _kTeal,
+          unselectedLabelColor: _kMuted,
+          labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          tabs: const [
+            Tab(text: '📊 History'),
+            Tab(text: '🪙 Rewards'),
+          ],
+        ),
+      ),
+      Expanded(child: TabBarView(
+        controller: _innerTab,
+        children: [
+          _HistoryTab(txs: widget.txs, fmt: widget.fmt, virtualAccount: widget.virtualAccount),
+          _RewardsTab(userId: widget.userId, serverUrl: widget.serverUrl),
+        ],
+      )),
+    ]);
+  }
+}
 
 class _HistoryTab extends StatefulWidget {
   final List<WalletTx> txs;
