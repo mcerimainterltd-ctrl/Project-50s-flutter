@@ -165,7 +165,6 @@ class _XameTvScreenState extends State<XameTvScreen>
     } else {
       _initPlayer(_filtered[i].streamUrl);
     }
-    }
     _showBriefly();
     Future.delayed(const Duration(milliseconds:100), () {
       if (_listCtrl.hasClients)
