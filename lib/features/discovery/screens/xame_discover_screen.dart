@@ -815,7 +815,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               ),
             ),
 
-            // Feed
+            // Feed — fullscreen TikTok-style vertical swipe
             if (_loading)
               SliverList(delegate: SliverChildBuilderDelegate(
                 (_, __) => const DiscoveryCardSkeleton(), childCount: 3))
@@ -824,72 +824,49 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 region: _regionName,
                 onPost: () => _showPostDialog(context, user?.xameId ?? '')))
             else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount:   2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing:  10,
-                    childAspectRatio: 0.58,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (_, i) {
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height,
+                  child: PageView.builder(
+                    scrollDirection: Axis.vertical,
+                    itemCount: _filtered.length,
+                    onPageChanged: (i) {
+                      if (i >= _filtered.length - 3) _loadMore();
+                    },
+                    itemBuilder: (_, i) {
                       final item = _filtered[i];
-                      // Stagger: odd-index cards taller via an inner container
-                      final isOdd = i.isOdd;
-                      return Padding(
-                        padding: EdgeInsets.only(top: isOdd ? 24 : 0, bottom: isOdd ? 0 : 24),
-                        child: VisibilityDetectorWidget(
-                          onVisibilityChanged: (visible) {
-                            if (item.mediaType == DiscoveryMediaType.video) {
-                              _videoKeys[item.id]?.currentState?.setAutoPlay(visible);
-                            }
-                          },
-                          child: MediaDiscoverCard(
-                            key: item.mediaType == DiscoveryMediaType.video
-                                ? (_videoKeys[item.id] ??= GlobalKey<MediaDiscoverCardState>())
-                                : null,
-                            mediaType:    item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
-                            mediaUrl:     item.mediaUrl,
-                            thumbnailUrl: item.thumbnailUrl,
-                            title:        item.title,
-                            category:     item.category,
-                            isLive:       item.isLive,
-                            authorName:   item.authorName,
-                            authorAvatar: item.authorAvatar,
-                            authorId:     item.authorId,
-                            userName:     user?.displayName ?? '',
-                            viewCount:    item.viewCount,
-                            likeCount:    item.likeCount,
-                            commentCount: item.commentCount,
-                            postId:       item.id,
-                            userId:       user?.xameId ?? '',
-                            userAvatar:   user?.profilePic ?? '',
-                            onCountChanged: (n) => setState(() {
-                              final idx = _feed.indexWhere((x) => x.id == item.id);
-                              if (idx != -1) _feed[idx] = _feed[idx].copyWith(commentCount: n);
-                            }),
-                            ts:        item.ts,
-                            isWhisper:           item.isWhisper,
-                            isImmortal:          item.isImmortal,
-                            isCollabOpen:        item.isCollabOpen,
-                            collabStatus:        item.collabStatus,
-                            collabPartnerId:     item.collabPartnerId,
-                            collabPartnerName:   item.collabPartnerName,
-                            collabPartnerAvatar: item.collabPartnerAvatar,
-                            collabMediaUrl:      item.collabMediaUrl,
-                            collabMediaType:     item.collabMediaType,
-                            onVisibilityChanged: (v) => _videoKeys[item.id]?.currentState?.setAutoPlay(v),
-                            onTap: () {
-                              DiscoveryApiService.viewPost(item.id);
-                              _openDetail(context, item);
-                            },
-                          ),
+                      final posts = _filtered.map((e) => {
+                        'id':           e.id,
+                        'authorId':     e.authorId,
+                        'authorName':   e.authorName,
+                        'authorAvatar': e.authorAvatar,
+                        'mediaUrl':     e.mediaUrl,
+                        'mediaType':    e.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
+                        'thumbnailUrl': e.thumbnailUrl ?? '',
+                        'title':        e.title,
+                        'category':     e.category,
+                        'likeCount':    e.likeCount,
+                        'commentCount': e.commentCount,
+                        'viewCount':    e.viewCount,
+                        'ts':           e.ts?.toIso8601String(),
+                      }).toList();
+                      return _FullscreenFeedPage(
+                        item: item,
+                        isActive: true,
+                        currentUserId: user?.xameId ?? '',
+                        currentUserAvatar: user?.profilePic ?? '',
+                        onAvatarTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => AuthorGalleryScreen(
+                            authorId:      item.authorId,
+                            authorName:    item.authorName,
+                            authorAvatar:  item.authorAvatar,
+                            currentUserId: user?.xameId ?? '',
+                            currentUserAvatar: user?.profilePic ?? '',
+                          )),
                         ),
+                        onPost: () => _showPostDialog(context, user?.xameId ?? ''),
                       );
                     },
-                    childCount: _filtered.length,
                   ),
                 ),
               ),
@@ -3697,4 +3674,49 @@ class _StickyRegionBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_StickyRegionBarDelegate old) => old.child != child;
+}
+
+// ── Fullscreen Feed Page ─────────────────────────────────────────────────────
+class _FullscreenFeedPage extends StatelessWidget {
+  final DiscoveryItem item;
+  final bool isActive;
+  final String currentUserId;
+  final String currentUserAvatar;
+  final VoidCallback? onAvatarTap;
+  final VoidCallback? onPost;
+
+  const _FullscreenFeedPage({
+    required this.item,
+    required this.isActive,
+    required this.currentUserId,
+    this.currentUserAvatar = '',
+    this.onAvatarTap,
+    this.onPost,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final post = {
+      'id':           item.id,
+      'authorId':     item.authorId,
+      'authorName':   item.authorName,
+      'authorAvatar': item.authorAvatar,
+      'mediaUrl':     item.mediaUrl,
+      'mediaType':    item.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
+      'thumbnailUrl': item.thumbnailUrl ?? '',
+      'title':        item.title,
+      'category':     item.category,
+      'likeCount':    item.likeCount,
+      'commentCount': item.commentCount,
+      'viewCount':    item.viewCount,
+      'ts':           item.ts?.toIso8601String(),
+    };
+    return DiscoveryFullscreenViewer(
+      posts: [post],
+      initialIndex: 0,
+      currentUserId: currentUserId,
+      currentUserAvatar: currentUserAvatar,
+      embedded: true,
+    );
+  }
 }

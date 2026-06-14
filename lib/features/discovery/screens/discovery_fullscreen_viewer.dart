@@ -17,12 +17,14 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
   final String currentUserId;
   final String currentUserAvatar;
 
+  final bool embedded;
   const DiscoveryFullscreenViewer({
     Key? key,
     required this.posts,
     required this.initialIndex,
     required this.currentUserId,
     this.currentUserAvatar = '',
+    this.embedded = false,
   }) : super(key: key);
 
   @override
@@ -40,18 +42,36 @@ class _DiscoveryFullscreenViewerState
     super.initState();
     _currentIndex = widget.initialIndex.clamp(0, widget.posts.isEmpty ? 0 : widget.posts.length - 1);
     _verticalCtrl = PageController(initialPage: _currentIndex);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    if (!widget.embedded) SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
   void dispose() {
     _verticalCtrl.dispose();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    if (!widget.embedded) SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return PageView.builder(
+        controller: _verticalCtrl,
+        scrollDirection: Axis.vertical,
+        itemCount: widget.posts.length,
+        onPageChanged: (i) => setState(() => _currentIndex = i),
+        itemBuilder: (_, i) {
+          final post = widget.posts[i];
+          return _FullscreenPostPage(
+            post: post,
+            isActive: i == _currentIndex,
+            currentUserId: widget.currentUserId,
+            currentUserAvatar: widget.currentUserAvatar,
+            onClose: () => Navigator.of(context).pop(),
+          );
+        },
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.black,
       body: PageView.builder(
