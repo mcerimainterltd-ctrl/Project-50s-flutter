@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'author_gallery_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,32 +34,11 @@ class _DiscoveryFullscreenViewerState
     extends State<DiscoveryFullscreenViewer> {
   late PageController _verticalCtrl;
   int _currentIndex = 0;
-  late List<String> _authorOrder;
-  late Map<String, List<Map<String, dynamic>>> _postsByAuthor;
 
   @override
   void initState() {
     super.initState();
-    // Map post index to author index
-    final initialPost = widget.posts.length > widget.initialIndex
-        ? widget.posts[widget.initialIndex]
-        : (widget.posts.isNotEmpty ? widget.posts.first : null);
-    final initialAuthorId = initialPost?['authorId'] as String? ?? '';
-    _currentIndex = 0;
-
-    // Build author-grouped structure first so we can find the author index
-    _authorOrder = [];
-    _postsByAuthor = {};
-    for (final p in widget.posts) {
-      final aId = p['authorId'] as String? ?? '';
-      if (!_postsByAuthor.containsKey(aId)) {
-        _authorOrder.add(aId);
-        _postsByAuthor[aId] = [];
-      }
-      _postsByAuthor[aId]!.add(p);
-    }
-    final authorIdx = _authorOrder.indexOf(initialAuthorId);
-    _currentIndex = authorIdx < 0 ? 0 : authorIdx;
+    _currentIndex = widget.initialIndex.clamp(0, widget.posts.isEmpty ? 0 : widget.posts.length - 1);
     _verticalCtrl = PageController(initialPage: _currentIndex);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
@@ -86,7 +66,6 @@ class _DiscoveryFullscreenViewerState
             isActive: i == _currentIndex,
             currentUserId: widget.currentUserId,
             currentUserAvatar: widget.currentUserAvatar,
-            allPosts: widget.posts,
             onClose: () => Navigator.of(context).pop(),
           );
         },
@@ -100,7 +79,6 @@ class _FullscreenPostPage extends StatefulWidget {
   final bool isActive;
   final String currentUserId;
   final String currentUserAvatar;
-  final List<Map<String, dynamic>> allPosts;
   final VoidCallback onClose;
 
   const _FullscreenPostPage({
@@ -109,7 +87,6 @@ class _FullscreenPostPage extends StatefulWidget {
     required this.isActive,
     required this.currentUserId,
     required this.currentUserAvatar,
-    required this.allPosts,
     required this.onClose,
   }) : super(key: key);
 
@@ -412,18 +389,29 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white54, width: 1.5),
-                          ),
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundImage: CachedNetworkImageProvider(
-                              widget.post['authorAvatar'] as String? ?? '',
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => AuthorGalleryScreen(
+                              authorId:         widget.post['authorId']     as String? ?? '',
+                              authorName:       widget.post['authorName']   as String? ?? '',
+                              authorAvatar:     widget.post['authorAvatar'] as String? ?? '',
+                              currentUserId:    widget.currentUserId,
+                              currentUserAvatar: widget.currentUserAvatar,
                             ),
-                            onBackgroundImageError: (_, __) {},
-                            backgroundColor: Colors.grey[800],
+                          )),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white54, width: 1.5),
+                            ),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundImage: CachedNetworkImageProvider(
+                                widget.post['authorAvatar'] as String? ?? '',
+                              ),
+                              onBackgroundImageError: (_, __) {},
+                              backgroundColor: Colors.grey[800],
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),

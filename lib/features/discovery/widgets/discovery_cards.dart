@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'dart:convert';
 import 'package:http/http.dart' as http;import 'package:better_player_enhanced/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../screens/author_gallery_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
@@ -732,19 +733,32 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                         if (widget.authorName != null)
                           Row(children: [
                             if (widget.authorAvatar != null)
-                              Container(
-                                width: 26, height: 26,
-                                margin: const EdgeInsets.only(right: 7),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: context.xMuted.withValues(alpha: 0.3), width: 1)),
-                                child: ClipOval(
-                                  child: CachedNetworkImage(
-                                    imageUrl:    widget.authorAvatar!,
-                                    fit:         BoxFit.cover,
-                                    errorWidget: (_, __, ___) =>
-                                      Container(color: context.xSurface),
+                              GestureDetector(
+                                onTap: () {
+                                  if (widget.authorId == null || widget.authorId!.isEmpty) return;
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (_) => AuthorGalleryScreen(
+                                      authorId:      widget.authorId!,
+                                      authorName:    widget.authorName ?? '',
+                                      authorAvatar:  widget.authorAvatar ?? '',
+                                      currentUserId: widget.userId,
+                                    ),
+                                  ));
+                                },
+                                child: Container(
+                                  width: 26, height: 26,
+                                  margin: const EdgeInsets.only(right: 7),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: context.xMuted.withValues(alpha: 0.3), width: 1)),
+                                  child: ClipOval(
+                                    child: CachedNetworkImage(
+                                      imageUrl:    widget.authorAvatar!,
+                                      fit:         BoxFit.cover,
+                                      errorWidget: (_, __, ___) =>
+                                        Container(color: context.xSurface),
+                                    ),
                                   ),
                                 ),
                               ),
