@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import '../../../features/settings/screens/settings_screen.dart';
 import 'discovery_fullscreen_viewer.dart';
+import 'author_gallery_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:video_compress/video_compress.dart';
