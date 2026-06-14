@@ -131,9 +131,13 @@ class _AuthorGalleryScreenState extends State<AuthorGalleryScreen> {
                       itemCount: _posts.length,
                       itemBuilder: (_, i) {
                         final post = _posts[i];
-                        final thumb = (post['thumbnailUrl'] as String?)?.isNotEmpty == true
+                        final rawThumb = (post['thumbnailUrl'] as String?)?.isNotEmpty == true
                             ? post['thumbnailUrl'] as String
                             : post['mediaUrl'] as String? ?? '';
+                        // For videos, ensure we get a poster image via Cloudinary transform
+                        final thumb = isVideo && !rawThumb.contains('f_jpg')
+                            ? rawThumb.replaceFirst('/upload/', '/upload/so_0,f_jpg/').replaceAll(RegExp(r'\.(mp4|mov|avi|webm)$', caseSensitive: false), '.jpg')
+                            : rawThumb;
                         final isVideo = post['mediaType'] == 'video';
                         return GestureDetector(
                           onTap: () => _openFullscreen(i),

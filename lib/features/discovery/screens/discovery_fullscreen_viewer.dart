@@ -572,6 +572,12 @@ class _VideoPageState extends State<_VideoPage> {
       betterPlayerDataSource: BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
         widget.url,
+        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+          minBufferMs: 2000,
+          maxBufferMs: 10000,
+          bufferForPlaybackMs: 500,
+          bufferForPlaybackAfterRebufferMs: 1000,
+        ),
       ),
     );
     _ctrl!.addEventsListener(_onEvent);
@@ -755,10 +761,11 @@ class _ImagePageState extends State<_ImagePage>
   @override
   Widget build(BuildContext context) {
     return InteractiveViewer(
-      minScale: 1.0,
-      maxScale: 5.0,
-      panEnabled: false,
+      minScale: 0.8,
+      maxScale: 6.0,
+      panEnabled: true,
       scaleEnabled: true,
+      clipBehavior: Clip.none,
       child: CachedNetworkImage(
         imageUrl: widget.url,
         fit:      BoxFit.contain,
