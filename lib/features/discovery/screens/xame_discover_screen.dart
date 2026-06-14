@@ -578,9 +578,6 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     final user = ref.watch(currentUserProvider);
     return Scaffold(
       backgroundColor: context.xBg,
-      floatingActionButton: _PostFAB(
-        onPost: () => _showPostDialog(context, user?.xameId ?? ''),
-      ),
       body: Stack(children: [
         CustomScrollView(
           controller: _scrollCtrl,
@@ -827,7 +824,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             else
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height,
+                  height: MediaQuery.of(context).size.height + MediaQuery.of(context).padding.top,
                   child: PageView.builder(
                     scrollDirection: Axis.vertical,
                     itemCount: _filtered.length,
@@ -882,6 +879,14 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
+        ),
+
+        // Post FAB overlay
+        Positioned(
+          bottom: 24, right: 16,
+          child: _PostFAB(
+            onPost: () => _showPostDialog(context, user?.xameId ?? ''),
+          ),
         ),
 
         // Search overlay
