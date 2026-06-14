@@ -31,6 +31,7 @@ class _XameTvScreenState extends State<XameTvScreen>
   final   _listCtrl=ScrollController();
 
   VideoPlayerController? _ctrl;
+  VideoPlayerController? _preloadCtrl;
   bool _ready=false, _error=false, _buffering=true;
   int  _retries=0;
   final Set<String> _deadUrls={};
@@ -65,6 +66,7 @@ class _XameTvScreenState extends State<XameTvScreen>
     _retryTimer?.cancel();
     _oAnim.dispose(); _sAnim.dispose();
     _ctrl?.dispose();
+    _preloadCtrl?.dispose();
     _searchCtrl.dispose(); _listCtrl.dispose();
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -110,6 +112,8 @@ class _XameTvScreenState extends State<XameTvScreen>
       c.play();
       _sAnim.forward(from:0);
       setState(() { _ready=true; _buffering=false; _retries=0; });
+      // Preload next channel in background
+      _preloadNext();
     } catch(_) {
       if (!mounted || _ctrl!=c) return;
       // Mark dead and auto-skip if liveOnly is on
@@ -128,10 +132,40 @@ class _XameTvScreenState extends State<XameTvScreen>
     }
   }
 
+  Future<void> _preloadNext() async {
+    if (_filtered.isEmpty) return;
+    final nextIdx = (_index + 1) % _filtered.length;
+    final nextUrl = _filtered[nextIdx].streamUrl;
+    if (nextUrl.isEmpty || _deadUrls.contains(nextUrl)) return;
+    try {
+      final pre = VideoPlayerController.networkUrl(Uri.parse(nextUrl));
+      _preloadCtrl?.dispose();
+      _preloadCtrl = pre;
+      await pre.initialize();
+      // Just buffer, don't play
+    } catch (_) {}
+  }
+
   void _switchTo(int i) {
     if (i==_index || i>=_filtered.length) return;
+    final nextIdx = (_index + 1) % _filtered.length;
     setState(() => _index=i);
-    _initPlayer(_filtered[i].streamUrl);
+    // Use preloaded controller if switching to the next channel
+    if (i == nextIdx && _preloadCtrl != null && _preloadCtrl!.value.isInitialized) {
+      final pre = _preloadCtrl!;
+      _preloadCtrl = null;
+      _ctrl?.dispose();
+      _ctrl = pre;
+      pre.setLooping(true);
+      pre.setVolume(_isMuted ? 0 : 1);
+      pre.play();
+      _sAnim.forward(from: 0);
+      setState(() { _ready = true; _buffering = false; _retries = 0; });
+      _preloadNext();
+    } else {
+      _initPlayer(_filtered[i].streamUrl);
+    }
+    }
     _showBriefly();
     Future.delayed(const Duration(milliseconds:100), () {
       if (_listCtrl.hasClients)
