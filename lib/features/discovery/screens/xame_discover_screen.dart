@@ -824,7 +824,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             else
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: MediaQuery.of(context).size.height + MediaQuery.of(context).padding.top,
+                  height: MediaQuery.of(context).size.height + MediaQuery.of(context).padding.top + MediaQuery.of(context).padding.bottom,
                   child: PageView.builder(
                     scrollDirection: Axis.vertical,
                     itemCount: _filtered.length,
@@ -883,7 +883,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
         // Post FAB overlay
         Positioned(
-          bottom: 24, right: 16,
+          bottom: 90, right: 16,
           child: _PostFAB(
             onPost: () => _showPostDialog(context, user?.xameId ?? ''),
           ),
