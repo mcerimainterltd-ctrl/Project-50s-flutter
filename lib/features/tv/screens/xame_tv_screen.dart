@@ -102,10 +102,14 @@ class _XameTvScreenState extends State<XameTvScreen>
     if (!mounted) return;
     setState(() { _ready=false; _error=false; _buffering=true; });
     if (url.isEmpty) { setState(() { _error=true; _buffering=false; }); return; }
-    final c = VideoPlayerController.networkUrl(Uri.parse(url));
+    final c = VideoPlayerController.networkUrl(
+      Uri.parse(url),
+      httpHeaders: const {'Connection': 'keep-alive'},
+    );
     _ctrl = c;
     try {
-      await c.initialize();
+      await c.initialize().timeout(const Duration(seconds: 8),
+          onTimeout: () => throw Exception('Stream timeout'));
       if (!mounted || _ctrl!=c) return;
       c.setLooping(true);
       c.setVolume(_isMuted ? 0 : 1);
@@ -304,6 +308,15 @@ class _XameTvScreenState extends State<XameTvScreen>
   }
 
   Widget _bufferingOverlay() => Center(child:Column(mainAxisSize:MainAxisSize.min, children:[
+    if (_cur?.logo.isNotEmpty == true) ...[
+      CachedNetworkImage(
+        imageUrl: _cur!.logo,
+        width: 80, height: 80,
+        fit: BoxFit.contain,
+        errorWidget: (_, __, ___) => const SizedBox.shrink(),
+      ),
+      const SizedBox(height: 16),
+    ],
     SizedBox(width:40,height:40,
       child:CircularProgressIndicator(
           color:kCategoryColors[_category]??Colors.white54, strokeWidth:2)),
