@@ -2810,7 +2810,15 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
         ),
       ),
       betterPlayerDataSource: BetterPlayerDataSource(
-          BetterPlayerDataSourceType.network, widget.url),
+        BetterPlayerDataSourceType.network,
+        widget.url,
+        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+          minBufferMs: 2000,
+          maxBufferMs: 15000,
+          bufferForPlaybackMs: 500,
+          bufferForPlaybackAfterRebufferMs: 1000,
+        ),
+      ),
     );
     _ctrl!.addEventsListener(_onEvent);
     _resetHideTimer();

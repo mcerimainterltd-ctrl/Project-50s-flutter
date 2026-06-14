@@ -276,7 +276,15 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
         ),
       ),
       betterPlayerDataSource: BetterPlayerDataSource(
-          BetterPlayerDataSourceType.network, widget.mediaUrl),
+        BetterPlayerDataSourceType.network,
+        widget.mediaUrl,
+        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+          minBufferMs: 2000,
+          maxBufferMs: 15000,
+          bufferForPlaybackMs: 500,
+          bufferForPlaybackAfterRebufferMs: 1000,
+        ),
+      ),
     );
     setState(() { _playerCtrl = ctrl; _playing = true; });
   }
