@@ -3068,8 +3068,10 @@ class _DataTabState extends State<_DataTab> {
                         child: Text(p.size,
                             style: TextStyle(
                                 color: selected ? _kTeal : Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600)),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
                       ),
                     // Price
                     Text(widget.fmt(p.price),
