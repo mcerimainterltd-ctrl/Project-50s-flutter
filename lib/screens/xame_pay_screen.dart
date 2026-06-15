@@ -3042,29 +3042,35 @@ class _DataTabState extends State<_DataTab> {
                         width: selected ? 2 : 1),
                   ),
                   child: Row(children: [
-                    // Size badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? _kTeal
-                            : const Color(0x22FFFFFF),
-                        borderRadius: BorderRadius.circular(8),
+                    // Size badge (only for hardcoded plans)
+                    if (_fetchedPlans.isEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: selected ? _kTeal : const Color(0x22FFFFFF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(p.size,
+                            style: TextStyle(
+                                color: selected ? Colors.black : Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800)),
                       ),
-                      child: Text(p.size,
-                          style: TextStyle(
-                              color: selected ? Colors.black : Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800)),
-                    ),
-                    const SizedBox(width: 12),
-                    // Validity
-                    Expanded(
-                      child: Text(
-                        p.days == 1 ? '1 day' : p.days == 7 ? '1 week' : p.days == 14 ? '2 weeks' : p.days == 30 ? '1 month' : p.days == 90 ? '3 months' : p.days == 365 ? '1 year' : '${p.days} days',
-                        style: const TextStyle(color: _kMuted, fontSize: 13)),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          p.days == 1 ? '1 day' : p.days == 7 ? '1 week' : p.days == 30 ? '1 month' : '${p.days} days',
+                          style: const TextStyle(color: _kMuted, fontSize: 13)),
+                      ),
+                    ] else
+                      Expanded(
+                        child: Text(p.size,
+                            style: TextStyle(
+                                color: selected ? _kTeal : Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                      ),
                     // Price
                     Text(widget.fmt(p.price),
                         style: TextStyle(
