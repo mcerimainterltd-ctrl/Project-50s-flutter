@@ -2922,13 +2922,22 @@ class _DataTabState extends State<_DataTab> {
       if (d['success'] == true && mounted) {
         final bundles = d['bundles'] as List? ?? [];
         setState(() {
-          _fetchedPlans = bundles.map((b) => DataPlan(
-            operatorId,
-            b['name'] as String? ?? '',
-            30,
-            ((b['amount'] as num?)?.toDouble() ?? 0),
-            b['item_code'] as String? ?? '',
-          )).where((p) => p.price > 0).toList();
+          _fetchedPlans = bundles.map((b) {
+            final name = b['name'] as String? ?? '';
+            // Parse duration from name
+            int days = 30;
+            if (name.toLowerCase().contains('1 day') || name.toLowerCase().contains('(1 day)') || name.toLowerCase().contains('one day')) days = 1;
+            else if (name.toLowerCase().contains('2 day')) days = 2;
+            else if (name.toLowerCase().contains('7 day') || name.toLowerCase().contains('(7 day)') || name.toLowerCase().contains('one week') || name.toLowerCase().contains('1 week')) days = 7;
+            else if (name.toLowerCase().contains('2 week')) days = 14;
+            else if (name.toLowerCase().contains('1 month') || name.toLowerCase().contains('one month') || name.toLowerCase().contains('30 day')) days = 30;
+            else if (name.toLowerCase().contains('2 month') || name.toLowerCase().contains('60 day')) days = 60;
+            else if (name.toLowerCase().contains('3 month') || name.toLowerCase().contains('90 day') || name.toLowerCase().contains('quarterly')) days = 90;
+            else if (name.toLowerCase().contains('yearly') || name.toLowerCase().contains('1 year') || name.toLowerCase().contains('365 day')) days = 365;
+            return DataPlan(operatorId, name, days, ((b['amount'] as num?)?.toDouble() ?? 0), b['item_code'] as String? ?? '');
+          }).where((p) => p.price > 0).toList();
+          // Sort by price
+          _fetchedPlans.sort((a, b) => a.price.compareTo(b.price));
         });
       }
     } catch (_) {}
@@ -3052,9 +3061,9 @@ class _DataTabState extends State<_DataTab> {
                     const SizedBox(width: 12),
                     // Validity
                     Expanded(
-                      child: Text('${p.days} days',
-                          style: const TextStyle(
-                              color: _kMuted, fontSize: 13)),
+                      child: Text(
+                        p.days == 1 ? '1 day' : p.days == 7 ? '1 week' : p.days == 14 ? '2 weeks' : p.days == 30 ? '1 month' : p.days == 90 ? '3 months' : p.days == 365 ? '1 year' : '${p.days} days',
+                        style: const TextStyle(color: _kMuted, fontSize: 13)),
                     ),
                     // Price
                     Text(widget.fmt(p.price),
