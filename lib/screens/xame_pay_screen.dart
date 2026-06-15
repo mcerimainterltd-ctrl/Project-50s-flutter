@@ -2382,7 +2382,8 @@ class DataPlan {
   final String size, operatorId;
   final int days;
   final double price;
-  const DataPlan(this.operatorId, this.size, this.days, this.price);
+  final String itemCode;
+  const DataPlan(this.operatorId, this.size, this.days, this.price, [this.itemCode = '']);
 }
 
 // Full data plan catalogue — mirrors wallet.js GD.dataPlans
@@ -2905,9 +2906,34 @@ class _DataTabState extends State<_DataTab> {
   DataPlan? _plan;
   String _phone = '';
   final _pCtrl = TextEditingController();
+  List<DataPlan> _fetchedPlans = [];
+  bool _fetchingPlans = false;
   @override void dispose() { _pCtrl.dispose(); super.dispose(); }
 
-  List<DataPlan> get _plans => _net == null ? [] : (_kDataPlans[_net] ?? []);
+  List<DataPlan> get _plans => _fetchedPlans.isNotEmpty ? _fetchedPlans : (_net == null ? [] : (_kDataPlans[_net] ?? []));
+
+  Future<void> _fetchPlans(String operatorId) async {
+    setState(() { _fetchingPlans = true; _fetchedPlans = []; });
+    try {
+      final r = await http.get(Uri.parse(
+          '${widget.serverUrl}/api/vtu/bundles/$operatorId'))
+          .timeout(const Duration(seconds: 8));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true && mounted) {
+        final bundles = d['bundles'] as List? ?? [];
+        setState(() {
+          _fetchedPlans = bundles.map((b) => DataPlan(
+            operatorId,
+            b['name'] as String? ?? '',
+            30,
+            ((b['amount'] as num?)?.toDouble() ?? 0),
+            b['item_code'] as String? ?? '',
+          )).where((p) => p.price > 0).toList();
+        });
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _fetchingPlans = false);
+  }
 
   Future<void> _buy() async {
     if (_net == null)          { widget.snack('Select a network'); return; }
@@ -2924,6 +2950,7 @@ class _DataTabState extends State<_DataTab> {
           'operatorId': _net,
           'amount':     _plan!.price,
           'userId':     widget.userId,
+          'itemCode':   _plan!.itemCode,
         }),
       ).timeout(const Duration(seconds: 20));
       final d = jsonDecode(r.body);
@@ -2951,7 +2978,8 @@ class _DataTabState extends State<_DataTab> {
               fontSize: 13, fontWeight: FontWeight.w600)),
       const SizedBox(height: 10),
       _netGrid(widget.region.networks, _net, (id) {
-        setState(() { _net = id; _plan = null; });
+        setState(() { _net = id; _plan = null; _fetchedPlans = []; });
+        _fetchPlans(id);
       }),
       const SizedBox(height: 16),
 
@@ -2970,7 +2998,11 @@ class _DataTabState extends State<_DataTab> {
             style: TextStyle(color: _kMuted,
                 fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
-        if (_plans.isEmpty)
+        if (_fetchingPlans)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(child: CircularProgressIndicator(color: _kTeal, strokeWidth: 2)))
+        else if (_plans.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text('No plans available for this network.',
