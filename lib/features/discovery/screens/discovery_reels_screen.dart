@@ -203,8 +203,7 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
                                   SizedBox(
                                     height: 160,
                                     child: PeoplePerspectiveCarousel(
-                                      userId: user?.xameId ?? '',
-                                      contactIds: const {},
+                                      users: const [],
                                     ),
                                   ),
                                   const SizedBox(height: 16),
