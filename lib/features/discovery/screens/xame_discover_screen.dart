@@ -573,12 +573,196 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     _loadData(refresh: true);
   }
 
+  void _showDiscoveryMenu(BuildContext context, dynamic user) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.xSurface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            // Stories bar
+            if (_stories.isNotEmpty) ...[
+              DiscoveryStoriesBar(users: [
+                {'name':'You','avatar':user?.profilePic??'','hasSeen':true,'isOnline':false,'isSelf':true,
+                 'onTap':() { Navigator.pop(context); _showPostStoryDialog(context, user?.xameId??''); }},
+                ..._stories.asMap().entries.map((e) => {
+                  'name': e.value['authorName'] as String???'',
+                  'avatar': e.value['authorAvatar'] as String???'',
+                  'hasSeen': e.value['hasSeen'] as bool?? false,
+                  'isOnline': e.value['isOnline'] as bool?? false,
+                  'onTap': () { Navigator.pop(context); _openStoryViewer(context, e.key); },
+                }),
+              ]),
+              const SizedBox(height: 12),
+            ],
+            // Menu items
+            _menuItem(context, '✍️', 'Create Post', () { Navigator.pop(context); _showPostDialog(context, user?.xameId??''); }),
+            _menuItem(context, '📖', 'Stories', () { Navigator.pop(context); }),
+            _menuItem(context, '👥', 'People You May Know', () {
+              Navigator.pop(context);
+              showModalBottomSheet(context: context, backgroundColor: context.xSurface, isScrollControlled: true,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                builder: (_) => DraggableScrollableSheet(expand: false, initialChildSize: 0.7, maxChildSize: 0.95,
+                  builder: (_, sc) => _AllPeopleScreen(initialPeople: _people, userId: user?.xameId??'',
+                    onAdd: (u) async { try { final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                      await dio.post('/api/send-contact-request', data: {'userId': user?.xameId??'', 'contactId': u.id});
+                      setState(() => u.isAdded = true); } catch (_) {} })));
+            }),
+            _menuItem(context, '📣', 'XamePage News', () {
+              Navigator.pop(context);
+              if (_officialPosts.isNotEmpty) showModalBottomSheet(context: context, backgroundColor: context.xSurface,
+                isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                builder: (_) => DraggableScrollableSheet(expand: false, initialChildSize: 0.6, maxChildSize: 0.95,
+                  builder: (_, sc) => ListView(controller: sc, children: [_XameNewsChannel(posts: _officialPosts, context: context)])));
+            }),
+            _menuItem(context, '🏆', 'Leaderboard', () {
+              Navigator.pop(context);
+              showModalBottomSheet(context: context, backgroundColor: context.xSurface, isScrollControlled: true,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                builder: (_) => DraggableScrollableSheet(expand: false, initialChildSize: 0.5, maxChildSize: 0.8,
+                  builder: (_, sc) => ListView(controller: sc, padding: const EdgeInsets.all(16), children: [
+                    if (_leaderboard.isNotEmpty) _RewardsTicker(leaderboard: _leaderboard),
+                  ])));
+            }),
+            _menuItem(context, '🗺️', 'Discovery Map', () { Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => DiscoveryMapScreen(
+                posts: _feed, regions: discoveryRegions, currentRegion: _regionCode, onRegionSelected: _onRegionSelected)));
+            }),
+            _menuItem(context, '📺', 'XameTV', () { Navigator.pop(context); context.push('/tv'); }),
+            _menuItem(context, '🔍', 'Search Posts', () { Navigator.pop(context); _openSearch(); }),
+            _menuItem(context, '🔄', 'Refresh Feed', () { Navigator.pop(context); _loadData(refresh: true); }),
+            const SizedBox(height: 8),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _menuItem(BuildContext context, String emoji, String label, VoidCallback onTap) {
+    return ListTile(
+      leading: Text(emoji, style: const TextStyle(fontSize: 22)),
+      title: Text(label, style: TextStyle(color: context.xText, fontSize: 15, fontWeight: FontWeight.w600)),
+      onTap: onTap,
+      dense: true,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     return Scaffold(
-      backgroundColor: context.xBg,
+      backgroundColor: Colors.black,
       body: Stack(children: [
+        // ── Fullscreen vertical feed ──────────────────────────────────
+        if (_loading)
+          const Center(child: CircularProgressIndicator(color: Color(0xFF00C896)))
+        else if (_filtered.isEmpty)
+          Center(child: _EmptyState(region: _regionName, onPost: () => _showPostDialog(context, user?.xameId??'')))
+        else
+          PageView.builder(
+            scrollDirection: Axis.vertical,
+            itemCount: _filtered.length,
+            onPageChanged: (i) { if (i >= _filtered.length - 3) _loadMore(); },
+            itemBuilder: (_, i) {
+              final item = _filtered[i];
+              return _FullscreenFeedPage(
+                item: item,
+                isActive: true,
+                currentUserId: user?.xameId??'',
+                currentUserAvatar: user?.profilePic??'',
+                onAvatarTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => AuthorGalleryScreen(
+                    authorId: item.authorId, authorName: item.authorName,
+                    authorAvatar: item.authorAvatar, currentUserId: user?.xameId??'',
+                    currentUserAvatar: user?.profilePic??''))),
+                onPost: () => _showPostDialog(context, user?.xameId??''),
+              );
+            },
+          ),
+
+        // ── Top overlay ───────────────────────────────────────────────
+        Positioned(
+          top: 0, left: 0, right: 0,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(children: [
+                if (widget.authorId != null)
+                  GestureDetector(
+                    onTap: () => context.canPop() ? context.pop() : context.go('/contacts'),
+                    child: Container(padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(20)),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16))),
+                ShaderMask(
+                  shaderCallback: (b) => const LinearGradient(colors: [Color(0xFF00C896), Color(0xFF00E5FF)]).createShader(b),
+                  child: const Text('DISCOVERY', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                ),
+                const SizedBox(width: 8),
+                _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
+                const Spacer(),
+                // Region filter pill
+                RegionFilterBar(onRegionSelected: _onRegionSelected, initialCode: _regionCode),
+              ]),
+            ),
+          ),
+        ),
+
+        // ── Floating ⋮ menu button ────────────────────────────────────
+        Positioned(
+          top: 48, right: 16,
+          child: SafeArea(
+            child: GestureDetector(
+              onTap: () => _showDiscoveryMenu(context, user),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.menu_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 4),
+                  Text('Menu', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                ]),
+              ),
+            ),
+          ),
+        ),
+
+        // ── Post FAB ──────────────────────────────────────────────────
+        Positioned(
+          bottom: 90, right: 16,
+          child: _PostFAB(onPost: () => _showPostDialog(context, user?.xameId??'')),
+        ),
+
+        // ── Search overlay ────────────────────────────────────────────
+        if (_searchOpen)
+          FadeTransition(
+            opacity: _searchFade,
+            child: _SearchOverlay(
+              ctrl: _searchCtrl,
+              onSearch: (q) => setState(() => _searchQuery = q),
+              onClose: _closeSearch,
+              feed: _feed,
+            ),
+          ),
+      ]),
+    );
+  }
+
+  // ── OLD build remnant — replaced above ───────────────────────────────────
+  Widget _oldBuildBody(BuildContext context) {
+    final user = ref.watch(currentUserProvider);
+    return Stack(children: [
         CustomScrollView(
           controller: _scrollCtrl,
           physics:    BouncingScrollPhysics(),
