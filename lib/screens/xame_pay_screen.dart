@@ -898,7 +898,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                         "userId": widget.userId, "amount": amt,
                         "currency": _currency,
                         "email": "${widget.userId}@xamepage.app",
-                        "name": widget.userId,
+                        "name": "",
                       }),
                     ).timeout(const Duration(seconds: 15));
                     final d = jsonDecode(r.body);
@@ -1426,7 +1426,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         body: jsonEncode({
           "userId": widget.userId,
           "email": "${widget.userId}@xamepage.app",
-          "name": widget.userId,
+          "name": "",
           "currency": widget.currency,
           "bvn": bvn,
         }),
