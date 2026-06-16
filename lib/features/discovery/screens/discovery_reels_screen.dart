@@ -149,7 +149,7 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
                         isScrollControlled: true,
                         shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-                        builder: (_) => _CreatePostSheet(
+                        builder: (_) => CreatePostSheet(
                           userId: user?.xameId ?? '',
                           region: _regionName,
                           onPosted: () => _loadData(refresh: true),

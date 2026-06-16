@@ -954,7 +954,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => _CreatePostSheet(
+      builder: (_) => CreatePostSheet(
         userId:   userId,
         region:   _regionName,
         onPosted: () => _loadData(refresh: true),
@@ -1187,17 +1187,17 @@ class _PostFAB extends StatelessWidget {
 }
 
 // ── Create Post Sheet ─────────────────────────────────────────────────────────
-class _CreatePostSheet extends StatefulWidget {
+class CreatePostSheet extends StatefulWidget {
   final String   userId, region;
   final VoidCallback onPosted;
-  const _CreatePostSheet({
+  const CreatePostSheet({
     required this.userId, required this.region,
     required this.onPosted});
   @override
-  State<_CreatePostSheet> createState() => _CreatePostSheetState();
+  State<CreatePostSheet> createState() => CreatePostSheetState();
 }
 
-class _CreatePostSheetState extends State<_CreatePostSheet> {
+class CreatePostSheetState extends State<CreatePostSheet> {
   final _titleCtrl   = TextEditingController();
   final _captionCtrl = TextEditingController();
   final _quoteCtrl   = TextEditingController();
