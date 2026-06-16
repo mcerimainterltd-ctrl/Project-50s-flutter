@@ -611,39 +611,6 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
               ]),
               actions: [
-          TVEntryButton(onTap: () => context.push("/tv")),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => DiscoveryMapScreen(
-                        posts:    _feed,
-                        regions:  discoveryRegions,
-                        currentRegion: _regionCode,
-                        onRegionSelected: _onRegionSelected,
-                      ),
-                    ));
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 4),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: const Row(mainAxisSize: MainAxisSize.min,
-                        children: [
-                      Text('🌍', style: TextStyle(fontSize: 13)),
-                      SizedBox(width: 4),
-                      Text('Map', style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5)),
-                    ]),
-                  ),
-                ),
                 IconButton(
                   icon: AnimatedSwitcher(
                     duration: Duration(milliseconds: 200),
@@ -651,9 +618,81 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       _searchOpen ? Icons.close : Icons.search,
                       key: ValueKey(_searchOpen), color: context.xText.withValues(alpha: 0.7))),
                   onPressed: _searchOpen ? _closeSearch : _openSearch),
-                IconButton(
-                  icon: Icon(Icons.refresh_rounded, color: context.xText.withValues(alpha: 0.7)),
-                  onPressed: () => _loadData(refresh: true)),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: context.xText.withValues(alpha: 0.7)),
+                  color: context.xSurface,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  onSelected: (val) {
+                    switch (val) {
+                      case 'people':
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: context.xSurface,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                          builder: (_) => DraggableScrollableSheet(
+                            expand: false, initialChildSize: 0.6, maxChildSize: 0.9,
+                            builder: (_, sc) => _AllPeopleScreen(
+                              initialPeople: _people,
+                              userId: user?.xameId ?? '',
+                              onAdd: (u) async {
+                                final self = ref.read(currentUserProvider);
+                                if (self == null) return;
+                                try {
+                                  final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                                  await dio.post('/api/send-contact-request', data: {
+                                    'userId': self.xameId, 'contactId': u.id});
+                                  setState(() => u.isAdded = true);
+                                } catch (_) {}
+                              },
+                            ),
+                          ),
+                        );
+                        break;
+                      case 'map':
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => DiscoveryMapScreen(
+                            posts: _feed, regions: discoveryRegions,
+                            currentRegion: _regionCode,
+                            onRegionSelected: _onRegionSelected,
+                          ),
+                        ));
+                        break;
+                      case 'tv':
+                        context.push('/tv');
+                        break;
+                      case 'explore':
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => _AllPeopleScreen(
+                            initialPeople: _people,
+                            userId: user?.xameId ?? '',
+                            onAdd: (u) async {
+                              final self = ref.read(currentUserProvider);
+                              if (self == null) return;
+                              try {
+                                final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                                await dio.post('/api/send-contact-request', data: {
+                                  'userId': self.xameId, 'contactId': u.id});
+                                setState(() => u.isAdded = true);
+                              } catch (_) {}
+                            },
+                          ),
+                        ));
+                        break;
+                      case 'refresh':
+                        _loadData(refresh: true);
+                        break;
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'people',  child: Row(children: [Text('👥  '), Text('People You May Know', style: TextStyle(color: context.xText))])),
+                    PopupMenuItem(value: 'map',     child: Row(children: [Text('🗺️  '), Text('Discovery Map',       style: TextStyle(color: context.xText))])),
+                    PopupMenuItem(value: 'tv',      child: Row(children: [Text('📺  '), Text('XameTV',              style: TextStyle(color: context.xText))])),
+                    PopupMenuItem(value: 'explore', child: Row(children: [Text('🔍  '), Text('Explore People',      style: TextStyle(color: context.xText))])),
+                    PopupMenuItem(value: 'refresh', child: Row(children: [Text('🔄  '), Text('Refresh Feed',        style: TextStyle(color: context.xText))])),
+                  ],
+                ),
                 const SizedBox(width: 4),
               ],
             ),
