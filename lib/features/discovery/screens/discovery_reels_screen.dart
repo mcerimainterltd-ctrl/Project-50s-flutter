@@ -202,7 +202,7 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
                                   const SizedBox(height: 8),
                                   SizedBox(
                                     height: 160,
-                                    child: PeopleCarousel(
+                                    child: PeoplePerspectiveCarousel(
                                       userId: user?.xameId ?? '',
                                       contactIds: const {},
                                     ),
@@ -215,12 +215,7 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
                           case 'map':
                             Navigator.push(context, MaterialPageRoute(
                               builder: (_) => DiscoveryMapScreen(
-                                posts: _feed.map((e) => {
-                                  'id': e.id, 'authorId': e.authorId,
-                                  'authorName': e.authorName, 'authorAvatar': e.authorAvatar,
-                                  'mediaUrl': e.mediaUrl, 'region': e.region,
-                                  'title': e.title,
-                                }).toList(),
+                                posts: _feed,
                                 regions: discoveryRegions,
                                 currentRegion: _regionCode,
                                 onRegionSelected: _onRegionSelected,
