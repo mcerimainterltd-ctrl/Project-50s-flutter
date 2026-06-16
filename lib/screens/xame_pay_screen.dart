@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 // lib/screens/xame_pay_screen.dart
 import 'dart:async';
 // XamePay — go_router-aware wallet for XamePage 2.1  (Build 264+)
