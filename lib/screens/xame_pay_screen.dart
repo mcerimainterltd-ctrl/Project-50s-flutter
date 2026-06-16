@@ -2384,7 +2384,8 @@ class DataPlan {
   final double price;
   final String itemCode;
   final String billerType;
-  const DataPlan(this.operatorId, this.size, this.days, this.price, [this.itemCode = '', this.billerType = '']);
+  final String billerCode;
+  const DataPlan(this.operatorId, this.size, this.days, this.price, [this.itemCode = '', this.billerType = '', this.billerCode = '']);
 }
 
 // Full data plan catalogue — mirrors wallet.js GD.dataPlans
@@ -2935,7 +2936,7 @@ class _DataTabState extends State<_DataTab> {
             else if (name.toLowerCase().contains('2 month') || name.toLowerCase().contains('60 day')) days = 60;
             else if (name.toLowerCase().contains('3 month') || name.toLowerCase().contains('90 day') || name.toLowerCase().contains('quarterly')) days = 90;
             else if (name.toLowerCase().contains('yearly') || name.toLowerCase().contains('1 year') || name.toLowerCase().contains('365 day')) days = 365;
-            return DataPlan(operatorId, name, days, ((b['amount'] as num?)?.toDouble() ?? 0), b['item_code'] as String? ?? '', b['biller_type'] as String? ?? '');
+            return DataPlan(operatorId, name, days, ((b['amount'] as num?)?.toDouble() ?? 0), b['item_code'] as String? ?? '', b['biller_type'] as String? ?? '', b['biller_code'] as String? ?? '');
           }).where((p) => p.price > 0).toList();
           // Sort by price
           _fetchedPlans.sort((a, b) => a.price.compareTo(b.price));
@@ -2962,6 +2963,7 @@ class _DataTabState extends State<_DataTab> {
           'userId':     widget.userId,
           'itemCode':   _plan!.itemCode,
           'billerType': _plan!.billerType,
+          'billerCode': _plan!.billerCode,
         }),
       ).timeout(const Duration(seconds: 20));
       final d = jsonDecode(r.body);
