@@ -634,6 +634,19 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     if (_leaderboard.isNotEmpty) _RewardsTicker(leaderboard: _leaderboard),
                   ])));
             }),
+            _menuItem(context, '🔥', 'Trending Now', () {
+              Navigator.pop(context);
+              if (_feed.where((p) => p.isLive || p.viewCount > 10).isNotEmpty)
+                showModalBottomSheet(context: context, backgroundColor: context.xSurface,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                  builder: (_) => DraggableScrollableSheet(expand: false, initialChildSize: 0.5, maxChildSize: 0.9,
+                    builder: (_, sc) => ListView(controller: sc, children: [
+                      _TrendingPulseStrip(
+                        posts: _feed.where((p) => p.isLive || p.viewCount > 10).take(12).toList(),
+                        onTap: (item) { Navigator.pop(context); DiscoveryApiService.viewPost(item.id); _openDetail(context, item); }),
+                    ])));
+            }),
             _menuItem(context, '🗺️', 'Discovery Map', () { Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => DiscoveryMapScreen(
                 posts: _feed, regions: discoveryRegions, currentRegion: _regionCode, onRegionSelected: _onRegionSelected)));
@@ -718,19 +731,6 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
           ),
         ),
 
-        // ── Trending strip at bottom ─────────────────────────────────
-        if (!_loading && _feed.where((p) => p.isLive || p.viewCount > 10).isNotEmpty)
-          Positioned(
-            bottom: 150, left: 0, right: 0,
-            child: _TrendingPulseStrip(
-              posts: _feed.where((p) => p.isLive || p.viewCount > 10).take(12).toList(),
-              onTap: (item) {
-                DiscoveryApiService.viewPost(item.id);
-                _openDetail(context, item);
-              },
-            ),
-          ),
-
         // ── Floating ⋮ menu button ────────────────────────────────────
         Positioned(
           top: 48, right: 16,
@@ -765,6 +765,10 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               onSearch: (q) => setState(() => _searchQuery = q),
               onClose: _closeSearch,
               feed: _feed,
+              onItemTap: (item) {
+                DiscoveryApiService.viewPost(item.id);
+                _openDetail(context, item);
+              },
             ),
           ),
       ]),
@@ -2061,8 +2065,9 @@ class _SearchOverlay extends StatefulWidget {
   final Function(String)      onSearch;
   final VoidCallback          onClose;
   final List<DiscoveryItem>   feed;
+  final Function(DiscoveryItem)? onItemTap;
   _SearchOverlay({required this.ctrl, required this.onSearch,
-      required this.onClose, required this.feed});
+      required this.onClose, required this.feed, this.onItemTap});
   @override
   State<_SearchOverlay> createState() => _SearchOverlayState();
 }
@@ -2129,6 +2134,10 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                   final item = _results[i];
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
+                    onTap: () {
+                      widget.onClose();
+                      widget.onItemTap?.call(item);
+                    },
                     leading: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: CachedNetworkImage(
