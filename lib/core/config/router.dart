@@ -3,6 +3,7 @@ import '../../core/services/wallet_lock_service.dart';
 import '../../core/services/app_lock_service.dart';
 import "../../features/discovery/screens/people_discovery_screen.dart";
 import "../../features/discovery/screens/discovery_aura_feed.dart";
+import "../../features/discovery/screens/discovery_reels_screen.dart";
 import "../../features/tv/screens/xame_tv_page.dart";
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,7 +52,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: "/discovery", name: "discovery", builder: (context, state) {
           final authorId = state.uri.queryParameters['authorId'];
-          return DiscoveryAuraFeed(authorId: authorId);
+          return DiscoveryReelsScreen(authorId: authorId);
         }),
       GoRoute(path: "/tv", name: "tv", builder: (context, state) => const XameTVPage()),
       GoRoute(path: "/people", name: "people", builder: (c, s) => const PeopleDiscoveryScreen()),
