@@ -1467,7 +1467,40 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
               child: const Text("Try Again", style: TextStyle(color: Colors.black))),
           ]
           else if (_bvnSubmitted && _account != null) ...[
-            _accountRow("Bank Name", _account!["bank_name"] ?? ""),
+            // Bank logo header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white10)),
+              child: Row(children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: CachedNetworkImage(
+                    imageUrl: 'https://nigerianbanks.xyz/logo/indulge-microfinance-bank.png',
+                    width: 48, height: 48, fit: BoxFit.contain,
+                    errorWidget: (_, __, ___) => Container(
+                      width: 48, height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B3A5C),
+                        borderRadius: BorderRadius.circular(10)),
+                      child: const Center(child: Text('I',
+                          style: TextStyle(color: Colors.white,
+                              fontWeight: FontWeight.w800, fontSize: 22)))),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Indulge MFB',
+                      style: TextStyle(color: Colors.white,
+                          fontWeight: FontWeight.w700, fontSize: 15)),
+                  const Text('Virtual Account',
+                      style: TextStyle(color: _kMuted, fontSize: 11)),
+                ]),
+              ]),
+            ),
+            const SizedBox(height: 16),
             _accountRow("Account Number", _account!["account_number"] ?? ""),
             _accountRow("Account Name", _account!["account_name"] ?? "XamePay"),
             const SizedBox(height: 16),
