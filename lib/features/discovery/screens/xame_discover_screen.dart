@@ -754,11 +754,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
           ),
         ),
 
-        // ── Post FAB ──────────────────────────────────────────────────
-        Positioned(
-          bottom: 90, right: 16,
-          child: _PostFAB(onPost: () => _showPostDialog(context, user?.xameId??'')),
-        ),
+
 
         // ── Search overlay ────────────────────────────────────────────
         if (_searchOpen)
