@@ -583,7 +583,7 @@ class _VideoPageState extends State<_VideoPage> {
       BetterPlayerConfiguration(
         autoPlay:    widget.isActive,
         looping:     true,
-        fit:         BoxFit.contain,
+        fit:         BoxFit.cover,
         aspectRatio: 9 / 16,
         fullScreenByDefault: false,
         controlsConfiguration: const BetterPlayerControlsConfiguration(
@@ -788,7 +788,7 @@ class _ImagePageState extends State<_ImagePage>
       clipBehavior: Clip.none,
       child: CachedNetworkImage(
         imageUrl: widget.url,
-        fit:      BoxFit.contain,
+        fit:      BoxFit.cover,
         width:    double.infinity,
         height:   double.infinity,
         errorWidget: (_, __, ___) => Container(
