@@ -604,7 +604,10 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             ],
             // Menu items
             _menuItem(context, '✍️', 'Create Post', () { Navigator.pop(context); _showPostDialog(context, user?.xameId??''); }),
-            _menuItem(context, '📖', 'Stories', () { Navigator.pop(context); }),
+            _menuItem(context, '📖', 'Stories', () {
+              Navigator.pop(context);
+              if (_stories.isNotEmpty) _openStoryViewer(context, 0);
+            }),
             _menuItem(context, '👥', 'People You May Know', () {
               Navigator.pop(context);
               showModalBottomSheet(context: context, backgroundColor: context.xSurface, isScrollControlled: true,
@@ -714,6 +717,19 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             ),
           ),
         ),
+
+        // ── Trending strip at bottom ─────────────────────────────────
+        if (!_loading && _feed.where((p) => p.isLive || p.viewCount > 10).isNotEmpty)
+          Positioned(
+            bottom: 150, left: 0, right: 0,
+            child: _TrendingPulseStrip(
+              posts: _feed.where((p) => p.isLive || p.viewCount > 10).take(12).toList(),
+              onTap: (item) {
+                DiscoveryApiService.viewPost(item.id);
+                _openDetail(context, item);
+              },
+            ),
+          ),
 
         // ── Floating ⋮ menu button ────────────────────────────────────
         Positioned(
