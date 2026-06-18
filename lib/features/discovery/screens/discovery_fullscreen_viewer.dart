@@ -68,7 +68,7 @@ class _DiscoveryFullscreenViewerState
             isActive: i == _currentIndex,
             currentUserId: widget.currentUserId,
             currentUserAvatar: widget.currentUserAvatar,
-            onClose: () => Navigator.of(context).pop(),
+            onClose: () => Navigator.of(context, rootNavigator: true).pop(),
           );
         },
       );
@@ -87,7 +87,7 @@ class _DiscoveryFullscreenViewerState
             isActive: i == _currentIndex,
             currentUserId: widget.currentUserId,
             currentUserAvatar: widget.currentUserAvatar,
-            onClose: () => Navigator.of(context).pop(),
+            onClose: () => Navigator.of(context, rootNavigator: true).pop(),
           );
         },
       ),
@@ -430,7 +430,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                     children: [
                       Row(children: [
                         GestureDetector(
-                          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                          onTap: () => Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                             builder: (_) => AuthorGalleryScreen(
                               authorId:         widget.post['authorId']     as String? ?? '',
                               authorName:       widget.post['authorName']   as String? ?? '',
