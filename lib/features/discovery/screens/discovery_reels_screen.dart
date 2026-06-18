@@ -89,6 +89,8 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
     'commentCount': e.commentCount,
     'viewCount':    e.viewCount,
     'ts':           e.ts?.toIso8601String(),
+    'musicUrl':     e.musicUrl,
+    'musicTitle':   e.musicTitle,
   }).toList();
 
   @override

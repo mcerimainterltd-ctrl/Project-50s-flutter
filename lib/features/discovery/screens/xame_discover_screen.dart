@@ -1364,12 +1364,15 @@ class CreatePostSheetState extends State<CreatePostSheet> {
       final res = await dio.get('/api/discover/music-library');
       final tracks = (res.data['tracks'] as List).cast<Map<String, dynamic>>();
       if (!context.mounted) return;
+      final AudioPlayer previewPlayer = AudioPlayer();
+      String previewingId = '';
       showModalBottomSheet(
         context: context,
         backgroundColor: const Color(0xFF12121E),
         shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-        builder: (_) => SafeArea(
+        builder: (_) => StatefulBuilder(
+          builder: (ctx, setSheet) => SafeArea(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const SizedBox(height: 12),
             Container(width: 36, height: 4,
@@ -1387,16 +1390,33 @@ class CreatePostSheetState extends State<CreatePostSheet> {
                 itemBuilder: (_, i) {
                   final t = tracks[i];
                   final isSel = _musicUrl == t['url'];
+                  final isPrev = previewingId == t['id'];
                   return ListTile(
-                    leading: Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: isSel
-                            ? const Color(0xFF00E5A0).withOpacity(0.2)
-                            : Colors.white10,
-                        borderRadius: BorderRadius.circular(8)),
-                      child: const Center(child: Text('🎵',
-                          style: TextStyle(fontSize: 18)))),
+                    leading: GestureDetector(
+                      onTap: () async {
+                        if (isPrev) {
+                          await previewPlayer.stop();
+                          setSheet(() => previewingId = '');
+                        } else {
+                          setSheet(() => previewingId = t['id'] as String);
+                          await previewPlayer.stop();
+                          await previewPlayer.setUrl(t['url'] as String);
+                          await previewPlayer.play();
+                        }
+                      },
+                      child: Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: isPrev
+                              ? const Color(0xFF00E5A0).withOpacity(0.2)
+                              : isSel
+                                  ? const Color(0xFF00E5A0).withOpacity(0.1)
+                                  : Colors.white10,
+                          borderRadius: BorderRadius.circular(8)),
+                        child: Center(child: Icon(
+                          isPrev ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                          color: isPrev ? const Color(0xFF00E5A0) : Colors.white54,
+                          size: 20)))),
                     title: Text(t['title'] as String,
                         style: TextStyle(
                             color: isSel
@@ -1412,6 +1432,7 @@ class CreatePostSheetState extends State<CreatePostSheet> {
                             color: Color(0xFF00E5A0), size: 18)
                         : null,
                     onTap: () {
+                      previewPlayer.stop();
                       setState(() {
                         _musicUrl   = t['url'] as String;
                         _musicTitle = t['title'] as String;
@@ -1434,8 +1455,8 @@ class CreatePostSheetState extends State<CreatePostSheet> {
             ),
             const SizedBox(height: 8),
           ]),
-        ),
-      );
+        )),
+      ).whenComplete(() => previewPlayer.dispose());
     } catch (_) {}
   }
 
