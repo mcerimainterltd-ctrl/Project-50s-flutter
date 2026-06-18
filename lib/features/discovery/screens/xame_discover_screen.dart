@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import '../../../features/settings/screens/settings_screen.dart';
@@ -170,8 +171,8 @@ class DiscoveryApiService {
         'mediaType':    mediaType,
         'isWhisper':    isWhisper.toString(),
         'isCollabOpen': isCollabOpen.toString(),
-        'musicUrl':     musicUrl,
         'musicTitle':   musicTitle,
+        if (musicUrl.isNotEmpty) 'musicUrl': musicUrl,
         'media': await MultipartFile.fromFile(mediaFile.path),
       });
       final res = await _dio.post(
@@ -1359,7 +1360,25 @@ class CreatePostSheetState extends State<CreatePostSheet> {
     });
   }
 
+  File? _musicFile;
+
   Future<void> _pickMusic(BuildContext context) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      setState(() {
+        _musicFile  = File(file.path!);
+        _musicUrl   = file.path ?? '';
+        _musicTitle = file.name.replaceAll(RegExp(r'\.[^.]+$'), '');
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _pickMusicFromLibrary(BuildContext context) async {
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       final res = await dio.get('/api/discover/music-library');
@@ -1547,6 +1566,19 @@ class CreatePostSheetState extends State<CreatePostSheet> {
       setState(() => _error = 'Please select media'); return;
     }
     setState(() { _uploading = true; _error = null; });
+    // Upload local audio file via server if picked from device
+    String finalMusicUrl = _musicUrl;
+    if (_musicFile != null && _musicUrl.startsWith('/')) {
+      try {
+        final audioForm = FormData.fromMap({
+          'audio': await MultipartFile.fromFile(_musicFile!.path),
+        });
+        final uploadRes = await Dio(BaseOptions(baseUrl: AppConstants.serverUrl))
+            .post('/api/discover/upload-music', data: audioForm);
+        finalMusicUrl = uploadRes.data['url'] as String? ?? _musicUrl;
+      } catch (_) {}
+    }
+
     final err = await DiscoveryApiService.createPost(
       authorId:  widget.userId,
       title:     _titleCtrl.text.trim(),
@@ -1557,7 +1589,7 @@ class CreatePostSheetState extends State<CreatePostSheet> {
       mediaType: _mediaType,
       isWhisper:    _isWhisper,
       isCollabOpen: _isCollabOpen,
-      musicUrl:     _musicUrl,
+      musicUrl:     finalMusicUrl,
       musicTitle:   _musicTitle,
       onProgress: (sent, total) {
         if (total > 0 && mounted) {
@@ -1854,7 +1886,30 @@ class CreatePostSheetState extends State<CreatePostSheet> {
 
       // Music picker
       GestureDetector(
-        onTap: () => _pickMusic(context),
+        onTap: () => showModalBottomSheet(
+          context: context,
+          backgroundColor: const Color(0xFF12121E),
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          builder: (_) => SafeArea(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.audio_file_rounded, color: Color(0xFF00E5A0)),
+                title: const Text('Pick from Device', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Choose any audio file', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                onTap: () { Navigator.pop(context); _pickMusic(context); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.library_music_rounded, color: Color(0xFF00E5FF)),
+                title: const Text('XamePage Sounds', style: TextStyle(color: Colors.white)),
+                subtitle: const Text('Curated royalty-free tracks', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                onTap: () { Navigator.pop(context); _pickMusicFromLibrary(context); },
+              ),
+              const SizedBox(height: 8),
+            ]),
+          ),
+        ),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.only(bottom: 12),
