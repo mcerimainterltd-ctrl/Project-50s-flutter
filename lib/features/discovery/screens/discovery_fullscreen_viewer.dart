@@ -72,7 +72,7 @@ class _DiscoveryFullscreenViewerState
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
         itemCount: widget.posts.length,
-        onPageChanged: (i) {
+        onPageChanged: (i) async {
           setState(() => _currentIndex = i);
           if (i < widget.posts.length) {
             final postId = widget.posts[i]['id'] as String? ?? widget.posts[i]['postId'] as String? ?? '';
