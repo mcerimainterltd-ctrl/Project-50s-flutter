@@ -659,10 +659,8 @@ class _VideoPageState extends State<_VideoPage> {
   void didUpdateWidget(_VideoPage old) {
     super.didUpdateWidget(old);
     if (widget.isActive && !old.isActive) {
-      _musicPlayer?.play();
       _ctrl?.play();
     } else if (!widget.isActive && old.isActive) {
-      _musicPlayer?.pause();
       _ctrl?.pause();
     }
   }
