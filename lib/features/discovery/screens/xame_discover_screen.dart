@@ -8,6 +8,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:math';
 import 'package:dio/dio.dart';
+import 'package:just_audio/just_audio.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import '../../../features/settings/screens/settings_screen.dart';
