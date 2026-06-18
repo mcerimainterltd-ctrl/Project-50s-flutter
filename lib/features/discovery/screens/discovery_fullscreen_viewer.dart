@@ -43,6 +43,15 @@ class _DiscoveryFullscreenViewerState
     super.initState();
     _currentIndex = widget.initialIndex.clamp(0, widget.posts.isEmpty ? 0 : widget.posts.length - 1);
     _verticalCtrl = PageController(initialPage: _currentIndex);
+    // Track view for initial post
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.posts.isNotEmpty) {
+        final postId = widget.posts[_currentIndex]['id'] as String? ?? widget.posts[_currentIndex]['postId'] as String? ?? '';
+        if (postId.isNotEmpty) {
+          DiscoveryApiService.viewPost(postId, userId: widget.currentUserId.isNotEmpty ? widget.currentUserId : null);
+        }
+      }
+    });
     if (!widget.embedded) SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
@@ -60,7 +69,15 @@ class _DiscoveryFullscreenViewerState
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
         itemCount: widget.posts.length,
-        onPageChanged: (i) => setState(() => _currentIndex = i),
+        onPageChanged: (i) {
+          setState(() => _currentIndex = i);
+          if (i < widget.posts.length) {
+            final postId = widget.posts[i]['id'] as String? ?? widget.posts[i]['postId'] as String? ?? '';
+            if (postId.isNotEmpty) {
+              DiscoveryApiService.viewPost(postId, userId: widget.currentUserId.isNotEmpty ? widget.currentUserId : null);
+            }
+          }
+        },
         itemBuilder: (_, i) {
           final post = widget.posts[i];
           return _FullscreenPostPage(
