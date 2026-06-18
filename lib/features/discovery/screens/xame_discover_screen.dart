@@ -83,6 +83,8 @@ class DiscoveryApiService {
           ts: m['ts'] != null
             ? DateTime.tryParse(m['ts'].toString()) ?? DateTime.now()
             : DateTime.now(),
+          musicUrl:       m['musicUrl']    as String? ?? '',
+          musicTitle:     m['musicTitle']  as String? ?? '',
         );
       }).toList();
     } catch (_) { return []; }
