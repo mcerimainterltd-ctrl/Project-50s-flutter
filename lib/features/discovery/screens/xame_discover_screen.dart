@@ -808,6 +808,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       'commentCount':  e.commentCount,
       'viewCount':     e.viewCount,
       'ts':            e.ts?.toIso8601String(),
+      'musicUrl':      e.musicUrl,
+      'musicTitle':    e.musicTitle,
     }).toList();
     final idx = _filtered.indexWhere((e) => e.id == item.id);
     Navigator.of(context).push(PageRouteBuilder(

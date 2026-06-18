@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:just_audio/just_audio.dart';
 import 'author_gallery_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -126,6 +127,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   bool _liked = false;
   int _likeCount = 0;
+  AudioPlayer? _musicPlayer;
 
   static const _reactionEmojis = ['❤️', '🔥', '😍', '👏', '💯', '✨', '🎉', '⚡'];
 
@@ -156,12 +158,29 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     _spotlightFade = CurvedAnimation(parent: _spotlightAnim, curve: Curves.easeOut);
 
     if (widget.isActive) _triggerSpotlight();
+    _initMusic();
   }
 
   @override
   void didUpdateWidget(_FullscreenPostPage old) {
     super.didUpdateWidget(old);
-    if (widget.isActive && !old.isActive) _triggerSpotlight();
+    if (widget.isActive && !old.isActive) {
+      _triggerSpotlight();
+      _musicPlayer?.play();
+    } else if (!widget.isActive && old.isActive) {
+      _musicPlayer?.pause();
+    }
+  }
+
+  Future<void> _initMusic() async {
+    final url = widget.post['musicUrl'] as String? ?? '';
+    if (url.isEmpty) return;
+    try {
+      _musicPlayer = AudioPlayer();
+      await _musicPlayer!.setUrl(url);
+      _musicPlayer!.setLoopMode(LoopMode.one);
+      if (widget.isActive) await _musicPlayer!.play();
+    } catch (_) {}
   }
 
   void _triggerSpotlight() {
@@ -175,6 +194,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
   void dispose() {
     _burstAnim.dispose();
     _spotlightAnim.dispose();
+    _musicPlayer?.dispose();
     super.dispose();
   }
 
@@ -465,6 +485,22 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if ((widget.post['musicTitle'] as String? ?? '').isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Row(children: [
+                          const Icon(Icons.music_note_rounded,
+                              color: Color(0xFF00E5A0), size: 12),
+                          const SizedBox(width: 4),
+                          Expanded(child: Text(
+                            widget.post['musicTitle'] as String,
+                            style: const TextStyle(
+                                color: Color(0xFF00E5A0),
+                                fontSize: 11, fontWeight: FontWeight.w500),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )),
+                        ]),
+                      ],
 
                     ],
                   ),
@@ -623,8 +659,10 @@ class _VideoPageState extends State<_VideoPage> {
   void didUpdateWidget(_VideoPage old) {
     super.didUpdateWidget(old);
     if (widget.isActive && !old.isActive) {
+      _musicPlayer?.play();
       _ctrl?.play();
     } else if (!widget.isActive && old.isActive) {
+      _musicPlayer?.pause();
       _ctrl?.pause();
     }
   }
