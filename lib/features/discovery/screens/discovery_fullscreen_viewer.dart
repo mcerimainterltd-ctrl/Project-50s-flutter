@@ -170,6 +170,14 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     } else if (!widget.isActive && old.isActive) {
       _musicPlayer?.pause();
     }
+    // Re-init music if musicUrl changed (e.g. feed loaded after initial render)
+    final newUrl = widget.post['musicUrl'] as String? ?? '';
+    final oldUrl = old.post['musicUrl'] as String? ?? '';
+    if (newUrl != oldUrl && newUrl.isNotEmpty) {
+      _musicPlayer?.dispose();
+      _musicPlayer = null;
+      _initMusic();
+    }
   }
 
   Future<void> _initMusic() async {
