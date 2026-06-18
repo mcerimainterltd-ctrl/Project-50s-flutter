@@ -260,6 +260,40 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     );
   }
 
+  void _openViewers(Map<String, dynamic> post) {
+    final postId = post['id'] as String? ?? post['postId'] as String? ?? '';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A2E),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _PeopleListSheet(
+        title: '👁️ Viewers',
+        postId: postId,
+        type: 'viewers',
+        currentUserId: widget.currentUserId,
+      ),
+    );
+  }
+
+  void _openCommenters(Map<String, dynamic> post) {
+    final postId = post['id'] as String? ?? post['postId'] as String? ?? '';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A2E),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _PeopleListSheet(
+        title: '💬 Commenters',
+        postId: postId,
+        type: 'commenters',
+        currentUserId: widget.currentUserId,
+      ),
+    );
+  }
+
   Future<void> _sharePost(Map<String, dynamic> post) async {
     HapticFeedback.mediumImpact();
     final title    = post['title']     as String? ?? '';
@@ -534,8 +568,10 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                     });
                     _toggleLike();
                   },
-                  onComment: () => _openComments(widget.post),
-                  onShare:   () => _sharePost(widget.post),
+                  onComment:    () => _openComments(widget.post),
+                  onShare:      () => _sharePost(widget.post),
+                  onViewers:    () => _openViewers(widget.post),
+                  onCommenters: () => _openCommenters(widget.post),
                 ),
               ],
             ),
@@ -861,6 +897,8 @@ class _ActionColumn extends StatefulWidget {
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onShare;
+  final VoidCallback? onViewers;
+  final VoidCallback? onCommenters;
 
   const _ActionColumn({
     Key? key,
@@ -871,6 +909,8 @@ class _ActionColumn extends StatefulWidget {
     required this.onLike,
     required this.onComment,
     required this.onShare,
+    this.onViewers,
+    this.onCommenters,
   }) : super(key: key);
 
   @override
@@ -964,10 +1004,11 @@ class _ActionColumnState extends State<_ActionColumn>
       ),
       const SizedBox(height: 22),
       _ActionBtn(icon: Icons.chat_bubble_outline_rounded,
-          color: Colors.white, label: _fmt(commentCount), onTap: widget.onComment),
+          color: Colors.white, label: _fmt(commentCount),
+          onTap: widget.onCommenters ?? widget.onComment),
       const SizedBox(height: 22),
       _ActionBtn(icon: Icons.remove_red_eye_outlined,
-          color: Colors.white, label: _fmt(viewCount), onTap: null),
+          color: Colors.white, label: _fmt(viewCount), onTap: widget.onViewers),
       const SizedBox(height: 22),
       _ActionBtn(icon: Icons.ios_share_rounded,
           color: Colors.white, label: 'Share', onTap: widget.onShare),
@@ -1116,6 +1157,121 @@ class _FollowChipState extends State<_FollowChip> {
                 ),
               ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _PeopleListSheet — shows viewers or commenters in a bottom sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PeopleListSheet extends StatefulWidget {
+  final String title;
+  final String postId;
+  final String type; // 'viewers' or 'commenters'
+  final String currentUserId;
+
+  const _PeopleListSheet({
+    Key? key,
+    required this.title,
+    required this.postId,
+    required this.type,
+    required this.currentUserId,
+  }) : super(key: key);
+
+  @override
+  State<_PeopleListSheet> createState() => _PeopleListSheetState();
+}
+
+class _PeopleListSheetState extends State<_PeopleListSheet> {
+  List<Map<String, dynamic>> _list = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final endpoint = widget.type == 'viewers'
+          ? '/api/discover/${widget.postId}/viewers'
+          : '/api/discover/${widget.postId}/commenters';
+      final res = await dio.get(endpoint);
+      if (mounted && res.data['success'] == true) {
+        final key = widget.type == 'viewers' ? 'viewers' : 'commenters';
+        setState(() {
+          _list = List<Map<String, dynamic>>.from(res.data[key] ?? []);
+          _loading = false;
+        });
+      } else if (mounted) {
+        setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.5,
+      maxChildSize: 0.9,
+      builder: (_, sc) => Column(children: [
+        Container(width: 36, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 8),
+            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(children: [
+            Text(widget.title,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            const Spacer(),
+            Text('${_list.length}', style: const TextStyle(color: Colors.white54, fontSize: 14)),
+          ]),
+        ),
+        const Divider(color: Colors.white10, height: 1),
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00C896)))
+              : _list.isEmpty
+                  ? Center(child: Text(
+                      widget.type == 'viewers' ? 'No viewers yet' : 'No comments yet',
+                      style: const TextStyle(color: Colors.white54, fontSize: 13)))
+                  : ListView.builder(
+                      controller: sc,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: _list.length,
+                      itemBuilder: (_, i) {
+                        final u = _list[i];
+                        final name   = u['name']   as String? ?? '';
+                        final avatar = u['avatar']  as String? ?? '';
+                        final comment = u['comment'] as String?;
+                        return ListTile(
+                          leading: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.white12,
+                            backgroundImage: avatar.isNotEmpty
+                                ? CachedNetworkImageProvider(avatar) : null,
+                            child: avatar.isEmpty
+                                ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
+                                : null,
+                          ),
+                          title: Text(name,
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                          subtitle: comment != null
+                              ? Text(comment,
+                                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                                  maxLines: 1, overflow: TextOverflow.ellipsis)
+                              : null,
+                        );
+                      },
+                    ),
+        ),
+      ]),
     );
   }
 }
