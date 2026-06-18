@@ -48,7 +48,10 @@ class _DiscoveryFullscreenViewerState
       if (widget.posts.isNotEmpty) {
         final postId = widget.posts[_currentIndex]['id'] as String? ?? widget.posts[_currentIndex]['postId'] as String? ?? '';
         if (postId.isNotEmpty) {
-          DiscoveryApiService.viewPost(postId, userId: widget.currentUserId.isNotEmpty ? widget.currentUserId : null);
+          try {
+            final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+            dio.post('/api/discover/view', data: {'postId': postId, 'userId': widget.currentUserId});
+          } catch (_) {}
         }
       }
     });
@@ -74,7 +77,10 @@ class _DiscoveryFullscreenViewerState
           if (i < widget.posts.length) {
             final postId = widget.posts[i]['id'] as String? ?? widget.posts[i]['postId'] as String? ?? '';
             if (postId.isNotEmpty) {
-              DiscoveryApiService.viewPost(postId, userId: widget.currentUserId.isNotEmpty ? widget.currentUserId : null);
+              try {
+                final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+                await dio.post('/api/discover/view', data: {'postId': postId, 'userId': widget.currentUserId});
+              } catch (_) {}
             }
           }
         },
