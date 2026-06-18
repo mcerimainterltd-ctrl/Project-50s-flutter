@@ -654,14 +654,15 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             }),
             _menuItem(context, '🔥', 'Trending Now', () {
               Navigator.pop(context);
-              if (_feed.where((p) => p.isLive || p.viewCount > 10).isNotEmpty)
+              final trending = _feed.isNotEmpty ? (List.of(_feed)..sort((a,b) => b.viewCount.compareTo(a.viewCount))).take(12).toList() : <DiscoveryItem>[];
+              if (trending.isNotEmpty)
                 showModalBottomSheet(context: context, backgroundColor: context.xSurface,
                   isScrollControlled: true,
                   shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                   builder: (_) => DraggableScrollableSheet(expand: false, initialChildSize: 0.5, maxChildSize: 0.9,
                     builder: (_, sc) => ListView(controller: sc, children: [
                       _TrendingPulseStrip(
-                        posts: _feed.where((p) => p.isLive || p.viewCount > 10).take(12).toList(),
+                        posts: trending,
                         onTap: (item) { Navigator.pop(context); DiscoveryApiService.viewPost(item.id); _openDetail(context, item); }),
                     ])));
             }),

@@ -233,6 +233,12 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
                         }
                       },
                       itemBuilder: (_) => [
+                        const PopupMenuItem(value: 'trending',
+                          child: Row(children: [
+                            Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 18),
+                            SizedBox(width: 10),
+                            Text('Trending Now', style: TextStyle(color: Colors.white)),
+                          ])),
                         const PopupMenuItem(value: 'people',
                           child: Row(children: [
                             Icon(Icons.people_outline, color: Colors.white70, size: 18),
