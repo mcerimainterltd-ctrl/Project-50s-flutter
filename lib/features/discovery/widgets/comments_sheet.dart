@@ -137,7 +137,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
         color: context.xSurface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(children: [
+      child: Column(mainAxisSize: MainAxisSize.max, children: [
         Container(
           margin: const EdgeInsets.only(top: 12, bottom: 8),
           width: 40, height: 4,
@@ -219,8 +219,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                   },
                 ),
         ),
-        SafeArea(
-          child: Container(
+        Container(
             padding: EdgeInsets.only(
                 left: 16, right: 16, top: 8,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 8),
@@ -266,7 +265,6 @@ class _CommentsSheetState extends State<CommentsSheet> {
               ),
             ]),
           ),
-        ),
       ]),
     );
   }
