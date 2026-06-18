@@ -604,9 +604,13 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             ],
             // Menu items
             _menuItem(context, '✍️', 'Create Post', () { Navigator.pop(context); _showPostDialog(context, user?.xameId??''); }),
-            _menuItem(context, '📖', 'Stories', () {
+            _menuItem(context, '📖', _stories.isNotEmpty ? 'Stories' : 'Add a Story', () {
               Navigator.pop(context);
-              if (_stories.isNotEmpty) _openStoryViewer(context, 0);
+              if (_stories.isNotEmpty) {
+                _openStoryViewer(context, 0);
+              } else {
+                _showPostStoryDialog(context, user?.xameId ?? '');
+              }
             }),
             _menuItem(context, '👥', 'People You May Know', () {
               Navigator.pop(context);
