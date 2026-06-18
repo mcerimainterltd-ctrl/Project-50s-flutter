@@ -155,6 +155,8 @@ class DiscoveryApiService {
     required String mediaType,
     bool isWhisper = false,
     bool isCollabOpen = false,
+    String musicUrl = '',
+    String musicTitle = '',
     void Function(int, int)? onProgress,
   }) async {
     try {
@@ -167,6 +169,8 @@ class DiscoveryApiService {
         'mediaType':    mediaType,
         'isWhisper':    isWhisper.toString(),
         'isCollabOpen': isCollabOpen.toString(),
+        'musicUrl':     musicUrl,
+        'musicTitle':   musicTitle,
         'media': await MultipartFile.fromFile(mediaFile.path),
       });
       final res = await _dio.post(
@@ -1094,6 +1098,8 @@ class CreatePostSheetState extends State<CreatePostSheet> {
   double _uploadProgress = 0;
   bool   _isWhisper    = false;
   bool   _isCollabOpen = false;
+  String _musicUrl   = '';
+  String _musicTitle = '';
   String? _detectedRegion;
   bool   _locating     = false;
   String? _error;
@@ -1349,6 +1355,87 @@ class CreatePostSheetState extends State<CreatePostSheet> {
     });
   }
 
+  Future<void> _pickMusic(BuildContext context) async {
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res = await dio.get('/api/discover/music-library');
+      final tracks = (res.data['tracks'] as List).cast<Map<String, dynamic>>();
+      if (!context.mounted) return;
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF12121E),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (_) => SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(height: 12),
+            Container(width: 36, height: 4,
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 12),
+            const Text('Choose Background Music',
+                style: TextStyle(color: Colors.white,
+                    fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 320,
+              child: ListView.builder(
+                itemCount: tracks.length,
+                itemBuilder: (_, i) {
+                  final t = tracks[i];
+                  final isSel = _musicUrl == t['url'];
+                  return ListTile(
+                    leading: Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: isSel
+                            ? const Color(0xFF00E5A0).withOpacity(0.2)
+                            : Colors.white10,
+                        borderRadius: BorderRadius.circular(8)),
+                      child: const Center(child: Text('🎵',
+                          style: TextStyle(fontSize: 18)))),
+                    title: Text(t['title'] as String,
+                        style: TextStyle(
+                            color: isSel
+                                ? const Color(0xFF00E5A0)
+                                : Colors.white,
+                            fontWeight: isSel
+                                ? FontWeight.w700 : FontWeight.normal)),
+                    subtitle: Text('${t['genre']} • ${t['duration']}',
+                        style: const TextStyle(
+                            color: Colors.white38, fontSize: 11)),
+                    trailing: isSel
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: Color(0xFF00E5A0), size: 18)
+                        : null,
+                    onTap: () {
+                      setState(() {
+                        _musicUrl   = t['url'] as String;
+                        _musicTitle = t['title'] as String;
+                      });
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.music_off_rounded,
+                  color: Colors.white38, size: 20),
+              title: const Text('No Music',
+                  style: TextStyle(color: Colors.white54)),
+              onTap: () {
+                setState(() { _musicUrl = ''; _musicTitle = ''; });
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 8),
+          ]),
+        ),
+      );
+    } catch (_) {}
+  }
+
   void _pickRegion(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -1445,6 +1532,8 @@ class CreatePostSheetState extends State<CreatePostSheet> {
       mediaType: _mediaType,
       isWhisper:    _isWhisper,
       isCollabOpen: _isCollabOpen,
+      musicUrl:     _musicUrl,
+      musicTitle:   _musicTitle,
       onProgress: (sent, total) {
         if (total > 0 && mounted) {
           setState(() => _uploadProgress = sent / total);
@@ -1734,6 +1823,46 @@ class CreatePostSheetState extends State<CreatePostSheet> {
                 child: const Icon(Icons.close_rounded,
                     color: Colors.white38, size: 16),
               ),
+          ]),
+        ),
+      ),
+
+      // Music picker
+      GestureDetector(
+        onTap: () => _pickMusic(context),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _musicUrl.isNotEmpty
+                ? const Color(0xFF1B3A2A).withOpacity(0.8)
+                : Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _musicUrl.isNotEmpty
+                  ? const Color(0xFF00E5A0).withOpacity(0.4)
+                  : Colors.white12)),
+          child: Row(children: [
+            Text(_musicUrl.isNotEmpty ? '🎵' : '🎵',
+                style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Expanded(child: Text(
+              _musicUrl.isNotEmpty ? _musicTitle : 'Add Background Music',
+              style: TextStyle(
+                color: _musicUrl.isNotEmpty
+                    ? const Color(0xFF00E5A0)
+                    : Colors.white54,
+                fontSize: 13, fontWeight: FontWeight.w500),
+            )),
+            if (_musicUrl.isNotEmpty)
+              GestureDetector(
+                onTap: () => setState(() { _musicUrl = ''; _musicTitle = ''; }),
+                child: const Icon(Icons.close_rounded,
+                    color: Colors.white38, size: 16)),
+            if (_musicUrl.isEmpty)
+              const Icon(Icons.chevron_right_rounded,
+                  color: Colors.white24, size: 18),
           ]),
         ),
       ),
