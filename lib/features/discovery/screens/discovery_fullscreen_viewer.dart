@@ -272,13 +272,19 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => CommentsSheet(
-        postId:         postId,
-        userId:         widget.currentUserId,
-        authorName:     post['authorName'] as String? ?? '',
-        authorAvatar:   post['authorAvatar'] as String? ?? '',
-        initialCount:   (post['commentCount'] as int?) ?? 0,
-        onCountChanged: (_) {},
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize:     0.4,
+        maxChildSize:     0.92,
+        expand: false,
+        builder: (ctx, scroll) => CommentsSheet(
+          postId:         postId,
+          userId:         widget.currentUserId,
+          authorName:     post['authorName'] as String? ?? '',
+          authorAvatar:   post['authorAvatar'] as String? ?? '',
+          initialCount:   (post['commentCount'] as int?) ?? 0,
+          onCountChanged: (_) {},
+        ),
       ),
     );
   }
