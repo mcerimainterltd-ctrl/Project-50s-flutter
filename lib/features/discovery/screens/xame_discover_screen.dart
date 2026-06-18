@@ -134,9 +134,9 @@ class DiscoveryApiService {
     } catch (_) { return false; }
   }
 
-  static Future<void> viewPost(String postId) async {
+  static Future<void> viewPost(String postId, {String? userId}) async {
     try {
-      await _dio.post('/api/discover/view', data: {'postId': postId});
+      await _dio.post('/api/discover/view', data: {'postId': postId, if (userId != null) 'userId': userId});
     } catch (_) {}
   }
 
@@ -667,7 +667,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                     builder: (_, sc) => ListView(controller: sc, children: [
                       _TrendingPulseStrip(
                         posts: trending,
-                        onTap: (item) { Navigator.pop(context); DiscoveryApiService.viewPost(item.id); _openDetail(context, item); }),
+                        onTap: (item) { Navigator.pop(context); DiscoveryApiService.viewPost(item.id, userId: user?.xameId); _openDetail(context, item); }),
                     ])));
             }),
             _menuItem(context, '🗺️', 'Discovery Map', () { Navigator.pop(context);
@@ -789,7 +789,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               onClose: _closeSearch,
               feed: _feed,
               onItemTap: (item) {
-                DiscoveryApiService.viewPost(item.id);
+                DiscoveryApiService.viewPost(item.id, userId: user?.xameId);
                 _openDetail(context, item);
               },
             ),
