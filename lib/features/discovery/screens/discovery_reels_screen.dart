@@ -112,6 +112,7 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
                       style: TextStyle(color: Colors.white54)))
                   : SizedBox.expand(
                       child: DiscoveryFullscreenViewer(
+                        key: ValueKey(_feed.length),
                         posts: _posts,
                         initialIndex: 0,
                         currentUserId: user?.xameId ?? '',
