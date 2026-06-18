@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import '../../../features/settings/screens/settings_screen.dart';
 import 'discovery_fullscreen_viewer.dart';
+import 'followers_following_screen.dart';
 import 'author_gallery_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
@@ -628,6 +629,15 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 isScrollControlled: true, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                 builder: (_) => DraggableScrollableSheet(expand: false, initialChildSize: 0.6, maxChildSize: 0.95,
                   builder: (_, sc) => ListView(controller: sc, children: [_XameNewsChannel(posts: _officialPosts, context: context)])));
+            }),
+            _menuItem(context, '👥', 'My Followers & Following', () {
+              Navigator.pop(context);
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => FollowersFollowingScreen(
+                  userId: user?.xameId ?? '',
+                  currentUserId: user?.xameId ?? '',
+                ),
+              ));
             }),
             _menuItem(context, '🏆', 'Leaderboard', () {
               Navigator.pop(context);
