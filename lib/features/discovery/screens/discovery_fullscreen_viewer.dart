@@ -177,10 +177,18 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     if (url.isEmpty) return;
     try {
       _musicPlayer = AudioPlayer();
-      await _musicPlayer!.setUrl(url);
-      _musicPlayer!.setLoopMode(LoopMode.one);
+      if (url.startsWith('/')) {
+        // Local file path
+        await _musicPlayer!.setFilePath(url);
+      } else {
+        // Remote URL
+        await _musicPlayer!.setUrl(url);
+      }
+      await _musicPlayer!.setLoopMode(LoopMode.one);
       if (widget.isActive) await _musicPlayer!.play();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Music init error: $e');
+    }
   }
 
   void _triggerSpotlight() {
