@@ -3817,6 +3817,7 @@ class _FullscreenFeedPage extends StatelessWidget {
       'commentCount': item.commentCount,
       'viewCount':    item.viewCount,
       'ts':           item.ts?.toIso8601String(),
+      'musicUrl':     item.musicUrl,
     };
     return DiscoveryFullscreenViewer(
       posts: [post],
