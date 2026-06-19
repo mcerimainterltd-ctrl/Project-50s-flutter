@@ -1034,7 +1034,7 @@ class _ActionColumnState extends State<_ActionColumn>
       const SizedBox(height: 22),
       _ActionBtn(icon: Icons.chat_bubble_outline_rounded,
           color: Colors.white, label: _fmt(commentCount),
-          onTap: widget.onCommenters ?? widget.onComment),
+          onTap: widget.onComment),
       const SizedBox(height: 22),
       _ActionBtn(icon: Icons.remove_red_eye_outlined,
           color: Colors.white, label: _fmt(viewCount), onTap: widget.onViewers),
