@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';import 'package:dio/dio.dart';
 import '../../discovery/screens/discovery_aura_feed.dart';
+import '../../discovery/screens/xame_discover_screen.dart' show DiscoveryApiService;
+import '../../discovery/widgets/story_viewer.dart';
 import '../../../core/services/wallet_lock_service.dart';
 import '../../../core/services/chat_lock_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -694,12 +696,32 @@ class _ContactTile extends ConsumerWidget {
           Stack(children: [
             GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () {
+              onTap: () async {
                 if (contact.hasNewDiscoveryPost) {
                   ref.read(contactsProvider.notifier).clearDiscoveryDot(contact.id);
                   ref.read(socketServiceProvider).emitMarkDiscoverySeen(contact.id);
                 }
-                context.go('/discovery?authorId=${contact.id}');
+                final currentUserId = ref.read(currentUserProvider)?.xameId ?? '';
+                final allStories = await DiscoveryApiService.fetchStories(currentUserId);
+                final contactStories = allStories.where((s) =>
+                    (s['authorId'] as String? ?? '') == contact.id).toList();
+                if (contactStories.isNotEmpty) {
+                  final groups = contactStories.map((s) => StoryGroup.fromMap(s)).toList();
+                  Navigator.of(context).push(PageRouteBuilder(
+                    pageBuilder: (_, anim, __) => FadeTransition(
+                      opacity: anim,
+                      child: StoryViewerScreen(
+                        groups: groups,
+                        initialGroupIndex: 0,
+                        currentUserId: currentUserId,
+                      ),
+                    ),
+                    transitionDuration: const Duration(milliseconds: 200),
+                    reverseTransitionDuration: const Duration(milliseconds: 200),
+                  ));
+                } else {
+                  context.go('/discovery?authorId=${contact.id}');
+                }
               },
               child: XameAvatar(
                 name: contact.name,
