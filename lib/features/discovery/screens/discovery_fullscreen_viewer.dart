@@ -181,7 +181,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     _spotlightFade = CurvedAnimation(parent: _spotlightAnim, curve: Curves.easeOut);
 
     if (widget.isActive) _triggerSpotlight();
-    _initMusic();
+    if (widget.isActive) Future.delayed(const Duration(milliseconds: 500), _initMusic);
   }
 
   @override
