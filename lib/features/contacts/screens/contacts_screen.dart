@@ -720,7 +720,10 @@ class _ContactTile extends ConsumerWidget {
                     reverseTransitionDuration: const Duration(milliseconds: 200),
                   ));
                 } else {
-                  context.go('/discovery?authorId=${contact.id}');
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('${contact.name} has no active stories right now'),
+                    duration: const Duration(seconds: 2),
+                  ));
                 }
               },
               child: XameAvatar(

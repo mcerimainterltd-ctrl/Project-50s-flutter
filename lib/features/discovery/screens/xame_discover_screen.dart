@@ -596,21 +596,19 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             Container(width: 40, height: 4,
               decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 16),
-            // Stories bar
-            if (_stories.isNotEmpty) ...[
-              DiscoveryStoriesBar(users: [
-                {'name':'You','avatar':user?.profilePic??'','hasSeen':true,'isOnline':false,'isSelf':true,
-                 'onTap':() { Navigator.pop(context); _showPostStoryDialog(context, user?.xameId??''); }},
-                ..._stories.asMap().entries.map((e) => {
-                  'name': (e.value['authorName'] as String?) ?? '',
-                  'avatar': (e.value['authorAvatar'] as String?) ?? '',
-                  'hasSeen': e.value['hasSeen'] as bool?? false,
-                  'isOnline': e.value['isOnline'] as bool?? false,
-                  'onTap': () { Navigator.pop(context); _openStoryViewer(context, e.key); },
-                }),
-              ]),
-              const SizedBox(height: 12),
-            ],
+            // Stories bar — "You" always shown, even with no contact stories yet
+            DiscoveryStoriesBar(users: [
+              {'name':'You','avatar':user?.profilePic??'','hasSeen':true,'isOnline':false,'isSelf':true,
+               'onTap':() { Navigator.pop(context); _showPostStoryDialog(context, user?.xameId??''); }},
+              ..._stories.asMap().entries.map((e) => {
+                'name': (e.value['authorName'] as String?) ?? '',
+                'avatar': (e.value['authorAvatar'] as String?) ?? '',
+                'hasSeen': e.value['hasSeen'] as bool?? false,
+                'isOnline': e.value['isOnline'] as bool?? false,
+                'onTap': () { Navigator.pop(context); _openStoryViewer(context, e.key); },
+              }),
+            ]),
+            const SizedBox(height: 12),
             // Menu items
             _menuItem(context, '✍️', 'Create Post', () { Navigator.pop(context); _showPostDialog(context, user?.xameId??''); }),
             _menuItem(context, '📖', _stories.isNotEmpty ? 'Stories' : 'Add a Story', () {
