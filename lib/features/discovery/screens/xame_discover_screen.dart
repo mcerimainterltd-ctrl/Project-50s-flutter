@@ -733,15 +733,18 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
         // ── Top overlay (background, non-interactive) ──────────────────
         Positioned(
           top: 0, left: 0, right: 0,
-          height: 110,
+          height: 80,
           child: IgnorePointer(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black, Colors.black, Colors.transparent],
-                  stops: [0.0, 0.55, 1.0],
+                  colors: [
+                    Colors.black.withOpacity(0.45),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 1.0],
                 ),
               ),
             ),
