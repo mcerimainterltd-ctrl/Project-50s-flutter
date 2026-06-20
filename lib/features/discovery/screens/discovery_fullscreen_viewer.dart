@@ -718,13 +718,28 @@ class _VideoPageState extends State<_VideoPage> {
   BetterPlayerController? _ctrl;
   bool _muted  = true;
   bool _paused = false;
+  bool _controlsVisible = true;
   double _progress = 0;
   Duration _total  = Duration.zero;
   Duration _pos    = Duration.zero;
+  Timer? _hideTimer;
+
+  void _scheduleHide() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && !_paused) setState(() => _controlsVisible = false);
+    });
+  }
+
+  void _toggleControlsVisibility() {
+    setState(() => _controlsVisible = !_controlsVisible);
+    if (_controlsVisible) _scheduleHide();
+  }
 
   @override
   void initState() {
     super.initState();
+    _scheduleHide();
     _ctrl = BetterPlayerController(
       BetterPlayerConfiguration(
         autoPlay:    widget.isActive,
@@ -777,6 +792,7 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   void dispose() {
+    _hideTimer?.cancel();
     _ctrl?.removeEventsListener(_onEvent);
     _ctrl?.dispose();
     super.dispose();
@@ -790,8 +806,17 @@ class _VideoPageState extends State<_VideoPage> {
 
   void _togglePause() {
     HapticFeedback.lightImpact();
-    setState(() => _paused = !_paused);
-    _paused ? _ctrl?.pause() : _ctrl?.play();
+    setState(() {
+      _paused = !_paused;
+      _controlsVisible = true;
+    });
+    if (_paused) {
+      _ctrl?.pause();
+      _hideTimer?.cancel();
+    } else {
+      _ctrl?.play();
+      _scheduleHide();
+    }
   }
 
   String _fmtDur(Duration d) {
@@ -802,11 +827,12 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _togglePause,
-      behavior: HitTestBehavior.opaque,
-      child: Stack(children: [
-        IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
+    return Stack(children: [
+        GestureDetector(
+          onTap: _toggleControlsVisibility,
+          behavior: HitTestBehavior.opaque,
+          child: IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
+        ),
         if (_paused)
           Center(
             child: GestureDetector(
@@ -820,78 +846,84 @@ class _VideoPageState extends State<_VideoPage> {
               ),
             ),
           ),
-        Positioned(
-          top: 80, right: 16,
-          child: GestureDetector(
-            onTap: _togglePause,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                  color: Colors.black45,
-                  borderRadius: BorderRadius.circular(20)),
-              child: Icon(
-                _paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                color: Colors.white70, size: 20),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 80, left: 16,
-          child: GestureDetector(
-            onTap: _toggleMute,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                  color: Colors.black45,
-                  borderRadius: BorderRadius.circular(20)),
-              child: Icon(
-                _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                color: Colors.white70, size: 20),
-            ),
-          ),
-        ),
-        if (_total.inSeconds > 0)
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: GestureDetector(
-              onTap: () {}, // absorb tap so it doesn't reach parent's pause toggle
-              behavior: HitTestBehavior.opaque,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(children: [
-                    Text(_fmtDur(_pos),
-                        style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                    const Spacer(),
-                    Text(_fmtDur(_total),
-                        style: const TextStyle(color: Colors.white54, fontSize: 10)),
+        IgnorePointer(
+          ignoring: !_controlsVisible,
+          child: AnimatedOpacity(
+            opacity: _controlsVisible ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: Stack(children: [
+              Positioned(
+                top: 80, right: 16,
+                child: GestureDetector(
+                  onTap: _togglePause,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Icon(
+                      _paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                      color: Colors.white70, size: 20),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 80, left: 16,
+                child: GestureDetector(
+                  onTap: _toggleMute,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Icon(
+                      _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                      color: Colors.white70, size: 20),
+                  ),
+                ),
+              ),
+              if (_total.inSeconds > 0)
+                Positioned(
+                  bottom: 0, left: 0, right: 0,
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(children: [
+                        Text(_fmtDur(_pos),
+                            style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                        const Spacer(),
+                        Text(_fmtDur(_total),
+                            style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                      ]),
+                    ),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 2,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
+                        overlayShape: SliderComponentShape.noOverlay,
+                        activeTrackColor: const Color(0xFF00E5FF),
+                        inactiveTrackColor: Colors.white24,
+                        thumbColor: Colors.white,
+                      ),
+                      child: Slider(
+                        value: _progress.clamp(0.0, 1.0),
+                        onChangeStart: (_) => _hideTimer?.cancel(),
+                        onChanged: (v) {
+                          if (_total.inMilliseconds > 0) {
+                            final seek = Duration(
+                                milliseconds: (v * _total.inMilliseconds).round());
+                            _ctrl?.seekTo(seek);
+                          }
+                        },
+                        onChangeEnd: (_) => _scheduleHide(),
+                      ),
+                    ),
                   ]),
                 ),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 2,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
-                    overlayShape: SliderComponentShape.noOverlay,
-                    activeTrackColor: const Color(0xFF00E5FF),
-                    inactiveTrackColor: Colors.white24,
-                    thumbColor: Colors.white,
-                  ),
-                  child: Slider(
-                    value: _progress.clamp(0.0, 1.0),
-                    onChanged: (v) {
-                      if (_total.inMilliseconds > 0) {
-                        final seek = Duration(
-                            milliseconds: (v * _total.inMilliseconds).round());
-                        _ctrl?.seekTo(seek);
-                      }
-                    },
-                  ),
-                ),
-              ]),
-            ),
+            ]),
           ),
-      ]),
-    );
+        ),
+      ]);
   }
 }
 
