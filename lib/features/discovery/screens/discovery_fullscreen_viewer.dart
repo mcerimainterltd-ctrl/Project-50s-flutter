@@ -39,6 +39,11 @@ class _DiscoveryFullscreenViewerState
     extends State<DiscoveryFullscreenViewer> {
   late PageController _verticalCtrl;
   int _currentIndex = 0;
+  int _activePointers = 0;
+
+  void _onPointerDown(PointerDownEvent e) => setState(() => _activePointers++);
+  void _onPointerUp(PointerUpEvent e)   => setState(() => _activePointers = (_activePointers - 1).clamp(0, 10));
+  void _onPointerCancel(PointerCancelEvent e) => setState(() => _activePointers = (_activePointers - 1).clamp(0, 10));
 
   @override
   void initState() {
@@ -70,9 +75,14 @@ class _DiscoveryFullscreenViewerState
   @override
   Widget build(BuildContext context) {
     if (widget.embedded) {
-      return PageView.builder(
+      return Listener(
+        onPointerDown: _onPointerDown,
+        onPointerUp: _onPointerUp,
+        onPointerCancel: _onPointerCancel,
+        child: PageView.builder(
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
+        physics: _activePointers >= 2 ? const NeverScrollableScrollPhysics() : null,
         itemCount: widget.posts.length,
         onPageChanged: (i) async {
           setState(() => _currentIndex = i);
@@ -96,13 +106,18 @@ class _DiscoveryFullscreenViewerState
             onClose: () => Navigator.of(context, rootNavigator: true).pop(),
           );
         },
-      );
+      ));
     }
     return Scaffold(
       backgroundColor: Colors.black,
-      body: PageView.builder(
+      body: Listener(
+        onPointerDown: _onPointerDown,
+        onPointerUp: _onPointerUp,
+        onPointerCancel: _onPointerCancel,
+        child: PageView.builder(
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
+        physics: _activePointers >= 2 ? const NeverScrollableScrollPhysics() : null,
         itemCount: widget.posts.length,
         onPageChanged: (i) => setState(() => _currentIndex = i),
         itemBuilder: (_, i) {
@@ -115,7 +130,7 @@ class _DiscoveryFullscreenViewerState
             onClose: () => Navigator.of(context, rootNavigator: true).pop(),
           );
         },
-      ),
+      )),
     );
   }
 }
