@@ -3043,22 +3043,45 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                   colors: [Colors.black.withOpacity(0.8), Colors.transparent])),
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                // Progress bar
-                SliderTheme(
-                  data: SliderThemeData(
-                    trackHeight: 2.5,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-                    activeTrackColor: XameColors.primary,
-                    inactiveTrackColor: Colors.white24,
-                    thumbColor: Colors.white,
-                    overlayColor: XameColors.primary.withOpacity(0.3),
-                  ),
-                  child: Slider(
-                    value: progress.toDouble(),
-                    onChanged: _seekTo,
-                  ),
-                ),
+                // Progress bar — raw Listener bypasses BetterPlayer gesture arena
+                LayoutBuilder(builder: (ctx, constraints) {
+                  final barWidth = constraints.maxWidth;
+                  return Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: (e) {
+                      _hideTimer?.cancel();
+                      _seekTo((e.localPosition.dx / barWidth).clamp(0.0, 1.0));
+                    },
+                    onPointerMove: (e) {
+                      _seekTo((e.localPosition.dx / barWidth).clamp(0.0, 1.0));
+                    },
+                    onPointerUp: (_) => _resetHideTimer(),
+                    child: SizedBox(
+                      height: 36,
+                      child: Stack(alignment: Alignment.center, children: [
+                        Container(height: 3,
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(2))),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: progress.clamp(0.0, 1.0),
+                            child: Container(height: 3,
+                              decoration: BoxDecoration(
+                                color: XameColors.primary,
+                                borderRadius: BorderRadius.circular(2))))),
+                        Align(
+                          alignment: Alignment(
+                              (progress.clamp(0.0, 1.0) * 2) - 1, 0),
+                          child: Container(width: 14, height: 14,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle))),
+                      ]),
+                    ),
+                  );
+                }),
                 // Controls row
                 Row(children: [
                   // Play/Pause
