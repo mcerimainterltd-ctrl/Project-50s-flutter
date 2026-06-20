@@ -19,6 +19,7 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
   final String currentUserAvatar;
 
   final bool embedded;
+  final bool isActive;
   const DiscoveryFullscreenViewer({
     Key? key,
     required this.posts,
@@ -26,6 +27,7 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
     required this.currentUserId,
     this.currentUserAvatar = '',
     this.embedded = false,
+    this.isActive = true,
   }) : super(key: key);
 
   @override
@@ -88,7 +90,7 @@ class _DiscoveryFullscreenViewerState
           final post = widget.posts[i];
           return _FullscreenPostPage(
             post: post,
-            isActive: i == _currentIndex,
+            isActive: i == _currentIndex && widget.isActive,
             currentUserId: widget.currentUserId,
             currentUserAvatar: widget.currentUserAvatar,
             onClose: () => Navigator.of(context, rootNavigator: true).pop(),
@@ -107,7 +109,7 @@ class _DiscoveryFullscreenViewerState
           final post = widget.posts[i];
           return _FullscreenPostPage(
             post: post,
-            isActive: i == _currentIndex,
+            isActive: i == _currentIndex && widget.isActive,
             currentUserId: widget.currentUserId,
             currentUserAvatar: widget.currentUserAvatar,
             onClose: () => Navigator.of(context, rootNavigator: true).pop(),
@@ -509,15 +511,19 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                     children: [
                       Row(children: [
                         GestureDetector(
-                          onTap: () => Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-                            builder: (_) => AuthorGalleryScreen(
-                              authorId:         widget.post['authorId']     as String? ?? '',
-                              authorName:       widget.post['authorName']   as String? ?? '',
-                              authorAvatar:     widget.post['authorAvatar'] as String? ?? '',
-                              currentUserId:    widget.currentUserId,
-                              currentUserAvatar: widget.currentUserAvatar,
-                            ),
-                          )),
+                          onTap: () async {
+                            _musicPlayer?.pause();
+                            await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+                              builder: (_) => AuthorGalleryScreen(
+                                authorId:         widget.post['authorId']     as String? ?? '',
+                                authorName:       widget.post['authorName']   as String? ?? '',
+                                authorAvatar:     widget.post['authorAvatar'] as String? ?? '',
+                                currentUserId:    widget.currentUserId,
+                                currentUserAvatar: widget.currentUserAvatar,
+                              ),
+                            ));
+                            if (widget.isActive && mounted) _musicPlayer?.play();
+                          },
                           child: Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,

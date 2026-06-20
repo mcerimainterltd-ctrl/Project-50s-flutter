@@ -239,6 +239,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   List<_OfficialPost>           _officialPosts = [];
   List<Map<String,dynamic>>      _leaderboard   = [];
   List<Map<String, dynamic>>    _stories = [];
+  int                            _currentFeedIndex = 0;
 
   late AnimationController _searchAnim;
   late Animation<double>   _searchFade;
@@ -707,12 +708,15 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
           PageView.builder(
             scrollDirection: Axis.vertical,
             itemCount: _filtered.length,
-            onPageChanged: (i) { if (i >= _filtered.length - 3) _loadMore(); },
+            onPageChanged: (i) {
+              setState(() => _currentFeedIndex = i);
+              if (i >= _filtered.length - 3) _loadMore();
+            },
             itemBuilder: (_, i) {
               final item = _filtered[i];
               return _FullscreenFeedPage(
                 item: item,
-                isActive: true,
+                isActive: i == _currentFeedIndex,
                 currentUserId: user?.xameId??'',
                 currentUserAvatar: user?.profilePic??'',
                 onAvatarTap: () => Navigator.of(context).push(MaterialPageRoute(
@@ -3823,6 +3827,7 @@ class _FullscreenFeedPage extends StatelessWidget {
       currentUserId: currentUserId,
       currentUserAvatar: currentUserAvatar,
       embedded: true,
+      isActive: isActive,
     );
   }
 }
