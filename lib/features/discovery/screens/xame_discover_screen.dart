@@ -2990,138 +2990,128 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
         ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
 
-    return GestureDetector(
-      onTap: _onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: sw, height: sh,
-        child: Stack(children: [
+    return SizedBox(
+      width: sw, height: sh,
+      child: Stack(children: [
 
-          // ── Video surface — full size, engine only ───────────────
-          if (_ctrl != null)
-            SizedBox(width: sw, height: sh,
+        // ── Video surface — tap to toggle controls ────────────────
+        if (_ctrl != null)
+          GestureDetector(
+            onTap: _onTap,
+            behavior: HitTestBehavior.opaque,
+            child: SizedBox(width: sw, height: sh,
               child: BetterPlayer(controller: _ctrl!)),
+          ),
 
-          // ── Cinematic controls overlay ───────────────────────────
-          AbsorbPointer(
-            absorbing: !_showControls,
-            child: AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 250),
-              child: Stack(children: [
-
-              // Top gradient
-              Positioned(
-                top: 0, left: 0, right: 0,
-                child: Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.black.withOpacity(0.6), Colors.transparent])),
-                ),
+        // ── Controls overlay — independent of video tap ───────────
+        if (_showControls) ...[
+          // Top gradient
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: IgnorePointer(
+              child: Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.black.withOpacity(0.6), Colors.transparent])),
               ),
+            ),
+          ),
 
-              // Bottom gradient + controls bar
-              Positioned(
-                bottom: 0, left: 0, right: 0,
-                child: GestureDetector(
-                  onTap: () {}, // absorb taps so they don't toggle controls
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [Colors.black.withOpacity(0.8), Colors.transparent])),
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-
-                    // Progress bar
-                    SliderTheme(
-                      data: SliderThemeData(
-                        trackHeight: 2.5,
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-                        activeTrackColor: XameColors.primary,
-                        inactiveTrackColor: Colors.white24,
-                        thumbColor: Colors.white,
-                        overlayColor: XameColors.primary.withOpacity(0.3),
-                      ),
-                      child: Slider(
-                        value: progress.toDouble(),
-                        onChanged: _seekTo,
-                      ),
-                    ),
-
-                    // Controls row
-                    Row(children: [
-                      // Play/Pause
-                      GestureDetector(
-                        onTap: _togglePlay,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: Icon(
-                            _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                            key: ValueKey(_playing),
-                            color: Colors.white, size: 36),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Time
-                      Text('${_fmt(_position)} / ${_fmt(_duration)}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                      const Spacer(),
-                      // Mute
-                      GestureDetector(
-                        onTap: _toggleMute,
-                        child: Icon(
-                          _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                          color: Colors.white, size: 24),
-                      ),
-                      const SizedBox(width: 16),
-                      // Fullscreen
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => _isFullscreen = !_isFullscreen);
-                          if (_isFullscreen) {
-                            SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
-                            SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-                          } else {
-                            SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-                            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                          }
-                        },
-                        child: Icon(
-                            _isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
-                            color: Colors.white, size: 26),
-                      ),
-                    ]),
-                  ]),
-                ),
-                ), // end GestureDetector
-              ),
-
-              // Centre play/pause on tap
-              if (!_playing)
-                Center(
-                  child: Container(
-                    width: 72, height: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withOpacity(0.6),
-                      border: Border.all(color: Colors.white24)),
-                    child: const Icon(Icons.play_arrow_rounded,
-                        color: Colors.white, size: 44),
+          // Bottom gradient + controls bar
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [Colors.black.withOpacity(0.8), Colors.transparent])),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                // Progress bar
+                SliderTheme(
+                  data: SliderThemeData(
+                    trackHeight: 2.5,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                    activeTrackColor: XameColors.primary,
+                    inactiveTrackColor: Colors.white24,
+                    thumbColor: Colors.white,
+                    overlayColor: XameColors.primary.withOpacity(0.3),
+                  ),
+                  child: Slider(
+                    value: progress.toDouble(),
+                    onChanged: _seekTo,
                   ),
                 ),
-            ]),       // end Stack inside AnimatedOpacity
-          ),          // end AnimatedOpacity
-          ),          // end AbsorbPointer
-        ]),           // end outer Stack
-      ),              // end SizedBox
-    );               // end GestureDetector
+                // Controls row
+                Row(children: [
+                  // Play/Pause
+                  GestureDetector(
+                    onTap: _togglePlay,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        key: ValueKey(_playing),
+                        color: Colors.white, size: 36),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('${_fmt(_position)} / ${_fmt(_duration)}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  const Spacer(),
+                  // Mute
+                  GestureDetector(
+                    onTap: _toggleMute,
+                    child: Icon(
+                      _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                      color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  // Fullscreen
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _isFullscreen = !_isFullscreen);
+                      if (_isFullscreen) {
+                        SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+                        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+                      } else {
+                        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+                        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                      }
+                    },
+                    child: Icon(
+                      _isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                      color: Colors.white, size: 26),
+                  ),
+                ]),
+              ]),
+            ),
+          ),
+        ],
+
+        // Centre play indicator when paused
+        if (!_playing)
+          GestureDetector(
+            onTap: _togglePlay,
+            child: Center(
+              child: Container(
+                width: 72, height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withOpacity(0.6),
+                  border: Border.all(color: Colors.white24)),
+                child: const Icon(Icons.play_arrow_rounded,
+                    color: Colors.white, size: 44),
+              ),
+            ),
+          ),
+      ]),
+    )
   }
 }
 
