@@ -412,17 +412,18 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onDoubleTapDown: _onTapForReaction,
-      onDoubleTap: () {},
-      behavior: HitTestBehavior.translucent,
-      child: Stack(children: [
+    return Stack(children: [
 
         Builder(builder: (_) {
           final isVid = (widget.post['mediaType'] as String? ?? '') == 'video';
-          return isVid
-              ? _VideoPage(url: widget.post['mediaUrl'] as String? ?? '', isActive: widget.isActive)
-              : _ImagePage(url: widget.post['mediaUrl'] as String? ?? '');
+          return GestureDetector(
+            onDoubleTapDown: _onTapForReaction,
+            onDoubleTap: () {},
+            behavior: HitTestBehavior.translucent,
+            child: isVid
+                ? _VideoPage(url: widget.post['mediaUrl'] as String? ?? '', isActive: widget.isActive)
+                : _ImagePage(url: widget.post['mediaUrl'] as String? ?? ''),
+          );
         }),
 
 
@@ -627,7 +628,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
           ),
         ),
 
-      ]),
+      ],
     );
   }
 }
