@@ -3003,10 +3003,12 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
               child: BetterPlayer(controller: _ctrl!)),
 
           // ── Cinematic controls overlay ───────────────────────────
-          AnimatedOpacity(
-            opacity: _showControls ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 250),
-            child: Stack(children: [
+          AbsorbPointer(
+            absorbing: !_showControls,
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 250),
+              child: Stack(children: [
 
               // Top gradient
               Positioned(
@@ -3024,7 +3026,10 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
               // Bottom gradient + controls bar
               Positioned(
                 bottom: 0, left: 0, right: 0,
-                child: Container(
+                child: GestureDetector(
+                  onTap: () {}, // absorb taps so they don't toggle controls
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
@@ -3095,7 +3100,10 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                     ]),
                   ]),
                 ),
+                ), // end GestureDetector
               ),
+
+            ]), // end AbsorbPointer
 
               // Centre play/pause on tap
               if (!_playing)
