@@ -3103,8 +3103,6 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                 ), // end GestureDetector
               ),
 
-            ]), // end AbsorbPointer
-
               // Centre play/pause on tap
               if (!_playing)
                 Center(
@@ -3118,11 +3116,12 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                         color: Colors.white, size: 44),
                   ),
                 ),
-            ]),
-          ),
-        ]),
-      ),
-    );
+            ]),       // end Stack inside AnimatedOpacity
+          ),          // end AnimatedOpacity
+          ),          // end AbsorbPointer
+        ]),           // end outer Stack
+      ),              // end SizedBox
+    );               // end GestureDetector
   }
 }
 
