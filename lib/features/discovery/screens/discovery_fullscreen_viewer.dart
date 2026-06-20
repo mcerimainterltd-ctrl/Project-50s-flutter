@@ -927,7 +927,7 @@ class _ImagePageState extends State<_ImagePage>
       clipBehavior: Clip.none,
       child: CachedNetworkImage(
         imageUrl: widget.url,
-        fit:      BoxFit.cover,
+        fit:      BoxFit.contain,
         width:    double.infinity,
         height:   double.infinity,
         errorWidget: (_, __, ___) => Container(
