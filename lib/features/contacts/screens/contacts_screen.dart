@@ -131,7 +131,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           const SizedBox.shrink(), // Calls tab opens fullscreen
           Consumer(builder: (_, ref, __) {
             final self = ref.read(currentUserProvider);
-            return DiscoveryAuraFeed();
+            return DiscoveryAuraFeed(isTabActive: _tab == 2);
           }),
           Consumer(builder: (_, ref, __) { final u = ref.read(currentUserProvider); return PhoneScreen(
                     userId:       u?.xameId ?? '',

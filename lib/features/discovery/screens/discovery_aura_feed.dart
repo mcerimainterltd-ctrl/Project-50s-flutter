@@ -3,7 +3,8 @@ import 'xame_discover_screen.dart';
 
 class DiscoveryAuraFeed extends StatelessWidget {
   final String? authorId;
-  const DiscoveryAuraFeed({Key? key, this.authorId}) : super(key: key);
+  final bool isTabActive;
+  const DiscoveryAuraFeed({Key? key, this.authorId, this.isTabActive = true}) : super(key: key);
   @override
-  Widget build(BuildContext context) => XameDiscoverScreen(authorId: authorId);
+  Widget build(BuildContext context) => XameDiscoverScreen(authorId: authorId, isTabActive: isTabActive);
 }

@@ -208,7 +208,8 @@ class DiscoveryApiService {
 // ── Screen ────────────────────────────────────────────────────────────────────
 class XameDiscoverScreen extends ConsumerStatefulWidget {
   final String? authorId;
-  const XameDiscoverScreen({Key? key, this.authorId}) : super(key: key);
+  final bool isTabActive;
+  const XameDiscoverScreen({Key? key, this.authorId, this.isTabActive = true}) : super(key: key);
   @override
   ConsumerState<XameDiscoverScreen> createState() => _XameDiscoverScreenState();
 }
@@ -716,7 +717,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               final item = _filtered[i];
               return _FullscreenFeedPage(
                 item: item,
-                isActive: i == _currentFeedIndex,
+                isActive: i == _currentFeedIndex && widget.isTabActive,
                 currentUserId: user?.xameId??'',
                 currentUserAvatar: user?.profilePic??'',
                 onAvatarTap: () => Navigator.of(context).push(MaterialPageRoute(
