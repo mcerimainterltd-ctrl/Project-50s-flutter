@@ -3008,7 +3008,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
         if (_ctrl != null)
           GestureDetector(
             onTap: _onTap,
-            behavior: HitTestBehavior.opaque,
+            behavior: HitTestBehavior.translucent,
             child: SizedBox(width: sw, height: sh,
               child: BetterPlayer(controller: _ctrl!)),
           ),
