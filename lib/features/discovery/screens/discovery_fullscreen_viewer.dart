@@ -512,15 +512,18 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
         Positioned(
           bottom: 0, left: 0, right: 0,
           child: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
                 end:   Alignment.topCenter,
-                colors: [Colors.black87, Colors.black45, Colors.transparent],
-                stops: [0.0, 0.5, 1.0],
+                colors: [
+                  Colors.black.withOpacity(0.55),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 1.0],
               ),
             ),
-            padding: const EdgeInsets.fromLTRB(16, 60, 16, 36),
+            padding: const EdgeInsets.fromLTRB(16, 40, 16, 28),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
