@@ -730,43 +730,50 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             },
           ),
 
-        // ── Top overlay ───────────────────────────────────────────────
+        // ── Top overlay (background, non-interactive) ──────────────────
         Positioned(
           top: 0, left: 0, right: 0,
           height: 110,
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.black, Colors.black, Colors.transparent],
-                stops: [0.0, 0.55, 1.0],
+          child: IgnorePointer(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black, Colors.black, Colors.transparent],
+                  stops: [0.0, 0.55, 1.0],
+                ),
               ),
             ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(children: [
-                  if (widget.authorId != null)
-                    GestureDetector(
-                      onTap: () => context.canPop() ? context.pop() : context.go('/contacts'),
-                      child: Container(padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(20)),
-                        child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16))),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ShaderMask(
-                      shaderCallback: (b) => const LinearGradient(colors: [Color(0xFF00C896), Color(0xFF00E5FF)]).createShader(b),
-                      child: const Text('DISCOVERY', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2)),
-                    ),
+          ),
+        ),
+
+        // ── Top overlay (interactive row, sits above video, only its own widgets are tappable) ──
+        Positioned(
+          top: 0, left: 0, right: 0,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(children: [
+                if (widget.authorId != null)
+                  GestureDetector(
+                    onTap: () => context.canPop() ? context.pop() : context.go('/contacts'),
+                    child: Container(padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(20)),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ShaderMask(
+                    shaderCallback: (b) => const LinearGradient(colors: [Color(0xFF00C896), Color(0xFF00E5FF)]).createShader(b),
+                    child: const Text('DISCOVERY', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2)),
                   ),
-                  const SizedBox(width: 8),
-                  _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
-                  const Spacer(),
-                  // Region filter pill
-                  RegionFilterBar(onRegionSelected: _onRegionSelected, initialCode: _regionCode),
-                ]),
-              ),
+                ),
+                const SizedBox(width: 8),
+                _LiveCountBadge(count: _feed.where((f) => f.isLive).length),
+                const Spacer(),
+                // Region filter pill
+                RegionFilterBar(onRegionSelected: _onRegionSelected, initialCode: _regionCode),
+              ]),
             ),
           ),
         ),
