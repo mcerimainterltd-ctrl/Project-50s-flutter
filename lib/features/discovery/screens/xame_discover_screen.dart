@@ -3033,7 +3033,9 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
           // Bottom gradient + controls bar
           Positioned(
             bottom: 0, left: 0, right: 0,
-            child: Container(
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
@@ -3101,6 +3103,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                 ]),
               ]),
             ),
+            ), // end Material
           ),
         ],
 
