@@ -2880,7 +2880,7 @@ class _DetailVideoPlayer extends StatefulWidget {
 
 class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
   BetterPlayerController? _ctrl;
-  bool   _showControls = true;
+  bool   _showControls = false;
   bool   _playing      = true;
   bool   _isFullscreen = false;
   bool   _muted        = false;
@@ -2922,7 +2922,6 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
       ),
     );
     _ctrl!.addEventsListener(_onEvent);
-    _resetHideTimer();
   }
 
   void _onEvent(BetterPlayerEvent e) {
