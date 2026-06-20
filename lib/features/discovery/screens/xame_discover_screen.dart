@@ -3111,7 +3111,7 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
             ),
           ),
       ]),
-    )
+    );
   }
 }
 
