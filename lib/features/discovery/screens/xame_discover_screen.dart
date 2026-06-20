@@ -783,7 +783,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
 
         // ── Floating ⋮ menu button ────────────────────────────────────
         Positioned(
-          top: 48, right: 16,
+          top: 0, right: 16,
           child: SafeArea(
             child: GestureDetector(
               onTap: () => _showDiscoveryMenu(context, user),
