@@ -104,6 +104,7 @@ class _DiscoveryFullscreenViewerState
             currentUserId: widget.currentUserId,
             currentUserAvatar: widget.currentUserAvatar,
             onClose: () => Navigator.of(context, rootNavigator: true).pop(),
+            embedded: true,
           );
         },
       ));
@@ -141,6 +142,7 @@ class _FullscreenPostPage extends StatefulWidget {
   final String currentUserId;
   final String currentUserAvatar;
   final VoidCallback onClose;
+  final bool embedded;
 
   const _FullscreenPostPage({
     Key? key,
@@ -149,6 +151,7 @@ class _FullscreenPostPage extends StatefulWidget {
     required this.currentUserId,
     required this.currentUserAvatar,
     required this.onClose,
+    this.embedded = false,
   }) : super(key: key);
 
   @override
@@ -465,45 +468,46 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
             },
           ),
 
-        Positioned(
-          top: 0, left: 0, right: 0,
-          child: SafeArea(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(children: [
-                  GestureDetector(
-                    onTap: widget.onClose,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black45,
-                        borderRadius: BorderRadius.circular(20),
+        if (!widget.embedded)
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: SafeArea(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(children: [
+                    GestureDetector(
+                      onTap: widget.onClose,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.arrow_back_ios_new,
+                            color: Colors.white, size: 16),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new,
-                          color: Colors.white, size: 16),
                     ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Text(
+                        widget.post['category'] as String? ?? '',
+                        style: const TextStyle(color: Colors.white,
+                            fontSize: 11, fontWeight: FontWeight.w700),
+                      ),
                     ),
-                    child: Text(
-                      widget.post['category'] as String? ?? '',
-                      style: const TextStyle(color: Colors.white,
-                          fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ]),
-              ),
+                  ]),
+                ),
 
-            ]),
+              ]),
+            ),
           ),
-        ),
 
         Positioned(
           bottom: 0, left: 0, right: 0,
