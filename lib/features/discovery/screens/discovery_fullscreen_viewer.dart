@@ -853,38 +853,42 @@ class _VideoPageState extends State<_VideoPage> {
         if (_total.inSeconds > 0)
           Positioned(
             bottom: 0, left: 0, right: 0,
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(children: [
-                  Text(_fmtDur(_pos),
-                      style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                  const Spacer(),
-                  Text(_fmtDur(_total),
-                      style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                ]),
-              ),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 2,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
-                  overlayShape: SliderComponentShape.noOverlay,
-                  activeTrackColor: const Color(0xFF00E5FF),
-                  inactiveTrackColor: Colors.white24,
-                  thumbColor: Colors.white,
+            child: GestureDetector(
+              onTap: () {}, // absorb tap so it doesn't reach parent's pause toggle
+              behavior: HitTestBehavior.opaque,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(children: [
+                    Text(_fmtDur(_pos),
+                        style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                    const Spacer(),
+                    Text(_fmtDur(_total),
+                        style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                  ]),
                 ),
-                child: Slider(
-                  value: _progress.clamp(0.0, 1.0),
-                  onChanged: (v) {
-                    if (_total.inMilliseconds > 0) {
-                      final seek = Duration(
-                          milliseconds: (v * _total.inMilliseconds).round());
-                      _ctrl?.seekTo(seek);
-                    }
-                  },
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 2,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
+                    overlayShape: SliderComponentShape.noOverlay,
+                    activeTrackColor: const Color(0xFF00E5FF),
+                    inactiveTrackColor: Colors.white24,
+                    thumbColor: Colors.white,
+                  ),
+                  child: Slider(
+                    value: _progress.clamp(0.0, 1.0),
+                    onChanged: (v) {
+                      if (_total.inMilliseconds > 0) {
+                        final seek = Duration(
+                            milliseconds: (v * _total.inMilliseconds).round());
+                        _ctrl?.seekTo(seek);
+                      }
+                    },
+                  ),
                 ),
-              ),
-            ]),
+              ]),
+            ),
           ),
       ]),
     );
