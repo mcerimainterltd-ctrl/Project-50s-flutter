@@ -2897,6 +2897,8 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
   Duration _position   = Duration.zero;
   Duration _duration   = Duration.zero;
   Timer?   _hideTimer;
+  bool   _dragging     = false;
+  double _dragProgress = 0.0;
   final List<StreamSubscription> _subs = [];
 
   @override
@@ -2996,9 +2998,11 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
   Widget build(BuildContext context) {
     final sw = MediaQuery.of(context).size.width;
     final sh = MediaQuery.of(context).size.height;
-    final progress = _duration.inMilliseconds > 0
-        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
-        : 0.0;
+    final progress = _dragging
+        ? _dragProgress
+        : (_duration.inMilliseconds > 0
+            ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+            : 0.0);
 
     return SizedBox(
       width: sw, height: sh,
@@ -3050,12 +3054,23 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                     behavior: HitTestBehavior.opaque,
                     onPointerDown: (e) {
                       _hideTimer?.cancel();
-                      _seekTo((e.localPosition.dx / barWidth).clamp(0.0, 1.0));
+                      final ratio = (e.localPosition.dx / barWidth).clamp(0.0, 1.0);
+                      setState(() { _dragging = true; _dragProgress = ratio; });
                     },
                     onPointerMove: (e) {
-                      _seekTo((e.localPosition.dx / barWidth).clamp(0.0, 1.0));
+                      final ratio = (e.localPosition.dx / barWidth).clamp(0.0, 1.0);
+                      setState(() => _dragProgress = ratio);
                     },
-                    onPointerUp: (_) => _resetHideTimer(),
+                    onPointerUp: (e) {
+                      final ratio = (e.localPosition.dx / barWidth).clamp(0.0, 1.0);
+                      _seekTo(ratio);
+                      setState(() => _dragging = false);
+                      _resetHideTimer();
+                    },
+                    onPointerCancel: (_) {
+                      setState(() => _dragging = false);
+                      _resetHideTimer();
+                    },
                     child: SizedBox(
                       height: 52,
                       child: Stack(alignment: Alignment.center, children: [
