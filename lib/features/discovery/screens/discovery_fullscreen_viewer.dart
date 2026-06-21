@@ -828,10 +828,17 @@ class _VideoPageState extends State<_VideoPage> {
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
-        GestureDetector(
-          onTap: _toggleControlsVisibility,
-          behavior: HitTestBehavior.opaque,
-          child: IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
+        // The actual video — always painted, never intercepts touches itself.
+        IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
+        // Tap-to-toggle layer. Only active (hit-testable) when controls are
+        // hidden, so it never competes with the slider's drag gesture while
+        // controls are visible.
+        IgnorePointer(
+          ignoring: _controlsVisible,
+          child: GestureDetector(
+            onTap: _toggleControlsVisibility,
+            behavior: HitTestBehavior.opaque,
+          ),
         ),
         if (_paused)
           Center(
