@@ -3057,27 +3057,30 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
                     },
                     onPointerUp: (_) => _resetHideTimer(),
                     child: SizedBox(
-                      height: 36,
+                      height: 52,
                       child: Stack(alignment: Alignment.center, children: [
-                        Container(height: 3,
+                        Container(height: 4,
                           decoration: BoxDecoration(
                             color: Colors.white24,
-                            borderRadius: BorderRadius.circular(2))),
+                            borderRadius: BorderRadius.circular(3))),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: FractionallySizedBox(
                             widthFactor: progress.clamp(0.0, 1.0),
-                            child: Container(height: 3,
+                            child: Container(height: 4,
                               decoration: BoxDecoration(
                                 color: XameColors.primary,
-                                borderRadius: BorderRadius.circular(2))))),
+                                borderRadius: BorderRadius.circular(3))))),
                         Align(
                           alignment: Alignment(
                               (progress.clamp(0.0, 1.0) * 2) - 1, 0),
-                          child: Container(width: 14, height: 14,
-                            decoration: const BoxDecoration(
+                          child: Container(width: 20, height: 20,
+                            decoration: BoxDecoration(
                               color: Colors.white,
-                              shape: BoxShape.circle))),
+                              shape: BoxShape.circle,
+                              boxShadow: [BoxShadow(
+                                color: Colors.black38,
+                                blurRadius: 4)]))),
                       ]),
                     ),
                   );
