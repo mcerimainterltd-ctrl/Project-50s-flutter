@@ -723,17 +723,33 @@ class _VideoPageState extends State<_VideoPage> {
   Duration _total  = Duration.zero;
   Duration _pos    = Duration.zero;
   Timer? _hideTimer;
+  int _activeTouches = 0;
 
   void _scheduleHide() {
     _hideTimer?.cancel();
+    // Never hide while a finger is still on the screen (e.g. dragging slider)
+    if (_activeTouches > 0) return;
     _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && !_paused) setState(() => _controlsVisible = false);
+      if (mounted && !_paused && _activeTouches == 0) {
+        setState(() => _controlsVisible = false);
+      }
     });
   }
 
   void _toggleControlsVisibility() {
     setState(() => _controlsVisible = !_controlsVisible);
     if (_controlsVisible) _scheduleHide();
+  }
+
+  void _onPointerDown(PointerDownEvent e) {
+    _activeTouches++;
+    _hideTimer?.cancel();
+    if (!_controlsVisible) setState(() => _controlsVisible = true);
+  }
+
+  void _onPointerUpOrCancel(PointerEvent e) {
+    _activeTouches = (_activeTouches - 1).clamp(0, 10);
+    if (_activeTouches == 0) _scheduleHide();
   }
 
   @override
@@ -827,7 +843,12 @@ class _VideoPageState extends State<_VideoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
+    return Listener(
+      onPointerDown: _onPointerDown,
+      onPointerUp: _onPointerUpOrCancel,
+      onPointerCancel: _onPointerUpOrCancel,
+      behavior: HitTestBehavior.translucent,
+      child: Stack(children: [
         // The actual video — always painted, never intercepts touches itself.
         IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
         // Tap-to-toggle layer. Only active (hit-testable) when controls are
@@ -930,7 +951,8 @@ class _VideoPageState extends State<_VideoPage> {
             ]),
           ),
         ),
-      ]);
+      ]),
+    );
   }
 }
 
