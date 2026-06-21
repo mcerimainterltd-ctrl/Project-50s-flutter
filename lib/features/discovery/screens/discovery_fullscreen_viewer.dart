@@ -729,7 +729,7 @@ class _VideoPageState extends State<_VideoPage> {
     _hideTimer?.cancel();
     // Never hide while a finger is still on the screen (e.g. dragging slider)
     if (_activeTouches > 0) return;
-    _hideTimer = Timer(const Duration(seconds: 3), () {
+    _hideTimer = Timer(const Duration(seconds: 6), () {
       if (mounted && !_paused && _activeTouches == 0) {
         setState(() => _controlsVisible = false);
       }
