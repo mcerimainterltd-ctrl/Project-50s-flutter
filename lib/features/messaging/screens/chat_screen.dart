@@ -231,11 +231,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _pickImage() async {
-    final file = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (file == null) return;
+    final files = await _picker.pickMultiImage(imageQuality: 85);
+    if (files.isEmpty) return;
     setState(() => _showAttach = false);
-    await ref.read(chatProvider(widget.userId).notifier)
-        .sendFile(dart_io.File(file.path), 'image/jpeg');
+    for (final file in files) {
+      await ref.read(chatProvider(widget.userId).notifier)
+          .sendFile(dart_io.File(file.path), 'image/jpeg');
+    }
     _scrollToBottom();
   }
 
