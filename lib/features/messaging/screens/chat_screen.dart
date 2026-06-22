@@ -245,7 +245,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isAlbum = assets.length > 1;
     final albumId = isAlbum ? const Uuid().v4() : null;
     for (var i = 0; i < assets.length; i++) {
-      final file = await assets[i].file;
+      final file = await assets[i].originFile;
       if (file == null) continue;
       await ref.read(chatProvider(widget.userId).notifier).sendFile(
         file, 'image/jpeg',

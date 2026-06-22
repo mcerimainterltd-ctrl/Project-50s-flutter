@@ -64,6 +64,9 @@ class CacheService {
       'callType':    m.callType,
       'callStatus':  m.callStatus,
       'callDuration':m.callDuration,
+      'albumId':     m.albumId,
+      'albumIndex':  m.albumIndex,
+      'albumTotal':  m.albumTotal,
     }).toList();
     // Keep last 100 messages per contact
     final trimmed = data.length > 100 ? data.sublist(data.length - 100) : data;
@@ -105,6 +108,9 @@ class CacheService {
           callType:     m['callType']    as String?,
           callStatus:   m['callStatus']  as String?,
           callDuration: m['callDuration'] == null ? null : ((m['callDuration'] as num).toInt() > 86400 ? (m['callDuration'] as num).toInt() ~/ 1000 : (m['callDuration'] as num).toInt()),
+          albumId:      m['albumId']     as String?,
+          albumIndex:   (m['albumIndex'] as num?)?.toInt(),
+          albumTotal:   (m['albumTotal'] as num?)?.toInt(),
         ))
         .where((m) => m.type != MessageType.call || m.callStatus != null)
         .toList();
