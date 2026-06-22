@@ -28,6 +28,9 @@ class XameMessage {
   final String?          callType;      // 'voice' | 'video'
   final String?          callStatus;    // 'ended' | 'no-answer'
   final int?             callDuration;  // seconds
+  final String?          albumId;       // groups multi-image picks sent together
+  final int?             albumIndex;    // position within the album (0-based)
+  final int?             albumTotal;    // total images in this album
 
   const XameMessage({
     required this.id,
@@ -56,6 +59,9 @@ class XameMessage {
     this.callType,
     this.callStatus,
     this.callDuration,
+    this.albumId,
+    this.albumIndex,
+    this.albumTotal,
   });
 
 XameMessage copyWith({String? status, Map<String, String>? reactions, String? localPath, bool? isDeleted, String? callType, String? callStatus, int? callDuration}) => XameMessage(
@@ -75,6 +81,9 @@ XameMessage copyWith({String? status, Map<String, String>? reactions, String? lo
     callType:       callType ?? this.callType,
     callStatus:     callStatus ?? this.callStatus,
     callDuration:   callDuration ?? this.callDuration,
+    albumId:        albumId,
+    albumIndex:     albumIndex,
+    albumTotal:     albumTotal,
   );
 
   DateTime get dateTime => DateTime.fromMillisecondsSinceEpoch(ts);

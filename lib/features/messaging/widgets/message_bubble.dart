@@ -78,6 +78,7 @@ class MessageBubble extends ConsumerWidget {
   final VoidCallback onTap;
   final void Function(String emoji)? onReact;
   final void Function(String)? onQuoteTap;
+  final List<XameMessage>? allMessages;
 
   MessageBubble({
     super.key,
@@ -88,6 +89,7 @@ class MessageBubble extends ConsumerWidget {
     required this.onTap,
     this.onReact,
     this.onQuoteTap,
+    this.allMessages,
   });
 
   @override
@@ -197,10 +199,16 @@ class MessageBubble extends ConsumerWidget {
     }
     switch (message.type) {
       case MessageType.image:
+        final albumSiblings = (message.albumId != null && allMessages != null)
+            ? allMessages!.where((m) => m.albumId == message.albumId).toList()
+            : <XameMessage>[];
         return _ImageBubble(
             url: message.fileUrl ?? '',
             caption: message.text,
-            viewOnce: message.viewOnce);
+            viewOnce: message.viewOnce,
+            albumIndex: message.albumIndex,
+            albumTotal: message.albumTotal,
+            albumSiblings: albumSiblings);
       case MessageType.video:
         return _VideoBubble(
             url:       message.fileUrl ?? '',
@@ -450,10 +458,30 @@ class _ReplyQuote extends StatelessWidget {
 class _ImageBubble extends StatelessWidget {
   final String url, caption;
   final bool   viewOnce;
+  final int?   albumIndex;
+  final int?   albumTotal;
+  final List<XameMessage> albumSiblings;
   _ImageBubble(
-      {required this.url, required this.caption, required this.viewOnce});
+      {required this.url, required this.caption, required this.viewOnce,
+       this.albumIndex, this.albumTotal, this.albumSiblings = const []});
 
   void _openFullScreen(BuildContext context) {
+    if (albumSiblings.length > 1) {
+      final urls = albumSiblings
+          .map((m) => m.fileUrl ?? '')
+          .where((u) => u.isNotEmpty)
+          .toList();
+      final startIndex = (albumIndex ?? 0).clamp(0, urls.length - 1);
+      Navigator.of(context).push(PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black87,
+        pageBuilder: (_, __, ___) =>
+            _FullScreenAlbumViewer(urls: urls, initialIndex: startIndex),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ));
+      return;
+    }
     Navigator.of(context).push(PageRouteBuilder(
       opaque: false,
       barrierColor: Colors.black87,
@@ -479,25 +507,42 @@ class _ImageBubble extends StatelessWidget {
         ),
       );
     }
+    final showBadge = albumTotal != null && albumTotal! > 1;
     return GestureDetector(
       onTap: () => _openFullScreen(context),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Hero(
-          tag: url,
-          child: ClipRRect(
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(14)),
-            child: CachedNetworkImage(
-              imageUrl: _resolveUrl(url), fit: BoxFit.cover,
-              width: double.infinity,
-              placeholder: (_, __) => _Shimmer(
-                  width: double.infinity, height: 180),
-              errorWidget: (_, __, ___) => SizedBox(height: 80,
-                  child: Center(
-                      child: Icon(Icons.broken_image, color: context.xMuted.withValues(alpha: 0.5)))),
+        Stack(children: [
+          Hero(
+            tag: url,
+            child: ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(14)),
+              child: CachedNetworkImage(
+                imageUrl: _resolveUrl(url), fit: BoxFit.cover,
+                width: double.infinity,
+                placeholder: (_, __) => _Shimmer(
+                    width: double.infinity, height: 180),
+                errorWidget: (_, __, ___) => SizedBox(height: 80,
+                    child: Center(
+                        child: Icon(Icons.broken_image, color: context.xMuted.withValues(alpha: 0.5)))),
+              ),
             ),
           ),
-        ),
+          if (showBadge)
+            Positioned(
+              right: 8, bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('${(albumIndex ?? 0) + 1}/$albumTotal',
+                    style: const TextStyle(color: Colors.white,
+                        fontSize: 11, fontWeight: FontWeight.w600)),
+              ),
+            ),
+        ]),
         if (caption.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
@@ -516,6 +561,99 @@ class _FullScreenImageViewer extends StatefulWidget {
   State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
 }
 
+// ─── Full-screen swipeable album viewer (multiple images sent together) ──
+class _FullScreenAlbumViewer extends StatefulWidget {
+  final List<String> urls;
+  final int initialIndex;
+  const _FullScreenAlbumViewer({required this.urls, required this.initialIndex});
+  @override
+  State<_FullScreenAlbumViewer> createState() => _FullScreenAlbumViewerState();
+}
+
+class _FullScreenAlbumViewerState extends State<_FullScreenAlbumViewer> {
+  late PageController _ctrl;
+  late int _current;
+  bool   _downloading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _current = widget.initialIndex;
+    _ctrl = PageController(initialPage: _current);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _download() async {
+    setState(() => _downloading = true);
+    try {
+      const bridge = MethodChannel('com.xamepage.app/android_bridge');
+      final fileName = 'xamepage_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final success = await bridge.invokeMethod<bool>('saveMedia', {
+        'url': _resolveUrl(widget.urls[_current]),
+        'fileName': fileName,
+        'mimeType': 'image/jpeg',
+      });
+      if (mounted) {
+        setState(() => _downloading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(success == true ? 'Image saved to Pictures/XamePage' : 'Save failed — please try again'),
+            backgroundColor: success == true ? Colors.green : Colors.redAccent));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _downloading = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Save failed'),
+            backgroundColor: Colors.redAccent));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(
+      backgroundColor: Colors.black54,
+      leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context)),
+      title: Text('${_current + 1} / ${widget.urls.length}',
+          style: const TextStyle(color: Colors.white, fontSize: 15)),
+      centerTitle: true,
+      actions: [
+        if (_downloading)
+          const Padding(padding: EdgeInsets.all(14),
+            child: SizedBox(width: 22, height: 22,
+              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+        else
+          IconButton(
+              icon: const Icon(Icons.download_outlined, color: Colors.white),
+              onPressed: _download),
+      ],
+    ),
+    body: PageView.builder(
+      controller: _ctrl,
+      itemCount: widget.urls.length,
+      onPageChanged: (i) => setState(() => _current = i),
+      itemBuilder: (_, i) => InteractiveViewer(
+        minScale: 0.5, maxScale: 5.0,
+        child: Center(child: CachedNetworkImage(
+          imageUrl: _resolveUrl(widget.urls[i]), fit: BoxFit.contain,
+          placeholder: (_, __) =>
+              CircularProgressIndicator(color: XameColors.primary),
+          errorWidget: (_, __, ___) =>
+              Icon(Icons.broken_image, color: XameColors.darkSurface.withValues(alpha: 0.5), size: 60),
+        )),
+      ),
+    ),
+  );
+}
+
 class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
   bool   _downloading = false;
   double _progress    = 0;
@@ -524,7 +662,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
     setState(() { _downloading = true; _progress = 0; });
     try {
       const bridge = MethodChannel('com.xamepage.app/android_bridge');
-      final fileName = 'xamepage_\${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fileName = 'xamepage_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final success = await bridge.invokeMethod<bool>('saveMedia', {
         'url': _resolveUrl(widget.url),
         'fileName': fileName,

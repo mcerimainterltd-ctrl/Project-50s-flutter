@@ -89,6 +89,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         callType:    m['callType']    as String? ?? data['callType']    as String?,
         callStatus:  m['callStatus']  as String? ?? data['callStatus']  as String?,
         callDuration:((((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt()) ?? 0) > 86400 ? (((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt())! ~/ 1000) : ((m['callDuration'] as num?)?.toInt() ?? (data['callDuration'] as num?)?.toInt())),
+        albumId:     m['albumId']    as String?,
+        albumIndex:  (m['albumIndex'] as num?)?.toInt(),
+        albumTotal:  (m['albumTotal'] as num?)?.toInt(),
       );
 
       // Deduplicate — server echo can arrive before socket ack
@@ -196,7 +199,8 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
   // ── Send file — FIXED: never silently delete, show failed state ────────
   Future<void> sendFile(File file, String mimeType,
-      {String? caption, bool viewOnce = false}) async {
+      {String? caption, bool viewOnce = false,
+       String? albumId, int? albumIndex, int? albumTotal}) async {
     final self = _ref.read(currentUserProvider);
     if (self == null) return;
 
@@ -237,6 +241,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       fileSize: fileSize, viewOnce:   viewOnce,
       localPath: file.path,  // keep local path for instant open without download
       // fileUrl is null while uploading — bubble handles this gracefully
+      albumId: albumId, albumIndex: albumIndex, albumTotal: albumTotal,
     );
     state = [...state, pending];
 
@@ -248,6 +253,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       caption: caption, viewOnce: viewOnce,
       fileName: fileName, fileSize: fileSize, ts: ts,
       msgType: msgType,
+      albumId: albumId, albumIndex: albumIndex, albumTotal: albumTotal,
     );
     try {
       await uploadFuture.timeout(
@@ -267,6 +273,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     required bool   viewOnce,   required String fileName,
     required int?   fileSize,   required int    ts,
     required MessageType msgType,
+    String? albumId, int? albumIndex, int? albumTotal,
   }) async {
     final self = _ref.read(currentUserProvider);
     if (self == null) return;
@@ -352,6 +359,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
           fileUrl: fileUrl,  fileName:    fileName,
           fileMime: mimeType, fileSize:   fileSize,   viewOnce: viewOnce,
           localPath: file.path,
+          albumId: albumId, albumIndex: albumIndex, albumTotal: albumTotal,
         );
         state = state.map((m) => m.id == msgId ? finalMsg : m).toList();
         CacheService.saveChat(_contactId, state);
@@ -367,6 +375,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
               'size': fileSize,
             },
             'viewOnce': viewOnce,
+            if (albumId != null) 'albumId': albumId,
+            if (albumIndex != null) 'albumIndex': albumIndex,
+            if (albumTotal != null) 'albumTotal': albumTotal,
           },
         });
       } else {

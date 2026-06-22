@@ -1,4 +1,5 @@
 import 'dart:io' as dart_io;
+import 'package:uuid/uuid.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import '../../../core/config/constants.dart';
 import 'dart:convert';
@@ -234,9 +235,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final files = await _picker.pickMultiImage(imageQuality: 85);
     if (files.isEmpty) return;
     setState(() => _showAttach = false);
-    for (final file in files) {
-      await ref.read(chatProvider(widget.userId).notifier)
-          .sendFile(dart_io.File(file.path), 'image/jpeg');
+    final isAlbum = files.length > 1;
+    final albumId = isAlbum ? const Uuid().v4() : null;
+    for (var i = 0; i < files.length; i++) {
+      await ref.read(chatProvider(widget.userId).notifier).sendFile(
+        dart_io.File(files[i].path), 'image/jpeg',
+        albumId:    isAlbum ? albumId : null,
+        albumIndex: isAlbum ? i : null,
+        albumTotal: isAlbum ? files.length : null,
+      );
     }
     _scrollToBottom();
   }
@@ -1202,6 +1209,7 @@ class _MessageList extends StatelessWidget {
             onTap:       () => onTap(msg),
             onReact:    (emoji) => onReact(msg, emoji),
             onQuoteTap: onQuoteTap,
+            allMessages: messages,
           ),
         ]);
       },
