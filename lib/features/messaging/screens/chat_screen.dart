@@ -1,5 +1,6 @@
 import 'dart:io' as dart_io;
 import 'package:uuid/uuid.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import '../../../core/config/constants.dart';
 import 'dart:convert';
@@ -232,17 +233,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _pickImage() async {
-    final files = await _picker.pickMultiImage(imageQuality: 85);
-    if (files.isEmpty) return;
+    final assets = await AssetPicker.pickAssets(
+      context,
+      pickerConfig: const AssetPickerConfig(
+        requestType: RequestType.image,
+        maxAssets: 30,
+      ),
+    );
+    if (assets == null || assets.isEmpty) return;
     setState(() => _showAttach = false);
-    final isAlbum = files.length > 1;
+    final isAlbum = assets.length > 1;
     final albumId = isAlbum ? const Uuid().v4() : null;
-    for (var i = 0; i < files.length; i++) {
+    for (var i = 0; i < assets.length; i++) {
+      final file = await assets[i].file;
+      if (file == null) continue;
       await ref.read(chatProvider(widget.userId).notifier).sendFile(
-        dart_io.File(files[i].path), 'image/jpeg',
+        file, 'image/jpeg',
         albumId:    isAlbum ? albumId : null,
         albumIndex: isAlbum ? i : null,
-        albumTotal: isAlbum ? files.length : null,
+        albumTotal: isAlbum ? assets.length : null,
       );
     }
     _scrollToBottom();
