@@ -548,6 +548,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
                     (m['reactions'] as Map).isNotEmpty
                 ? Map<String, String>.from(m['reactions'] as Map)
                 : null,
+            albumId:     m['albumId']    as String?,
+            albumIndex:  (m['albumIndex'] as num?)?.toInt(),
+            albumTotal:  (m['albumTotal'] as num?)?.toInt(),
           );
         })
         .toList();

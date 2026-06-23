@@ -237,6 +237,9 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
           forwarded:   message['forwarded'] as bool? ?? false,
           viewOnce:    message['viewOnce']  as bool? ?? false,
           expiresAt:   message['expiresAt'] as int?,
+          albumId:     message['albumId']    as String?,
+          albumIndex:  (message['albumIndex'] as num?)?.toInt(),
+          albumTotal:  (message['albumTotal'] as num?)?.toInt(),
         );
         final notifier = ref.read(chatProvider(senderId).notifier);
         notifier.appendIncoming(msg);
