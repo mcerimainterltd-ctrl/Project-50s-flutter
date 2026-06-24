@@ -68,7 +68,8 @@ _ParsedTxLabel _parseTxLabel(String label, String type) {
 class WalletTx {
   final String id, label, icon, type, status, ts;
   final double amount;
-  final double? sentAmount, recvAmount, fxRate;
+  final double? sentAmount, recvAmount, fxRate, principal, fee;
+  final int? cashback;
   final String? sentCurrency, recvCurrency, recipient;
   WalletTx.fromJson(Map<String, dynamic> j)
       : id           = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
@@ -81,6 +82,9 @@ class WalletTx {
         sentAmount   = (j['sentAmount'] as num?)?.toDouble(),
         recvAmount   = (j['recvAmount'] as num?)?.toDouble(),
         fxRate       = (j['fxRate']     as num?)?.toDouble(),
+        principal    = (j['principal']  as num?)?.toDouble(),
+        fee          = (j['fee']        as num?)?.toDouble(),
+        cashback     = (j['cashback']   as num?)?.toInt(),
         sentCurrency = j['sentCurrency']?.toString(),
         recvCurrency = j['recvCurrency']?.toString(),
         recipient    = j['recipient']?.toString();
@@ -3699,8 +3703,8 @@ class _HistoryTabState extends State<_HistoryTab> {
                   color: Color(0xFF888888), fontSize: 11)),
             ]),
             const SizedBox(height: 16),
-            // Amount
-            Center(child: Text(fmt(tx.amount),
+            // Amount — show principal (before fee) when available, not the total debited
+            Center(child: Text(fmt(tx.principal ?? tx.amount),
                 style: TextStyle(
                     color: tx.type == 'credit' ? _kTeal : const Color(0xFFFF6464),
                     fontSize: 36, fontWeight: FontWeight.w800))),
@@ -3718,6 +3722,22 @@ class _HistoryTabState extends State<_HistoryTab> {
 
               widgets.add(_receiptRowLight('Description', parsed.method));
               widgets.add(_receiptRowLight('Date & Time', _fmtTs(tx.ts)));
+
+              // ── Transparent fee/cashback breakdown ────────────────────
+              if (tx.principal != null) {
+                widgets.add(_receiptRowLight('Amount', fmt(tx.principal!)));
+              }
+              if (tx.fee != null && tx.fee! > 0) {
+                widgets.add(_receiptRowLight('Service Fee', fmt(tx.fee!)));
+              }
+              if (tx.principal != null && tx.fee != null) {
+                widgets.add(_receiptRowLight('Total Debited', fmt(tx.principal! + tx.fee!)));
+              }
+              if (tx.cashback != null && tx.cashback! > 0) {
+                final ngnEquiv = tx.cashback! * 0.1;
+                widgets.add(_receiptRowLight('Cashback Earned',
+                    '+${tx.cashback} XameCoins (≈₦${ngnEquiv.toStringAsFixed(2)})'));
+              }
 
               if (tx.sentCurrency != null && tx.recvCurrency != null &&
                   tx.sentCurrency != tx.recvCurrency) {
@@ -3821,7 +3841,7 @@ class _HistoryTabState extends State<_HistoryTab> {
             child: Center(child: Text(tx.icon,
                 style: const TextStyle(fontSize: 26)))),
           const SizedBox(height: 12),
-          Text(fmt(tx.amount),
+          Text(fmt(tx.principal ?? tx.amount),
               style: TextStyle(
                   color: tx.type == 'credit' ? _kTeal : const Color(0xFFFF6464),
                   fontSize: 32, fontWeight: FontWeight.w800)),
@@ -3839,6 +3859,22 @@ class _HistoryTabState extends State<_HistoryTab> {
               _receiptRow('Description', parsed.method),
               _receiptRow('Date & Time', _fmtTs(tx.ts)),
             ];
+
+            // ── Transparent fee/cashback breakdown ──────────────────────
+            if (tx.principal != null) {
+              widgets.add(_receiptRow('Amount', fmt(tx.principal!)));
+            }
+            if (tx.fee != null && tx.fee! > 0) {
+              widgets.add(_receiptRow('Service Fee', fmt(tx.fee!)));
+            }
+            if (tx.principal != null && tx.fee != null) {
+              widgets.add(_receiptRow('Total Debited', fmt(tx.principal! + tx.fee!)));
+            }
+            if (tx.cashback != null && tx.cashback! > 0) {
+              final ngnEquiv = tx.cashback! * 0.1;
+              widgets.add(_receiptRow('Cashback Earned',
+                  '+${tx.cashback} XameCoins (≈₦${ngnEquiv.toStringAsFixed(2)})'));
+            }
 
             if (tx.sentAmount != null && tx.sentCurrency != null &&
                 tx.recvAmount != null && tx.recvCurrency != null &&
