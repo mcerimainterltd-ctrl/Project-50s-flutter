@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../settings/screens/settings_screen.dart';
@@ -228,7 +229,7 @@ class MessageBubble extends ConsumerWidget {
             fileSize:  message.fileSize,
             localPath: message.localPath);
       case MessageType.text:
-        return _TextContent(text: message.text, isSelf: isSelf);
+        return _TextContent(text: message.text, isSelf: isSelf, actionButton: message.actionButton);
       case MessageType.call:
         return _CallBubble(
           callType:     message.callType     ?? 'voice',
@@ -336,7 +337,8 @@ String _fmtSize(int? bytes) {
 // ─── Text content ─────────────────────────────────────────────────────────
 class _TextContent extends ConsumerWidget {
   final String text; final bool isSelf;
-  _TextContent({required this.text, required this.isSelf});
+  final Map<String, dynamic>? actionButton;
+  _TextContent({required this.text, required this.isSelf, this.actionButton});
 
   bool get _isEmojiOnly {
     final c = text.trim();
@@ -353,13 +355,42 @@ class _TextContent extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _isEmojiOnly
-      ? Text(text.trim(), style: TextStyle(fontSize: 36))
-      : Text(text,
-            style: TextStyle(
-                color: context.xBubbleSentText,
-                fontSize: _fontSize(ref),
-                height: 1.4));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final textWidget = _isEmojiOnly
+        ? Text(text.trim(), style: TextStyle(fontSize: 36))
+        : Text(text,
+              style: TextStyle(
+                  color: context.xBubbleSentText,
+                  fontSize: _fontSize(ref),
+                  height: 1.4));
+
+    final label = actionButton?['label'] as String?;
+    final url   = actionButton?['url']   as String?;
+    if (label == null || url == null || url.isEmpty) return textWidget;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      textWidget,
+      const SizedBox(height: 10),
+      GestureDetector(
+        onTap: () async {
+          final uri = Uri.tryParse(url);
+          if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: context.xPrimary,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+        ),
+      ),
+    ]);
+  }
 }
 
 // ─── Status ticks ─────────────────────────────────────────────────────────

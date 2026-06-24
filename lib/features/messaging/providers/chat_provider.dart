@@ -551,6 +551,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
             albumId:     m['albumId']    as String?,
             albumIndex:  (m['albumIndex'] as num?)?.toInt(),
             albumTotal:  (m['albumTotal'] as num?)?.toInt(),
+            actionButton: m['actionButton'] != null
+                ? Map<String, dynamic>.from(m['actionButton'] as Map)
+                : null,
           );
         })
         .toList();
