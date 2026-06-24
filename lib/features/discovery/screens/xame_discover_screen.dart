@@ -3008,10 +3008,12 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
       width: sw, height: sh,
       child: Stack(children: [
 
-        // ── Video surface — no gesture wrapper ──────────────────
+        // ── Video surface — IgnorePointer so BetterPlayer never consumes events ──
         if (_ctrl != null)
-          SizedBox(width: sw, height: sh,
-            child: BetterPlayer(controller: _ctrl!)),
+          IgnorePointer(
+            child: SizedBox(width: sw, height: sh,
+              child: BetterPlayer(controller: _ctrl!)),
+          ),
 
         // ── Controls overlay — independent of video tap ───────────
         if (_showControls) ...[
@@ -3144,15 +3146,27 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
           ),
         ],
 
-        // Tap layer — full screen, behind nothing, toggles controls
-        // Must be LAST in stack so controls receive events first
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: _onTap,
-            behavior: HitTestBehavior.translucent,
-            child: const SizedBox.expand(),
+        // Tap layer — only active when controls hidden
+        // When controls visible, disabled so Listener gets drag events
+        if (!_showControls)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _onTap,
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox.expand(),
+            ),
           ),
-        ),
+        // When controls visible, tap anywhere outside controls hides them
+        if (_showControls)
+          Positioned(
+            top: 0, left: 0, right: 0,
+            bottom: 150, // above the controls bar
+            child: GestureDetector(
+              onTap: _onTap,
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox.expand(),
+            ),
+          ),
 
         // Centre play indicator when paused
         if (!_playing)
