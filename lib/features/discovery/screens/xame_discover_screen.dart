@@ -3008,14 +3008,10 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
       width: sw, height: sh,
       child: Stack(children: [
 
-        // ── Video surface — tap to toggle controls ────────────────
+        // ── Video surface — no gesture wrapper ──────────────────
         if (_ctrl != null)
-          GestureDetector(
-            onTap: _onTap,
-            behavior: HitTestBehavior.translucent,
-            child: SizedBox(width: sw, height: sh,
-              child: BetterPlayer(controller: _ctrl!)),
-          ),
+          SizedBox(width: sw, height: sh,
+            child: BetterPlayer(controller: _ctrl!)),
 
         // ── Controls overlay — independent of video tap ───────────
         if (_showControls) ...[
@@ -3147,6 +3143,16 @@ class _DetailVideoPlayerState extends State<_DetailVideoPlayer> {
             ), // end Material
           ),
         ],
+
+        // Tap layer — full screen, behind nothing, toggles controls
+        // Must be LAST in stack so controls receive events first
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: _onTap,
+            behavior: HitTestBehavior.translucent,
+            child: const SizedBox.expand(),
+          ),
+        ),
 
         // Centre play indicator when paused
         if (!_playing)
