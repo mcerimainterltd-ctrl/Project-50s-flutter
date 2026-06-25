@@ -418,12 +418,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
   // ── Fetch history ─────────────────────────────────────────────────────
   Future<void> fetchHistory() async {
     try {
-      final token = await _storage.read(key: AppConstants.keySessionToken);
-      if (token == null) return;
-      final res = await _dio.get(
-        '/api/messages/$_contactId',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
+      final selfId = _ref.read(currentUserProvider)?.xameId;
+      if (selfId == null || selfId.isEmpty) return;
+      final res = await _dio.get('/api/chat/$selfId/$_contactId');
       final data = res.data as Map<String, dynamic>?;
       if (data == null || data['success'] != true) return;
       final msgs = data['messages'];
@@ -558,9 +555,42 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         })
         .toList();
 
-    if (newMsgs.isEmpty) return;
+    // Silently drop locally cached messages that the server no longer has
+    // (e.g. removed server-side), without any visible "deleted" indicator.
+    // Only reconcile within the timestamp range actually covered by this
+    // fetch (the server returns a limited page, not full history), and
+    // never touch messages still pending send.
+    final serverIds = serverMessages
+        .map((m) => m['id'] as String?)
+        .whereType<String>()
+        .toSet();
+    final fetchedTimestamps = serverMessages
+        .map((m) => (m['ts'] as num?)?.toInt())
+        .whereType<int>()
+        .toList();
+    int? rangeStart, rangeEnd;
+    if (fetchedTimestamps.isNotEmpty) {
+      rangeStart = fetchedTimestamps.reduce((a, b) => a < b ? a : b);
+      rangeEnd   = fetchedTimestamps.reduce((a, b) => a > b ? a : b);
+    }
+    final reconciledState = state.where((m) {
+      final isPending = m.status == 'sending' || m.status == 'uploading';
+      if (isPending) return true;
+      if (rangeStart == null || rangeEnd == null) return true;
+      final withinFetchedRange = m.ts >= rangeStart! && m.ts <= rangeEnd!;
+      if (!withinFetchedRange) return true; // outside this page, leave untouched
+      return serverIds.contains(m.id); // inside range but missing → was deleted
+    }).toList();
 
-    final merged = [...state, ...newMsgs]..sort((a, b) => a.ts.compareTo(b.ts));
+    if (newMsgs.isEmpty) {
+      if (reconciledState.length != state.length) {
+        state = reconciledState;
+        CacheService.saveChat(_contactId, state);
+      }
+      return;
+    }
+
+    final merged = [...reconciledState, ...newMsgs]..sort((a, b) => a.ts.compareTo(b.ts));
     state = merged;
     CacheService.saveChat(_contactId, state);
   }
