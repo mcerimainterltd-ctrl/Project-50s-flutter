@@ -26,6 +26,7 @@ class DiscoveryItem {
   final bool              isWhisper;
   final String            musicUrl;
   final String            musicTitle;
+  final List<String>      mediaUrls;
   final bool              isImmortal;
   final bool              isCollabOpen;
   final String            collabStatus;
@@ -58,6 +59,7 @@ class DiscoveryItem {
     this.isWhisper          = false,
     this.musicUrl           = '',
     this.musicTitle         = '',
+    this.mediaUrls          = const [],
     this.isImmortal         = false,
     this.isCollabOpen       = false,
     this.collabStatus       = 'none',
@@ -92,6 +94,9 @@ class DiscoveryItem {
       isWhisper:           json['isWhisper']           as bool?   ?? false,
       musicUrl:            json['musicUrl']            as String? ?? '',
       musicTitle:          json['musicTitle']          as String? ?? '',
+      mediaUrls: json['mediaUrls'] != null
+          ? (json['mediaUrls'] as List).map((e) => (e as Map)['url'] as String).toList()
+          : const [],
       isImmortal:          json['isImmortal']          as bool?   ?? false,
       isCollabOpen:        json['isCollabOpen']        as bool?   ?? false,
       collabStatus:        json['collabStatus']        as String? ?? 'none',
@@ -129,6 +134,9 @@ class DiscoveryItem {
     ts:             ts,
     accentColor:    accentColor,
     isWhisper:           isWhisper,
+    musicUrl:            musicUrl,
+    musicTitle:          musicTitle,
+    mediaUrls:           mediaUrls,
     isImmortal:          isImmortal,
     isCollabOpen:        isCollabOpen,
     collabStatus:        collabStatus,
