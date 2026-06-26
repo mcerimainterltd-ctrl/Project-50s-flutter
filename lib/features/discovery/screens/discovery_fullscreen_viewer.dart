@@ -12,6 +12,25 @@ import '../../../core/config/constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../widgets/comments_sheet.dart';
 
+// Inherited widget to lock/unlock vertical swipe when image carousel is active
+class DiscoveryVerticalLock extends InheritedWidget {
+  final void Function() lock;
+  final void Function() unlock;
+
+  const DiscoveryVerticalLock({
+    Key? key,
+    required this.lock,
+    required this.unlock,
+    required Widget child,
+  }) : super(key: key, child: child);
+
+  static DiscoveryVerticalLock? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<DiscoveryVerticalLock>();
+
+  @override
+  bool updateShouldNotify(DiscoveryVerticalLock old) => false;
+}
+
 class DiscoveryFullscreenViewer extends StatefulWidget {
   final List<Map<String, dynamic>> posts;
   final int initialIndex;
