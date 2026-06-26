@@ -22,6 +22,7 @@ import 'package:video_compress/video_compress.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/constants.dart';
@@ -1363,10 +1364,17 @@ class CreatePostSheetState extends State<CreatePostSheet> {
   }
 
   Future<void> _pickMedia() async {
-    final picked = await _picker.pickImage(
-        source: ImageSource.gallery, imageQuality: 85);
-    if (picked != null) {
-      setState(() { _mediaFile = File(picked.path); _mediaType = 'image'; });
+    final assets = await AssetPicker.pickAssets(
+      context,
+      pickerConfig: const AssetPickerConfig(
+        requestType: RequestType.image,
+        maxAssets: 10,
+      ),
+    );
+    if (assets == null || assets.isEmpty) return;
+    final file = await assets.first.originFile;
+    if (file != null) {
+      setState(() { _mediaFile = file; _mediaType = 'image'; });
     }
   }
 
