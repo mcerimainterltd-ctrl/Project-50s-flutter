@@ -3910,6 +3910,7 @@ class _FullscreenFeedPage extends StatelessWidget {
       'ts':           item.ts?.toIso8601String(),
       'musicUrl':     item.musicUrl,
       'musicTitle':   item.musicTitle,
+      'mediaUrls':    item.mediaUrls.isNotEmpty ? item.mediaUrls.map((u) => {'url': u}).toList() : null,
     };
     return DiscoveryFullscreenViewer(
       posts: [post],

@@ -434,14 +434,24 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
         Builder(builder: (_) {
           final isVid = (widget.post['mediaType'] as String? ?? '') == 'video';
-          return GestureDetector(
-            onDoubleTapDown: _onTapForReaction,
-            onDoubleTap: () {},
-            behavior: HitTestBehavior.translucent,
-            child: isVid
-                ? _VideoPage(url: widget.post['mediaUrl'] as String? ?? '', isActive: widget.isActive)
-                : _ImagePage(url: widget.post['mediaUrl'] as String? ?? ''),
-          );
+          final mediaUrlsRaw = widget.post['mediaUrls'] as List?;
+          final mediaUrls = mediaUrlsRaw != null
+              ? mediaUrlsRaw.map((e) => (e as Map)['url'] as String).toList()
+              : <String>[];
+          Widget child;
+          if (!isVid && mediaUrls.length > 1) {
+            child = _ImageCarousel(urls: mediaUrls, onDoubleTapDown: _onTapForReaction);
+          } else {
+            child = GestureDetector(
+              onDoubleTapDown: _onTapForReaction,
+              onDoubleTap: () {},
+              behavior: HitTestBehavior.translucent,
+              child: isVid
+                  ? _VideoPage(url: widget.post['mediaUrl'] as String? ?? '', isActive: widget.isActive)
+                  : _ImagePage(url: widget.post['mediaUrl'] as String? ?? ''),
+            );
+          }
+          return child;
         }),
 
 
@@ -949,6 +959,85 @@ class _VideoPageState extends State<_VideoPage> {
                   ]),
                 ),
             ]),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+// ─── Horizontal image carousel within a single Discovery post ────────────
+// Locks the OUTER vertical PageView's scrolling while a horizontal drag is
+// active here, then releases it once the drag ends — this prevents the two
+// PageViews from fighting over the same gesture (Instagram-style behavior).
+class _ImageCarousel extends StatefulWidget {
+  final List<String> urls;
+  final void Function(TapDownDetails)? onDoubleTapDown;
+  const _ImageCarousel({required this.urls, this.onDoubleTapDown});
+  @override
+  State<_ImageCarousel> createState() => _ImageCarouselState();
+}
+
+class _ImageCarouselState extends State<_ImageCarousel> {
+  late PageController _ctrl;
+  int _current = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = PageController();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onDoubleTapDown: widget.onDoubleTapDown,
+      onDoubleTap: () {},
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragStart: (_) =>
+          DiscoveryVerticalLock.of(context)?.lock(),
+      onHorizontalDragEnd: (_) =>
+          DiscoveryVerticalLock.of(context)?.unlock(),
+      onHorizontalDragCancel: () =>
+          DiscoveryVerticalLock.of(context)?.unlock(),
+      child: Stack(children: [
+        PageView.builder(
+          controller: _ctrl,
+          itemCount: widget.urls.length,
+          onPageChanged: (i) => setState(() => _current = i),
+          itemBuilder: (_, i) => _ImagePage(url: widget.urls[i]),
+        ),
+        Positioned(
+          top: 12, left: 0, right: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(widget.urls.length, (i) => Container(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: i == _current ? 7 : 5,
+              height: i == _current ? 7 : 5,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: i == _current ? Colors.white : Colors.white38,
+              ),
+            )),
+          ),
+        ),
+        Positioned(
+          top: 24, right: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text('\${_current + 1}/\${widget.urls.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 11)),
           ),
         ),
       ]),
