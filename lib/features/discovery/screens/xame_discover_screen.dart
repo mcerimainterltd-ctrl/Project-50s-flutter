@@ -169,6 +169,7 @@ class DiscoveryApiService {
     void Function(int, int)? onProgress,
   }) async {
     try {
+      final allFiles = mediaFiles.isNotEmpty ? mediaFiles : [mediaFile];
       final formData = FormData.fromMap({
         'authorId':     authorId,
         'title':        title,
@@ -180,11 +181,10 @@ class DiscoveryApiService {
         'isCollabOpen': isCollabOpen.toString(),
         'musicTitle':   musicTitle,
         if (musicUrl.isNotEmpty) 'musicUrl': musicUrl,
-        if (mediaFiles.length > 1)
-          for (var i = 1; i < mediaFiles.length; i++)
-            'mediaFile_$i': await MultipartFile.fromFile(mediaFiles[i].path),
-        'media': await MultipartFile.fromFile(mediaFile.path),
       });
+      for (final f in allFiles) {
+        formData.files.add(MapEntry('media', await MultipartFile.fromFile(f.path)));
+      }
       final res = await _dio.post(
         '/api/discover/post',
         data: formData,
