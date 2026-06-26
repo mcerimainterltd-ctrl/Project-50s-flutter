@@ -85,6 +85,9 @@ class DiscoveryApiService {
             : DateTime.now(),
           musicUrl:       m['musicUrl']    as String? ?? '',
           musicTitle:     m['musicTitle']  as String? ?? '',
+          mediaUrls: m['mediaUrls'] != null
+              ? (m['mediaUrls'] as List).map((e) => (e as Map)['url'] as String).toList()
+              : const [],
         );
       }).toList();
     } catch (_) { return []; }
@@ -842,6 +845,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       'ts':            e.ts?.toIso8601String(),
       'musicUrl':      e.musicUrl,
       'musicTitle':    e.musicTitle,
+      'mediaUrls':     e.mediaUrls.isNotEmpty ? e.mediaUrls.map((u) => {'url': u}).toList() : null,
     }).toList();
     final idx = _filtered.indexWhere((e) => e.id == item.id);
     Navigator.of(context).push(PageRouteBuilder(
@@ -3905,6 +3909,7 @@ class _FullscreenFeedPage extends StatelessWidget {
       'viewCount':    item.viewCount,
       'ts':           item.ts?.toIso8601String(),
       'musicUrl':     item.musicUrl,
+      'musicTitle':   item.musicTitle,
     };
     return DiscoveryFullscreenViewer(
       posts: [post],
