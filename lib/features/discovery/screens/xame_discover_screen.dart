@@ -161,6 +161,7 @@ class DiscoveryApiService {
     required String category,
     required File   mediaFile,
     required String mediaType,
+    List<File>      mediaFiles = const [],
     bool isWhisper = false,
     bool isCollabOpen = false,
     String musicUrl = '',
@@ -179,6 +180,9 @@ class DiscoveryApiService {
         'isCollabOpen': isCollabOpen.toString(),
         'musicTitle':   musicTitle,
         if (musicUrl.isNotEmpty) 'musicUrl': musicUrl,
+        if (mediaFiles.length > 1)
+          for (var i = 1; i < mediaFiles.length; i++)
+            'mediaFile_$i': await MultipartFile.fromFile(mediaFiles[i].path),
         'media': await MultipartFile.fromFile(mediaFile.path),
       });
       final res = await _dio.post(
@@ -1363,6 +1367,8 @@ class CreatePostSheetState extends State<CreatePostSheet> {
     }
   }
 
+  List<File> _mediaFiles = [];
+
   Future<void> _pickMedia() async {
     final assets = await AssetPicker.pickAssets(
       context,
@@ -1372,10 +1378,17 @@ class CreatePostSheetState extends State<CreatePostSheet> {
       ),
     );
     if (assets == null || assets.isEmpty) return;
-    final file = await assets.first.originFile;
-    if (file != null) {
-      setState(() { _mediaFile = file; _mediaType = 'image'; });
+    final files = <File>[];
+    for (final asset in assets) {
+      final file = await asset.originFile;
+      if (file != null) files.add(file);
     }
+    if (files.isEmpty) return;
+    setState(() {
+      _mediaFiles = files;
+      _mediaFile  = files.first;
+      _mediaType  = 'image';
+    });
   }
 
   Future<void> _pickVideo() async {
@@ -1632,6 +1645,7 @@ class CreatePostSheetState extends State<CreatePostSheet> {
       isCollabOpen: _isCollabOpen,
       musicUrl:     finalMusicUrl,
       musicTitle:   _musicTitle,
+      mediaFiles:   _mediaFiles,
       onProgress: (sent, total) {
         if (total > 0 && mounted) {
           setState(() => _uploadProgress = sent / total);
