@@ -28,7 +28,7 @@ class DiscoveryVerticalLock extends InheritedWidget {
       context.dependOnInheritedWidgetOfExactType<DiscoveryVerticalLock>();
 
   @override
-  bool updateShouldNotify(DiscoveryVerticalLock old) => false;
+  bool updateShouldNotify(DiscoveryVerticalLock old) => lock != old.lock || unlock != old.unlock;
 }
 
 class DiscoveryFullscreenViewer extends StatefulWidget {
@@ -105,7 +105,7 @@ class _DiscoveryFullscreenViewerState
         child: PageView.builder(
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
-        physics: (_locked || _activePointers >= 2) ? const NeverScrollableScrollPhysics() : null,
+        physics: (_locked || _activePointers >= 2) ? const NeverScrollableScrollPhysics() : const ClampingScrollPhysics(),
         itemCount: widget.posts.length,
         onPageChanged: (i) async {
           setState(() => _currentIndex = i);
@@ -1059,7 +1059,7 @@ class _ImageCarouselState extends State<_ImageCarousel> {
               color: Colors.black.withOpacity(0.5),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text('\${_current + 1}/\${widget.urls.length}',
+            child: Text('${_current + 1}/${widget.urls.length}',
                 style: const TextStyle(color: Colors.white, fontSize: 11)),
           ),
         ),
