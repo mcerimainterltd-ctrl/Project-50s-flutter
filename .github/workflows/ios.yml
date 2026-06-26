@@ -2,7 +2,7 @@ name: XamePage iOS IPA
 
 on:
   push:
-    tags: ['v*']
+    tags: ['v*-ios']
   workflow_dispatch:
 
 permissions:
