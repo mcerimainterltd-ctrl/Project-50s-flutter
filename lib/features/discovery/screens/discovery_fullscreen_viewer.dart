@@ -59,6 +59,7 @@ class _DiscoveryFullscreenViewerState
   late PageController _verticalCtrl;
   int _currentIndex = 0;
   int _activePointers = 0;
+  bool _locked = false;
 
   void _onPointerDown(PointerDownEvent e) => setState(() => _activePointers++);
   void _onPointerUp(PointerUpEvent e)   => setState(() => _activePointers = (_activePointers - 1).clamp(0, 10));
@@ -94,14 +95,17 @@ class _DiscoveryFullscreenViewerState
   @override
   Widget build(BuildContext context) {
     if (widget.embedded) {
-      return Listener(
+      return DiscoveryVerticalLock(
+        lock:   () { if (mounted) setState(() => _locked = true); },
+        unlock: () { if (mounted) setState(() => _locked = false); },
+        child: Listener(
         onPointerDown: _onPointerDown,
         onPointerUp: _onPointerUp,
         onPointerCancel: _onPointerCancel,
         child: PageView.builder(
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
-        physics: _activePointers >= 2 ? const NeverScrollableScrollPhysics() : null,
+        physics: (_locked || _activePointers >= 2) ? const NeverScrollableScrollPhysics() : null,
         itemCount: widget.posts.length,
         onPageChanged: (i) async {
           setState(() => _currentIndex = i);
@@ -126,7 +130,7 @@ class _DiscoveryFullscreenViewerState
             embedded: true,
           );
         },
-      ));
+      )));
     }
     return Scaffold(
       backgroundColor: Colors.black,
