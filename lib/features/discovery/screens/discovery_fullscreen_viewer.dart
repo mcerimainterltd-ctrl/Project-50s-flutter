@@ -1052,7 +1052,7 @@ class _ImageCarouselState extends State<_ImageCarousel> {
           ),
         ),
         Positioned(
-          top: 24, right: 16,
+          bottom: 12, right: 12,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
