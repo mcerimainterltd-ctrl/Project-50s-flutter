@@ -8,6 +8,7 @@ import 'dart:ui' as ui;
 import 'package:share_plus/share_plus.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
+import 'transaction_details_screen.dart';
 import 'dart:io';
 import '../core/services/push_service.dart';
 import 'package:flutter/material.dart';
@@ -1960,11 +1961,81 @@ class _SendTabState extends State<_SendTab> {
     );
   }
 
+  // Mirrors the server's tiered flat fee — for display only, server is source of truth
+  double _estimateFee(double amount) {
+    if (amount <= 5000) return 15;
+    if (amount <= 50000) return 40;
+    return 75;
+  }
+
+  Future<bool> _showTransferConfirmation() async {
+    final fee = _estimateFee(_amount);
+    final total = _amount + fee;
+    final cashbackEstimate = (_amount * 0.0002 / 0.1).floor(); // Basic tier estimate
+    return await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: _kCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          const Text('Confirm Transfer', style: TextStyle(
+              color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text('To $_accName${_selBank != null ? ' (${_selBank!.name})' : ''}',
+              style: const TextStyle(color: _kMuted, fontSize: 13)),
+          const SizedBox(height: 20),
+          _confirmRow('Amount', widget.fmt(_amount)),
+          _confirmRow('Service Fee', widget.fmt(fee)),
+          if (cashbackEstimate > 0)
+            _confirmRow('Estimated Cashback', '+$cashbackEstimate XameCoins', color: _kTeal),
+          const Divider(color: Colors.white12, height: 24),
+          _confirmRow('Total Debited', widget.fmt(total), bold: true),
+          const SizedBox(height: 24),
+          Row(children: [
+            Expanded(child: OutlinedButton(
+                onPressed: () => Navigator.pop(context, false),
+                style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 14)),
+                child: const Text('Cancel', style: TextStyle(color: Colors.white)))),
+            const SizedBox(width: 12),
+            Expanded(child: ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: _kTeal,
+                    padding: const EdgeInsets.symmetric(vertical: 14)),
+                child: const Text('Confirm & Send', style: TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.w700)))),
+          ]),
+        ]),
+      ),
+    ) ?? false;
+  }
+
+  Widget _confirmRow(String label, String value, {bool bold = false, Color? color}) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(label, style: const TextStyle(color: _kMuted, fontSize: 13)),
+      Text(value, style: TextStyle(
+          color: color ?? Colors.white, fontSize: bold ? 16 : 14,
+          fontWeight: bold ? FontWeight.w800 : FontWeight.w600)),
+    ]),
+  );
+
   Future<void> _send() async {
     if (_selBank == null)         { widget.snack('Select a bank'); return; }
     if (_accNum.length < 6)       { widget.snack('Enter account number'); return; }
     if (_amount < 1)              { widget.snack('Enter a valid amount'); return; }
     if (_amount > widget.balance) { widget.snack('Insufficient balance'); return; }
+    // Show full breakdown — user must confirm before proceeding
+    final confirmed = await _showTransferConfirmation();
+    if (!confirmed) return;
     // Verify PIN before transfer if enabled
     if (widget.pinEnabled) {
       final pin = await _promptPin(context);
@@ -1992,8 +2063,25 @@ class _SendTabState extends State<_SendTab> {
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
         await widget.onSuccess();
-        widget.snack('✅ Transfer successful! XameCoins cashback credited 🎉');
         _saveBeneficiary();
+        if (mounted) {
+          Navigator.of(context).pop(); // close the send sheet
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => TransactionDetailsScreen(
+            amount:         (d['principal'] as num?)?.toDouble() ?? _amount,
+            fee:            (d['fee'] as num?)?.toDouble() ?? 0,
+            totalDebit:     (d['totalDebit'] as num?)?.toDouble() ?? (_amount + ((d['fee'] as num?)?.toDouble() ?? 0)),
+            cashbackCoins:  d['cashbackCoins'] as int?,
+            senderName:     d['senderName']?.toString() ?? '',
+            recipientName:  d['recipientName']?.toString() ?? _accName,
+            bankName:       d['bankName']?.toString() ?? _selBank?.name ?? '',
+            accountNumber:  d['accountNumber']?.toString() ?? _accNum,
+            txRef:          d['txRef']?.toString() ?? '',
+            sessionId:      d['txRef']?.toString() ?? '',
+            paymentMethod:  'XamePay Wallet',
+            ts:             DateTime.tryParse(d['ts']?.toString() ?? '') ?? DateTime.now(),
+            fmt:            widget.fmt,
+          )));
+        }
       } else { widget.snack('❌ ${d['message'] ?? 'Transfer failed'}'); }
     } catch (_) { widget.snack('❌ Network error'); }
   }
