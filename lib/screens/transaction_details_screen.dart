@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 const _kTeal  = Color(0xFF00B0A0);
 const _kBg    = Color(0xFF0D1520);
@@ -227,48 +230,45 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _shareReceipt(BuildContext context) async {
-    final ctrl = ScreenshotController();
-    final image = await ctrl.captureFromWidget(
-      Material(
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Text('XamePay', style: TextStyle(color: _kTeal, fontSize: 20, fontWeight: FontWeight.w800)),
-              const Spacer(),
-              const Text('Transaction Receipt', style: TextStyle(color: Color(0xFF888888), fontSize: 11)),
-            ]),
-            const SizedBox(height: 16),
-            // Intended transfer amount only — no fee breakdown on the shareable receipt
-            Center(child: Text(fmt(amount),
-                style: const TextStyle(color: Color(0xFFFF6464), fontSize: 36, fontWeight: FontWeight.w800))),
-            const Center(child: Text('Completed', style: TextStyle(color: _kTeal, fontSize: 14))),
-            const SizedBox(height: 16),
-            const Divider(color: Color(0xFFE0E0E0)),
-            const SizedBox(height: 8),
-            _receiptRow('Description', 'Transfer to $recipientName ($bankName)'),
-            _receiptRow('Sender', senderName),
-            _receiptRow('Date & Time', _fmtTs(ts)),
-            _receiptRow('Reference', txRef),
-            _receiptRow('Status', 'Completed'),
-            const SizedBox(height: 16),
-            const Divider(color: Color(0xFFE0E0E0)),
-            const SizedBox(height: 8),
-            const Center(child: Text('Powered by XamePage', style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 10))),
+  // The receipt widget — intended transfer amount only, no fee breakdown
+  Widget _buildReceiptWidget() {
+    return Material(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Text('XamePay', style: TextStyle(color: _kTeal, fontSize: 20, fontWeight: FontWeight.w800)),
+            const Spacer(),
+            const Text('Transaction Receipt', style: TextStyle(color: Color(0xFF888888), fontSize: 11)),
           ]),
-        ),
+          const SizedBox(height: 16),
+          Center(child: Text(fmt(amount),
+              style: const TextStyle(color: Color(0xFFFF6464), fontSize: 36, fontWeight: FontWeight.w800))),
+          const Center(child: Text('Completed', style: TextStyle(color: _kTeal, fontSize: 14))),
+          const SizedBox(height: 16),
+          const Divider(color: Color(0xFFE0E0E0)),
+          const SizedBox(height: 8),
+          _receiptRow('Description', 'Transfer to $recipientName ($bankName)'),
+          if (senderName.isNotEmpty) _receiptRow('Sender', senderName),
+          _receiptRow('Date & Time', _fmtTs(ts)),
+          _receiptRow('Reference', txRef),
+          _receiptRow('Status', 'Completed'),
+          const SizedBox(height: 16),
+          const Divider(color: Color(0xFFE0E0E0)),
+          const SizedBox(height: 8),
+          const Center(child: Text('Powered by XamePage', style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 10))),
+        ]),
       ),
-      context: context,
     );
-    try {
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/xamepay_receipt_$txRef.png');
-      await file.writeAsBytes(image);
-      await Share.shareXFiles([XFile(file.path)],
-          text: 'XamePay Transaction Receipt', subject: 'XamePay Transaction Receipt');
-    } catch (_) {}
+  }
+
+  // Opens the pre-receipt preview, with explicit Image / PDF share choices
+  void _shareReceipt(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => _ReceiptPreviewScreen(
+      receiptBuilder: _buildReceiptWidget,
+      txRef: txRef,
+    )));
   }
 
   Widget _receiptRow(String label, String value) => Padding(
@@ -300,4 +300,109 @@ class _StatusDot extends StatelessWidget {
     const SizedBox(height: 2),
     Text(time, style: const TextStyle(color: _kMuted, fontSize: 9)),
   ]);
+}
+
+/// Pre-receipt preview shown before sharing — lets the user choose
+/// whether to share as an Image or as a PDF, matching the OPay-style flow.
+class _ReceiptPreviewScreen extends StatefulWidget {
+  final Widget Function() receiptBuilder;
+  final String txRef;
+  const _ReceiptPreviewScreen({required this.receiptBuilder, required this.txRef});
+
+  @override
+  State<_ReceiptPreviewScreen> createState() => _ReceiptPreviewScreenState();
+}
+
+class _ReceiptPreviewScreenState extends State<_ReceiptPreviewScreen> {
+  final _ctrl = ScreenshotController();
+  bool _busy = false;
+
+  Future<Uint8List?> _capture() async {
+    return await _ctrl.captureFromWidget(widget.receiptBuilder(), context: context);
+  }
+
+  Future<void> _shareAsImage() async {
+    setState(() => _busy = true);
+    try {
+      final bytes = await _capture();
+      if (bytes == null) return;
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/xamepay_receipt_${widget.txRef}.png');
+      await file.writeAsBytes(bytes);
+      await Share.shareXFiles([XFile(file.path)],
+          text: 'XamePay Transaction Receipt', subject: 'XamePay Transaction Receipt');
+    } catch (_) {} finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _shareAsPdf() async {
+    setState(() => _busy = true);
+    try {
+      final bytes = await _capture();
+      if (bytes == null) return;
+      final pdfDoc = pw.Document();
+      final pwImage = pw.MemoryImage(bytes);
+      pdfDoc.addPage(pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (ctx) => pw.Center(child: pw.Image(pwImage, width: 380)),
+      ));
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/xamepay_receipt_${widget.txRef}.pdf');
+      await file.writeAsBytes(await pdfDoc.save());
+      await Share.shareXFiles([XFile(file.path)],
+          text: 'XamePay Transaction Receipt', subject: 'XamePay Transaction Receipt');
+    } catch (_) {} finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        backgroundColor: _kBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('Share Receipt',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+      ),
+      body: Column(children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Screenshot(controller: _ctrl, child: widget.receiptBuilder()),
+          ),
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              Expanded(child: OutlinedButton.icon(
+                onPressed: _busy ? null : _shareAsImage,
+                icon: const Icon(Icons.image_outlined, color: _kTeal, size: 18),
+                label: const Text('Share as Image', style: TextStyle(color: _kTeal, fontWeight: FontWeight.w700)),
+                style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: _kTeal),
+                    padding: const EdgeInsets.symmetric(vertical: 14)),
+              )),
+              const SizedBox(width: 12),
+              Expanded(child: ElevatedButton.icon(
+                onPressed: _busy ? null : _shareAsPdf,
+                icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 18),
+                label: const Text('Share as PDF', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: _kTeal,
+                    padding: const EdgeInsets.symmetric(vertical: 14)),
+              )),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
 }

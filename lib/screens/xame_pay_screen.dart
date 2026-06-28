@@ -1484,22 +1484,27 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: CachedNetworkImage(
-                    imageUrl: 'https://nigerianbanks.xyz/logo/indulge-microfinance-bank.png',
+                    imageUrl: 'https://nigerianbanks.xyz/logo/' +
+                        (_account!["bank_name"] ?? "").toString().toLowerCase()
+                            .replaceAll(' ', '-') + '.png',
                     width: 48, height: 48, fit: BoxFit.contain,
                     errorWidget: (_, __, ___) => Container(
                       width: 48, height: 48,
                       decoration: BoxDecoration(
                         color: const Color(0xFF1B3A5C),
                         borderRadius: BorderRadius.circular(10)),
-                      child: const Center(child: Text('I',
-                          style: TextStyle(color: Colors.white,
+                      child: Center(child: Text(
+                          ((_account!["bank_name"] ?? "B") as String).isNotEmpty
+                              ? (_account!["bank_name"] as String)[0].toUpperCase()
+                              : 'B',
+                          style: const TextStyle(color: Colors.white,
                               fontWeight: FontWeight.w800, fontSize: 22)))),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Indulge MFB',
-                      style: TextStyle(color: Colors.white,
+                  Text(_account!["bank_name"]?.toString() ?? "Bank",
+                      style: const TextStyle(color: Colors.white,
                           fontWeight: FontWeight.w700, fontSize: 15)),
                   const Text('Virtual Account',
                       style: TextStyle(color: _kMuted, fontSize: 11)),
@@ -3907,6 +3912,27 @@ class _HistoryTabState extends State<_HistoryTab> {
     );
   }
 
+  void _openTransactionDetails(BuildContext context, WalletTx tx) {
+    final parsed = _parseTxLabel(tx.label, tx.type);
+    final recipientName = parsed.partyName ?? parsed.method;
+    final bankName = parsed.partyInfo ?? '';
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => TransactionDetailsScreen(
+      amount:         tx.principal ?? tx.amount,
+      fee:            tx.fee ?? 0,
+      totalDebit:     (tx.principal ?? tx.amount) + (tx.fee ?? 0),
+      cashbackCoins:  tx.cashback,
+      senderName:     '',
+      recipientName:  recipientName,
+      bankName:       bankName,
+      accountNumber:  '',
+      txRef:          tx.id,
+      sessionId:      tx.id,
+      paymentMethod:  'XamePay Wallet',
+      ts:             DateTime.tryParse(tx.ts) ?? DateTime.now(),
+      fmt:            widget.fmt,
+    )));
+  }
+
   void _showReceipt(BuildContext context, WalletTx tx) {
     showModalBottomSheet(
       context: context,
@@ -4174,7 +4200,7 @@ class _HistoryTabState extends State<_HistoryTab> {
       itemBuilder: (_, i) {
         final tx = widget.txs[i]; final cr = tx.type == 'credit';
         return InkWell(
-          onTap: () => _showReceipt(context, tx),
+          onTap: () => _openTransactionDetails(context, tx),
           borderRadius: BorderRadius.circular(10),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
