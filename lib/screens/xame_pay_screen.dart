@@ -1381,6 +1381,7 @@ class _BankTransferSheet extends StatefulWidget {
 class _BankTransferSheetState extends State<_BankTransferSheet> {
   Map<String, dynamic>? _account;
   bool _loading = false;
+  bool _switching = false;
   bool _bvnSubmitted = false;
   String? _error;
   final _bvnCtrl = TextEditingController();
@@ -1407,6 +1408,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
               "account_number": va["accountNumber"],
               "bank_name":      va["bankName"],
               "account_name":   "XamePay",
+              "provider":       va["provider"] ?? "",
             };
             _bvnSubmitted = true;
           });
@@ -1414,6 +1416,66 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
       }
     } catch (_) {}
     setState(() { _loading = false; });
+  }
+
+  Future<void> _switchProvider(BuildContext context) async {
+    final currentProvider = (_account?["provider"] ?? "flutterwave").toString();
+    final targetProvider = currentProvider == "monnify" ? "flutterwave" : "monnify";
+    final targetLabel = targetProvider == "monnify" ? "Monnify" : "Flutterwave";
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Switch to $targetLabel?',
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: const Text(
+            "You'll get a new account number. Your old account number will stop receiving funds — only transfer to your new account from now on.",
+            style: TextStyle(color: Colors.white60, fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00E5FF)),
+            child: const Text('Switch', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    setState(() { _switching = true; _error = null; });
+    try {
+      final endpoint = targetProvider == "monnify"
+          ? '/api/wallet/monnify/virtual-account'
+          : '/api/wallet/flw/virtual-account';
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}$endpoint'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "userId": widget.userId,
+          "email": "${widget.userId}@xamepage.app",
+          "confirmSwitch": true,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      final d = jsonDecode(r.body);
+      if (d["success"] == true) {
+        setState(() {
+          _account = {
+            "account_number": d["account"]["account_number"],
+            "bank_name":      d["account"]["bank_name"],
+            "account_name":   d["account"]["account_name"] ?? "XamePay",
+            "provider":       targetProvider,
+          };
+          _switching = false;
+        });
+        widget.onSnack('Switched to $targetLabel. New account ready.');
+      } else {
+        setState(() { _switching = false; _error = d["message"] ?? "Switch failed"; });
+      }
+    } catch (e) {
+      setState(() { _switching = false; _error = "Switch failed: $e"; });
+    }
   }
 
   Future<void> _fetchVirtualAccount(String bvn) async {
@@ -1510,6 +1572,19 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                       style: TextStyle(color: _kMuted, fontSize: 11)),
                 ]),
               ]),
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _switching ? null : () => _switchProvider(context),
+                icon: _switching
+                    ? const SizedBox(width: 14, height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54))
+                    : const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF00E5FF)),
+                label: Text(_switching ? 'Switching…' : 'Switch funding provider',
+                    style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
             ),
             const SizedBox(height: 16),
             _accountRow("Account Number", _account!["account_number"] ?? ""),
