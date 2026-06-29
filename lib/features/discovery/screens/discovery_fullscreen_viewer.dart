@@ -193,6 +193,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   bool _liked = false;
   int _likeCount = 0;
+  bool _showGrid = true;
   AudioPlayer? _musicPlayer;
 
   static const _reactionEmojis = ['❤️', '🔥', '😍', '👏', '💯', '✨', '🎉', '⚡'];
@@ -463,7 +464,9 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
               : <String>[];
           Widget child;
           if (!isVid && mediaUrls.length > 1) {
-            child = _ImageCarousel(urls: mediaUrls, onDoubleTapDown: _onTapForReaction);
+            child = _showGrid
+                ? _ImageGrid(urls: mediaUrls, onTap: () => setState(() => _showGrid = false))
+                : _ImageCarousel(urls: mediaUrls, onDoubleTapDown: _onTapForReaction);
           } else {
             child = GestureDetector(
               onDoubleTapDown: _onTapForReaction,
@@ -993,6 +996,55 @@ class _VideoPageState extends State<_VideoPage> {
 // Locks the OUTER vertical PageView's scrolling while a horizontal drag is
 // active here, then releases it once the drag ends — this prevents the two
 // PageViews from fighting over the same gesture (Instagram-style behavior).
+class _ImageGrid extends StatelessWidget {
+  final List<String> urls;
+  final VoidCallback onTap;
+  const _ImageGrid({required this.urls, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final tileCount = urls.length > 4 ? 4 : urls.length;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        color: Colors.black,
+        child: GridView.builder(
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 2,
+            mainAxisSpacing: 2,
+          ),
+          itemCount: tileCount,
+          itemBuilder: (_, i) {
+            final isLastTile = i == tileCount - 1;
+            final remaining = urls.length - tileCount;
+            return Stack(fit: StackFit.expand, children: [
+              CachedNetworkImage(
+                imageUrl: urls[i],
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(color: Colors.grey[900]),
+                errorWidget: (_, __, ___) => Container(
+                    color: Colors.grey[900],
+                    child: const Icon(Icons.broken_image, color: Colors.white24)),
+              ),
+              if (isLastTile && remaining > 0)
+                Container(
+                  color: Colors.black.withOpacity(0.55),
+                  alignment: Alignment.center,
+                  child: Text('+$remaining',
+                      style: const TextStyle(color: Colors.white,
+                          fontSize: 28, fontWeight: FontWeight.w700)),
+                ),
+            ]);
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class _ImageCarousel extends StatefulWidget {
   final List<String> urls;
   final void Function(TapDownDetails)? onDoubleTapDown;
