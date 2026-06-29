@@ -538,6 +538,85 @@ class _ImageBubble extends StatelessWidget {
         ),
       );
     }
+    // ── Album grid rendering ─────────────────────────────────────────────
+    // Only the first image (albumIndex == 0) renders the full grid.
+    // All other siblings are hidden to avoid duplicate bubbles.
+    if (albumIndex != null && albumIndex! > 0 && albumSiblings.length > 1) {
+      return const SizedBox.shrink();
+    }
+
+    if (albumIndex == 0 && albumSiblings.length > 1) {
+      final allUrls = albumSiblings
+          .map((m) => m.fileUrl ?? '')
+          .where((u) => u.isNotEmpty)
+          .toList();
+      final displayCount = allUrls.length > 4 ? 4 : allUrls.length;
+      final overflow = allUrls.length - 4;
+
+      return GestureDetector(
+        onTap: () => _openFullScreen(context),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: allUrls.length == 1 ? 1 : 2,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+                childAspectRatio: allUrls.length == 1 ? 16/9 : 1.0,
+              ),
+              itemCount: displayCount,
+              itemBuilder: (ctx, i) {
+                final isLast = i == 3 && overflow > 0;
+                return GestureDetector(
+                  onTap: () {
+                    final startIdx = i.clamp(0, allUrls.length - 1);
+                    Navigator.of(context).push(PageRouteBuilder(
+                      opaque: false,
+                      barrierColor: Colors.black87,
+                      pageBuilder: (_, __, ___) => _FullScreenAlbumViewer(
+                          urls: allUrls, initialIndex: startIdx),
+                      transitionsBuilder: (_, anim, __, child) =>
+                          FadeTransition(opacity: anim, child: child),
+                    ));
+                  },
+                  child: Stack(fit: StackFit.expand, children: [
+                    CachedNetworkImage(
+                      imageUrl: _resolveUrl(allUrls[i]),
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: Colors.grey[800]),
+                      errorWidget: (_, __, ___) => Container(
+                          color: Colors.grey[900],
+                          child: const Icon(Icons.broken_image,
+                              color: Colors.white38)),
+                    ),
+                    if (isLast)
+                      Container(
+                        color: Colors.black.withOpacity(0.55),
+                        child: Center(
+                          child: Text('+$overflow',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                  ]),
+                );
+              },
+            ),
+          ),
+          if (caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+              child: Text(caption,
+                  style: TextStyle(color: context.xText, fontSize: 13))),
+        ]),
+      );
+    }
+
     final showBadge = albumTotal != null && albumTotal! > 1;
     return GestureDetector(
       onTap: () => _openFullScreen(context),
