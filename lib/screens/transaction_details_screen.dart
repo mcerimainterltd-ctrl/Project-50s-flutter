@@ -30,6 +30,11 @@ class TransactionDetailsScreen extends StatelessWidget {
   final String paymentMethod;
   final DateTime ts;
   final String Function(double) fmt;
+  /// Full, ready-to-display sentence describing the transaction, e.g.
+  /// "Transfer to GIBSON AGBOR" or "Received from Covenant Agbor".
+  /// This is the single source of truth for the title and receipt
+  /// description — never reconstructed from recipientName + a template.
+  final String description;
 
   const TransactionDetailsScreen({
     super.key,
@@ -41,6 +46,7 @@ class TransactionDetailsScreen extends StatelessWidget {
     required this.recipientName,
     required this.bankName,
     required this.accountNumber,
+    required this.description,
     required this.txRef,
     required this.sessionId,
     required this.paymentMethod,
@@ -93,7 +99,7 @@ class TransactionDetailsScreen extends StatelessWidget {
                 child: const Icon(Icons.account_balance_rounded, color: _kTeal, size: 24),
               ),
               const SizedBox(height: 14),
-              Text('Transfer to $recipientName',
+              Text(description,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
@@ -133,7 +139,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               const Text('Transaction Details',
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
               const SizedBox(height: 14),
-              _detailRow('Sender', senderName),
+              if (senderName.isNotEmpty) _detailRow('Sender', senderName),
               _detailRow('Recipient Details', '$recipientName\n$bankName | $accountNumber'),
               _detailRow('Transaction No.', txRef, copyable: true, context: context),
               _detailRow('Payment Method', paymentMethod),
@@ -249,7 +255,7 @@ class TransactionDetailsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(color: Color(0xFFE0E0E0)),
           const SizedBox(height: 8),
-          _receiptRow('Description', 'Transfer to $recipientName ($bankName)'),
+          _receiptRow('Description', description),
           if (senderName.isNotEmpty) _receiptRow('Sender', senderName),
           _receiptRow('Date & Time', _fmtTs(ts)),
           _receiptRow('Reference', txRef),

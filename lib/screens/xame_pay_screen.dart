@@ -2146,21 +2146,25 @@ class _SendTabState extends State<_SendTab> {
         _saveBeneficiary();
         if (mounted) {
           Navigator.of(context).pop(); // close the send sheet
-          Navigator.of(context).push(MaterialPageRoute(builder: (_) => TransactionDetailsScreen(
-            amount:         (d['principal'] as num?)?.toDouble() ?? _amount,
-            fee:            (d['fee'] as num?)?.toDouble() ?? 0,
-            totalDebit:     (d['totalDebit'] as num?)?.toDouble() ?? (_amount + ((d['fee'] as num?)?.toDouble() ?? 0)),
-            cashbackCoins:  d['cashbackCoins'] as int?,
-            senderName:     d['senderName']?.toString() ?? '',
-            recipientName:  d['recipientName']?.toString() ?? _accName,
-            bankName:       d['bankName']?.toString() ?? _selBank?.name ?? '',
-            accountNumber:  d['accountNumber']?.toString() ?? _accNum,
-            txRef:          d['txRef']?.toString() ?? '',
-            sessionId:      d['txRef']?.toString() ?? '',
-            paymentMethod:  'XamePay Wallet',
-            ts:             DateTime.tryParse(d['ts']?.toString() ?? '') ?? DateTime.now(),
-            fmt:            widget.fmt,
-          )));
+          {
+            final freshRecipientName = d['recipientName']?.toString() ?? _accName;
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => TransactionDetailsScreen(
+              amount:         (d['principal'] as num?)?.toDouble() ?? _amount,
+              fee:            (d['fee'] as num?)?.toDouble() ?? 0,
+              totalDebit:     (d['totalDebit'] as num?)?.toDouble() ?? (_amount + ((d['fee'] as num?)?.toDouble() ?? 0)),
+              cashbackCoins:  d['cashbackCoins'] as int?,
+              senderName:     d['senderName']?.toString() ?? '',
+              recipientName:  freshRecipientName,
+              bankName:       d['bankName']?.toString() ?? _selBank?.name ?? '',
+              accountNumber:  d['accountNumber']?.toString() ?? _accNum,
+              txRef:          d['txRef']?.toString() ?? '',
+              sessionId:      d['txRef']?.toString() ?? '',
+              paymentMethod:  'XamePay Wallet',
+              ts:             DateTime.tryParse(d['ts']?.toString() ?? '') ?? DateTime.now(),
+              fmt:            widget.fmt,
+              description:    'Transfer to $freshRecipientName',
+            )));
+          }
         }
       } else { widget.snack('❌ ${d['message'] ?? 'Transfer failed'}'); }
     } catch (_) { widget.snack('❌ Network error'); }
@@ -4005,6 +4009,7 @@ class _HistoryTabState extends State<_HistoryTab> {
       paymentMethod:  'XamePay Wallet',
       ts:             DateTime.tryParse(tx.ts) ?? DateTime.now(),
       fmt:            widget.fmt,
+      description:    tx.label, // server's original label is already the correct, complete sentence
     )));
   }
 
