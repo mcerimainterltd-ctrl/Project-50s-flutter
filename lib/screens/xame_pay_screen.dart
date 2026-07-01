@@ -72,7 +72,7 @@ class WalletTx {
   final double? sentAmount, recvAmount, fxRate, principal, fee;
   final int? cashback;
   final String? sentCurrency, recvCurrency, recipient;
-  final String txSenderName, txRecipientName, txBankName, txAccountNumber;
+  final String txSenderName, txSenderBankName, txSenderAccountNumber, txRecipientName, txBankName, txAccountNumber;
   WalletTx.fromJson(Map<String, dynamic> j)
       : id               = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
         label            = j['label']  ?? '',
@@ -88,10 +88,12 @@ class WalletTx {
         fee              = (j['fee']        as num?)?.toDouble(),
         cashback         = (j['cashback']   as num?)?.toInt(),
         sentCurrency     = j['sentCurrency']?.toString(),
-        txSenderName     = j['senderName']?.toString()    ?? '',
-        txRecipientName  = j['recipientName']?.toString() ?? '',
-        txBankName       = j['bankName']?.toString()      ?? '',
-        txAccountNumber  = j['accountNumber']?.toString() ?? '',
+        txSenderName        = j['senderName']?.toString()           ?? '',
+        txSenderBankName    = j['senderBankName']?.toString()       ?? '',
+        txSenderAccountNumber = j['senderAccountNumber']?.toString() ?? '',
+        txRecipientName     = j['recipientName']?.toString()        ?? '',
+        txBankName          = j['bankName']?.toString()             ?? '',
+        txAccountNumber     = j['accountNumber']?.toString()        ?? '',
         recvCurrency = j['recvCurrency']?.toString(),
         recipient    = j['recipient']?.toString();
 }
@@ -2158,10 +2160,12 @@ class _SendTabState extends State<_SendTab> {
               fee:            (d['fee'] as num?)?.toDouble() ?? 0,
               totalDebit:     (d['totalDebit'] as num?)?.toDouble() ?? (_amount + ((d['fee'] as num?)?.toDouble() ?? 0)),
               cashbackCoins:  d['cashbackCoins'] as int?,
-              senderName:     d['senderName']?.toString() ?? '',
-              recipientName:  freshRecipientName,
-              bankName:       d['bankName']?.toString() ?? _selBank?.name ?? '',
-              accountNumber:  d['accountNumber']?.toString() ?? _accNum,
+              senderName:          d['senderName']?.toString() ?? '',
+              senderBankName:      d['senderBankName']?.toString() ?? '',
+              senderAccountNumber: d['senderAccountNumber']?.toString() ?? '',
+              recipientName:       freshRecipientName,
+              bankName:            d['bankName']?.toString() ?? _selBank?.name ?? '',
+              accountNumber:       d['accountNumber']?.toString() ?? _accNum,
               txRef:          d['txRef']?.toString() ?? '',
               sessionId:      d['txRef']?.toString() ?? '',
               paymentMethod:  'XamePay Wallet',
@@ -4007,10 +4011,12 @@ class _HistoryTabState extends State<_HistoryTab> {
       fee:            tx.fee ?? 0,
       totalDebit:     (tx.principal ?? tx.amount) + (tx.fee ?? 0),
       cashbackCoins:  tx.cashback,
-      senderName:     tx.txSenderName,
-      recipientName:  recipientName,
-      bankName:       bankName,
-      accountNumber:  tx.txAccountNumber,
+      senderName:          tx.txSenderName,
+      senderBankName:      tx.txSenderBankName,
+      senderAccountNumber: tx.txSenderAccountNumber,
+      recipientName:       recipientName,
+      bankName:            bankName,
+      accountNumber:       tx.txAccountNumber,
       txRef:          tx.id,
       sessionId:      tx.id,
       paymentMethod:  'XamePay Wallet',

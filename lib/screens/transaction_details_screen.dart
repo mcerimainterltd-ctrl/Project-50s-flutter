@@ -22,6 +22,8 @@ class TransactionDetailsScreen extends StatelessWidget {
   final double totalDebit;
   final int? cashbackCoins;
   final String senderName;
+  final String senderBankName;
+  final String senderAccountNumber;
   final String recipientName;
   final String bankName;
   final String accountNumber;
@@ -43,6 +45,8 @@ class TransactionDetailsScreen extends StatelessWidget {
     required this.totalDebit,
     this.cashbackCoins,
     required this.senderName,
+    this.senderBankName = '',
+    this.senderAccountNumber = '',
     required this.recipientName,
     required this.bankName,
     required this.accountNumber,
@@ -139,7 +143,8 @@ class TransactionDetailsScreen extends StatelessWidget {
               const Text('Transaction Details',
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
               const SizedBox(height: 14),
-              if (senderName.isNotEmpty) _detailRow('Sender', senderName),
+              if (senderName.isNotEmpty) _detailRow('Sender Details',
+                [senderName, if (senderBankName.isNotEmpty) senderBankName, if (senderAccountNumber.isNotEmpty) senderAccountNumber].join('\n')),
               if (recipientName.isNotEmpty || bankName.isNotEmpty || accountNumber.isNotEmpty)
                 _detailRow('Recipient Details', [
                   if (recipientName.isNotEmpty) recipientName,
@@ -262,7 +267,8 @@ class TransactionDetailsScreen extends StatelessWidget {
           const Divider(color: Color(0xFFE0E0E0)),
           const SizedBox(height: 8),
           _receiptRow('Description', description),
-          if (senderName.isNotEmpty) _receiptRow('Sender', senderName),
+          if (senderName.isNotEmpty) _receiptRow('Sender Details',
+            [senderName, if (senderBankName.isNotEmpty) senderBankName, if (senderAccountNumber.isNotEmpty) senderAccountNumber].join(' · ')),
           if (recipientName.isNotEmpty) _receiptRow(
             'Recipient',
             [recipientName, if (bankName.isNotEmpty) bankName, if (accountNumber.isNotEmpty) accountNumber].join(' · '),
