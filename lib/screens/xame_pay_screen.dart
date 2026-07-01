@@ -72,7 +72,7 @@ class WalletTx {
   final double? sentAmount, recvAmount, fxRate, principal, fee;
   final int? cashback;
   final String? sentCurrency, recvCurrency, recipient;
-  final String txSenderName, txSenderBankName, txSenderAccountNumber, txRecipientName, txBankName, txAccountNumber;
+  final String txSenderName, txSenderBankName, txSenderAccountNumber, txRecipientName, txBankName, txAccountNumber, txRecipientBankName, txRecipientAccountNumber;
   WalletTx.fromJson(Map<String, dynamic> j)
       : id               = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
         label            = j['label']  ?? '',
@@ -88,12 +88,14 @@ class WalletTx {
         fee              = (j['fee']        as num?)?.toDouble(),
         cashback         = (j['cashback']   as num?)?.toInt(),
         sentCurrency     = j['sentCurrency']?.toString(),
-        txSenderName        = j['senderName']?.toString()           ?? '',
-        txSenderBankName    = j['senderBankName']?.toString()       ?? '',
-        txSenderAccountNumber = j['senderAccountNumber']?.toString() ?? '',
-        txRecipientName     = j['recipientName']?.toString()        ?? '',
-        txBankName          = j['bankName']?.toString()             ?? '',
-        txAccountNumber     = j['accountNumber']?.toString()        ?? '',
+        txSenderName            = j['senderName']?.toString()              ?? '',
+        txSenderBankName        = j['senderBankName']?.toString()          ?? '',
+        txSenderAccountNumber   = j['senderAccountNumber']?.toString()     ?? '',
+        txRecipientName         = j['recipientName']?.toString()           ?? '',
+        txBankName              = j['bankName']?.toString()                ?? '',
+        txAccountNumber         = j['accountNumber']?.toString()           ?? '',
+        txRecipientBankName     = j['recipientBankName']?.toString()       ?? '',
+        txRecipientAccountNumber = j['recipientAccountNumber']?.toString() ?? '',
         recvCurrency = j['recvCurrency']?.toString(),
         recipient    = j['recipient']?.toString();
 }
@@ -4001,28 +4003,32 @@ class _HistoryTabState extends State<_HistoryTab> {
   }
 
   void _openTransactionDetails(BuildContext context, WalletTx tx) {
-    final parsed = _parseTxLabel(tx.label, tx.type);
-    final recipientName = tx.txRecipientName.isNotEmpty
-        ? tx.txRecipientName : (parsed.partyName ?? '');
-    final bankName = tx.txBankName.isNotEmpty
-        ? tx.txBankName : (parsed.partyInfo ?? '');
+    final isCredit = tx.type == 'credit';
+    // For credit: sender is external party, recipient is the wallet owner's VA
+    // For debit: sender is the wallet owner's VA, recipient is external party
+    final senderName        = isCredit ? tx.txSenderName        : tx.txSenderName;
+    final senderBankName    = isCredit ? tx.txBankName          : tx.txSenderBankName;
+    final senderAccountNumber = isCredit ? tx.txAccountNumber   : tx.txSenderAccountNumber;
+    final recipientName     = isCredit ? tx.txRecipientName     : tx.txRecipientName;
+    final recipientBankName = isCredit ? tx.txRecipientBankName : tx.txBankName;
+    final recipientAccountNumber = isCredit ? tx.txRecipientAccountNumber : tx.txAccountNumber;
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => TransactionDetailsScreen(
-      amount:         tx.principal ?? tx.amount,
-      fee:            tx.fee ?? 0,
-      totalDebit:     (tx.principal ?? tx.amount) + (tx.fee ?? 0),
-      cashbackCoins:  tx.cashback,
-      senderName:          tx.txSenderName,
-      senderBankName:      tx.txSenderBankName,
-      senderAccountNumber: tx.txSenderAccountNumber,
+      amount:              tx.principal ?? tx.amount,
+      fee:                 tx.fee ?? 0,
+      totalDebit:          (tx.principal ?? tx.amount) + (tx.fee ?? 0),
+      cashbackCoins:       tx.cashback,
+      senderName:          senderName,
+      senderBankName:      senderBankName,
+      senderAccountNumber: senderAccountNumber,
       recipientName:       recipientName,
-      bankName:            bankName,
-      accountNumber:       tx.txAccountNumber,
-      txRef:          tx.id,
-      sessionId:      tx.id,
-      paymentMethod:  'XamePay Wallet',
-      ts:             DateTime.tryParse(tx.ts) ?? DateTime.now(),
-      fmt:            widget.fmt,
-      description:    tx.label,
+      bankName:            recipientBankName,
+      accountNumber:       recipientAccountNumber,
+      txRef:               tx.id,
+      sessionId:           tx.id,
+      paymentMethod:       'XamePay Wallet',
+      ts:                  DateTime.tryParse(tx.ts) ?? DateTime.now(),
+      fmt:                 widget.fmt,
+      description:         tx.label,
     )));
   }
 
