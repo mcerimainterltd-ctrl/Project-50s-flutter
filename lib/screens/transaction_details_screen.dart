@@ -140,7 +140,13 @@ class TransactionDetailsScreen extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
               const SizedBox(height: 14),
               if (senderName.isNotEmpty) _detailRow('Sender', senderName),
-              _detailRow('Recipient Details', '$recipientName\n$bankName | $accountNumber'),
+              if (recipientName.isNotEmpty || bankName.isNotEmpty || accountNumber.isNotEmpty)
+                _detailRow('Recipient Details', [
+                  if (recipientName.isNotEmpty) recipientName,
+                  if (bankName.isNotEmpty && accountNumber.isNotEmpty) '$bankName | $accountNumber'
+                  else if (bankName.isNotEmpty) bankName
+                  else if (accountNumber.isNotEmpty) accountNumber,
+                ].join('\n')),
               _detailRow('Transaction No.', txRef, copyable: true, context: context),
               _detailRow('Payment Method', paymentMethod),
               _detailRow('Transaction Date', _fmtTs(ts)),
@@ -257,6 +263,10 @@ class TransactionDetailsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           _receiptRow('Description', description),
           if (senderName.isNotEmpty) _receiptRow('Sender', senderName),
+          if (recipientName.isNotEmpty) _receiptRow(
+            'Recipient',
+            [recipientName, if (bankName.isNotEmpty) bankName, if (accountNumber.isNotEmpty) accountNumber].join(' · '),
+          ),
           _receiptRow('Date & Time', _fmtTs(ts)),
           _receiptRow('Reference', txRef),
           _receiptRow('Status', 'Completed'),

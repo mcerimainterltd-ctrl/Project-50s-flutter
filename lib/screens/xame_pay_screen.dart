@@ -72,21 +72,26 @@ class WalletTx {
   final double? sentAmount, recvAmount, fxRate, principal, fee;
   final int? cashback;
   final String? sentCurrency, recvCurrency, recipient;
+  final String txSenderName, txRecipientName, txBankName, txAccountNumber;
   WalletTx.fromJson(Map<String, dynamic> j)
-      : id           = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
-        label        = j['label']  ?? '',
-        icon         = j['icon']   ?? '💳',
-        type         = j['type']   ?? 'debit',
-        status       = j['status'] ?? 'Completed',
-        ts           = j['ts']     ?? DateTime.now().toIso8601String(),
-        amount       = (j['amount']     as num?)?.toDouble() ?? 0,
-        sentAmount   = (j['sentAmount'] as num?)?.toDouble(),
-        recvAmount   = (j['recvAmount'] as num?)?.toDouble(),
-        fxRate       = (j['fxRate']     as num?)?.toDouble(),
-        principal    = (j['principal']  as num?)?.toDouble(),
-        fee          = (j['fee']        as num?)?.toDouble(),
-        cashback     = (j['cashback']   as num?)?.toInt(),
-        sentCurrency = j['sentCurrency']?.toString(),
+      : id               = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
+        label            = j['label']  ?? '',
+        icon             = j['icon']   ?? '💳',
+        type             = j['type']   ?? 'debit',
+        status           = j['status'] ?? 'Completed',
+        ts               = j['ts']     ?? DateTime.now().toIso8601String(),
+        amount           = (j['amount']     as num?)?.toDouble() ?? 0,
+        sentAmount       = (j['sentAmount'] as num?)?.toDouble(),
+        recvAmount       = (j['recvAmount'] as num?)?.toDouble(),
+        fxRate           = (j['fxRate']     as num?)?.toDouble(),
+        principal        = (j['principal']  as num?)?.toDouble(),
+        fee              = (j['fee']        as num?)?.toDouble(),
+        cashback         = (j['cashback']   as num?)?.toInt(),
+        sentCurrency     = j['sentCurrency']?.toString(),
+        txSenderName     = j['senderName']?.toString()    ?? '',
+        txRecipientName  = j['recipientName']?.toString() ?? '',
+        txBankName       = j['bankName']?.toString()      ?? '',
+        txAccountNumber  = j['accountNumber']?.toString() ?? '',
         recvCurrency = j['recvCurrency']?.toString(),
         recipient    = j['recipient']?.toString();
 }
@@ -3993,23 +3998,25 @@ class _HistoryTabState extends State<_HistoryTab> {
 
   void _openTransactionDetails(BuildContext context, WalletTx tx) {
     final parsed = _parseTxLabel(tx.label, tx.type);
-    final recipientName = parsed.partyName ?? parsed.method;
-    final bankName = parsed.partyInfo ?? '';
+    final recipientName = tx.txRecipientName.isNotEmpty
+        ? tx.txRecipientName : (parsed.partyName ?? '');
+    final bankName = tx.txBankName.isNotEmpty
+        ? tx.txBankName : (parsed.partyInfo ?? '');
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => TransactionDetailsScreen(
       amount:         tx.principal ?? tx.amount,
       fee:            tx.fee ?? 0,
       totalDebit:     (tx.principal ?? tx.amount) + (tx.fee ?? 0),
       cashbackCoins:  tx.cashback,
-      senderName:     '',
+      senderName:     tx.txSenderName,
       recipientName:  recipientName,
       bankName:       bankName,
-      accountNumber:  '',
+      accountNumber:  tx.txAccountNumber,
       txRef:          tx.id,
       sessionId:      tx.id,
       paymentMethod:  'XamePay Wallet',
       ts:             DateTime.tryParse(tx.ts) ?? DateTime.now(),
       fmt:            widget.fmt,
-      description:    tx.label, // server's original label is already the correct, complete sentence
+      description:    tx.label,
     )));
   }
 
