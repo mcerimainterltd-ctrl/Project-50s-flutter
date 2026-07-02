@@ -54,16 +54,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
     super.initState();
     _tabCtrl = TabController(length: 5, vsync: this);
     _tabCtrl.addListener(() {
-      if (_tabCtrl.index == 1 && _tabCtrl.indexIsChanging) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.of(context, rootNavigator: true).push(
-              MaterialPageRoute(builder: (_) => CallsHubScreen()));
-          _tabCtrl.index = _tab;
-        });
-      } else {
-        setState(() => _tab = _tabCtrl.index);
-      }
+      setState(() => _tab = _tabCtrl.index);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _connectSocket());
     _startAutoRefresh();
