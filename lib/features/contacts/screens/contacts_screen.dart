@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import '../../../core/services/cache_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../calls/screens/call_history_screen.dart';
+import '../../tv/screens/xame_tv_screen.dart';
+
 import '../../calls/screens/calls_hub_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../../screens/phone_screen.dart';
@@ -128,7 +130,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         backgroundColor: context.xCard,
         child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
-          const SizedBox.shrink(), // Calls tab opens fullscreen
+          const XameTvScreen(),
           Consumer(builder: (_, ref, __) {
             final self = ref.read(currentUserProvider);
             return DiscoveryAuraFeed(isTabActive: _tab == 2);
@@ -237,7 +239,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 horizontal: 12, vertical: 10),
             ),
           )
-        : Text(['Chats','Calls','Discover','Tel','Pay'][_tab],
+        : Text(['Chats','TV','Discover','Tel','Pay'][_tab],
             style: TextStyle(color: context.xText, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
@@ -269,15 +271,15 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           icon: Consumer(builder: (_, ref, __) {
             final contacts = ref.watch(contactsProvider).valueOrNull ?? [];
             final missed = contacts.fold<int>(0, (sum, c) => sum + c.missedCallsCount);
-            if (missed <= 0) return const Icon(Icons.call_outlined, size: 22);
+            if (missed <= 0) return const Icon(Icons.tv_outlined, size: 22);
             return Badge(
                   label: Text(missed > 99 ? '99+' : '$missed',
                       style: const TextStyle(fontSize: 10,
                           fontWeight: FontWeight.w700)),
                   backgroundColor: XameColors.danger,
-                  child: const Icon(Icons.call_outlined, size: 22));
+                  child: const Icon(Icons.tv_outlined, size: 22));
           }),
-          text: 'Calls'),
+          text: 'TV'),
         Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
         Tab(icon: Icon(Icons.phone_outlined,              size: 22), text: 'Tel'),
         Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 22), text: "Pay"),
@@ -484,6 +486,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           title: Text('My Portfolio',
             style: TextStyle(color: context.xText)),
           onTap: () => context.push("/gallery")),
+        ListTile(
+          leading: Icon(Icons.call_outlined, color: context.xMuted),
+          title: Text('Calls',
+            style: TextStyle(color: context.xText)),
+          onTap: () { Navigator.pop(context); context.go('/call-history'); }),
         ListTile(
           leading: Icon(Icons.campaign_outlined, color: context.xMuted),
           title: Text("Mass Messaging",
