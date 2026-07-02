@@ -130,7 +130,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         backgroundColor: context.xCard,
         child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
-          const XameTvScreen(),
+          _tab == 1 ? const XameTvScreen() : const SizedBox.shrink(),
           Consumer(builder: (_, ref, __) {
             final self = ref.read(currentUserProvider);
             return DiscoveryAuraFeed(isTabActive: _tab == 2);
@@ -490,7 +490,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           leading: Icon(Icons.call_outlined, color: context.xMuted),
           title: Text('Calls',
             style: TextStyle(color: context.xText)),
-          onTap: () { Navigator.pop(context); context.go('/call-history'); }),
+          onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const CallHistoryScreen())); }),
         ListTile(
           leading: Icon(Icons.campaign_outlined, color: context.xMuted),
           title: Text("Mass Messaging",

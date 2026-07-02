@@ -682,7 +682,6 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               Navigator.push(context, MaterialPageRoute(builder: (_) => DiscoveryMapScreen(
                 posts: _feed, regions: discoveryRegions, currentRegion: _regionCode, onRegionSelected: _onRegionSelected)));
             }),
-            _menuItem(context, '📺', 'XameTV', () { Navigator.pop(context); context.push('/tv'); }),
             _menuItem(context, '🔍', 'Search Posts', () { Navigator.pop(context); _openSearch(); }),
             _menuItem(context, '🔄', 'Refresh Feed', () { Navigator.pop(context); _loadData(refresh: true); }),
             const SizedBox(height: 8),
