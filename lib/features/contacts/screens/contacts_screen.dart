@@ -130,7 +130,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         backgroundColor: context.xCard,
         child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
-          _tab == 1 ? const XameTvScreen() : const SizedBox.shrink(),
+          XameTvScreen(isActive: _tab == 1),
           Consumer(builder: (_, ref, __) {
             final self = ref.read(currentUserProvider);
             return DiscoveryAuraFeed(isTabActive: _tab == 2);

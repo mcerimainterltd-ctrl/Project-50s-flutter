@@ -10,7 +10,8 @@ import 'package:http/http.dart' as http;
 import '../data/tv_channels.dart';
 
 class XameTvScreen extends StatefulWidget {
-  const XameTvScreen({Key? key}) : super(key: key);
+  final bool isActive;
+  const XameTvScreen({Key? key, this.isActive = false}) : super(key: key);
   @override
   State<XameTvScreen> createState() => _XameTvScreenState();
 }
@@ -55,9 +56,31 @@ class _XameTvScreenState extends State<XameTvScreen>
     _sSlide = Tween<Offset>(begin:const Offset(0,0.04), end:Offset.zero)
         .animate(CurvedAnimation(parent:_sAnim, curve:Curves.easeOut));
     _oAnim.forward();
-    _fetch();
-    _startTimer();
+    if (widget.isActive) {
+      _fetch();
+      _startTimer();
+    }
     _retryTimer = Timer.periodic(const Duration(minutes:5), (_) => _retryDead());
+  }
+
+  @override
+  void didUpdateWidget(XameTvScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      // Tab just became active — start fetching if not already loaded
+      if (_all.isEmpty) {
+        _fetch();
+      } else if (_ctrl == null || !_ctrl!.value.isInitialized) {
+        if (_filtered.isNotEmpty) _initPlayer(_filtered.first.streamUrl);
+      } else {
+        _ctrl?.play();
+      }
+      _startTimer();
+    } else if (!widget.isActive && oldWidget.isActive) {
+      // Tab became inactive — pause and stop overlay timer
+      _ctrl?.pause();
+      _overlayTimer?.cancel();
+    }
   }
 
   @override
