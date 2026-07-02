@@ -54,7 +54,20 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
     super.initState();
     _tabCtrl = TabController(length: 5, vsync: this);
     _tabCtrl.addListener(() {
-      setState(() => _tab = _tabCtrl.index);
+      if (_tabCtrl.index == 1 && _tabCtrl.indexIsChanging) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _tabCtrl.index = _tab;
+          Navigator.of(context, rootNavigator: true).push(
+            MaterialPageRoute(
+              fullscreenDialog: true,
+              builder: (_) => const XameTvScreen(isActive: true),
+            ),
+          );
+        });
+      } else {
+        setState(() => _tab = _tabCtrl.index);
+      }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _connectSocket());
     _startAutoRefresh();
@@ -121,7 +134,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
         backgroundColor: context.xCard,
         child: IndexedStack(index: _tab, children: [
           _ChatsTab(filter: _filter),
-          XameTvScreen(isActive: _tab == 1),
+          const SizedBox.shrink(), // TV opens fullscreen via route
           Consumer(builder: (_, ref, __) {
             final self = ref.read(currentUserProvider);
             return DiscoveryAuraFeed(isTabActive: _tab == 2);

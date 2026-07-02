@@ -563,7 +563,7 @@ class _XameTvScreenState extends State<XameTvScreen>
             child:Row(mainAxisSize:MainAxisSize.min, children:[
               const Icon(Icons.list_rounded,color:Colors.white,size:14),
               const SizedBox(width:4),
-              Text('\${_index+1}/\${_filtered.length}',
+              Text('${_index+1}/${_filtered.length}',
                   style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.w600)),
             ]),
           ),
