@@ -67,14 +67,15 @@ _ParsedTxLabel _parseTxLabel(String label, String type) {
 }
 
 class WalletTx {
-  final String id, label, icon, type, status, ts;
+  final String id, label, icon, type, status, ts, flwRef;
   final double amount;
   final double? sentAmount, recvAmount, fxRate, principal, fee;
   final int? cashback;
   final String? sentCurrency, recvCurrency, recipient;
   final String txSenderName, txSenderBankName, txSenderAccountNumber, txRecipientName, txBankName, txAccountNumber, txRecipientBankName, txRecipientAccountNumber;
   WalletTx.fromJson(Map<String, dynamic> j)
-      : id               = j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
+      : id               = j['_id']?.toString() ?? j['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}',
+        flwRef           = j['flwRef']?.toString() ?? '',
         label            = j['label']  ?? '',
         icon             = j['icon']   ?? '💳',
         type             = j['type']   ?? 'debit',
@@ -4023,7 +4024,7 @@ class _HistoryTabState extends State<_HistoryTab> {
       recipientName:       recipientName,
       bankName:            recipientBankName,
       accountNumber:       recipientAccountNumber,
-      txRef:               tx.id,
+      txRef:               tx.flwRef.isNotEmpty ? tx.flwRef : tx.id,
       sessionId:           tx.id,
       paymentMethod:       'XamePay Wallet',
       ts:                  DateTime.tryParse(tx.ts) ?? DateTime.now(),
