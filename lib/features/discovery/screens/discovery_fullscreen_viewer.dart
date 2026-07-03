@@ -887,14 +887,15 @@ class _VideoPageState extends State<_VideoPage> {
       child: Stack(children: [
         // The actual video — always painted, never intercepts touches itself.
         IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
-        // Tap-to-toggle layer. Only active (hit-testable) when controls are
-        // hidden, so it never competes with the slider's drag gesture while
-        // controls are visible.
-        IgnorePointer(
-          ignoring: _controlsVisible,
+        // Tap-to-toggle layer — always active but pointer events are
+        // passed through to children (slider, buttons) via Stack hit testing.
+        // Excludes bottom 80px so slider drag is never intercepted.
+        Positioned(
+          top: 0, left: 0, right: 0,
+          bottom: 80,
           child: GestureDetector(
             onTap: _toggleControlsVisibility,
-            behavior: HitTestBehavior.opaque,
+            behavior: HitTestBehavior.translucent,
           ),
         ),
         if (_paused)
@@ -974,6 +975,7 @@ class _VideoPageState extends State<_VideoPage> {
                         onChangeStart: (_) => _hideTimer?.cancel(),
                         onChanged: (v) {
                           if (_total.inMilliseconds > 0) {
+                            setState(() => _progress = v);
                             final seek = Duration(
                                 milliseconds: (v * _total.inMilliseconds).round());
                             _ctrl?.seekTo(seek);
