@@ -550,20 +550,21 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
           child: Stack(children: [
             // Gradient background — IgnorePointer so the video progress bar
             // underneath remains draggable through this decorative overlay
-            IgnorePointer(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end:   Alignment.topCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.55),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 1.0],
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end:   Alignment.topCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.55),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 1.0],
+                    ),
                   ),
                 ),
-                height: 220,
               ),
             ),
             Padding(
