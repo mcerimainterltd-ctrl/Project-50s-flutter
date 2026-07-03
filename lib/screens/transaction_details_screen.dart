@@ -64,7 +64,7 @@ class TransactionDetailsScreen extends StatelessWidget {
     final h = l.hour.toString().padLeft(2, '0');
     final m = l.minute.toString().padLeft(2, '0');
     final s = l.second.toString().padLeft(2, '0');
-    return '\${months[l.month - 1]} \${l.day}, \${l.year} • \$h:\$m:\$s';
+    return '${months[l.month - 1]} ${l.day}, ${l.year} • $h:$m:$s';
   }
 
   String _fmtCompact(DateTime t) {
@@ -74,7 +74,7 @@ class TransactionDetailsScreen extends StatelessWidget {
     final h = l.hour.toString().padLeft(2, '0');
     final m = l.minute.toString().padLeft(2, '0');
     final s = l.second.toString().padLeft(2, '0');
-    return '\${l.month}-\$dd \$h:\$m:\$s'.replaceFirst('\${l.month}', mm);
+    return '${l.month}-$dd $h:$m:$s'.replaceFirst('${l.month}', mm);
   }
 
   @override
