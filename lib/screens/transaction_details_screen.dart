@@ -59,20 +59,22 @@ class TransactionDetailsScreen extends StatelessWidget {
   });
 
   String _fmtTs(DateTime t) {
+    final l = t.toLocal();
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    final h = t.hour.toString().padLeft(2, '0');
-    final m = t.minute.toString().padLeft(2, '0');
-    final s = t.second.toString().padLeft(2, '0');
-    return '${months[t.month - 1]} ${t.day}, ${t.year} • $h:$m:$s';
+    final h = l.hour.toString().padLeft(2, '0');
+    final m = l.minute.toString().padLeft(2, '0');
+    final s = l.second.toString().padLeft(2, '0');
+    return '\${months[l.month - 1]} \${l.day}, \${l.year} • \$h:\$m:\$s';
   }
 
   String _fmtCompact(DateTime t) {
-    final mm = t.month.toString().padLeft(2, '0');
-    final dd = t.day.toString().padLeft(2, '0');
-    final h = t.hour.toString().padLeft(2, '0');
-    final m = t.minute.toString().padLeft(2, '0');
-    final s = t.second.toString().padLeft(2, '0');
-    return '${t.month}-$dd $h:$m:$s'.replaceFirst('${t.month}', mm);
+    final l = t.toLocal();
+    final mm = l.month.toString().padLeft(2, '0');
+    final dd = l.day.toString().padLeft(2, '0');
+    final h = l.hour.toString().padLeft(2, '0');
+    final m = l.minute.toString().padLeft(2, '0');
+    final s = l.second.toString().padLeft(2, '0');
+    return '\${l.month}-\$dd \$h:\$m:\$s'.replaceFirst('\${l.month}', mm);
   }
 
   @override
