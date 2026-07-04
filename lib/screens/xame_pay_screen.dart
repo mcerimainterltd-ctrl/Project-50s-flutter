@@ -803,6 +803,7 @@ class _XamePayScreenState extends State<XamePayScreen>
       ['🏦', 'Bank Transfer',        'Instant • Virtual account'],
       ['📟', 'USSD',                 'No internet needed'],
       ['📥', 'Receive from Contact', 'Request from another XamePage user'],
+      ['🌍', 'International Card / USD', 'Powered by Squad · Card, Bank, USSD'],
     ];
     showModalBottomSheet(
       context: context, backgroundColor: _kCard,
@@ -828,6 +829,7 @@ class _XamePayScreenState extends State<XamePayScreen>
                     case 1: _showBankTransfer(); break;
                     case 2: _showUSSD(); break;
                     case 3: _showRequestFromContact(); break;
+                    case 4: _showSquadPayment(); break;
                   }
                 },
                 child: Container(
@@ -929,6 +931,104 @@ class _XamePayScreenState extends State<XamePayScreen>
                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
               )),
           ]),
+        ),
+      ),
+    );
+  }
+
+  // ── SQUAD (INTERNATIONAL CARD / USD) ────────────────────────────────────────
+  void _showSquadPayment() {
+    final amtCtrl = TextEditingController();
+    String squadCurrency = _currency == 'USD' ? 'USD' : 'NGN';
+    showModalBottomSheet(
+      context: context, backgroundColor: _kCard, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Padding(padding: const EdgeInsets.all(24),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text("🌍 Pay with Squad",
+                  style: TextStyle(color: Colors.white,
+                      fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              const Text("Card or bank payment — NGN or USD",
+                  style: TextStyle(color: _kMuted, fontSize: 12)),
+              const SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                value: squadCurrency,
+                dropdownColor: const Color(0xFF1E2D3D),
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Currency",
+                  labelStyle: const TextStyle(color: _kMuted),
+                  filled: true, fillColor: const Color(0xFF1E2D3D),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24)),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'NGN', child: Text('NGN')),
+                  DropdownMenuItem(value: 'USD', child: Text('USD')),
+                ],
+                onChanged: (v) => setSheetState(() => squadCurrency = v ?? 'NGN'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amtCtrl,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Amount ($squadCurrency)",
+                  labelStyle: const TextStyle(color: _kMuted),
+                  filled: true, fillColor: const Color(0xFF1E2D3D),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: _kTeal,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
+                  onPressed: () async {
+                    final amt = double.tryParse(amtCtrl.text.trim());
+                    if (amt == null || amt <= 0) { _snack("Enter a valid amount"); return; }
+                    Navigator.pop(ctx);
+                    _snack("Initializing payment...");
+                    try {
+                      final r = await http.post(
+                        Uri.parse("${widget.serverUrl}/api/wallet/squad/init-payment"),
+                        headers: {"Content-Type": "application/json"},
+                        body: jsonEncode({
+                          "userId": widget.userId, "amount": amt,
+                          "currency": squadCurrency,
+                          "email": "${widget.userId}@xamepage.app",
+                          "name": "",
+                        }),
+                      ).timeout(const Duration(seconds: 15));
+                      final d = jsonDecode(r.body);
+                      if (d["success"] == true) {
+                        final url = Uri.parse(d["paymentLink"]);
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        } else { _snack("Could not open payment page"); }
+                      } else { _snack(d["message"] ?? "Payment initialization failed"); }
+                    } catch (_) { _snack("Payment failed — check connection"); }
+                  },
+                  child: const Text("Continue to Squad",
+                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                )),
+            ]),
+          ),
         ),
       ),
     );
