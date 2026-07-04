@@ -1050,62 +1050,106 @@ class _XamePayScreenState extends State<XamePayScreen>
   // ── USSD ─────────────────────────────────────────────────────────────────
   void _showUSSD() {
     final amtCtrl = TextEditingController();
+    List<BankItem> banks = [];
+    BankItem? selBank;
+    bool loadingBanks = true;
     showModalBottomSheet(
       context: context, backgroundColor: _kCard, isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Padding(padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text("📟 USSD Payment",
-                style: TextStyle(color: Colors.white,
-                    fontSize: 17, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            const Text("Works without internet",
-                style: TextStyle(color: _kMuted, fontSize: 12)),
-            const SizedBox(height: 20),
-            TextField(
-              controller: amtCtrl, keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "Amount ($_currency)",
-                labelStyle: const TextStyle(color: _kMuted),
-                filled: true, fillColor: const Color(0xFF1E2D3D),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white24)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white24)),
-              ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          if (loadingBanks && banks.isEmpty) {
+            loadingBanks = true;
+            http.get(Uri.parse("${widget.serverUrl}/api/wallet/banklist?cc=NG"))
+                .timeout(const Duration(seconds: 10)).then((r) {
+              final d = jsonDecode(r.body);
+              if (d["success"] == true) {
+                final list = (d["banks"] as List).map((b) => BankItem.fromJson(b)).toList();
+                setSheetState(() { banks = list; loadingBanks = false; });
+              } else {
+                setSheetState(() { loadingBanks = false; });
+              }
+            }).catchError((_) { setSheetState(() { loadingBanks = false; }); });
+          }
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            child: Padding(padding: const EdgeInsets.all(24),
+              child: Column(mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text("📟 USSD Payment",
+                    style: TextStyle(color: Colors.white,
+                        fontSize: 17, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                const Text("Works without internet",
+                    style: TextStyle(color: _kMuted, fontSize: 12)),
+                const SizedBox(height: 20),
+                const Text("Select Bank",
+                    style: TextStyle(color: _kMuted, fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                if (loadingBanks)
+                  const Padding(padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(child: CircularProgressIndicator(color: _kTeal, strokeWidth: 2)))
+                else
+                  DropdownButtonFormField<BankItem>(
+                    value: selBank,
+                    dropdownColor: const Color(0xFF1E2D3D),
+                    style: const TextStyle(color: Colors.white),
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      filled: true, fillColor: const Color(0xFF1E2D3D),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.white24)),
+                    ),
+                    hint: const Text("Choose your bank", style: TextStyle(color: _kMuted)),
+                    items: banks.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
+                    onChanged: (v) => setSheetState(() { selBank = v; }),
+                  ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: amtCtrl, keyboardType: TextInputType.number,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Amount ($_currency)",
+                    labelStyle: const TextStyle(color: _kMuted),
+                    filled: true, fillColor: const Color(0xFF1E2D3D),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.white24)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.white24)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    onPressed: () async {
+                      if (selBank == null) { _snack("Select your bank"); return; }
+                      final amt = double.tryParse(amtCtrl.text.trim());
+                      if (amt == null || amt <= 0) { _snack("Enter a valid amount"); return; }
+                      Navigator.pop(ctx);
+                      _snack("Generating USSD code...");
+                      try {
+                        final r = await http.post(
+                          Uri.parse("${widget.serverUrl}/api/wallet/flw/ussd"),
+                          headers: {"Content-Type": "application/json"},
+                          body: jsonEncode({"userId": widget.userId, "amount": amt,
+                              "currency": _currency, "account_bank": selBank!.code}),
+                        ).timeout(const Duration(seconds: 15));
+                        final d = jsonDecode(r.body);
+                        if (d["success"] == true) { _showUSSDCode(d["ussdCode"], amt); }
+                        else { _snack(d["message"] ?? "USSD generation failed"); }
+                      } catch (_) { _snack("Failed — check connection"); }
+                    },
+                    child: const Text("Get USSD Code",
+                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                  )),
+              ]),
             ),
-            const SizedBox(height: 16),
-            SizedBox(width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                onPressed: () async {
-                  final amt = double.tryParse(amtCtrl.text.trim());
-                  if (amt == null || amt <= 0) { _snack("Enter a valid amount"); return; }
-                  Navigator.pop(ctx);
-                  _snack("Generating USSD code...");
-                  try {
-                    final r = await http.post(
-                      Uri.parse("${widget.serverUrl}/api/wallet/flw/ussd"),
-                      headers: {"Content-Type": "application/json"},
-                      body: jsonEncode({"userId": widget.userId, "amount": amt, "currency": _currency}),
-                    ).timeout(const Duration(seconds: 15));
-                    final d = jsonDecode(r.body);
-                    if (d["success"] == true) { _showUSSDCode(d["ussdCode"], amt); }
-                    else { _snack(d["message"] ?? "USSD generation failed"); }
-                  } catch (_) { _snack("Failed — check connection"); }
-                },
-                child: const Text("Get USSD Code",
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
-              )),
-          ]),
-        ),
+          );
+        },
       ),
     );
   }
