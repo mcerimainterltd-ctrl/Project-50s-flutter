@@ -1050,7 +1050,9 @@ class _XamePayScreenState extends State<XamePayScreen>
   // ── USSD ─────────────────────────────────────────────────────────────────
   void _showUSSD() {
     final amtCtrl = TextEditingController();
+    final srchCtrl = TextEditingController();
     List<BankItem> banks = [];
+    List<BankItem> filtered = [];
     BankItem? selBank;
     bool loadingBanks = true;
     showModalBottomSheet(
@@ -1066,7 +1068,7 @@ class _XamePayScreenState extends State<XamePayScreen>
               final d = jsonDecode(r.body);
               if (d["success"] == true) {
                 final list = (d["banks"] as List).map((b) => BankItem.fromJson(b)).toList();
-                setSheetState(() { banks = list; loadingBanks = false; });
+                setSheetState(() { banks = list; filtered = list; loadingBanks = false; });
               } else {
                 setSheetState(() { loadingBanks = false; });
               }
@@ -1090,21 +1092,53 @@ class _XamePayScreenState extends State<XamePayScreen>
                 if (loadingBanks)
                   const Padding(padding: EdgeInsets.symmetric(vertical: 12),
                       child: Center(child: CircularProgressIndicator(color: _kTeal, strokeWidth: 2)))
-                else
-                  DropdownButtonFormField<BankItem>(
-                    value: selBank,
-                    dropdownColor: const Color(0xFF1E2D3D),
-                    style: const TextStyle(color: Colors.white),
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      filled: true, fillColor: const Color(0xFF1E2D3D),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Colors.white24)),
+                else ...[
+                  _xf(srchCtrl, '🔍 Search bank…', TextInputType.text, (v) {
+                    setSheetState(() {
+                      filtered = v.isEmpty ? banks
+                          : banks.where((b) => b.name.toLowerCase().contains(v.toLowerCase())).toList();
+                      if (selBank != null) selBank = null;
+                    });
+                  }),
+                  if (selBank != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(color: const Color(0x1A00B0A0),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0x3300B0A0))),
+                      child: Text('✅ ${selBank!.name}',
+                          style: const TextStyle(color: _kTeal, fontSize: 13, fontWeight: FontWeight.w600)),
                     ),
-                    hint: const Text("Choose your bank", style: TextStyle(color: _kMuted)),
-                    items: banks.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
-                    onChanged: (v) => setSheetState(() { selBank = v; }),
-                  ),
+                  ] else ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white10)),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.isEmpty ? 1 : filtered.length,
+                        itemBuilder: (_, i) {
+                          if (filtered.isEmpty) return const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text('No banks found', style: TextStyle(color: _kMuted, fontSize: 13)));
+                          final b = filtered[i];
+                          return InkWell(
+                            onTap: () => setSheetState(() { selBank = b; srchCtrl.text = b.name; }),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(border: Border(
+                                  bottom: BorderSide(color: Colors.white.withOpacity(0.05)))),
+                              child: Text(b.name, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ],
                 const SizedBox(height: 16),
                 TextField(
                   controller: amtCtrl, keyboardType: TextInputType.number,
