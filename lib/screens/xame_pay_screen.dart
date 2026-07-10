@@ -1606,10 +1606,42 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
     setState(() { _loading = false; });
   }
 
+  Widget _providerTile(String value, String name, String subtitle, String current) {
+    final selected = current == value;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+          color: selected ? _kTeal : _kMuted, size: 20),
+      title: Text(name, style: TextStyle(color: selected ? _kTeal : Colors.white,
+          fontWeight: FontWeight.w700, fontSize: 14)),
+      subtitle: Text(subtitle, style: const TextStyle(color: _kMuted, fontSize: 11)),
+      onTap: () => Navigator.pop(context, value),
+    );
+  }
+
   Future<void> _switchProvider(BuildContext context) async {
     final currentProvider = (_account?["provider"] ?? "flutterwave").toString();
-    final targetProvider = currentProvider == "monnify" ? "flutterwave" : "monnify";
-    final targetLabel = targetProvider == "monnify" ? "Monnify" : "Flutterwave";
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: _kCard,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Select Funding Provider', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          const Text('Choose which provider generates your virtual account number.', style: TextStyle(color: _kMuted, fontSize: 12)),
+          const SizedBox(height: 16),
+          _providerTile('flutterwave', 'Flutterwave', 'Indulge MFB · Fully active ✅', currentProvider),
+          _providerTile('squad',       'Squad',       'GT Bank · Active, coming soon 🔜', currentProvider),
+          _providerTile('monnify',     'Monnify',     'Multiple banks · Pending activation ⏳', currentProvider),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+    if (picked == null || picked == currentProvider || !mounted) return;
+    final targetProvider = picked;
+    final targetLabel = picked == 'monnify' ? 'Monnify' : picked == 'squad' ? 'Squad' : 'Flutterwave';
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -1636,6 +1668,8 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
     try {
       final endpoint = targetProvider == "monnify"
           ? '/api/wallet/monnify/virtual-account'
+          : targetProvider == "squad"
+          ? '/api/wallet/squad/virtual-account'
           : '/api/wallet/flw/virtual-account';
       final r = await http.post(
         Uri.parse('${widget.serverUrl}$endpoint'),
