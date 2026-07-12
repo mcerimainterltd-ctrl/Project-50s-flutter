@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:just_audio/just_audio.dart';
@@ -299,6 +302,64 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
       }
     });
     _burstAnim.forward(from: 0);
+  }
+
+  Future<void> _requestCollab(BuildContext context) async {
+    final post = widget.post;
+    final postId = post['id'] as String? ?? post['postId'] as String? ?? '';
+    final authorName = post['authorName'] as String? ?? 'this creator';
+    HapticFeedback.mediumImpact();
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null || !context.mounted) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Send Collab Request',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: Text('Send your media to collab with $authorName?',
+            style: const TextStyle(color: Colors.white60, fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00E5FF)),
+            child: const Text('Send 🤝',
+                style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    try {
+      final req = http.MultipartRequest('POST',
+          Uri.parse('${AppConstants.serverUrl}/api/discover/collab/request'));
+      req.fields['postId']      = postId;
+      req.fields['requesterId'] = widget.currentUserId;
+      req.fields['mediaType']   = 'image';
+      req.files.add(await http.MultipartFile.fromPath('media', picked.path));
+      final res  = await req.send();
+      final body = jsonDecode(await res.stream.bytesToString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(body['success'] == true
+              ? '🤝 Collab request sent!'
+              : body['message'] ?? 'Failed'),
+          backgroundColor: body['success'] == true
+              ? const Color(0xFF1A3A3A) : Colors.redAccent,
+        ));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to send collab request'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    }
   }
 
   Future<void> _toggleLike() async {
@@ -675,6 +736,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                   onShare:      () => _sharePost(widget.post),
                   onViewers:    () => _openViewers(widget.post),
                   onCommenters: () => _openCommenters(widget.post),
+                  onCollab:     () => _requestCollab(context),
                 ),
               ],
             ),
@@ -1197,6 +1259,7 @@ class _ActionColumn extends StatefulWidget {
   final VoidCallback onShare;
   final VoidCallback? onViewers;
   final VoidCallback? onCommenters;
+  final VoidCallback? onCollab;
 
   const _ActionColumn({
     Key? key,
@@ -1209,6 +1272,7 @@ class _ActionColumn extends StatefulWidget {
     required this.onShare,
     this.onViewers,
     this.onCommenters,
+    this.onCollab,
   }) : super(key: key);
 
   @override
@@ -1310,6 +1374,15 @@ class _ActionColumnState extends State<_ActionColumn>
       const SizedBox(height: 22),
       _ActionBtn(icon: Icons.ios_share_rounded,
           color: Colors.white, label: 'Share', onTap: widget.onShare),
+      // Collab — only for non-owners when post is open for collab
+      if (widget.currentUserId.isNotEmpty &&
+          widget.currentUserId != (widget.post['authorId'] as String? ?? '') &&
+          (widget.post['isCollabOpen'] as bool? ?? false) &&
+          (widget.post['collabStatus'] as String? ?? 'none') == 'none') ...[
+        const SizedBox(height: 22),
+        _ActionBtn(icon: Icons.handshake_outlined,
+            color: const Color(0xFF00E5FF), label: 'Collab', onTap: widget.onCollab),
+      ],
       // Delete — only for post owner
       if (widget.currentUserId.isNotEmpty &&
           widget.currentUserId == (widget.post['authorId'] as String? ?? '')) ...[
