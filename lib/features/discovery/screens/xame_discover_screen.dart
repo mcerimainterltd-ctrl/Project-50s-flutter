@@ -727,6 +727,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 isActive: i == _currentFeedIndex && widget.isTabActive,
                 currentUserId: user?.xameId??'',
                 currentUserAvatar: user?.profilePic??'',
+                currentUserName:   user?.displayName??'',
                 onAvatarTap: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => AuthorGalleryScreen(
                     authorId: item.authorId, authorName: item.authorName,
@@ -865,6 +866,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
           initialIndex:     idx < 0 ? 0 : idx,
           currentUserId:    user?.xameId ?? '',
           currentUserAvatar: user?.profilePic ?? '',
+          currentUserName:   user?.displayName ?? '',
         ),
       ),
       transitionDuration: const Duration(milliseconds: 250),
@@ -3943,6 +3945,7 @@ class _FullscreenFeedPage extends StatelessWidget {
       initialIndex: 0,
       currentUserId: currentUserId,
       currentUserAvatar: currentUserAvatar,
+      currentUserName:   '',
       embedded: true,
       isActive: isActive,
     );

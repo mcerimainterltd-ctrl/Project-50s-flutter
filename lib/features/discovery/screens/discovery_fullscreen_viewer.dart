@@ -39,6 +39,7 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
   final int initialIndex;
   final String currentUserId;
   final String currentUserAvatar;
+  final String currentUserName;
 
   final bool embedded;
   final bool isActive;
@@ -48,6 +49,7 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
     required this.initialIndex,
     required this.currentUserId,
     this.currentUserAvatar = '',
+    this.currentUserName = '',
     this.embedded = false,
     this.isActive = true,
   }) : super(key: key);
@@ -337,9 +339,11 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     try {
       final req = http.MultipartRequest('POST',
           Uri.parse('${AppConstants.serverUrl}/api/discover/collab/request'));
-      req.fields['postId']      = postId;
-      req.fields['requesterId'] = widget.currentUserId;
-      req.fields['mediaType']   = 'image';
+      req.fields['postId']        = postId;
+      req.fields['requesterId']   = widget.currentUserId;
+      req.fields['requesterName'] = widget.currentUserName.isNotEmpty ? widget.currentUserName : widget.currentUserId;
+      req.fields['requesterAvatar'] = widget.currentUserAvatar;
+      req.fields['mediaType']     = 'image';
       req.files.add(await http.MultipartFile.fromPath('media', picked.path));
       final res  = await req.send();
       final body = jsonDecode(await res.stream.bytesToString());
