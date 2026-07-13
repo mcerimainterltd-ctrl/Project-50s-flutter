@@ -65,6 +65,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initShareListener();
     _initContactRequestListener();
     _initWalletRequestListener();
+    _initCollabListener();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkBatteryOptimization());
     WidgetsBinding.instance.addPostFrameCallback((_) => _initFcmNavigation());
@@ -162,6 +163,8 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
 
   StreamSubscription? _walletRequestSub;
+  StreamSubscription? _collabRequestSub;
+  StreamSubscription? _collabAcceptedSub;
 
   void _initWalletRequestListener() {
     _walletRequestSub = ref.read(socketServiceProvider)
@@ -258,6 +261,141 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
           ]),
         ),
       );
+    });
+  }
+
+  void _initCollabListener() {
+    final socket = ref.read(socketServiceProvider);
+
+    _collabRequestSub = socket.collabRequest.listen((data) {
+      final requesterName  = data['requesterName']   as String? ?? 'Someone';
+      final postTitle      = data['postTitle']        as String? ?? 'your post';
+      final requesterAvatar = data['requesterAvatar'] as String? ?? '';
+      final mediaUrl       = data['mediaUrl']         as String? ?? '';
+      final postId         = data['postId']           as String? ?? '';
+      final requesterId    = data['requesterId']      as String? ?? '';
+
+      // Push notification so the author is alerted even if the app is backgrounded
+      ref.read(pushServiceProvider).showAlertNotification(
+        '🤝 Collab Request',
+        '$requesterName wants to collab on "$postTitle"',
+      );
+
+      // In-app bottom sheet — mirrors _showCollabRequestSheet in xame_discover_screen
+      final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
+      if (ctx == null) return;
+      showModalBottomSheet(
+        context: ctx,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF12121E),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 36, height: 4,
+                decoration: BoxDecoration(color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            const Text('🤝 Collab Request',
+                style: TextStyle(color: Colors.white, fontSize: 18,
+                    fontWeight: FontWeight.w800)),
+            const SizedBox(height: 16),
+            Row(children: [
+              Container(width: 48, height: 48,
+                decoration: BoxDecoration(shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF00E5FF), width: 1.5)),
+                child: ClipOval(child: requesterAvatar.isNotEmpty
+                    ? CachedNetworkImage(imageUrl: requesterAvatar, fit: BoxFit.cover)
+                    : Container(color: const Color(0xFF1A2E2E),
+                        child: const Icon(Icons.person, color: Colors.white54)))),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(requesterName, style: const TextStyle(color: Colors.white,
+                    fontSize: 15, fontWeight: FontWeight.w700)),
+                Text('wants to collab on "$postTitle"',
+                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              ])),
+            ]),
+            if (mediaUrl.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ClipRRect(borderRadius: BorderRadius.circular(12),
+                child: CachedNetworkImage(imageUrl: mediaUrl,
+                    height: 160, width: double.infinity, fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => Container(height: 160,
+                        color: const Color(0xFF1A1A2E),
+                        child: const Icon(Icons.image_outlined,
+                            color: Colors.white24, size: 40)))),
+            ],
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Decline',
+                    style: TextStyle(color: Colors.white54)))),
+              const SizedBox(width: 12),
+              Expanded(flex: 2, child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00E5FF),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    await http.post(
+                      Uri.parse('${AppConstants.serverUrl}/api/discover/collab/accept'),
+                      headers: {'Content-Type': 'application/json'},
+                      body: jsonEncode({
+                        'postId':   postId,
+                        'authorId': ref.read(currentUserProvider)?.xameId ?? '',
+                      }),
+                    );
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                        content: Text('🤝 Collab accepted!'),
+                        backgroundColor: Color(0xFF1A3A3A),
+                      ));
+                    }
+                  } catch (_) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                        content: Text('Failed to accept collab'),
+                        backgroundColor: Colors.redAccent,
+                      ));
+                    }
+                  }
+                },
+                child: const Text('Accept 🤝',
+                    style: TextStyle(color: Colors.black,
+                        fontWeight: FontWeight.w700)))),
+            ]),
+          ]),
+        ),
+      );
+    });
+
+    _collabAcceptedSub = socket.collabAccepted.listen((data) {
+      final postTitle = data['postTitle'] as String? ?? 'your post';
+      ref.read(pushServiceProvider).showAlertNotification(
+        '🎉 Collab Accepted!',
+        'Your collab on "$postTitle" was accepted!',
+      );
+      final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
+      if (ctx == null) return;
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+        content: Text('🤝 Your collab on "$postTitle" was accepted!'),
+        backgroundColor: const Color(0xFF1A3A3A),
+        duration: const Duration(seconds: 4),
+      ));
     });
   }
 
