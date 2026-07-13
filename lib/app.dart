@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:xamepage/core/config/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'features/discovery/screens/collab_thread_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:xamepage/core/config/router.dart';
@@ -352,19 +353,24 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
                 onPressed: () async {
                   Navigator.pop(ctx);
                   try {
-                    await http.post(
+                    final res = await http.post(
                       Uri.parse('${AppConstants.serverUrl}/api/discover/collab/accept'),
                       headers: {'Content-Type': 'application/json'},
                       body: jsonEncode({
-                        'postId':   postId,
-                        'authorId': ref.read(currentUserProvider)?.xameId ?? '',
+                        'postId':      postId,
+                        'authorId':    ref.read(currentUserProvider)?.xameId ?? '',
+                        'requesterId': requesterId,
                       }),
                     );
-                    if (ctx.mounted) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                        content: Text('🤝 Collab accepted!'),
-                        backgroundColor: Color(0xFF1A3A3A),
-                      ));
+                    final data = jsonDecode(res.body);
+                    if (data['success'] == true && ctx.mounted) {
+                      Navigator.of(ctx).push(MaterialPageRoute(
+                        builder: (_) => CollabThreadScreen(
+                          threadId:     data['threadId'] as String,
+                          postTitle:    postTitle,
+                          postMediaUrl: mediaUrl,
+                          otherUserId:  requesterId,
+                        )));
                     }
                   } catch (_) {
                     if (ctx.mounted) {
@@ -385,18 +391,23 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     });
 
     _collabAcceptedSub = socket.collabAccepted.listen((data) {
-      final postTitle = data['postTitle'] as String? ?? 'your post';
+      final postTitle    = data['postTitle']    as String? ?? 'your post';
+      final postMediaUrl = data['postMediaUrl'] as String? ?? '';
+      final threadId     = data['threadId']     as String? ?? '';
       ref.read(pushServiceProvider).showAlertNotification(
         '🎉 Collab Accepted!',
         'Your collab on "$postTitle" was accepted!',
       );
       final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
       if (ctx == null) return;
-      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-        content: Text('🤝 Your collab on "$postTitle" was accepted!'),
-        backgroundColor: const Color(0xFF1A3A3A),
-        duration: const Duration(seconds: 4),
-      ));
+      // Open collab thread immediately
+      Navigator.of(ctx).push(MaterialPageRoute(
+        builder: (_) => CollabThreadScreen(
+          threadId:     threadId,
+          postTitle:    postTitle,
+          postMediaUrl: postMediaUrl,
+          otherUserId:  '',
+        )));
     });
   }
 

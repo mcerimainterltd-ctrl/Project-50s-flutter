@@ -49,6 +49,7 @@ class SocketService {
   final _disappearExpiredCtrl = StreamController<DisappearExpiredData>.broadcast();
   final _walletReceiveCtrl    = StreamController<WalletReceiveData>.broadcast();
   final _collabRequestCtrl   = StreamController<Map<String,dynamic>>.broadcast();
+  final _collabMessageCtrl   = StreamController<Map<String,dynamic>>.broadcast();
   final _collabAcceptedCtrl  = StreamController<Map<String,dynamic>>.broadcast();
   final _walletDebitCtrl      = StreamController<Map<String,dynamic>>.broadcast();
   final _profileUpdatedCtrl   = StreamController<Map<String, dynamic>>.broadcast();
@@ -87,6 +88,7 @@ class SocketService {
   Stream<DisappearExpiredData>      get disappearExpired => _disappearExpiredCtrl.stream;
   Stream<WalletReceiveData>         get walletReceive    => _walletReceiveCtrl.stream;
   Stream<Map<String,dynamic>>       get collabRequest   => _collabRequestCtrl.stream;
+  Stream<Map<String,dynamic>>       get collabMessage   => _collabMessageCtrl.stream;
   Stream<Map<String,dynamic>>       get collabAccepted  => _collabAcceptedCtrl.stream;
   Stream<Map<String,dynamic>>       get walletDebit      => _walletDebitCtrl.stream;
   Stream<Map<String, dynamic>>      get profileUpdated   => _profileUpdatedCtrl.stream;
@@ -381,6 +383,9 @@ class SocketService {
     // ── Collab ───────────────────────────────────────────────────────────
     socket.on('collab_request', (d) {
       if (d != null) _collabRequestCtrl.add(Map<String,dynamic>.from(d as Map));
+    });
+    socket.on('collab_message', (d) {
+      if (d != null) _collabMessageCtrl.add(Map<String,dynamic>.from(d as Map));
     });
     socket.on('collab_accepted', (d) {
       if (d != null) _collabAcceptedCtrl.add(Map<String,dynamic>.from(d as Map));
