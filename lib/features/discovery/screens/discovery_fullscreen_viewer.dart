@@ -40,7 +40,6 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
   final String currentUserId;
   final String currentUserName;
   final String currentUserAvatar;
-  final String currentUserName;
 
   final bool embedded;
   final bool isActive;
@@ -51,7 +50,6 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
     required this.currentUserId,
     this.currentUserName = '',
     this.currentUserAvatar = '',
-    this.currentUserName = '',
     this.embedded = false,
     this.isActive = true,
   }) : super(key: key);
