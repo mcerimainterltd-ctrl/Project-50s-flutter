@@ -169,6 +169,7 @@ class _FullscreenPostPage extends StatefulWidget {
   final bool isActive;
   final String currentUserId;
   final String currentUserAvatar;
+  final String currentUserName;
   final VoidCallback onClose;
   final bool embedded;
 
@@ -179,6 +180,7 @@ class _FullscreenPostPage extends StatefulWidget {
     required this.currentUserId,
     required this.currentUserAvatar,
     required this.onClose,
+    this.currentUserName = '',
     this.embedded = false,
   }) : super(key: key);
 

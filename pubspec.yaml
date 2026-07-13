@@ -1,7 +1,7 @@
 name: xamepage
 description: XamePage - Ultramodern calling & messaging app
 publish_to: 'none'
-version: 2.1.1+684
+version: 2.1.1+685
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
