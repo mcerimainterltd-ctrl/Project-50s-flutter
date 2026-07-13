@@ -6,7 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/config/constants.dart';
 import '../../../core/services/socket_service.dart';
-import '../../../features/auth/providers/auth_provider.dart';
+import '../../../core/services/auth_service.dart';
 
 class CollabMessage {
   final String messageId, senderId, senderName, text;
