@@ -850,6 +850,11 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       'musicUrl':      e.musicUrl,
       'musicTitle':    e.musicTitle,
       'mediaUrls':     e.mediaUrls.isNotEmpty ? e.mediaUrls.map((u) => {'url': u}).toList() : null,
+      'isCollabOpen':      e.isCollabOpen,
+      'collabStatus':      e.collabStatus,
+      'collabMediaUrl':    e.collabMediaUrl,
+      'collabPartnerId':   e.collabPartnerId,
+      'collabPartnerName': e.collabPartnerName,
     }).toList();
     final idx = _filtered.indexWhere((e) => e.id == item.id);
     Navigator.of(context).push(PageRouteBuilder(
