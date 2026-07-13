@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/constants.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../shared/models/xame_user.dart';
 
 class CollabMessage {
   final String messageId, senderId, senderName, text;
@@ -97,11 +98,11 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
       await http.post(
         Uri.parse('${AppConstants.serverUrl}/api/discover/collab/thread/${widget.threadId}/send'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': user.xameId, 'senderName': user.name, 'text': text}),
+        body: jsonEncode({'userId': user.xameId, 'senderName': user.displayName, 'text': text}),
       );
       final msg = CollabMessage(
         messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-        senderId: user.xameId, senderName: user.name, text: text, ts: DateTime.now());
+        senderId: user.xameId, senderName: user.displayName, text: text, ts: DateTime.now());
       if (mounted) setState(() => _messages.add(msg));
       _scrollToBottom();
     } catch (_) {}
