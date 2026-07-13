@@ -370,6 +370,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
                           postTitle:    postTitle,
                           postMediaUrl: mediaUrl,
                           otherUserId:  requesterId,
+                          isAuthor:     true,
                         )));
                     }
                   } catch (_) {
@@ -407,6 +408,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
           postTitle:    postTitle,
           postMediaUrl: postMediaUrl,
           otherUserId:  '',
+          isAuthor:     false,
         )));
     });
   }

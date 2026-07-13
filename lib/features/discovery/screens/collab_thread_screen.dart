@@ -28,6 +28,7 @@ class CollabThreadScreen extends ConsumerStatefulWidget {
   final String postTitle;
   final String postMediaUrl;
   final String otherUserId;
+  final bool isAuthor;
 
   const CollabThreadScreen({
     Key? key,
@@ -35,6 +36,7 @@ class CollabThreadScreen extends ConsumerStatefulWidget {
     required this.postTitle,
     required this.postMediaUrl,
     required this.otherUserId,
+    this.isAuthor = false,
   }) : super(key: key);
 
   @override
@@ -81,6 +83,8 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
             .map((m) => CollabMessage.fromJson(m as Map<String, dynamic>)).toList();
         if (mounted) setState(() { _messages.addAll(msgs); _loading = false; });
         _scrollToBottom();
+      } else {
+        if (mounted) setState(() => _loading = false);
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
@@ -228,6 +232,63 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
                   })),
 
         // Input
+        // Action buttons — author sees Authorize, requester sees Submit
+        if (widget.isAuthor)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00B0A0),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                icon: const Icon(Icons.verified_rounded, color: Colors.black, size: 18),
+                label: const Text('Authorize Collab',
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800, fontSize: 14)),
+                onPressed: () async {
+                  final user = ref.read(currentUserProvider);
+                  if (user == null) return;
+                  try {
+                    final res = await http.post(
+                      Uri.parse('${AppConstants.serverUrl}/api/discover/collab/authorize'),
+                      headers: {'Content-Type': 'application/json'},
+                      body: jsonEncode({'threadId': widget.threadId, 'authorId': user.xameId}));
+                    final data = jsonDecode(res.body);
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(data['success'] == true ? '✅ Collab authorized!' : data['message'] ?? 'Failed'),
+                      backgroundColor: data['success'] == true ? const Color(0xFF1A3A3A) : Colors.redAccent));
+                  } catch (_) {}
+                }),
+            )),
+        if (!widget.isAuthor)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00E5FF),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                icon: const Icon(Icons.upload_rounded, color: Colors.black, size: 18),
+                label: const Text('Submit Collab',
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800, fontSize: 14)),
+                onPressed: () async {
+                  final user = ref.read(currentUserProvider);
+                  if (user == null) return;
+                  try {
+                    final res = await http.post(
+                      Uri.parse('${AppConstants.serverUrl}/api/discover/collab/submit'),
+                      headers: {'Content-Type': 'application/json'},
+                      body: jsonEncode({'threadId': widget.threadId, 'requesterId': user.xameId}));
+                    final data = jsonDecode(res.body);
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(data['success'] == true ? '🤝 Collab submitted!' : data['message'] ?? 'Failed'),
+                      backgroundColor: data['success'] == true ? const Color(0xFF1A3A3A) : Colors.redAccent));
+                  } catch (_) {}
+                }),
+            )),
         Container(
           padding: EdgeInsets.fromLTRB(12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
           decoration: const BoxDecoration(
