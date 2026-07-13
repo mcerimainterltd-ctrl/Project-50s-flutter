@@ -38,6 +38,7 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
   final List<Map<String, dynamic>> posts;
   final int initialIndex;
   final String currentUserId;
+  final String currentUserName;
   final String currentUserAvatar;
   final String currentUserName;
 
@@ -48,6 +49,7 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
     required this.posts,
     required this.initialIndex,
     required this.currentUserId,
+    this.currentUserName = '',
     this.currentUserAvatar = '',
     this.currentUserName = '',
     this.embedded = false,

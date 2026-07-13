@@ -3908,6 +3908,7 @@ class _FullscreenFeedPage extends StatelessWidget {
   final bool isActive;
   final String currentUserId;
   final String currentUserAvatar;
+  final String currentUserName;
   final VoidCallback? onAvatarTap;
   final VoidCallback? onPost;
 
@@ -3916,6 +3917,7 @@ class _FullscreenFeedPage extends StatelessWidget {
     required this.isActive,
     required this.currentUserId,
     this.currentUserAvatar = '',
+    this.currentUserName = '',
     this.onAvatarTap,
     this.onPost,
   });
