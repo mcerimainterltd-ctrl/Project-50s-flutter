@@ -1377,7 +1377,7 @@ class _ActionColumnState extends State<_ActionColumn>
       // Collab — only for non-owners when post is open for collab
       if (widget.currentUserId.isNotEmpty &&
           widget.currentUserId != (widget.post['authorId'] as String? ?? '') &&
-          (widget.post['isCollabOpen'] as bool? ?? false) &&
+          (widget.post['isCollabOpen'] == true || widget.post['isCollabOpen'].toString() == 'true') &&
           (widget.post['collabStatus'] as String? ?? 'none') == 'none') ...[
         const SizedBox(height: 22),
         _ActionBtn(icon: Icons.handshake_outlined,
