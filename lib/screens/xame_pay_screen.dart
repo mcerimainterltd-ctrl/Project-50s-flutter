@@ -1671,16 +1671,32 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
           : targetProvider == "squad"
           ? '/api/wallet/squad/virtual-account'
           : '/api/wallet/flw/virtual-account';
-      final r = await http.post(
+      Map<String, dynamic> requestBody = {
+        "userId": widget.userId,
+        "email": "${widget.userId}@xamepage.app",
+        "confirmSwitch": true,
+      };
+      var r = await http.post(
         Uri.parse('${widget.serverUrl}$endpoint'),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "userId": widget.userId,
-          "email": "${widget.userId}@xamepage.app",
-          "confirmSwitch": true,
-        }),
+        body: jsonEncode(requestBody),
       ).timeout(const Duration(seconds: 15));
-      final d = jsonDecode(r.body);
+      var d = jsonDecode(r.body);
+      // Squad requires gender/address/mobile/bvn — prompt once if missing, then retry
+      if (d["success"] != true && d["requiresProfile"] == true && mounted) {
+        final profile = await _promptSquadProfile();
+        if (profile == null || !mounted) {
+          setState(() { _switching = false; });
+          return;
+        }
+        requestBody.addAll(profile);
+        r = await http.post(
+          Uri.parse('${widget.serverUrl}$endpoint'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(requestBody),
+        ).timeout(const Duration(seconds: 15));
+        d = jsonDecode(r.body);
+      }
       if (d["success"] == true) {
         setState(() {
           _account = {
@@ -1698,6 +1714,100 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
     } catch (e) {
       setState(() { _switching = false; _error = "Switch failed: $e"; });
     }
+  }
+
+  Future<Map<String, String>?> _promptSquadProfile() async {
+    final genderOptions = ['Male', 'Female'];
+    String? gender;
+    final addressCtrl = TextEditingController();
+    final mobileCtrl = TextEditingController();
+    final bvnCtrl = TextEditingController();
+    return showModalBottomSheet<Map<String, String>>(
+      context: context, backgroundColor: _kCard, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Padding(padding: const EdgeInsets.all(24),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text("A few more details for Squad",
+                  style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              const Text("Required once for identity verification — saved for future use.",
+                  style: TextStyle(color: _kMuted, fontSize: 12)),
+              const SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                value: gender,
+                dropdownColor: const Color(0xFF1E2D3D),
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Gender", labelStyle: const TextStyle(color: _kMuted),
+                  filled: true, fillColor: const Color(0xFF1E2D3D),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24)),
+                ),
+                items: genderOptions.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                onChanged: (v) => setSheetState(() { gender = v; }),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressCtrl, style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Home Address", labelStyle: const TextStyle(color: _kMuted),
+                  filled: true, fillColor: const Color(0xFF1E2D3D),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: mobileCtrl, keyboardType: TextInputType.phone,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Mobile Number", labelStyle: const TextStyle(color: _kMuted),
+                  filled: true, fillColor: const Color(0xFF1E2D3D),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: bvnCtrl, keyboardType: TextInputType.number, maxLength: 11,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "BVN", labelStyle: const TextStyle(color: _kMuted),
+                  filled: true, fillColor: const Color(0xFF1E2D3D),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  onPressed: () {
+                    if (gender == null || addressCtrl.text.trim().isEmpty ||
+                        mobileCtrl.text.trim().isEmpty || bvnCtrl.text.trim().length != 11) {
+                      widget.onSnack("Please fill in all fields correctly (BVN must be 11 digits)");
+                      return;
+                    }
+                    Navigator.pop(ctx, {
+                      "gender": gender!,
+                      "address": addressCtrl.text.trim(),
+                      "mobile": mobileCtrl.text.trim(),
+                      "bvn": bvnCtrl.text.trim(),
+                    });
+                  },
+                  child: const Text("Continue",
+                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                )),
+            ]),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _fetchVirtualAccount(String bvn) async {
