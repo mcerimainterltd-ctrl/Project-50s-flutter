@@ -1722,6 +1722,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
     final addressCtrl = TextEditingController();
     final mobileCtrl = TextEditingController();
     final bvnCtrl = TextEditingController();
+    final middleNameCtrl = TextEditingController();
     return showModalBottomSheet<Map<String, String>>(
       context: context, backgroundColor: _kCard, isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -1781,6 +1782,17 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                       borderSide: const BorderSide(color: Colors.white24)),
                 ),
               ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: middleNameCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Middle Name (optional)", labelStyle: const TextStyle(color: _kMuted),
+                  filled: true, fillColor: const Color(0xFF1E2D3D),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24)),
+                ),
+              ),
               const SizedBox(height: 16),
               SizedBox(width: double.infinity,
                 child: ElevatedButton(
@@ -1798,6 +1810,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                       "address": addressCtrl.text.trim(),
                       "mobile": mobileCtrl.text.trim(),
                       "bvn": bvnCtrl.text.trim(),
+                      "middleName": middleNameCtrl.text.trim(),
                     });
                   },
                   child: const Text("Continue",
