@@ -1669,7 +1669,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
     await _performSwitch(targetProvider, targetLabel);
   }
 
-  Future<void> _performSwitch(String targetProvider, String targetLabel) async {
+  Future<void> _performSwitch(String targetProvider, String targetLabel, {bool forceProfilePrompt = false}) async {
     setState(() { _switching = true; _error = null; });
     try {
       final endpoint = targetProvider == "monnify"
@@ -1682,6 +1682,18 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         "email": "${widget.userId}@xamepage.app",
         "confirmSwitch": true,
       };
+      // On a Squad retry, always let the user re-enter/correct their details up front —
+      // a previous invalid value (e.g. wrong gender format) may already be saved server-side,
+      // which would otherwise prevent the "missing fields" prompt from firing again.
+      if (targetProvider == 'squad' && forceProfilePrompt) {
+        if (!mounted) return;
+        final profile = await _promptSquadProfile();
+        if (profile == null || !mounted) {
+          setState(() { _switching = false; });
+          return;
+        }
+        requestBody.addAll(profile);
+      }
       var r = await http.post(
         Uri.parse('${widget.serverUrl}$endpoint'),
         headers: {"Content-Type": "application/json"},
@@ -1899,7 +1911,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                   final p = _lastFailedProvider!;
                   final l = _lastFailedLabel ?? p;
                   setState(() { _error = null; });
-                  _performSwitch(p, l);
+                  _performSwitch(p, l, forceProfilePrompt: p == 'squad');
                 } else {
                   setState(() { _error = null; _bvnSubmitted = false; });
                 }
