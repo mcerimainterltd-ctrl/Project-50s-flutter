@@ -1571,6 +1571,8 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
   bool _loading = false;
   bool _switching = false;
   bool _bvnSubmitted = false;
+  String? _lastFailedProvider;
+  String? _lastFailedLabel;
   String? _error;
   final _bvnCtrl = TextEditingController();
 
@@ -1664,6 +1666,10 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
       ),
     );
     if (confirm != true || !mounted) return;
+    await _performSwitch(targetProvider, targetLabel);
+  }
+
+  Future<void> _performSwitch(String targetProvider, String targetLabel) async {
     setState(() { _switching = true; _error = null; });
     try {
       final endpoint = targetProvider == "monnify"
@@ -1706,13 +1712,25 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
             "provider":       targetProvider,
           };
           _switching = false;
+          _lastFailedProvider = null;
+          _lastFailedLabel = null;
         });
         widget.onSnack('Switched to $targetLabel. New account ready.');
       } else {
-        setState(() { _switching = false; _error = d["message"] ?? "Switch failed"; });
+        setState(() {
+          _switching = false;
+          _error = d["message"] ?? "Switch failed";
+          _lastFailedProvider = targetProvider;
+          _lastFailedLabel = targetLabel;
+        });
       }
     } catch (e) {
-      setState(() { _switching = false; _error = "Switch failed: $e"; });
+      setState(() {
+        _switching = false;
+        _error = "Switch failed: $e";
+        _lastFailedProvider = targetProvider;
+        _lastFailedLabel = targetLabel;
+      });
     }
   }
 
@@ -1806,7 +1824,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                       return;
                     }
                     Navigator.pop(ctx, {
-                      "gender": gender!,
+                      "gender": gender == 'Male' ? '1' : '2',
                       "address": addressCtrl.text.trim(),
                       "mobile": mobileCtrl.text.trim(),
                       "bvn": bvnCtrl.text.trim(),
@@ -1876,7 +1894,16 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              onPressed: () => setState(() { _error = null; _bvnSubmitted = false; }),
+              onPressed: () {
+                if (_lastFailedProvider != null) {
+                  final p = _lastFailedProvider!;
+                  final l = _lastFailedLabel ?? p;
+                  setState(() { _error = null; });
+                  _performSwitch(p, l);
+                } else {
+                  setState(() { _error = null; _bvnSubmitted = false; });
+                }
+              },
               child: const Text("Try Again", style: TextStyle(color: Colors.black))),
           ]
           else if (_bvnSubmitted && _account != null) ...[
