@@ -273,26 +273,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
         if (isContact) _loadData(refresh: true);
       });
 
-      // Collab request — show accept/decline sheet to post author
-      _collabRequestSub = ref.read(socketServiceProvider)
-          .collabRequest
-          .listen((data) {
-        if (!mounted) return;
-        _showCollabRequestSheet(data);
-      });
-
-      // Collab accepted — notify requester
-      _collabAcceptedSub = ref.read(socketServiceProvider)
-          .collabAccepted
-          .listen((data) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('🤝 Your collab on "${data['postTitle']}" was accepted!'),
-          backgroundColor: const Color(0xFF1A3A3A),
-          duration: const Duration(seconds: 4),
-        ));
-        _loadData(refresh: true);
-      });
+      // Collab listeners handled globally in app.dart
     });
     if (widget.authorId != null && widget.authorId!.isNotEmpty) {
       _authorFilter = widget.authorId;

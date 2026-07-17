@@ -68,6 +68,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initContactRequestListener();
     _initWalletRequestListener();
     _initCollabListener();
+    Future.delayed(const Duration(seconds: 3), _checkPendingCollabThreads);
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkBatteryOptimization());
     WidgetsBinding.instance.addPostFrameCallback((_) => _initFcmNavigation());
@@ -264,6 +265,35 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         ),
       );
     });
+  }
+
+  Future<void> _checkPendingCollabThreads() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    try {
+      final res = await http.get(Uri.parse(
+        '${AppConstants.serverUrl}/api/discover/collab/my-threads?userId=${user.xameId}'));
+      final data = jsonDecode(res.body);
+      if (data['success'] != true) return;
+      final threads = data['threads'] as List;
+      if (threads.isEmpty) return;
+      // Find threads where user is the requester and status is active (just accepted)
+      final pending = threads.where((t) =>
+        t['requesterId'] == user.xameId && t['status'] == 'active').toList();
+      if (pending.isEmpty) return;
+      final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
+      if (ctx == null) return;
+      // Open the most recent pending thread
+      final thread = pending.first;
+      Navigator.of(ctx).push(MaterialPageRoute(
+        builder: (_) => CollabThreadScreen(
+          threadId:     thread['threadId'] as String,
+          postTitle:    thread['postTitle'] as String? ?? '',
+          postMediaUrl: thread['postMediaUrl'] as String? ?? '',
+          otherUserId:  thread['authorId'] as String? ?? '',
+          isAuthor:     false,
+        )));
+    } catch (_) {}
   }
 
   void _initCollabListener() {
