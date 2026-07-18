@@ -69,6 +69,12 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initWalletRequestListener();
     _initCollabListener();
     Future.delayed(const Duration(seconds: 3), _checkPendingCollabThreads);
+    // Also check on socket reconnect
+    ref.read(socketServiceProvider).connectionState.listen((state) {
+      if (state == SocketState.connected) {
+        Future.delayed(const Duration(seconds: 2), _checkPendingCollabThreads);
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkBatteryOptimization());
     WidgetsBinding.instance.addPostFrameCallback((_) => _initFcmNavigation());
@@ -267,6 +273,8 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     });
   }
 
+  final Set<String> _openedCollabThreads = {};
+
   Future<void> _checkPendingCollabThreads() async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
@@ -277,17 +285,20 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       if (data['success'] != true) return;
       final threads = data['threads'] as List;
       if (threads.isEmpty) return;
-      // Find threads where user is the requester and status is active (just accepted)
+      // Find threads where user is requester, status active, not yet opened
       final pending = threads.where((t) =>
-        t['requesterId'] == user.xameId && t['status'] == 'active').toList();
+        t['requesterId'] == user.xameId &&
+        t['status'] == 'active' &&
+        !_openedCollabThreads.contains(t['threadId'] as String)).toList();
       if (pending.isEmpty) return;
       final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
       if (ctx == null) return;
-      // Open the most recent pending thread
       final thread = pending.first;
+      final threadId = thread['threadId'] as String;
+      _openedCollabThreads.add(threadId);
       Navigator.of(ctx).push(MaterialPageRoute(
         builder: (_) => CollabThreadScreen(
-          threadId:     thread['threadId'] as String,
+          threadId:     threadId,
           postTitle:    thread['postTitle'] as String? ?? '',
           postMediaUrl: thread['postMediaUrl'] as String? ?? '',
           otherUserId:  thread['authorId'] as String? ?? '',
