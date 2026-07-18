@@ -341,11 +341,11 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     try {
       final req = http.MultipartRequest('POST',
           Uri.parse('${AppConstants.serverUrl}/api/discover/collab/request'));
-      req.fields['postId']        = postId;
-      req.fields['requesterId']   = widget.currentUserId;
-      req.fields['requesterName'] = widget.currentUserName.isNotEmpty ? widget.currentUserName : widget.currentUserId;
+      req.fields['postId']          = postId;
+      req.fields['requesterId']     = widget.currentUserId;
+      req.fields['requesterName']   = widget.currentUserName.isNotEmpty ? widget.currentUserName : widget.currentUserId;
       req.fields['requesterAvatar'] = widget.currentUserAvatar;
-      req.fields['mediaType']     = 'image';
+      req.fields['mediaType']       = 'image';
       req.files.add(await http.MultipartFile.fromPath('media', picked.path));
       final res  = await req.send();
       final body = jsonDecode(await res.stream.bytesToString());
