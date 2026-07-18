@@ -226,8 +226,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     with TickerProviderStateMixin {
   final _scrollCtrl  = ScrollController();
   final _searchCtrl  = TextEditingController();
-  StreamSubscription? _collabRequestSub;
-  StreamSubscription? _collabAcceptedSub;
+
   bool  _searchOpen  = false;
   bool  _loading     = true;
   bool  _loadingMore = false;
@@ -287,8 +286,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   @override
   void dispose() {
     _discoverySub?.cancel();
-    _collabRequestSub?.cancel();
-    _collabAcceptedSub?.cancel();
+
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
     _searchAnim.dispose();
