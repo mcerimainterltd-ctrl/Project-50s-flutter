@@ -68,7 +68,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initContactRequestListener();
     _initWalletRequestListener();
     _initCollabListener();
-    Future.delayed(const Duration(seconds: 3), _checkPendingCollabThreads);
+    Future.delayed(const Duration(seconds: 8), _checkPendingCollabThreads);
     // Also check on socket reconnect
     ref.read(socketServiceProvider).connectionState.listen((state) {
       if (state == SocketState.connected) {
