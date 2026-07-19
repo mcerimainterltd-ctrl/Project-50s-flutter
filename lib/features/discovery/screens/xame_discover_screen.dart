@@ -3935,7 +3935,7 @@ class _FullscreenFeedPage extends StatelessWidget {
       initialIndex: 0,
       currentUserId: currentUserId,
       currentUserAvatar: currentUserAvatar,
-      currentUserName:   '',
+      currentUserName:   currentUserName,
       embedded: true,
       isActive: isActive,
     );
