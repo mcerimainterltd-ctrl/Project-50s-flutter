@@ -285,25 +285,40 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       if (data['success'] != true) return;
       final threads = data['threads'] as List;
       if (threads.isEmpty) return;
-      // Find threads where user is requester, status active, not yet opened
-      final pending = threads.where((t) =>
-        t['requesterId'] == user.xameId &&
-        t['status'] == 'active' &&
-        !_openedCollabThreads.contains(t['threadId'] as String)).toList();
+      // Find threads where user is requester, status active, not yet opened, created within last 30 minutes
+      final now = DateTime.now();
+      final pending = threads.where((t) {
+        if (t['requesterId'] != user.xameId) return false;
+        if (t['status'] != 'active') return false;
+        if (_openedCollabThreads.contains(t['threadId'] as String)) return false;
+        final createdAt = DateTime.tryParse(t['createdAt']?.toString() ?? '');
+        if (createdAt == null) return false;
+        return now.difference(createdAt).inMinutes < 30;
+      }).toList();
       if (pending.isEmpty) return;
       final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
       if (ctx == null) return;
       final thread = pending.first;
       final threadId = thread['threadId'] as String;
       _openedCollabThreads.add(threadId);
-      Navigator.of(ctx).push(MaterialPageRoute(
-        builder: (_) => CollabThreadScreen(
-          threadId:     threadId,
-          postTitle:    thread['postTitle'] as String? ?? '',
-          postMediaUrl: thread['postMediaUrl'] as String? ?? '',
-          otherUserId:  thread['authorId'] as String? ?? '',
-          isAuthor:     false,
-        )));
+      final postTitle = thread['postTitle'] as String? ?? '';
+      // Show snackbar notification instead of auto-opening
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+        content: Text('🤝 Your collab on "$postTitle" was accepted! Tap to open.'),
+        backgroundColor: const Color(0xFF1A3A3A),
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: 'Open',
+          textColor: const Color(0xFF00E5FF),
+          onPressed: () => Navigator.of(ctx).push(MaterialPageRoute(
+            builder: (_) => CollabThreadScreen(
+              threadId:     threadId,
+              postTitle:    postTitle,
+              postMediaUrl: thread['postMediaUrl'] as String? ?? '',
+              otherUserId:  thread['authorId'] as String? ?? '',
+              isAuthor:     false,
+            )))),
+      ));
     } catch (_) {}
   }
 
