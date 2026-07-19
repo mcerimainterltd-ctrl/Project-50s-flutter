@@ -285,15 +285,12 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       if (data['success'] != true) return;
       final threads = data['threads'] as List;
       if (threads.isEmpty) return;
-      // Find threads where user is requester, status active, not yet opened, created within last 30 minutes
-      final now = DateTime.now();
+      // Find threads where user is requester, status active, not yet opened this session
       final pending = threads.where((t) {
         if (t['requesterId'] != user.xameId) return false;
         if (t['status'] != 'active') return false;
         if (_openedCollabThreads.contains(t['threadId'] as String)) return false;
-        final createdAt = DateTime.tryParse(t['createdAt']?.toString() ?? '');
-        if (createdAt == null) return false;
-        return now.difference(createdAt).inMinutes < 30;
+        return true;
       }).toList();
       if (pending.isEmpty) return;
       final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
