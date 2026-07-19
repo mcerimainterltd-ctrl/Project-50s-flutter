@@ -273,6 +273,15 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       });
 
       // Collab listeners handled globally in app.dart
+      // Feed refresh on collab events — both parties see split-screen immediately
+      ref.read(socketServiceProvider).collabUpdated.listen((data) {
+        if (!mounted) return;
+        _loadData(refresh: true);
+      });
+      ref.read(socketServiceProvider).collabAccepted.listen((data) {
+        if (!mounted) return;
+        _loadData(refresh: true);
+      });
     });
     if (widget.authorId != null && widget.authorId!.isNotEmpty) {
       _authorFilter = widget.authorId;
