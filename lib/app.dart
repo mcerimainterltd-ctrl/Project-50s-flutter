@@ -73,6 +73,11 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     ref.read(socketServiceProvider).connectionState.listen((state) {
       if (state == SocketState.connected) {
         Future.delayed(const Duration(seconds: 2), _checkPendingCollabThreads);
+        // Re-subscribe to collab accepted on every reconnect
+        _collabAcceptedSub?.cancel();
+        _collabAcceptedSub = ref.read(socketServiceProvider).collabAccepted.listen((data) {
+          _handleCollabAccepted(data);
+        });
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
@@ -323,6 +328,35 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     } catch (_) {}
   }
 
+  void _handleCollabAccepted(Map<String, dynamic> data) {
+    final postTitle    = data['postTitle']    as String? ?? 'your post';
+    final postMediaUrl = data['postMediaUrl'] as String? ?? '';
+    final threadId     = data['threadId']     as String? ?? '';
+    _openedCollabThreads.add(threadId);
+    ref.read(pushServiceProvider).showAlertNotification(
+      '🎉 Collab Accepted!',
+      'Your collab on "$postTitle" was accepted!',
+    );
+    final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
+    if (ctx == null) return;
+    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+      content: Text('🤝 Your collab on "$postTitle" was accepted! Tap to open.'),
+      backgroundColor: const Color(0xFF1A3A3A),
+      duration: const Duration(seconds: 10),
+      action: SnackBarAction(
+        label: 'Open',
+        textColor: const Color(0xFF00E5FF),
+        onPressed: () => Navigator.of(ctx).push(MaterialPageRoute(
+          builder: (_) => CollabThreadScreen(
+            threadId:     threadId,
+            postTitle:    postTitle,
+            postMediaUrl: postMediaUrl,
+            otherUserId:  '',
+            isAuthor:     false,
+          )))),
+    ));
+  }
+
   void _initCollabListener() {
     final socket = ref.read(socketServiceProvider);
 
@@ -448,34 +482,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       );
     });
 
-    _collabAcceptedSub = socket.collabAccepted.listen((data) {
-      final postTitle    = data['postTitle']    as String? ?? 'your post';
-      final postMediaUrl = data['postMediaUrl'] as String? ?? '';
-      final threadId     = data['threadId']     as String? ?? '';
-      _openedCollabThreads.add(threadId); // mark as handled so pending checker skips it
-      ref.read(pushServiceProvider).showAlertNotification(
-        '🎉 Collab Accepted!',
-        'Your collab on "$postTitle" was accepted!',
-      );
-      final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
-      if (ctx == null) return;
-      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-        content: Text('🤝 Your collab on "$postTitle" was accepted! Tap to open.'),
-        backgroundColor: const Color(0xFF1A3A3A),
-        duration: const Duration(seconds: 10),
-        action: SnackBarAction(
-          label: 'Open',
-          textColor: const Color(0xFF00E5FF),
-          onPressed: () => Navigator.of(ctx).push(MaterialPageRoute(
-            builder: (_) => CollabThreadScreen(
-              threadId:     threadId,
-              postTitle:    postTitle,
-              postMediaUrl: postMediaUrl,
-              otherUserId:  '',
-              isAuthor:     false,
-            )))),
-      ));
-    });
+    _collabAcceptedSub = socket.collabAccepted.listen(_handleCollabAccepted);
   }
 
   void _initContactRequestListener() {
