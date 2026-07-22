@@ -452,21 +452,29 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       final postTitle    = data['postTitle']    as String? ?? 'your post';
       final postMediaUrl = data['postMediaUrl'] as String? ?? '';
       final threadId     = data['threadId']     as String? ?? '';
+      _openedCollabThreads.add(threadId); // mark as handled so pending checker skips it
       ref.read(pushServiceProvider).showAlertNotification(
         '🎉 Collab Accepted!',
         'Your collab on "$postTitle" was accepted!',
       );
       final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
       if (ctx == null) return;
-      // Open collab thread immediately
-      Navigator.of(ctx).push(MaterialPageRoute(
-        builder: (_) => CollabThreadScreen(
-          threadId:     threadId,
-          postTitle:    postTitle,
-          postMediaUrl: postMediaUrl,
-          otherUserId:  '',
-          isAuthor:     false,
-        )));
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+        content: Text('🤝 Your collab on "$postTitle" was accepted! Tap to open.'),
+        backgroundColor: const Color(0xFF1A3A3A),
+        duration: const Duration(seconds: 10),
+        action: SnackBarAction(
+          label: 'Open',
+          textColor: const Color(0xFF00E5FF),
+          onPressed: () => Navigator.of(ctx).push(MaterialPageRoute(
+            builder: (_) => CollabThreadScreen(
+              threadId:     threadId,
+              postTitle:    postTitle,
+              postMediaUrl: postMediaUrl,
+              otherUserId:  '',
+              isAuthor:     false,
+            )))),
+      ));
     });
   }
 
