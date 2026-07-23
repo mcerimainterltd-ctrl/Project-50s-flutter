@@ -67,7 +67,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initShareListener();
     _initContactRequestListener();
     _initWalletRequestListener();
-    _initCollabListener();
+    _loadOpenedCollabThreads().then((_) => _initCollabListener());
     Future.delayed(const Duration(seconds: 3), _checkPendingCollabThreads);
     // Also check on socket reconnect
     ref.read(socketServiceProvider).connectionState.listen((state) {
@@ -280,6 +280,18 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
   final Set<String> _openedCollabThreads = {};
 
+  Future<void> _loadOpenedCollabThreads() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('opened_collab_threads') ?? [];
+    _openedCollabThreads.addAll(saved);
+  }
+
+  Future<void> _persistOpenedCollabThread(String threadId) async {
+    _openedCollabThreads.add(threadId);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('opened_collab_threads', _openedCollabThreads.toList());
+  }
+
   Future<void> _checkPendingCollabThreads() async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
@@ -299,14 +311,14 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         if (_openedCollabThreads.contains(t['threadId'] as String)) return false;
         final createdAt = DateTime.tryParse(t['createdAt']?.toString() ?? '');
         if (createdAt == null) return false;
-        return now.difference(createdAt).inSeconds > 5;
+        return now.difference(createdAt).inSeconds > 10;
       }).toList();
       if (pending.isEmpty) return;
       final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
       if (ctx == null) return;
       final thread = pending.first;
       final threadId = thread['threadId'] as String;
-      _openedCollabThreads.add(threadId);
+      _persistOpenedCollabThread(threadId);
       final postTitle = thread['postTitle'] as String? ?? '';
       // Show snackbar notification instead of auto-opening
       ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
