@@ -68,7 +68,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initContactRequestListener();
     _initWalletRequestListener();
     _initCollabListener();
-    Future.delayed(const Duration(seconds: 8), _checkPendingCollabThreads);
+    Future.delayed(const Duration(seconds: 3), _checkPendingCollabThreads);
     // Also check on socket reconnect
     ref.read(socketServiceProvider).connectionState.listen((state) {
       if (state == SocketState.connected) {
@@ -299,7 +299,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         if (_openedCollabThreads.contains(t['threadId'] as String)) return false;
         final createdAt = DateTime.tryParse(t['createdAt']?.toString() ?? '');
         if (createdAt == null) return false;
-        return now.difference(createdAt).inSeconds > 60;
+        return now.difference(createdAt).inSeconds > 5;
       }).toList();
       if (pending.isEmpty) return;
       final ctx = ref.read(routerProvider).routerDelegate.navigatorKey.currentContext;
