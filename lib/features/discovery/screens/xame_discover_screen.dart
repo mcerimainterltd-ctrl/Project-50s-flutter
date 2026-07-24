@@ -546,7 +546,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                 try {
                   final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
                   final res = await dio.post('/api/discover/collab/accept',
-                      data: {'postId': postId, 'authorId': user.xameId});
+                      data: {'postId': postId, 'authorId': user.xameId, 'requesterId': requesterId});
                   if (res.data['success'] == true) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -555,8 +555,20 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
                       ));
                       _loadData(refresh: true);
                     }
+                  } else if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(res.data['message']?.toString() ?? 'Failed to accept collab'),
+                      backgroundColor: Colors.redAccent,
+                    ));
                   }
-                } catch (_) {}
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Failed to accept collab: $e'),
+                      backgroundColor: Colors.redAccent,
+                    ));
+                  }
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00E5FF),
