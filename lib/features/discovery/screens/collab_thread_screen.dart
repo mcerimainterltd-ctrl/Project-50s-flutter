@@ -48,6 +48,8 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
   final _scroll     = ScrollController();
   final List<CollabMessage> _messages = [];
   StreamSubscription? _sub;
+  StreamSubscription? _authorizedSub;
+  StreamSubscription? _submittedSub;
   bool _loading = true;
   bool _sending = false;
 
@@ -61,11 +63,21 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
       if (mounted) setState(() => _messages.add(msg));
       _scrollToBottom();
     });
+    _authorizedSub = ref.read(socketServiceProvider).collabAuthorized.listen((data) {
+      if (data['threadId'] != widget.threadId) return;
+      _loadThread();
+    });
+    _submittedSub = ref.read(socketServiceProvider).collabSubmitted.listen((data) {
+      if (data['threadId'] != widget.threadId) return;
+      _loadThread();
+    });
   }
 
   @override
   void dispose() {
     _sub?.cancel();
+    _authorizedSub?.cancel();
+    _submittedSub?.cancel();
     _ctrl.dispose();
     _scroll.dispose();
     super.dispose();

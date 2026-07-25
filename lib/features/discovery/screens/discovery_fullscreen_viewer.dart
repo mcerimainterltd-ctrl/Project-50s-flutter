@@ -696,6 +696,12 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                           authorId:      widget.post['authorId'] as String? ?? '',
                           currentUserId: widget.currentUserId,
                         ),
+                        _CollabToggleChip(
+                          postId:              widget.postId,
+                          authorId:            widget.post['authorId'] as String? ?? '',
+                          currentUserId:       widget.currentUserId,
+                          initialIsCollabOpen: widget.post['isCollabOpen'] as bool? ?? false,
+                        ),
                       ]),
                       const SizedBox(height: 10),
                       Text(
@@ -1530,6 +1536,83 @@ class _FollowChipState extends State<_FollowChip> {
                 _following ? 'Following' : 'Follow',
                 style: TextStyle(
                   color: _following ? Colors.white70 : Colors.black,
+                  fontSize: 11, fontWeight: FontWeight.w800,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _CollabToggleChip extends StatefulWidget {
+  final String postId;
+  final String authorId;
+  final String currentUserId;
+  final bool   initialIsCollabOpen;
+  const _CollabToggleChip({
+    Key? key,
+    required this.postId,
+    required this.authorId,
+    required this.currentUserId,
+    required this.initialIsCollabOpen,
+  }) : super(key: key);
+
+  @override
+  State<_CollabToggleChip> createState() => _CollabToggleChipState();
+}
+
+class _CollabToggleChipState extends State<_CollabToggleChip> {
+  bool _isOpen  = false;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isOpen = widget.initialIsCollabOpen;
+  }
+
+  Future<void> _toggle() async {
+    if (_loading || widget.authorId != widget.currentUserId) return;
+    setState(() => _loading = true);
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res = await dio.post('/api/discover/collab/toggle', data: {
+        'postId':   widget.postId,
+        'authorId': widget.authorId,
+      });
+      if (res.data['success'] == true) {
+        setState(() {
+          _isOpen  = res.data['isCollabOpen'] as bool? ?? !_isOpen;
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (_) {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.authorId != widget.currentUserId) return const SizedBox.shrink();
+    return GestureDetector(
+      onTap: _toggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: _isOpen ? const Color(0xFF00E5FF) : Colors.white24,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: _loading
+            ? const SizedBox(width: 12, height: 12,
+                child: CircularProgressIndicator(
+                    strokeWidth: 1.5, color: Colors.white))
+            : Text(
+                _isOpen ? '🤝 Collab Open' : '🤝 Collab Closed',
+                style: TextStyle(
+                  color: _isOpen ? Colors.black : Colors.white70,
                   fontSize: 11, fontWeight: FontWeight.w800,
                 ),
               ),

@@ -179,6 +179,8 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   StreamSubscription? _walletRequestSub;
   StreamSubscription? _collabRequestSub;
   StreamSubscription? _collabAcceptedSub;
+  StreamSubscription? _collabAuthorizedSub;
+  StreamSubscription? _collabSubmittedSub;
 
   void _initWalletRequestListener() {
     _walletRequestSub = ref.read(socketServiceProvider)
@@ -495,6 +497,20 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     });
 
     _collabAcceptedSub = socket.collabAccepted.listen(_handleCollabAccepted);
+    _collabAuthorizedSub = socket.collabAuthorized.listen((data) {
+      final title = data['postTitle'] as String? ?? 'your post';
+      ref.read(pushServiceProvider).showAlertNotification(
+        '🤝 Collab Authorized',
+        'Your collab on "\$title" was authorized — you can now submit your part',
+      );
+    });
+    _collabSubmittedSub = socket.collabSubmitted.listen((data) {
+      final title = data['postTitle'] as String? ?? 'your post';
+      ref.read(pushServiceProvider).showAlertNotification(
+        '🤝 Collab Submitted',
+        'A contribution was submitted for "\$title" — review it now',
+      );
+    });
   }
 
   void _initContactRequestListener() {
