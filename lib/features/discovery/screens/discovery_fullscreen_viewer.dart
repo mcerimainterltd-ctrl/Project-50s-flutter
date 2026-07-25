@@ -697,7 +697,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                           currentUserId: widget.currentUserId,
                         ),
                         _CollabToggleChip(
-                          postId:              widget.postId,
+                          postId:              widget.post['id'] as String? ?? widget.post['postId'] as String? ?? '',
                           authorId:            widget.post['authorId'] as String? ?? '',
                           currentUserId:       widget.currentUserId,
                           initialIsCollabOpen: widget.post['isCollabOpen'] as bool? ?? false,
