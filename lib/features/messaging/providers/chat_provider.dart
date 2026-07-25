@@ -210,15 +210,14 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     int?  fileSize;
     try { fileSize = await file.length(); } catch (_) {}
 
-    // 50MB limit for video messages
-    const maxUploadBytes = 50 * 1024 * 1024;
-    if ((fileSize ?? 0) > maxUploadBytes) {
-      final mb = ((fileSize ?? 0) / (1024 * 1024)).toStringAsFixed(1);
+    if ((fileSize ?? 0) > AppConstants.maxFileSizeBytes) {
+      final mb    = ((fileSize ?? 0) / (1024 * 1024)).toStringAsFixed(1);
+      final maxMb = (AppConstants.maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0);
       state = [...state, XameMessage(
         id: _uuid.v4(),
         senderId:    _ref.read(currentUserProvider)?.xameId ?? '',
         recipientId: _contactId,
-        text:        'File too large (\${mb}MB). Max 50MB.',
+        text:        'File too large (${mb}MB). Max ${maxMb}MB.',
         type:        MessageType.text,
         direction:   MessageDirection.sent,
         ts:          DateTime.now().millisecondsSinceEpoch,
