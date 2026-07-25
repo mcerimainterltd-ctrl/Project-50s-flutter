@@ -1383,6 +1383,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
   bool _loading = false;
   bool _bvnSubmitted = false;
   String? _error;
+  String _currentProvider = 'flutterwave';
   final _bvnCtrl = TextEditingController();
 
   @override
@@ -1408,6 +1409,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
               "bank_name":      va["bankName"],
               "account_name":   "XamePay",
             };
+            _currentProvider = va["provider"]?.toString() ?? 'flutterwave';
             _bvnSubmitted = true;
           });
         }
@@ -1441,6 +1443,40 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         setState(() { _account = d["account"]; _loading = false; _bvnSubmitted = true; });
       } else {
         setState(() { _error = d["message"] ?? "Could not load account"; _loading = false; });
+      }
+    } catch (e) {
+      setState(() { _error = "Connection failed: $e"; _loading = false; });
+    }
+  }
+
+  Future<void> _switchProvider(String provider, String label) async {
+    setState(() { _loading = true; _error = null; });
+    final endpoint = provider == 'monnify'
+        ? '/api/wallet/monnify/virtual-account'
+        : provider == 'squad'
+        ? '/api/wallet/squad/virtual-account'
+        : '/api/wallet/flw/virtual-account';
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}$endpoint'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "userId": widget.userId,
+          "email": "${widget.userId}@xamepage.app",
+          "confirmSwitch": true,
+          "currency": widget.currency,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      final d = jsonDecode(r.body);
+      if (d["success"] == true) {
+        setState(() {
+          _account = d["account"];
+          _currentProvider = provider;
+          _loading = false;
+        });
+        widget.onSnack("Switched to $label successfully!");
+      } else {
+        setState(() { _error = d["message"] ?? "Switch failed"; _loading = false; });
       }
     } catch (e) {
       setState(() { _error = "Connection failed: $e"; _loading = false; });
@@ -1528,6 +1564,36 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                   style: TextStyle(color: _kTeal, fontSize: 12))),
               ]),
             ),
+            const SizedBox(height: 16),
+            // Provider switcher
+            Text('Current Provider: ${_currentProvider[0].toUpperCase()}${_currentProvider.substring(1)}',
+                style: const TextStyle(color: _kMuted, fontSize: 11)),
+            const SizedBox(height: 8),
+            Row(children: [
+              for (final p in [
+                ('flutterwave', 'Flutterwave'),
+                ('monnify', 'Monnify'),
+                ('squad', 'Squad'),
+              ])
+                Expanded(child: Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: _currentProvider == p.$1
+                          ? _kTeal.withOpacity(0.15) : Colors.transparent,
+                      side: BorderSide(
+                          color: _currentProvider == p.$1 ? _kTeal : Colors.white24),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10))),
+                    onPressed: _currentProvider == p.$1 ? null : () => _switchProvider(p.$1, p.$2),
+                    child: Text(p.$2,
+                        style: TextStyle(
+                            color: _currentProvider == p.$1 ? _kTeal : _kMuted,
+                            fontSize: 11, fontWeight: FontWeight.w600)),
+                  ),
+                )),
+            ]),
           ] else ...[
             const Text("Enter your BVN",
                 style: TextStyle(color: _kMuted, fontSize: 12,
