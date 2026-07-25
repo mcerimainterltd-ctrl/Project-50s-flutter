@@ -1406,11 +1406,11 @@ class CreatePostSheetState extends State<CreatePostSheet> {
 
     final videoFile = File(picked.path);
     final size = await videoFile.length();
-    const maxBytes = 100 * 1024 * 1024; // 100MB limit
 
-    if (size > maxBytes) {
+    if (size > AppConstants.maxFileSizeBytes) {
+      final maxMb = (AppConstants.maxFileSizeBytes / (1024 * 1024)).toStringAsFixed(0);
       setState(() => _error =
-          'Video too large (${(size/1024/1024).toStringAsFixed(1)}MB). Maximum is 100MB.');
+          'Video too large (${(size/1024/1024).toStringAsFixed(1)}MB). Maximum is ${maxMb}MB.');
       return;
     }
     setState(() {
