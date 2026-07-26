@@ -1477,11 +1477,43 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
   }
 
   Future<void> _switchProvider(String provider, String label) async {
+    // Squad requires extra fields — show a form first
+    if (provider == 'squad') {
+      final formData = await showModalBottomSheet<Map<String, String>>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: const Color(0xFF1A2A2A),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (_) => const _SquadFormSheet(),
+      );
+      if (formData == null) return;
+      setState(() { _loading = true; _error = null; });
+      try {
+        final r = await http.post(
+          Uri.parse('${widget.serverUrl}/api/wallet/squad/virtual-account'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            "userId": widget.userId,
+            "bvn": formData['bvn'] ?? '',
+            "dob": formData['dob'] ?? '',
+            "address": formData['address'] ?? '',
+          }),
+        ).timeout(const Duration(seconds: 15));
+        final d = jsonDecode(r.body);
+        if (d["success"] == true) {
+          setState(() { _account = d["account"]; _currentProvider = 'squad'; _loading = false; });
+          widget.onSnack("Switched to Squad successfully!");
+        } else {
+          setState(() { _error = d["message"] ?? "Squad setup failed"; _loading = false; });
+        }
+      } catch (e) {
+        setState(() { _error = "Connection failed: $e"; _loading = false; });
+      }
+      return;
+    }
     setState(() { _loading = true; _error = null; });
     final endpoint = provider == 'monnify'
         ? '/api/wallet/monnify/virtual-account'
-        : provider == 'squad'
-        ? '/api/wallet/squad/virtual-account'
         : '/api/wallet/flw/virtual-account';
     try {
       final r = await http.post(
