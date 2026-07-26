@@ -1427,8 +1427,13 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"userId": widget.userId, "bvn": bvn}),
       ).timeout(const Duration(seconds: 10));
+      final endpoint = _currentProvider == 'squad'
+          ? '/api/wallet/squad/virtual-account'
+          : _currentProvider == 'flutterwave'
+          ? '/api/wallet/flw/virtual-account'
+          : '/api/wallet/monnify/virtual-account';
       final r = await http.post(
-        Uri.parse('${widget.serverUrl}/api/wallet/monnify/virtual-account'), // default new users to Monnify
+        Uri.parse('\${widget.serverUrl}\$endpoint'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "userId": widget.userId,
