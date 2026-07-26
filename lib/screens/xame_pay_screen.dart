@@ -4700,3 +4700,92 @@ class _RewardsTabState extends State<_RewardsTab> {
       Text(reward, style: const TextStyle(color: _kTeal, fontSize: 12, fontWeight: FontWeight.w600)),
     ]));
 }
+
+// ── Squad Virtual Account Form ───────────────────────────────────────────────
+class _SquadFormSheet extends StatefulWidget {
+  const _SquadFormSheet();
+  @override
+  State<_SquadFormSheet> createState() => _SquadFormSheetState();
+}
+
+class _SquadFormSheetState extends State<_SquadFormSheet> {
+  final _bvnCtrl     = TextEditingController();
+  final _dobCtrl     = TextEditingController();
+  final _addressCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _bvnCtrl.dispose();
+    _dobCtrl.dispose();
+    _addressCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 20, right: 20, top: 20),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 36, height: 4,
+          decoration: BoxDecoration(color: Colors.white24,
+            borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 16),
+        const Text('Squad Virtual Account Setup',
+          style: TextStyle(color: Colors.white, fontSize: 16,
+            fontWeight: FontWeight.w700)),
+        const SizedBox(height: 20),
+        TextField(
+          controller: _bvnCtrl,
+          keyboardType: TextInputType.number,
+          maxLength: 11,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            labelText: 'BVN', labelStyle: TextStyle(color: Colors.white54),
+            counterStyle: TextStyle(color: Colors.white38),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00B0A0)))),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _dobCtrl,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            labelText: 'Date of Birth (DD/MM/YYYY)',
+            labelStyle: TextStyle(color: Colors.white54),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00B0A0)))),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _addressCtrl,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            labelText: 'Home Address',
+            labelStyle: TextStyle(color: Colors.white54),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00B0A0)))),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00B0A0),
+              padding: const EdgeInsets.symmetric(vertical: 14)),
+            onPressed: () {
+              if (_bvnCtrl.text.length != 11) return;
+              Navigator.pop(context, {
+                'bvn':     _bvnCtrl.text.trim(),
+                'dob':     _dobCtrl.text.trim(),
+                'address': _addressCtrl.text.trim(),
+              });
+            },
+            child: const Text('Continue',
+              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+          )),
+        const SizedBox(height: 24),
+      ]),
+    );
+  }
+}
