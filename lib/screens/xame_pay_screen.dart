@@ -1568,7 +1568,14 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              onPressed: () => setState(() { _error = null; _bvnSubmitted = false; }),
+              onPressed: () {
+                setState(() { _error = null; });
+                if (_currentProvider == 'monnify' || _currentProvider == 'squad') {
+                  _switchProvider(_currentProvider, _currentProvider[0].toUpperCase() + _currentProvider.substring(1));
+                } else {
+                  setState(() { _bvnSubmitted = false; });
+                }
+              },
               child: const Text("Try Again", style: TextStyle(color: Colors.black))),
           ]
           else if (_bvnSubmitted && _account != null) ...[
