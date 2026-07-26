@@ -1433,7 +1433,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
           ? '/api/wallet/squad/virtual-account'
           : '/api/wallet/flw/virtual-account'; // default: flutterwave
       final r = await http.post(
-        Uri.parse('\${widget.serverUrl}\$endpoint'),
+        Uri.parse('${widget.serverUrl}$endpoint'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "userId": widget.userId,
@@ -1481,6 +1481,20 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         });
         widget.onSnack("Switched to $label successfully!");
       } else {
+        // Try falling back to Flutterwave if switch failed
+        if (provider != 'flutterwave') {
+          final fallback = await http.post(
+            Uri.parse('${widget.serverUrl}/api/wallet/flw/virtual-account'),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({"userId": widget.userId, "email": "${widget.userId}@xamepage.app"}),
+          ).timeout(const Duration(seconds: 15));
+          final fd = jsonDecode(fallback.body);
+          if (fd["success"] == true) {
+            setState(() { _account = fd["account"]; _currentProvider = 'flutterwave'; _loading = false; });
+            widget.onSnack("$label unavailable. Showing Flutterwave account.");
+            return;
+          }
+        }
         setState(() { _error = d["message"] ?? "Switch failed"; _loading = false; });
       }
     } catch (e) {
@@ -1591,7 +1605,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10))),
-                    onPressed: _currentProvider == p.$1 ? null : () => _switchProvider(p.$1, p.$2),
+                    onPressed: () => _switchProvider(p.$1, p.$2),
                     child: Text(p.$2,
                         style: TextStyle(
                             color: _currentProvider == p.$1 ? _kTeal : _kMuted,
