@@ -1407,11 +1407,33 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
             _account = {
               "account_number": va["accountNumber"],
               "bank_name":      va["bankName"],
-              "account_name":   "XamePay",
+              "account_name":   va["accountName"] ?? "XamePay",
             };
             _currentProvider = va["provider"]?.toString() ?? 'flutterwave';
             _bvnSubmitted = true;
           });
+        } else {
+          // No VA yet — try auto-fetching Flutterwave using saved BVN silently
+          final bvnRes = await http.get(
+            Uri.parse("${widget.serverUrl}/api/wallet/get-bvn?userId=${widget.userId}"),
+          ).timeout(const Duration(seconds: 5));
+          final bvnData = jsonDecode(bvnRes.body);
+          final savedBvn = bvnData["bvn"]?.toString() ?? '';
+          if (savedBvn.length == 11) {
+            final flwRes = await http.post(
+              Uri.parse("${widget.serverUrl}/api/wallet/flw/virtual-account"),
+              headers: {"Content-Type": "application/json"},
+              body: jsonEncode({"userId": widget.userId, "email": "${widget.userId}@xamepage.app", "bvn": savedBvn}),
+            ).timeout(const Duration(seconds: 15));
+            final flwData = jsonDecode(flwRes.body);
+            if (flwData["success"] == true) {
+              setState(() {
+                _account = flwData["account"];
+                _currentProvider = 'flutterwave';
+                _bvnSubmitted = true;
+              });
+            }
+          }
         }
       }
     } catch (_) {}
