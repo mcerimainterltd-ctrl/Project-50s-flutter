@@ -1383,7 +1383,7 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
   bool _loading = false;
   bool _bvnSubmitted = false;
   String? _error;
-  String _currentProvider = 'flutterwave';
+  String _currentProvider = 'flutterwave'; // default provider
   final _bvnCtrl = TextEditingController();
 
   @override
@@ -1427,11 +1427,11 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"userId": widget.userId, "bvn": bvn}),
       ).timeout(const Duration(seconds: 10));
-      final endpoint = _currentProvider == 'squad'
+      final endpoint = _currentProvider == 'monnify'
+          ? '/api/wallet/monnify/virtual-account'
+          : _currentProvider == 'squad'
           ? '/api/wallet/squad/virtual-account'
-          : _currentProvider == 'flutterwave'
-          ? '/api/wallet/flw/virtual-account'
-          : '/api/wallet/monnify/virtual-account';
+          : '/api/wallet/flw/virtual-account'; // default: flutterwave
       final r = await http.post(
         Uri.parse('\${widget.serverUrl}\$endpoint'),
         headers: {"Content-Type": "application/json"},
