@@ -1569,11 +1569,9 @@ class _BankTransferSheet extends StatefulWidget {
 class _BankTransferSheetState extends State<_BankTransferSheet> {
   Map<String, dynamic>? _account;
   bool _loading = false;
-  bool _switching = false;
   bool _bvnSubmitted = false;
-  String? _lastFailedProvider;
-  String? _lastFailedLabel;
   String? _error;
+  String _currentProvider = 'flutterwave'; // default provider
   final _bvnCtrl = TextEditingController();
 
   @override
@@ -1597,260 +1595,37 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
             _account = {
               "account_number": va["accountNumber"],
               "bank_name":      va["bankName"],
-              "account_name":   "XamePay",
-              "provider":       va["provider"] ?? "",
+              "account_name":   va["accountName"] ?? "XamePay",
             };
+            _currentProvider = va["provider"]?.toString() ?? 'flutterwave';
             _bvnSubmitted = true;
           });
+        } else {
+          // No VA yet — try auto-fetching Flutterwave using saved BVN silently
+          final bvnRes = await http.get(
+            Uri.parse("${widget.serverUrl}/api/wallet/get-bvn?userId=${widget.userId}"),
+          ).timeout(const Duration(seconds: 5));
+          final bvnData = jsonDecode(bvnRes.body);
+          final savedBvn = bvnData["bvn"]?.toString() ?? '';
+          if (savedBvn.length == 11) {
+            final flwRes = await http.post(
+              Uri.parse("${widget.serverUrl}/api/wallet/flw/virtual-account"),
+              headers: {"Content-Type": "application/json"},
+              body: jsonEncode({"userId": widget.userId, "email": "${widget.userId}@xamepage.app", "bvn": savedBvn}),
+            ).timeout(const Duration(seconds: 15));
+            final flwData = jsonDecode(flwRes.body);
+            if (flwData["success"] == true) {
+              setState(() {
+                _account = flwData["account"];
+                _currentProvider = 'flutterwave';
+                _bvnSubmitted = true;
+              });
+            }
+          }
         }
       }
     } catch (_) {}
     setState(() { _loading = false; });
-  }
-
-  Widget _providerTile(String value, String name, String subtitle, String current) {
-    final selected = current == value;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-          color: selected ? _kTeal : _kMuted, size: 20),
-      title: Text(name, style: TextStyle(color: selected ? _kTeal : Colors.white,
-          fontWeight: FontWeight.w700, fontSize: 14)),
-      subtitle: Text(subtitle, style: const TextStyle(color: _kMuted, fontSize: 11)),
-      onTap: () => Navigator.pop(context, value),
-    );
-  }
-
-  Future<void> _switchProvider(BuildContext context) async {
-    final currentProvider = (_account?["provider"] ?? "flutterwave").toString();
-    final picked = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: _kCard,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Select Funding Provider', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          const Text('Choose which provider generates your virtual account number.', style: TextStyle(color: _kMuted, fontSize: 12)),
-          const SizedBox(height: 16),
-          _providerTile('flutterwave', 'Flutterwave', 'Indulge MFB · Fully active ✅', currentProvider),
-          _providerTile('squad',       'Squad',       'GT Bank · Active, coming soon 🔜', currentProvider),
-          _providerTile('monnify',     'Monnify',     'Multiple banks · Pending activation ⏳', currentProvider),
-          const SizedBox(height: 8),
-        ]),
-      ),
-    );
-    if (picked == null || picked == currentProvider || !mounted) return;
-    final targetProvider = picked;
-    final targetLabel = picked == 'monnify' ? 'Monnify' : picked == 'squad' ? 'Squad' : 'Flutterwave';
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Switch to $targetLabel?',
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-        content: const Text(
-            "You'll get a new account number. Your old account number will stop receiving funds — only transfer to your new account from now on.",
-            style: TextStyle(color: Colors.white60, fontSize: 13)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00E5FF)),
-            child: const Text('Switch', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true || !mounted) return;
-    await _performSwitch(targetProvider, targetLabel);
-  }
-
-  Future<void> _performSwitch(String targetProvider, String targetLabel, {bool forceProfilePrompt = false}) async {
-    setState(() { _switching = true; _error = null; });
-    try {
-      final endpoint = targetProvider == "monnify"
-          ? '/api/wallet/monnify/virtual-account'
-          : targetProvider == "squad"
-          ? '/api/wallet/squad/virtual-account'
-          : '/api/wallet/flw/virtual-account';
-      Map<String, dynamic> requestBody = {
-        "userId": widget.userId,
-        "email": "${widget.userId}@xamepage.app",
-        "confirmSwitch": true,
-      };
-      // On a Squad retry, always let the user re-enter/correct their details up front —
-      // a previous invalid value (e.g. wrong gender format) may already be saved server-side,
-      // which would otherwise prevent the "missing fields" prompt from firing again.
-      if (targetProvider == 'squad' && forceProfilePrompt) {
-        if (!mounted) return;
-        final profile = await _promptSquadProfile();
-        if (profile == null || !mounted) {
-          setState(() { _switching = false; });
-          return;
-        }
-        requestBody.addAll(profile);
-      }
-      var r = await http.post(
-        Uri.parse('${widget.serverUrl}$endpoint'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 15));
-      var d = jsonDecode(r.body);
-      // Squad requires gender/address/mobile/bvn — prompt once if missing, then retry
-      if (d["success"] != true && d["requiresProfile"] == true && mounted) {
-        final profile = await _promptSquadProfile();
-        if (profile == null || !mounted) {
-          setState(() { _switching = false; });
-          return;
-        }
-        requestBody.addAll(profile);
-        r = await http.post(
-          Uri.parse('${widget.serverUrl}$endpoint'),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(requestBody),
-        ).timeout(const Duration(seconds: 15));
-        d = jsonDecode(r.body);
-      }
-      if (d["success"] == true) {
-        setState(() {
-          _account = {
-            "account_number": d["account"]["account_number"],
-            "bank_name":      d["account"]["bank_name"],
-            "account_name":   d["account"]["account_name"] ?? "XamePay",
-            "provider":       targetProvider,
-          };
-          _switching = false;
-          _lastFailedProvider = null;
-          _lastFailedLabel = null;
-        });
-        widget.onSnack('Switched to $targetLabel. New account ready.');
-      } else {
-        setState(() {
-          _switching = false;
-          _error = d["message"] ?? "Switch failed";
-          _lastFailedProvider = targetProvider;
-          _lastFailedLabel = targetLabel;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _switching = false;
-        _error = "Switch failed: $e";
-        _lastFailedProvider = targetProvider;
-        _lastFailedLabel = targetLabel;
-      });
-    }
-  }
-
-  Future<Map<String, String>?> _promptSquadProfile() async {
-    final genderOptions = ['Male', 'Female'];
-    String? gender;
-    final addressCtrl = TextEditingController();
-    final mobileCtrl = TextEditingController();
-    final bvnCtrl = TextEditingController();
-    final middleNameCtrl = TextEditingController();
-    return showModalBottomSheet<Map<String, String>>(
-      context: context, backgroundColor: _kCard, isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          child: Padding(padding: const EdgeInsets.all(24),
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text("A few more details for Squad",
-                  style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              const Text("Required once for identity verification — saved for future use.",
-                  style: TextStyle(color: _kMuted, fontSize: 12)),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: gender,
-                dropdownColor: const Color(0xFF1E2D3D),
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Gender", labelStyle: const TextStyle(color: _kMuted),
-                  filled: true, fillColor: const Color(0xFF1E2D3D),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white24)),
-                ),
-                items: genderOptions.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-                onChanged: (v) => setSheetState(() { gender = v; }),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: addressCtrl, style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Home Address", labelStyle: const TextStyle(color: _kMuted),
-                  filled: true, fillColor: const Color(0xFF1E2D3D),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white24)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: mobileCtrl, keyboardType: TextInputType.phone,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Mobile Number", labelStyle: const TextStyle(color: _kMuted),
-                  filled: true, fillColor: const Color(0xFF1E2D3D),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white24)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: bvnCtrl, keyboardType: TextInputType.number, maxLength: 11,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "BVN", labelStyle: const TextStyle(color: _kMuted),
-                  filled: true, fillColor: const Color(0xFF1E2D3D),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white24)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: middleNameCtrl,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: "Middle Name (optional)", labelStyle: const TextStyle(color: _kMuted),
-                  filled: true, fillColor: const Color(0xFF1E2D3D),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white24)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  onPressed: () {
-                    if (gender == null || addressCtrl.text.trim().isEmpty ||
-                        mobileCtrl.text.trim().isEmpty || bvnCtrl.text.trim().length != 11) {
-                      widget.onSnack("Please fill in all fields correctly (BVN must be 11 digits)");
-                      return;
-                    }
-                    Navigator.pop(ctx, {
-                      "gender": gender == 'Male' ? '1' : '2',
-                      "address": addressCtrl.text.trim(),
-                      "mobile": mobileCtrl.text.trim(),
-                      "bvn": bvnCtrl.text.trim(),
-                      "middleName": middleNameCtrl.text.trim(),
-                    });
-                  },
-                  child: const Text("Continue",
-                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
-                )),
-            ]),
-          ),
-        ),
-      ),
-    );
   }
 
   Future<void> _fetchVirtualAccount(String bvn) async {
@@ -1862,8 +1637,13 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"userId": widget.userId, "bvn": bvn}),
       ).timeout(const Duration(seconds: 10));
+      final endpoint = _currentProvider == 'monnify'
+          ? '/api/wallet/monnify/virtual-account'
+          : _currentProvider == 'squad'
+          ? '/api/wallet/squad/virtual-account'
+          : '/api/wallet/flw/virtual-account'; // default: flutterwave
       final r = await http.post(
-        Uri.parse('${widget.serverUrl}/api/wallet/monnify/virtual-account'), // default new users to Monnify
+        Uri.parse('${widget.serverUrl}$endpoint'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "userId": widget.userId,
@@ -1878,6 +1658,76 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
         setState(() { _account = d["account"]; _loading = false; _bvnSubmitted = true; });
       } else {
         setState(() { _error = d["message"] ?? "Could not load account"; _loading = false; });
+      }
+    } catch (e) {
+      setState(() { _error = "Connection failed: $e"; _loading = false; });
+    }
+  }
+
+  Future<void> _switchProvider(String provider, String label) async {
+    // Squad requires extra fields — show a form first
+    if (provider == 'squad') {
+      final formData = await showModalBottomSheet<Map<String, String>>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: const Color(0xFF1A2A2A),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (_) => const _SquadFormSheet(),
+      );
+      if (formData == null) return;
+      setState(() { _loading = true; _error = null; });
+      try {
+        final r = await http.post(
+          Uri.parse('${widget.serverUrl}/api/wallet/squad/virtual-account'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            "userId": widget.userId,
+            "firstName": formData['firstName'] ?? '',
+            "middleName": formData['middleName'] ?? '',
+            "lastName": formData['lastName'] ?? '',
+            "bvn": formData['bvn'] ?? '',
+            "gender": formData['gender'] ?? 'M',
+            "dob": formData['dob'] ?? '',
+            "address": formData['address'] ?? '',
+          }),
+        ).timeout(const Duration(seconds: 15));
+        final d = jsonDecode(r.body);
+        if (d["success"] == true) {
+          setState(() { _account = d["account"]; _currentProvider = 'squad'; _loading = false; });
+          widget.onSnack("Switched to Squad successfully!");
+        } else {
+          setState(() { _error = d["message"] ?? "Squad setup failed"; _loading = false; });
+        }
+      } catch (e) {
+        setState(() { _error = "Connection failed: $e"; _loading = false; });
+      }
+      return;
+    }
+    setState(() { _loading = true; _error = null; });
+    final endpoint = provider == 'monnify'
+        ? '/api/wallet/monnify/virtual-account'
+        : '/api/wallet/flw/virtual-account';
+    try {
+      final r = await http.post(
+        Uri.parse('${widget.serverUrl}$endpoint'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "userId": widget.userId,
+          "email": "${widget.userId}@xamepage.app",
+          "confirmSwitch": true,
+          "currency": widget.currency,
+        }),
+      ).timeout(const Duration(seconds: 15));
+      final d = jsonDecode(r.body);
+      if (d["success"] == true) {
+        setState(() {
+          _account = d["account"];
+          _currentProvider = provider;
+          _loading = false;
+        });
+        widget.onSnack("Switched to $label successfully!");
+      } else {
+        setState(() { _error = d["message"] ?? "Switch failed"; _loading = false; });
       }
     } catch (e) {
       setState(() { _error = "Connection failed: $e"; _loading = false; });
@@ -1907,13 +1757,11 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
               style: ElevatedButton.styleFrom(backgroundColor: _kTeal,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               onPressed: () {
-                if (_lastFailedProvider != null) {
-                  final p = _lastFailedProvider!;
-                  final l = _lastFailedLabel ?? p;
-                  setState(() { _error = null; });
-                  _performSwitch(p, l, forceProfilePrompt: p == 'squad');
+                setState(() { _error = null; });
+                if (_currentProvider == 'monnify' || _currentProvider == 'squad') {
+                  _switchProvider(_currentProvider, _currentProvider[0].toUpperCase() + _currentProvider.substring(1));
                 } else {
-                  setState(() { _error = null; _bvnSubmitted = false; });
+                  setState(() { _bvnSubmitted = false; });
                 }
               },
               child: const Text("Try Again", style: TextStyle(color: Colors.black))),
@@ -1957,19 +1805,6 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                 ]),
               ]),
             ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: _switching ? null : () => _switchProvider(context),
-                icon: _switching
-                    ? const SizedBox(width: 14, height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54))
-                    : const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF00E5FF)),
-                label: Text(_switching ? 'Switching…' : 'Switch funding provider',
-                    style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 12, fontWeight: FontWeight.w600)),
-              ),
-            ),
             const SizedBox(height: 16),
             _accountRow("Account Number", _account!["account_number"] ?? ""),
             _accountRow("Account Name", _account!["account_name"] ?? "XamePay"),
@@ -1987,6 +1822,36 @@ class _BankTransferSheetState extends State<_BankTransferSheet> {
                   style: TextStyle(color: _kTeal, fontSize: 12))),
               ]),
             ),
+            const SizedBox(height: 16),
+            // Provider switcher
+            Text('Current Provider: ${_currentProvider[0].toUpperCase()}${_currentProvider.substring(1)}',
+                style: const TextStyle(color: _kMuted, fontSize: 11)),
+            const SizedBox(height: 8),
+            Row(children: [
+              for (final p in [
+                ('flutterwave', 'Flutterwave'),
+                ('monnify', 'Monnify'),
+                ('squad', 'Squad'),
+              ])
+                Expanded(child: Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: _currentProvider == p.$1
+                          ? _kTeal.withOpacity(0.15) : Colors.transparent,
+                      side: BorderSide(
+                          color: _currentProvider == p.$1 ? _kTeal : Colors.white24),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10))),
+                    onPressed: () => _switchProvider(p.$1, p.$2),
+                    child: Text(p.$2,
+                        style: TextStyle(
+                            color: _currentProvider == p.$1 ? _kTeal : _kMuted,
+                            fontSize: 11, fontWeight: FontWeight.w600)),
+                  ),
+                )),
+            ]),
           ] else ...[
             const Text("Enter your BVN",
                 style: TextStyle(color: _kMuted, fontSize: 12,
