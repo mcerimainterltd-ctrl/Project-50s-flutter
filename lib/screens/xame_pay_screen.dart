@@ -4986,7 +4986,12 @@ class _SquadFormSheetState extends State<_SquadFormSheet> {
               if (_lastNameCtrl.text.trim().isEmpty) return;
               if (_bvnCtrl.text.length != 11) return;
               final dobParts = _dobCtrl.text.trim().split('/');
-              if (dobParts.length != 3 || dobParts[0].length != 2 || dobParts[1].length != 2 || dobParts[2].length != 4) return;
+              if (dobParts.length != 3 || dobParts[0].length != 2 || dobParts[1].length != 2 || dobParts[2].length != 4) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Please enter date of birth as MM/DD/YYYY e.g. 12/06/1966'),
+                  backgroundColor: Colors.red));
+                return;
+              }
               Navigator.pop(context, {
                 'firstName':  _firstNameCtrl.text.trim(),
                 'middleName': _middleNameCtrl.text.trim(),
