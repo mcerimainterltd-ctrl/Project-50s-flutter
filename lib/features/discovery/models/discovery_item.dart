@@ -113,6 +113,7 @@ class DiscoveryItem {
     int? commentCount,
     int? likeCount,
     int? viewCount,
+    bool? isCollabOpen,
   }) => DiscoveryItem(
     id:             id,
     title:          title,
@@ -138,7 +139,7 @@ class DiscoveryItem {
     musicTitle:          musicTitle,
     mediaUrls:           mediaUrls,
     isImmortal:          isImmortal,
-    isCollabOpen:        isCollabOpen,
+    isCollabOpen:        isCollabOpen ?? this.isCollabOpen,
     collabStatus:        collabStatus,
     collabPartnerId:     collabPartnerId,
     collabPartnerName:   collabPartnerName,
