@@ -276,7 +276,13 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       // Feed refresh on collab events — both parties see split-screen immediately
       ref.read(socketServiceProvider).collabUpdated.listen((data) {
         if (!mounted) return;
-        _loadData(refresh: true);
+        final postId = data['postId'] as String?;
+        final isOpen = data['isCollabOpen'] as bool?;
+        if (postId == null || isOpen == null) return;
+        setState(() {
+          _feed = _feed.map((i) =>
+              i.id == postId ? i.copyWith(isCollabOpen: isOpen) : i).toList();
+        });
       });
       ref.read(socketServiceProvider).collabAccepted.listen((data) {
         if (!mounted) return;
