@@ -91,6 +91,11 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
     'ts':           e.ts?.toIso8601String(),
     'musicUrl':     e.musicUrl,
     'musicTitle':   e.musicTitle,
+    'isCollabOpen':      e.isCollabOpen,
+    'collabStatus':      e.collabStatus,
+    'collabPartnerId':   e.collabPartnerId,
+    'collabMediaUrl':    e.collabMediaUrl,
+    'collabMediaType':   e.collabMediaType,
   }).toList();
 
   @override
