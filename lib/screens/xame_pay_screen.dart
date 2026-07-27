@@ -4964,7 +4964,7 @@ class _SquadFormSheetState extends State<_SquadFormSheet> {
         const SizedBox(height: 12),
         _field(_bvnCtrl,        'BVN (11 digits)',             TextInputType.number, maxLen: 11),
         const SizedBox(height: 12),
-        _field(_dobCtrl,        'Date of Birth (DD/MM/YYYY)', TextInputType.datetime),
+        _field(_dobCtrl,        'Date of Birth (MM/DD/YYYY)', TextInputType.datetime),
         const SizedBox(height: 12),
         _field(_addressCtrl,    'Home Address',                TextInputType.streetAddress),
         const SizedBox(height: 12),
@@ -4985,6 +4985,8 @@ class _SquadFormSheetState extends State<_SquadFormSheet> {
               if (_firstNameCtrl.text.trim().isEmpty) return;
               if (_lastNameCtrl.text.trim().isEmpty) return;
               if (_bvnCtrl.text.length != 11) return;
+              final dobParts = _dobCtrl.text.trim().split('/');
+              if (dobParts.length != 3 || dobParts[0].length != 2 || dobParts[1].length != 2 || dobParts[2].length != 4) return;
               Navigator.pop(context, {
                 'firstName':  _firstNameCtrl.text.trim(),
                 'middleName': _middleNameCtrl.text.trim(),
