@@ -4914,3 +4914,119 @@ class _RewardsTabState extends State<_RewardsTab> {
       Text(reward, style: const TextStyle(color: _kTeal, fontSize: 12, fontWeight: FontWeight.w600)),
     ]));
 }
+
+class _SquadFormSheet extends StatefulWidget {
+  const _SquadFormSheet();
+  @override
+  State<_SquadFormSheet> createState() => _SquadFormSheetState();
+}
+
+class _SquadFormSheetState extends State<_SquadFormSheet> {
+  final _bvnCtrl        = TextEditingController();
+  final _dobCtrl        = TextEditingController();
+  final _addressCtrl    = TextEditingController();
+  final _firstNameCtrl  = TextEditingController();
+  final _middleNameCtrl = TextEditingController();
+  final _lastNameCtrl   = TextEditingController();
+  String _gender        = 'M';
+
+  @override
+  void dispose() {
+    _bvnCtrl.dispose();
+    _dobCtrl.dispose();
+    _addressCtrl.dispose();
+    _firstNameCtrl.dispose();
+    _middleNameCtrl.dispose();
+    _lastNameCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 20, right: 20, top: 20),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 36, height: 4,
+          decoration: BoxDecoration(color: Colors.white24,
+            borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 16),
+        const Text('Squad Virtual Account Setup',
+          style: TextStyle(color: Colors.white, fontSize: 16,
+            fontWeight: FontWeight.w700)),
+        const SizedBox(height: 20),
+        _field(_firstNameCtrl,  'First Name',                  TextInputType.name),
+        const SizedBox(height: 12),
+        _field(_middleNameCtrl, 'Middle Name (optional)',      TextInputType.name),
+        const SizedBox(height: 12),
+        _field(_lastNameCtrl,   'Last Name',                   TextInputType.name),
+        const SizedBox(height: 12),
+        _field(_bvnCtrl,        'BVN (11 digits)',             TextInputType.number, maxLen: 11),
+        const SizedBox(height: 12),
+        _field(_dobCtrl,        'Date of Birth (DD/MM/YYYY)', TextInputType.datetime),
+        const SizedBox(height: 12),
+        _field(_addressCtrl,    'Home Address',                TextInputType.streetAddress),
+        const SizedBox(height: 12),
+        Row(children: [
+          const Text('Gender:', style: TextStyle(color: Colors.white70, fontSize: 14)),
+          const SizedBox(width: 16),
+          _genderBtn('M', 'Male'),
+          const SizedBox(width: 12),
+          _genderBtn('F', 'Female'),
+        ]),
+        const SizedBox(height: 20),
+        SizedBox(width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00B0A0),
+              padding: const EdgeInsets.symmetric(vertical: 14)),
+            onPressed: () {
+              if (_firstNameCtrl.text.trim().isEmpty) return;
+              if (_lastNameCtrl.text.trim().isEmpty) return;
+              if (_bvnCtrl.text.length != 11) return;
+              Navigator.pop(context, {
+                'firstName':  _firstNameCtrl.text.trim(),
+                'middleName': _middleNameCtrl.text.trim(),
+                'lastName':   _lastNameCtrl.text.trim(),
+                'bvn':        _bvnCtrl.text.trim(),
+                'dob':        _dobCtrl.text.trim(),
+                'address':    _addressCtrl.text.trim(),
+                'gender':     _gender,
+              });
+            },
+            child: const Text('Continue',
+              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+          )),
+        const SizedBox(height: 24),
+      ]),
+    );
+  }
+
+  Widget _field(TextEditingController ctrl, String label, TextInputType type, {int? maxLen}) =>
+    TextField(
+      controller: ctrl,
+      keyboardType: type,
+      maxLength: maxLen,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white54),
+        counterStyle: const TextStyle(color: Colors.white38),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+        focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00B0A0)))),
+    );
+
+  Widget _genderBtn(String value, String label) => GestureDetector(
+    onTap: () => setState(() => _gender = value),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: _gender == value ? const Color(0xFF00B0A0) : Colors.transparent,
+        border: Border.all(color: _gender == value ? const Color(0xFF00B0A0) : Colors.white24),
+        borderRadius: BorderRadius.circular(20)),
+      child: Text(label, style: TextStyle(
+        color: _gender == value ? Colors.black : Colors.white70,
+        fontWeight: FontWeight.w600)),
+    ));
+}
