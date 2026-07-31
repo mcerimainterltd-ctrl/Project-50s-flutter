@@ -524,6 +524,19 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     return Stack(children: [
 
         Builder(builder: (_) {
+          final collabAccepted = (widget.post['collabStatus'] as String? ?? '') == 'accepted';
+          final collabMediaUrl = widget.post['collabMediaUrl'] as String? ?? '';
+          if (collabAccepted && collabMediaUrl.isNotEmpty) {
+            return _CollabCombinedView(
+              layout:          widget.post['collabLayout'] as String? ?? 'side-by-side',
+              mediaUrl:        widget.post['mediaUrl'] as String? ?? '',
+              mediaType:       widget.post['mediaType'] as String? ?? 'image',
+              collabMediaUrl:  collabMediaUrl,
+              collabMediaType: widget.post['collabMediaType'] as String? ?? 'image',
+              isActive:        widget.isActive,
+            );
+          }
+
           final isVid = (widget.post['mediaType'] as String? ?? '') == 'video';
           final mediaUrlsRaw = widget.post['mediaUrls'] as List?;
           final mediaUrls = mediaUrlsRaw != null
@@ -1618,6 +1631,77 @@ class _CollabToggleChipState extends State<_CollabToggleChip> {
               ),
       ),
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _CollabCombinedView — renders the author's and partner's media together once
+// a collab has been accepted, arranged per the post's chosen collabLayout.
+// ─────────────────────────────────────────────────────────────────────────────
+class _CollabCombinedView extends StatelessWidget {
+  final String layout;
+  final String mediaUrl;
+  final String mediaType;
+  final String collabMediaUrl;
+  final String collabMediaType;
+  final bool isActive;
+
+  const _CollabCombinedView({
+    Key? key,
+    required this.layout,
+    required this.mediaUrl,
+    required this.mediaType,
+    required this.collabMediaUrl,
+    required this.collabMediaType,
+    required this.isActive,
+  }) : super(key: key);
+
+  Widget _media(String url, String type, {bool active = false}) {
+    return type == 'video'
+        ? _VideoPage(url: url, isActive: active)
+        : _ImagePage(url: url);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final original = ClipRect(child: _media(mediaUrl, mediaType, active: isActive));
+    final partner  = ClipRect(child: _media(collabMediaUrl, collabMediaType));
+
+    switch (layout) {
+      case 'top-bottom':
+        return Column(children: [
+          Expanded(child: original),
+          Container(height: 2, color: Colors.white24),
+          Expanded(child: partner),
+        ]);
+      case 'picture-in-picture':
+        final pipWidth = MediaQuery.of(context).size.width * 0.32;
+        return Stack(fit: StackFit.expand, children: [
+          original,
+          Positioned(
+            right: 16, bottom: 110,
+            width: pipWidth, height: pipWidth * 1.6,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [BoxShadow(
+                    color: Colors.black.withOpacity(0.4),
+                    blurRadius: 12, offset: const Offset(0, 4))],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: partner,
+            ),
+          ),
+        ]);
+      case 'side-by-side':
+      default:
+        return Row(children: [
+          Expanded(child: original),
+          Container(width: 2, color: Colors.white24),
+          Expanded(child: partner),
+        ]);
+    }
   }
 }
 

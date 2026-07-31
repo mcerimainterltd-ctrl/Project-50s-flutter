@@ -94,8 +94,11 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
     'isCollabOpen':      e.isCollabOpen,
     'collabStatus':      e.collabStatus,
     'collabPartnerId':   e.collabPartnerId,
+    'collabPartnerName': e.collabPartnerName,
+    'collabPartnerAvatar': e.collabPartnerAvatar,
     'collabMediaUrl':    e.collabMediaUrl,
     'collabMediaType':   e.collabMediaType,
+    'collabLayout':      e.collabLayout,
   }).toList();
 
   @override
