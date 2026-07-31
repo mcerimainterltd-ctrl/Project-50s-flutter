@@ -35,6 +35,7 @@ class DiscoveryItem {
   final String            collabPartnerAvatar;
   final String            collabMediaUrl;
   final String            collabMediaType;
+  final String            collabLayout;
 
   const DiscoveryItem({
     required this.id,
@@ -68,6 +69,7 @@ class DiscoveryItem {
     this.collabPartnerAvatar = '',
     this.collabMediaUrl     = '',
     this.collabMediaType    = 'image',
+    this.collabLayout       = 'side-by-side',
   });
 
   factory DiscoveryItem.fromJson(Map<String, dynamic> json) {
@@ -105,6 +107,7 @@ class DiscoveryItem {
       collabPartnerAvatar: json['collabPartnerAvatar'] as String? ?? '',
       collabMediaUrl:      json['collabMediaUrl']      as String? ?? '',
       collabMediaType:     json['collabMediaType']     as String? ?? 'image',
+      collabLayout:        json['collabLayout']        as String? ?? 'side-by-side',
     );
   }
 
@@ -114,6 +117,7 @@ class DiscoveryItem {
     int? likeCount,
     int? viewCount,
     bool? isCollabOpen,
+    String? collabLayout,
   }) => DiscoveryItem(
     id:             id,
     title:          title,
@@ -146,6 +150,7 @@ class DiscoveryItem {
     collabPartnerAvatar: collabPartnerAvatar,
     collabMediaUrl:      collabMediaUrl,
     collabMediaType:     collabMediaType,
+    collabLayout:        collabLayout ?? this.collabLayout,
   );
 
 
@@ -178,6 +183,7 @@ class DiscoveryItem {
     'collabPartnerAvatar': collabPartnerAvatar,
     'collabMediaUrl':      collabMediaUrl,
     'collabMediaType':     collabMediaType,
+    'collabLayout':        collabLayout,
   };
 }
 

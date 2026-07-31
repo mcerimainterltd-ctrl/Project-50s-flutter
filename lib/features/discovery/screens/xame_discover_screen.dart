@@ -860,8 +860,11 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       'isCollabOpen':      e.isCollabOpen,
       'collabStatus':      e.collabStatus,
       'collabMediaUrl':    e.collabMediaUrl,
+      'collabMediaType':   e.collabMediaType,
       'collabPartnerId':   e.collabPartnerId,
       'collabPartnerName': e.collabPartnerName,
+      'collabPartnerAvatar': e.collabPartnerAvatar,
+      'collabLayout':      e.collabLayout,
     }).toList();
     final idx = _filtered.indexWhere((e) => e.id == item.id);
     Navigator.of(context).push(PageRouteBuilder(
@@ -3947,6 +3950,14 @@ class _FullscreenFeedPage extends StatelessWidget {
       'musicUrl':     item.musicUrl,
       'musicTitle':   item.musicTitle,
       'mediaUrls':    item.mediaUrls.isNotEmpty ? item.mediaUrls.map((u) => {'url': u}).toList() : null,
+      'isCollabOpen':      item.isCollabOpen,
+      'collabStatus':      item.collabStatus,
+      'collabPartnerId':   item.collabPartnerId,
+      'collabPartnerName': item.collabPartnerName,
+      'collabPartnerAvatar': item.collabPartnerAvatar,
+      'collabMediaUrl':    item.collabMediaUrl,
+      'collabMediaType':   item.collabMediaType,
+      'collabLayout':      item.collabLayout,
     };
     return DiscoveryFullscreenViewer(
       posts: [post],

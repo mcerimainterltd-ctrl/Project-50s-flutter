@@ -25,6 +25,7 @@ class CollabMessage {
 
 class CollabThreadScreen extends ConsumerStatefulWidget {
   final String threadId;
+  final String postId;
   final String postTitle;
   final String postMediaUrl;
   final String otherUserId;
@@ -33,6 +34,7 @@ class CollabThreadScreen extends ConsumerStatefulWidget {
   const CollabThreadScreen({
     Key? key,
     required this.threadId,
+    required this.postId,
     required this.postTitle,
     required this.postMediaUrl,
     required this.otherUserId,
@@ -50,8 +52,11 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
   StreamSubscription? _sub;
   StreamSubscription? _authorizedSub;
   StreamSubscription? _submittedSub;
+  StreamSubscription? _layoutSub;
   bool _loading = true;
   bool _sending = false;
+  String _collabLayout = 'side-by-side';
+  bool _layoutSaving = false;
 
   @override
   void initState() {
@@ -71,6 +76,11 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
       if (data['threadId'] != widget.threadId) return;
       _loadThread();
     });
+    _layoutSub = ref.read(socketServiceProvider).collabLayoutUpdated.listen((data) {
+      if (data['postId'] != widget.postId) return;
+      final layout = data['layout'] as String?;
+      if (layout != null && mounted) setState(() => _collabLayout = layout);
+    });
   }
 
   @override
@@ -78,9 +88,32 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
     _sub?.cancel();
     _authorizedSub?.cancel();
     _submittedSub?.cancel();
+    _layoutSub?.cancel();
     _ctrl.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  Future<void> _setLayout(String layout) async {
+    if (_layoutSaving || _collabLayout == layout) return;
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    final previous = _collabLayout;
+    setState(() { _collabLayout = layout; _layoutSaving = true; });
+    try {
+      final res = await http.post(
+        Uri.parse('${AppConstants.serverUrl}/api/discover/collab/set-layout'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'postId': widget.postId, 'userId': user.xameId, 'layout': layout}));
+      final data = jsonDecode(res.body);
+      if (data['success'] != true && mounted) {
+        setState(() => _collabLayout = previous);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _collabLayout = previous);
+    } finally {
+      if (mounted) setState(() => _layoutSaving = false);
+    }
   }
 
   Future<void> _loadThread() async {
@@ -243,6 +276,58 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
                         ])));
                   })),
 
+        // Layout picker — visible to both parties, lets either one choose
+        // how their two media items combine on the final post.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF171724),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.06)),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                const Icon(Icons.dashboard_customize_rounded,
+                    color: Color(0xFF00E5FF), size: 16),
+                const SizedBox(width: 6),
+                const Text('Combine Layout',
+                    style: TextStyle(color: Colors.white70, fontSize: 12,
+                        fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+                const Spacer(),
+                if (_layoutSaving)
+                  const SizedBox(width: 12, height: 12,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 1.5, color: Color(0xFF00E5FF))),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                _LayoutOption(
+                  icon: Icons.vertical_split_rounded,
+                  label: 'Side-by-side',
+                  selected: _collabLayout == 'side-by-side',
+                  onTap: () => _setLayout('side-by-side'),
+                ),
+                const SizedBox(width: 8),
+                _LayoutOption(
+                  icon: Icons.horizontal_split_rounded,
+                  label: 'Top-bottom',
+                  selected: _collabLayout == 'top-bottom',
+                  onTap: () => _setLayout('top-bottom'),
+                ),
+                const SizedBox(width: 8),
+                _LayoutOption(
+                  icon: Icons.picture_in_picture_alt_rounded,
+                  label: 'Picture-in-picture',
+                  selected: _collabLayout == 'picture-in-picture',
+                  onTap: () => _setLayout('picture-in-picture'),
+                ),
+              ]),
+            ]),
+          ),
+        ),
+
         // Input
         // Action buttons — author sees Authorize, requester sees Submit
         if (widget.isAuthor)
@@ -333,6 +418,66 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
                   : const Icon(Icons.send_rounded, color: Colors.black, size: 20))),
           ])),
       ]),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _LayoutOption — a single selectable chip in the Combine Layout picker
+// ─────────────────────────────────────────────────────────────────────────────
+class _LayoutOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _LayoutOption({
+    Key? key,
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: selected
+                ? const LinearGradient(
+                    colors: [Color(0xFF00E5FF), Color(0xFF00B0A0)],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight)
+                : null,
+            color: selected ? null : const Color(0xFF1E1E2E),
+            border: Border.all(
+                color: selected ? Colors.transparent : Colors.white.withOpacity(0.08)),
+            boxShadow: selected
+                ? [BoxShadow(color: const Color(0xFF00E5FF).withOpacity(0.35),
+                    blurRadius: 12, offset: const Offset(0, 4))]
+                : null,
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 20,
+                color: selected ? Colors.black : Colors.white54),
+            const SizedBox(height: 4),
+            Text(label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: selected ? Colors.black : Colors.white38)),
+          ]),
+        ),
+      ),
     );
   }
 }

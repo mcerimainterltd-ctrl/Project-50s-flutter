@@ -320,6 +320,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       if (ctx == null) return;
       final thread = pending.first;
       final threadId = thread['threadId'] as String;
+      final postId = thread['postId'] as String? ?? '';
       _persistOpenedCollabThread(threadId);
       final postTitle = thread['postTitle'] as String? ?? '';
       // Show snackbar notification instead of auto-opening
@@ -333,6 +334,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
           onPressed: () => Navigator.of(ctx).push(MaterialPageRoute(
             builder: (_) => CollabThreadScreen(
               threadId:     threadId,
+              postId:       postId,
               postTitle:    postTitle,
               postMediaUrl: thread['postMediaUrl'] as String? ?? '',
               otherUserId:  thread['authorId'] as String? ?? '',
@@ -363,6 +365,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         onPressed: () => Navigator.of(ctx).push(MaterialPageRoute(
           builder: (_) => CollabThreadScreen(
             threadId:     threadId,
+            postId:       data['postId'] as String? ?? '',
             postTitle:    postTitle,
             postMediaUrl: postMediaUrl,
             otherUserId:  '',
@@ -472,6 +475,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
                       Navigator.of(ctx).push(MaterialPageRoute(
                         builder: (_) => CollabThreadScreen(
                           threadId:     data['threadId'] as String,
+                          postId:       postId,
                           postTitle:    postTitle,
                           postMediaUrl: mediaUrl,
                           otherUserId:  requesterId,
