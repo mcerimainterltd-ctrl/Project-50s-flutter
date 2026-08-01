@@ -53,6 +53,7 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
   StreamSubscription? _authorizedSub;
   StreamSubscription? _submittedSub;
   StreamSubscription? _layoutSub;
+  StreamSubscription? _cancelledSub;
   bool _loading = true;
   bool _sending = false;
   String _collabLayout = 'side-by-side';
@@ -81,6 +82,13 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
       final layout = data['layout'] as String?;
       if (layout != null && mounted) setState(() => _collabLayout = layout);
     });
+    _cancelledSub = ref.read(socketServiceProvider).collabCancelled.listen((data) {
+      if (data['postId'] != widget.postId || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('This collab was cancelled by the other party.'),
+        backgroundColor: Colors.redAccent));
+      Navigator.pop(context);
+    });
   }
 
   @override
@@ -89,6 +97,7 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
     _authorizedSub?.cancel();
     _submittedSub?.cancel();
     _layoutSub?.cancel();
+    _cancelledSub?.cancel();
     _ctrl.dispose();
     _scroll.dispose();
     super.dispose();
@@ -113,6 +122,59 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
       if (mounted) setState(() => _collabLayout = previous);
     } finally {
       if (mounted) setState(() => _layoutSaving = false);
+    }
+  }
+
+  Future<void> _confirmCancelCollab() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cancel Collab?',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        content: const Text(
+            'This will end the collab and reopen the post for new requests. This can\'t be undone.',
+            style: TextStyle(color: Colors.white60, fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: const Text('Keep it', style: TextStyle(color: Colors.white38))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Cancel Collab',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+    try {
+      final res = await http.post(
+        Uri.parse('${AppConstants.serverUrl}/api/discover/collab/cancel'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'postId':   widget.postId,
+          'userId':   user.xameId,
+          'threadId': widget.threadId,
+        }));
+      final data = jsonDecode(res.body);
+      if (!mounted) return;
+      if (data['success'] == true) {
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(data['message'] as String? ?? 'Failed to cancel'),
+          backgroundColor: Colors.redAccent));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to cancel — check connection'),
+          backgroundColor: Colors.redAccent));
+      }
     }
   }
 
@@ -186,7 +248,7 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
         ]),
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 12),
+            margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.orange.withOpacity(0.15),
@@ -194,6 +256,10 @@ class _CollabThreadScreenState extends ConsumerState<CollabThreadScreen> {
               border: Border.all(color: Colors.orange.withOpacity(0.4))),
             child: const Text('Private · 7 days',
               style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.w600))),
+          IconButton(
+            icon: const Icon(Icons.cancel_outlined, color: Colors.redAccent, size: 20),
+            tooltip: 'Cancel Collab',
+            onPressed: _confirmCancelCollab),
         ]),
       body: Column(children: [
         // Post context banner
