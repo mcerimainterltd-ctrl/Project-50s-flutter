@@ -53,6 +53,7 @@ class SocketService {
   final _collabAcceptedCtrl  = StreamController<Map<String,dynamic>>.broadcast();
   final _collabUpdatedCtrl   = StreamController<Map<String,dynamic>>.broadcast();
   final _collabLayoutUpdatedCtrl = StreamController<Map<String,dynamic>>.broadcast();
+  final _collabCancelledCtrl = StreamController<Map<String,dynamic>>.broadcast();
   final _collabAuthorizedCtrl = StreamController<Map<String,dynamic>>.broadcast();
   final _collabSubmittedCtrl  = StreamController<Map<String,dynamic>>.broadcast();
   final _walletDebitCtrl      = StreamController<Map<String,dynamic>>.broadcast();
@@ -96,6 +97,7 @@ class SocketService {
   Stream<Map<String,dynamic>>       get collabAccepted  => _collabAcceptedCtrl.stream;
   Stream<Map<String,dynamic>>       get collabUpdated   => _collabUpdatedCtrl.stream;
   Stream<Map<String,dynamic>>       get collabLayoutUpdated => _collabLayoutUpdatedCtrl.stream;
+  Stream<Map<String,dynamic>>       get collabCancelled => _collabCancelledCtrl.stream;
   Stream<Map<String,dynamic>>       get collabAuthorized => _collabAuthorizedCtrl.stream;
   Stream<Map<String,dynamic>>       get collabSubmitted  => _collabSubmittedCtrl.stream;
   Stream<Map<String,dynamic>>       get walletDebit      => _walletDebitCtrl.stream;
@@ -403,6 +405,9 @@ class SocketService {
     });
     socket.on('collab_layout_updated', (d) {
       if (d != null) _collabLayoutUpdatedCtrl.add(Map<String,dynamic>.from(d as Map));
+    });
+    socket.on('collab_cancelled', (d) {
+      if (d != null) _collabCancelledCtrl.add(Map<String,dynamic>.from(d as Map));
     });
     socket.on('collab_authorized', (d) {
       if (d != null) _collabAuthorizedCtrl.add(Map<String,dynamic>.from(d as Map));

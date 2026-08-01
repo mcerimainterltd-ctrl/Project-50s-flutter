@@ -180,6 +180,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   StreamSubscription? _collabRequestSub;
   StreamSubscription? _collabAcceptedSub;
   StreamSubscription? _collabAuthorizedSub;
+  StreamSubscription? _collabCancelledSub;
   StreamSubscription? _collabSubmittedSub;
 
   void _initWalletRequestListener() {
@@ -513,6 +514,12 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       ref.read(pushServiceProvider).showAlertNotification(
         '🤝 Collab Submitted',
         'A contribution was submitted for "\$title" — review it now',
+      );
+    });
+    _collabCancelledSub = socket.collabCancelled.listen((data) {
+      ref.read(pushServiceProvider).showAlertNotification(
+        '❌ Collab Cancelled',
+        'A collab you were part of was cancelled by the other party',
       );
     });
   }
