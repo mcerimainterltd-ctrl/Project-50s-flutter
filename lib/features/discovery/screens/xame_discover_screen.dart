@@ -89,6 +89,14 @@ class DiscoveryApiService {
           mediaUrls: m['mediaUrls'] != null
               ? (m['mediaUrls'] as List).map((e) => (e as Map)['url'] as String).toList()
               : const [],
+          isCollabOpen:        m['isCollabOpen']        as bool?   ?? false,
+          collabStatus:        m['collabStatus']        as String? ?? 'none',
+          collabPartnerId:     m['collabPartnerId']     as String? ?? '',
+          collabPartnerName:   m['collabPartnerName']   as String? ?? '',
+          collabPartnerAvatar: m['collabPartnerAvatar'] as String? ?? '',
+          collabMediaUrl:      m['collabMediaUrl']      as String? ?? '',
+          collabMediaType:     m['collabMediaType']     as String? ?? 'image',
+          collabLayout:        m['collabLayout']        as String? ?? 'side-by-side',
         );
       }).toList();
     } catch (_) { return []; }
