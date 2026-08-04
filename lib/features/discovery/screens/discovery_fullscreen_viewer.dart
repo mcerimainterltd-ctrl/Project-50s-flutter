@@ -534,6 +534,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
               collabMediaUrl:  collabMediaUrl,
               collabMediaType: widget.post['collabMediaType'] as String? ?? 'image',
               isActive:        widget.isActive,
+              isRemix:         widget.post['isRemix'] as bool? ?? false,
             );
           }
 
@@ -1645,6 +1646,7 @@ class _CollabCombinedView extends StatelessWidget {
   final String collabMediaUrl;
   final String collabMediaType;
   final bool isActive;
+  final bool isRemix;
 
   const _CollabCombinedView({
     Key? key,
@@ -1654,6 +1656,7 @@ class _CollabCombinedView extends StatelessWidget {
     required this.collabMediaUrl,
     required this.collabMediaType,
     required this.isActive,
+    this.isRemix = false,
   }) : super(key: key);
 
   Widget _media(String url, String type, {bool active = false}) {
@@ -1667,16 +1670,18 @@ class _CollabCombinedView extends StatelessWidget {
     final original = ClipRect(child: _media(mediaUrl, mediaType, active: isActive));
     final partner  = ClipRect(child: _media(collabMediaUrl, collabMediaType));
 
+    Widget content;
     switch (layout) {
       case 'top-bottom':
-        return Column(children: [
+        content = Column(children: [
           Expanded(child: original),
           Container(height: 2, color: Colors.white24),
           Expanded(child: partner),
         ]);
+        break;
       case 'picture-in-picture':
         final pipWidth = MediaQuery.of(context).size.width * 0.32;
-        return Stack(fit: StackFit.expand, children: [
+        content = Stack(fit: StackFit.expand, children: [
           original,
           Positioned(
             right: 16, bottom: 110,
@@ -1694,14 +1699,39 @@ class _CollabCombinedView extends StatelessWidget {
             ),
           ),
         ]);
+        break;
       case 'side-by-side':
       default:
-        return Row(children: [
+        content = Row(children: [
           Expanded(child: original),
           Container(width: 2, color: Colors.white24),
           Expanded(child: partner),
         ]);
     }
+
+    if (!isRemix) return content;
+
+    return Stack(children: [
+      content,
+      Positioned(
+        top: MediaQuery.of(context).padding.top + 12,
+        left: 12,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.change_circle_rounded, color: Color(0xFF00E5FF), size: 14),
+            SizedBox(width: 4),
+            Text('Collab Remix',
+                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ),
+    ]);
   }
 }
 

@@ -97,6 +97,8 @@ class DiscoveryApiService {
           collabMediaUrl:      m['collabMediaUrl']      as String? ?? '',
           collabMediaType:     m['collabMediaType']     as String? ?? 'image',
           collabLayout:        m['collabLayout']        as String? ?? 'side-by-side',
+          originalPostId:      m['originalPostId']      as String? ?? '',
+          isRemix:             m['isRemix']              as bool?   ?? false,
         );
       }).toList();
     } catch (_) { return []; }
@@ -873,6 +875,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       'collabPartnerName': e.collabPartnerName,
       'collabPartnerAvatar': e.collabPartnerAvatar,
       'collabLayout':      e.collabLayout,
+      'originalPostId':    e.originalPostId,
+      'isRemix':           e.isRemix,
     }).toList();
     final idx = _filtered.indexWhere((e) => e.id == item.id);
     Navigator.of(context).push(PageRouteBuilder(
@@ -3966,6 +3970,8 @@ class _FullscreenFeedPage extends StatelessWidget {
       'collabMediaUrl':    item.collabMediaUrl,
       'collabMediaType':   item.collabMediaType,
       'collabLayout':      item.collabLayout,
+      'originalPostId':    item.originalPostId,
+      'isRemix':           item.isRemix,
     };
     return DiscoveryFullscreenViewer(
       posts: [post],
