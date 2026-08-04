@@ -35,6 +35,8 @@ class DiscoveryItem {
   final String            collabPartnerAvatar;
   final String            collabMediaUrl;
   final String            collabMediaType;
+  final String            originalPostId;
+  final bool              isRemix;
   final String            collabLayout;
 
   const DiscoveryItem({
@@ -69,6 +71,8 @@ class DiscoveryItem {
     this.collabPartnerAvatar = '',
     this.collabMediaUrl     = '',
     this.collabMediaType    = 'image',
+    this.originalPostId     = '',
+    this.isRemix            = false,
     this.collabLayout       = 'side-by-side',
   });
 
@@ -107,6 +111,8 @@ class DiscoveryItem {
       collabPartnerAvatar: json['collabPartnerAvatar'] as String? ?? '',
       collabMediaUrl:      json['collabMediaUrl']      as String? ?? '',
       collabMediaType:     json['collabMediaType']     as String? ?? 'image',
+      originalPostId:      json['originalPostId']      as String? ?? '',
+      isRemix:             json['isRemix']             as bool?   ?? false,
       collabLayout:        json['collabLayout']        as String? ?? 'side-by-side',
     );
   }
@@ -150,6 +156,8 @@ class DiscoveryItem {
     collabPartnerAvatar: collabPartnerAvatar,
     collabMediaUrl:      collabMediaUrl,
     collabMediaType:     collabMediaType,
+    originalPostId:      originalPostId,
+    isRemix:             isRemix,
     collabLayout:        collabLayout ?? this.collabLayout,
   );
 
@@ -183,6 +191,8 @@ class DiscoveryItem {
     'collabPartnerAvatar': collabPartnerAvatar,
     'collabMediaUrl':      collabMediaUrl,
     'collabMediaType':     collabMediaType,
+    'originalPostId':      originalPostId,
+    'isRemix':             isRemix,
     'collabLayout':        collabLayout,
   };
 }

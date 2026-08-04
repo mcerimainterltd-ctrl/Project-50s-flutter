@@ -99,6 +99,8 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
     'collabMediaUrl':    e.collabMediaUrl,
     'collabMediaType':   e.collabMediaType,
     'collabLayout':      e.collabLayout,
+    'originalPostId':    e.originalPostId,
+    'isRemix':           e.isRemix,
   }).toList();
 
   @override
