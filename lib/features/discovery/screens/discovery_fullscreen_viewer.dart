@@ -1714,7 +1714,7 @@ class _CollabCombinedView extends StatelessWidget {
     return Stack(children: [
       content,
       Positioned(
-        top: MediaQuery.of(context).padding.top + 12,
+        top: MediaQuery.of(context).padding.top + 68,
         left: 12,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
