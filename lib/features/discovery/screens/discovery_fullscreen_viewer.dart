@@ -658,6 +658,23 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (widget.post['isRemix'] as bool? ?? false) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.55),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withOpacity(0.2)),
+                          ),
+                          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.change_circle_rounded, color: Color(0xFF00E5FF), size: 14),
+                            SizedBox(width: 4),
+                            Text('Collab Remix',
+                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                          ]),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       Row(children: [
                         GestureDetector(
                           onTap: () async {
@@ -1709,29 +1726,7 @@ class _CollabCombinedView extends StatelessWidget {
         ]);
     }
 
-    if (!isRemix) return content;
-
-    return Stack(children: [
-      content,
-      Positioned(
-        top: MediaQuery.of(context).padding.top + 140,
-        left: 12,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: const Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.change_circle_rounded, color: Color(0xFF00E5FF), size: 14),
-            SizedBox(width: 4),
-            Text('Collab Remix',
-                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-          ]),
-        ),
-      ),
-    ]);
+    return content;
   }
 }
 
