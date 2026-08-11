@@ -704,6 +704,12 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
+    if (user != null) {
+      ref.read(socketServiceProvider).connect(user.xameId);
+      // Persist xameId for native SocketKeepaliveService to read on boot
+      SharedPreferences.getInstance().then((prefs) =>
+          prefs.setString('xamepage_user_id', user.xameId));
+    }
 
     // Pre-warm providers when user is logged in
     if (user != null) {

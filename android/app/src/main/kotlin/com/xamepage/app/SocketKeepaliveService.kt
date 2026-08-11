@@ -12,9 +12,11 @@ import io.flutter.plugin.common.MethodChannel
 class SocketKeepaliveService : Service() {
 
     companion object {
-        const val CHANNEL_ID  = "xamepage_keepalive"
-        const val NOTIF_ID    = 2001
+        const val CHANNEL_ID   = "xamepage_keepalive"
+        const val NOTIF_ID     = 2001
         const val CHANNEL_NAME = "com.xamepage.app/keepalive"
+        const val PREFS_NAME   = "FlutterSharedPreferences"
+        const val PREFS_KEY    = "flutter.xamepage_user_id"
 
         fun start(context: Context) {
             val intent = Intent(context, SocketKeepaliveService::class.java)
@@ -31,11 +33,12 @@ class SocketKeepaliveService : Service() {
 
     private val handler  = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
+    private var engineLaunchAttempted = false
 
     private val heartbeatRunnable = object : Runnable {
         override fun run() {
             pingFlutter()
-            handler.postDelayed(this, 25_000L) // every 25 seconds
+            handler.postDelayed(this, 25_000L)
         }
     }
 
@@ -47,17 +50,42 @@ class SocketKeepaliveService : Service() {
         handler.post(heartbeatRunnable)
     }
 
+    private fun getSavedUserId(): String? {
+        // Flutter stores SharedPreferences with "flutter." prefix
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(PREFS_KEY, null)
+    }
+
     private fun pingFlutter() {
-        // Renew wakelock to prevent expiry
         if (wakeLock?.isHeld == false) acquireWakeLock()
-        try {
-            val engine: FlutterEngine? = FlutterEngineCache.getInstance().get("main")
-            engine?.dartExecutor?.binaryMessenger?.let { messenger ->
-                MethodChannel(messenger, CHANNEL_NAME)
+        val engine: FlutterEngine? = FlutterEngineCache.getInstance().get("main")
+        if (engine != null) {
+            // Flutter engine is running — send heartbeat
+            engineLaunchAttempted = false
+            try {
+                MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL_NAME)
                     .invokeMethod("heartbeat", null)
+            } catch (e: Exception) {
+                // Engine not ready yet — skip this beat
             }
-        } catch (e: Exception) {
-            // Engine not ready yet — skip this beat
+        } else if (!engineLaunchAttempted) {
+            // Engine not running — check if user is logged in
+            val userId = getSavedUserId()
+            if (!userId.isNullOrEmpty()) {
+                // Launch app to initialize Flutter engine and connect socket
+                engineLaunchAttempted = true
+                try {
+                    val launchIntent = Intent(this, MainActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        putExtra("boot_launch", true)
+                    }
+                    startActivity(launchIntent)
+                } catch (e: Exception) {
+                    engineLaunchAttempted = false
+                }
+            }
+            // If no userId saved, user is not logged in — skip silently
         }
     }
 
@@ -99,11 +127,11 @@ class SocketKeepaliveService : Service() {
         wakeLock = pm.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "xamepage:SocketKeepalive"
-        ).apply { acquire(12 * 60 * 60 * 1000L) } // 12 hours — renewed by heartbeat
+        ).apply { acquire(12 * 60 * 60 * 1000L) }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY // restart if killed
+        return START_STICKY
     }
 
     override fun onDestroy() {
