@@ -19,6 +19,15 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // If launched silently by SocketKeepaliveService on boot,
+        // initialize the Flutter engine but move immediately to background
+        // so the user never sees the app pop up.
+        if (intent?.getBooleanExtra("boot_launch", false) == true) {
+            moveTaskToBack(true)
+            return
+        }
+
         // Allow activity to show on lock screen and wake device
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
