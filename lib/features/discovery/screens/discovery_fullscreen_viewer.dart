@@ -1370,7 +1370,11 @@ class _ActionColumnState extends State<_ActionColumn>
       final r = await dio.delete('/api/discover/post/' + postId,
           data: {'userId': widget.currentUserId});
       if (r.data['success'] == true && context.mounted) {
-        Navigator.pop(context); // close fullscreen viewer
+        // Only pop when this viewer was pushed as its own route — when
+        // embedded (e.g. the main swipeable feed), there's no dedicated
+        // route to pop, and calling Navigator.pop() anyway leaves a blank
+        // screen since it pops an unrelated ancestor navigator instead.
+        if (!widget.embedded) Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Post deleted'), backgroundColor: Colors.red));
       }
