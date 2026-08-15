@@ -768,6 +768,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                   liked:         _liked,
                   likeCount:     _likeCount,
                   currentUserId: widget.currentUserId,
+                  embedded:      widget.embedded,
                   onLike: () {
                     setState(() {
                       _liked      = !_liked;
@@ -1303,6 +1304,7 @@ class _ActionColumn extends StatefulWidget {
   final VoidCallback? onViewers;
   final VoidCallback? onCommenters;
   final VoidCallback? onCollab;
+  final bool embedded;
 
   const _ActionColumn({
     Key? key,
@@ -1316,6 +1318,7 @@ class _ActionColumn extends StatefulWidget {
     this.onViewers,
     this.onCommenters,
     this.onCollab,
+    this.embedded = false,
   }) : super(key: key);
 
   @override
