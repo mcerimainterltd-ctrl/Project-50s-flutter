@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../../../core/config/constants.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,19 +77,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         lastName:  _lastNameCtrl.text,
         dob:       dob,
         password:  _passwordCtrl.text,
+        referralCode: _referralCtrl.text.trim().isEmpty
+            ? null
+            : _referralCtrl.text.trim(),
       );
       setState(() => _returnedXameId = user.xameId);
-      // Credit referrer if referral code provided
-      final refCode = _referralCtrl.text.trim();
-      if (refCode.isNotEmpty) {
-        try {
-          await http.post(
-            Uri.parse('${AppConstants.serverUrl}/api/rewards/register-referral'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'newUserId': user.xameId, 'referralCode': refCode}),
-          );
-        } catch (_) {}
-      }
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
