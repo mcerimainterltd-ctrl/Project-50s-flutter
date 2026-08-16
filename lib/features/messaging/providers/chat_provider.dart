@@ -92,6 +92,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         albumId:     m['albumId']    as String?,
         albumIndex:  (m['albumIndex'] as num?)?.toInt(),
         albumTotal:  (m['albumTotal'] as num?)?.toInt(),
+        actionButton: m['actionButton'] as Map<String, dynamic>?,
       );
 
       // Deduplicate — server echo can arrive before socket ack
