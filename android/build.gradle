@@ -1,12 +1,12 @@
 buildscript {
-    ext.kotlin_version = '2.0.0'
+    ext.kotlin_version = '2.1.0'
 
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools:r8:8.3.37'
+        classpath 'com.android.tools:r8:8.5.35'
         classpath 'com.google.gms:google-services:4.4.2'
     }
 }
@@ -18,7 +18,7 @@ subprojects {
     project.configurations.all {
         resolutionStrategy.eachDependency { details ->
             if (details.requested.group == 'org.jetbrains.kotlin') {
-                details.useVersion '2.0.0'
+                details.useVersion '2.1.0'
             }
         }
     }
