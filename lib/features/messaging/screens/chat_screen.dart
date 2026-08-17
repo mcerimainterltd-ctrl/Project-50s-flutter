@@ -303,10 +303,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         onPressed: () => context.go('/contacts')),
       title: GestureDetector(
         onTap: () => Navigator.push(context, MaterialPageRoute(
-          builder: (_) => MyGalleryViewer(
-            items: const [], initialIndex: 0,
-            isOwner: false,
-          ))),
+          builder: (_) => MyGalleryViewer(items: const [], initialIndex: 0))),
         child: Row(children: [
           GestureDetector(
             onTap: () {
