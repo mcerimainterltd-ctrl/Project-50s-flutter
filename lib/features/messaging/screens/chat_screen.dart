@@ -304,7 +304,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       title: GestureDetector(
         onTap: () => Navigator.push(context, MaterialPageRoute(
           builder: (_) => MyGalleryViewer(
-            userId:  widget.userId,
+            items: const [], initialIndex: 0,
             isOwner: false,
           ))),
         child: Row(children: [
