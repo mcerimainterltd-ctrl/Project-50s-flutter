@@ -303,7 +303,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         onPressed: () => context.go('/contacts')),
       title: GestureDetector(
         onTap: () => Navigator.push(context, MaterialPageRoute(
-          builder: (_) => MyGalleryEngine(
+          builder: (_) => MyGalleryViewer(
             userId:  widget.userId,
             isOwner: false,
           ))),
