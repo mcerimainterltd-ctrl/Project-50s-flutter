@@ -4,6 +4,59 @@ environment:
   sdk: ">=3.0.0 <4.0.0"
 dependencies:
   flutter: { sdk: flutter }
+  # Core & Networking
+  http: ^1.2.1
+  dio: ^5.4.3+1
+  socket_io_client: ^2.0.3+1
+  app_links: ^6.0.1
+  url_launcher: ^6.3.0
+  connectivity_plus: ^6.0.3
+
+  # Firebase & Auth
+  firebase_core: ^3.1.0
+  firebase_auth: ^5.1.0
+  cloud_firestore: ^5.0.1
+  firebase_messaging: ^15.0.1
+  local_auth: ^2.2.0
+
+  # Storage & Utilities
+  shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.2.2
+  package_info_plus: ^8.0.0
+  permission_handler: ^11.3.1
+  uuid: ^4.4.0
+  intl: ^0.19.0
+  share_plus: ^9.0.0
+  receive_sharing_intent: ^1.6.8
+
+  # Location & Maps
+  geolocator: ^12.0.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Media, Audio & Video
+  cached_network_image: ^3.3.1
+  audioplayers: ^6.0.0
+  just_audio: ^0.9.38
+  flutter_sound: ^9.10.0
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.0.2
+  video_player: ^2.8.6
+  video_compress: ^3.1.2
+  video_thumbnail: ^0.5.3
+  better_player_enhanced: ^0.0.11
+  flutter_webrtc: ^0.11.7
+  wechat_assets_picker: ^9.1.0
+  file_picker: ^8.0.5
+
+  # UI, PDF, Notifications & Routing
+  go_router: ^14.2.0
+  flutter_local_notifications: ^17.1.2
+  flutter_contacts: ^1.1.8
+  open_filex: ^4.4.0
+  pdf: ^3.10.10
+  pdfx: ^2.6.0
+  screenshot: ^3.0.0
   firebase_core: ^3.1.0
   firebase_auth: ^5.1.0
   cloud_firestore: ^5.0.1
