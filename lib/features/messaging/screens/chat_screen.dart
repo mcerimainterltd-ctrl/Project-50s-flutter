@@ -1,7 +1,7 @@
 import 'dart:io' as dart_io;
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../gallery/screens/gallery_screen.dart';
+import '../../gallery/screens/my_gallery_engine.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
@@ -21,7 +21,8 @@ import '../widgets/message_bubble.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String userId;
-  const ChatScreen({super.key, required this.userId});
+  const ChatScreen({super.key, required this.userId, this.sharedFiles});
+  final List<dynamic>? sharedFiles;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -302,7 +303,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         onPressed: () => context.go('/contacts')),
       title: GestureDetector(
         onTap: () => Navigator.push(context, MaterialPageRoute(
-          builder: (_) => GalleryScreen(
+          builder: (_) => MyGalleryEngine(
             userId:  widget.userId,
             isOwner: false,
           ))),
