@@ -7,7 +7,7 @@ class XameSpaceService {
   // Resolve space slug and acquire ephemeral guest session if needed
   static Future<Map<String, dynamic>?> resolveSpace(String slug) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/spaces/$slug'));
+      final response = await http.get(Uri.parse('$baseUrl/objects/space/$slug'));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
