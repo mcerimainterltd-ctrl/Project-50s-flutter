@@ -67,6 +67,18 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initShareListener();
     _initContactRequestListener();
     _initWalletRequestListener();
+    // Auto-connect socket as soon as user is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(currentUserProvider);
+      if (user != null) {
+        ref.read(socketServiceProvider).connect(user.xameId);
+      }
+      ref.listenManual(currentUserProvider, (prev, next) {
+        if (next != null && prev?.xameId != next.xameId) {
+          ref.read(socketServiceProvider).connect(next.xameId);
+        }
+      });
+    });
     _loadOpenedCollabThreads().then((_) => _initCollabListener());
     Future.delayed(const Duration(seconds: 3), _checkPendingCollabThreads);
     // Also check on socket reconnect
@@ -674,9 +686,6 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
-    if (user != null) {
-      ref.read(socketServiceProvider).connect(user.xameId);
-    }
 
     // Pre-warm providers when user is logged in
     if (user != null) {
