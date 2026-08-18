@@ -14,6 +14,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _xameIdCtrl   = TextEditingController();
+  bool _usePhone   = false;
   final _passwordCtrl = TextEditingController();
   final _otpCtrl      = TextEditingController();
   bool    _loading    = false;
@@ -32,14 +33,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final xameId   = _xameIdCtrl.text.trim();
     final password = _passwordCtrl.text;
     if (xameId.isEmpty || password.isEmpty) {
-      setState(() => _error = 'Please enter your Xame-ID and password.');
+      setState(() => _error = _usePhone ? 'Please enter your phone number and password.' : 'Please enter your Xame-ID and password.');
       return;
     }
     setState(() { _loading = true; _error = null; });
     try {
       final auth   = ref.read(authServiceProvider);
       final result = await auth.login(xameId, password,
-        otp: _needsOTP && _otpCtrl.text.isNotEmpty ? _otpCtrl.text.trim() : null);
+        otp: _needsOTP && _otpCtrl.text.isNotEmpty ? _otpCtrl.text.trim() : null,
+        isPhone: _usePhone);
 
       switch (result.type) {
         case LoginResultType.success:
@@ -249,10 +251,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text('Sign in to continue',
                 style: TextStyle(color: context.xMuted, fontSize: 14)),
               SizedBox(height: 32),
-              _label('Xame-ID'),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                _label(_usePhone ? 'Phone Number' : 'Xame-ID'),
+                GestureDetector(
+                  onTap: () => setState(() { _usePhone = !_usePhone; _xameIdCtrl.clear(); _error = null; }),
+                  child: Text(_usePhone ? 'Use Xame-ID instead' : 'Use phone number instead',
+                    style: TextStyle(color: context.xAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+              ]),
               SizedBox(height: 8),
-              _field(controller: _xameIdCtrl, hint: 'Enter your Xame-ID',
-                icon: Icons.alternate_email,
+              _field(
+                controller: _xameIdCtrl,
+                hint: _usePhone ? '+2348012345678' : 'Enter your Xame-ID',
+                icon: _usePhone ? Icons.phone_outlined : Icons.alternate_email,
+                type: _usePhone ? TextInputType.phone : TextInputType.text,
                 onSubmitted: (_) => FocusScope.of(context).nextFocus()),
               SizedBox(height: 20),
               _label('Password'),

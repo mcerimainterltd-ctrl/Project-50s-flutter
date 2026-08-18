@@ -24,11 +24,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _dobMonthCtrl  = TextEditingController();
   final _dobYearCtrl    = TextEditingController();
   final _referralCtrl   = TextEditingController();
+  final _phoneCtrl     = TextEditingController();
+  final _otpCtrl       = TextEditingController();
   final _monthFocus    = FocusNode();
   final _yearFocus     = FocusNode();
   bool _loading  = false;
   bool _obscure  = true;
   bool _obscure2 = true;
+  int  _step     = 0; // 0=form, 1=otp verification
   String? _error;
   String? _returnedXameId;
 
@@ -44,7 +47,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void dispose() {
     _referralCtrl.dispose();
     for (final c in [_firstNameCtrl,_lastNameCtrl,_passwordCtrl,
-                     _confirmCtrl,_dobDayCtrl,_dobMonthCtrl,_dobYearCtrl]) c.dispose();
+                     _confirmCtrl,_dobDayCtrl,_dobMonthCtrl,_dobYearCtrl,
+                     _phoneCtrl,_otpCtrl]) c.dispose();
     for (final f in [_monthFocus,_yearFocus]) f.dispose();
     super.dispose();
   }
@@ -57,7 +61,51 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return '$y-$m-$d';
   }
 
-  Future<void> _register() async {
+  Future<void> _sendOtp() async {
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isEmpty) { setState(() => _error = 'Please enter your phone number.'); return; }
+    setState(() { _loading = true; _error = null; });
+    try {
+      final r = await http.post(
+        Uri.parse('${AppConstants.serverUrl}/api/auth/send-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phone': phone}),
+      );
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        setState(() { _step = 1; _loading = false; });
+      } else {
+        setState(() { _error = d['message'] ?? 'Failed to send OTP.'; _loading = false; });
+      }
+    } catch (e) {
+      setState(() { _error = 'Connection error. Please try again.'; _loading = false; });
+    }
+  }
+
+  Future<void> _verifyAndRegister() async {
+    final phone = _phoneCtrl.text.trim();
+    final otp   = _otpCtrl.text.trim();
+    if (otp.length != 6) { setState(() => _error = 'Please enter the 6-digit OTP.'); return; }
+    setState(() { _loading = true; _error = null; });
+    try {
+      // Verify OTP first
+      final vr = await http.post(
+        Uri.parse('${AppConstants.serverUrl}/api/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phone': phone, 'otp': otp}),
+      );
+      final vd = jsonDecode(vr.body);
+      if (vd['success'] != true) {
+        setState(() { _error = vd['message'] ?? 'Invalid OTP.'; _loading = false; }); return;
+      }
+      // Now register
+      await _register(phone: phone);
+    } catch (e) {
+      setState(() { _error = 'Connection error. Please try again.'; _loading = false; });
+    }
+  }
+
+  Future<void> _register({String? phone}) async {
     setState(() { _error = null; _loading = true; _returnedXameId = null; });
     try {
       final auth   = ref.read(authServiceProvider);
@@ -79,6 +127,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         lastName:  _lastNameCtrl.text,
         dob:       dob,
         password:  _passwordCtrl.text,
+        phone:     phone,
       );
       setState(() => _returnedXameId = user.xameId);
       // Credit referrer if referral code provided
@@ -101,6 +150,81 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // OTP verification step
+    if (_step == 1) {
+      return Scaffold(
+        backgroundColor: context.xBg,
+        appBar: AppBar(
+          backgroundColor: context.xBg,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: context.xText),
+            onPressed: () => setState(() { _step = 0; _error = null; _otpCtrl.clear(); }),
+          ),
+          title: Text('Verify Phone', style: TextStyle(color: context.xText)),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                Icon(Icons.sms_outlined, color: context.xAccent, size: 48),
+                const SizedBox(height: 20),
+                Text('Enter verification code',
+                  style: TextStyle(color: context.xText, fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('We sent a 6-digit code to ${_phoneCtrl.text}',
+                  style: TextStyle(color: context.xMuted, fontSize: 14)),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _otpCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: context.xText, fontSize: 28, letterSpacing: 8, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    hintText: '000000',
+                    hintStyle: TextStyle(color: context.xMuted, fontSize: 28, letterSpacing: 8),
+                    counterText: '',
+                    filled: true,
+                    fillColor: context.xCard,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _verifyAndRegister,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.xAccent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: _loading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                      : const Text('Verify & Create Account', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: _loading ? null : _sendOtp,
+                    child: Text('Resend code', style: TextStyle(color: context.xAccent)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_returnedXameId != null) {
       return Scaffold(
         backgroundColor: context.xBg,
@@ -242,6 +366,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               SizedBox(height: 12),
               _section('Referral Code (optional)',
                 _field(_referralCtrl, 'Enter referral code if you have one', Icons.card_giftcard_outlined)),
+              _section('Phone Number (optional but recommended)',
+                TextField(
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  style: TextStyle(color: context.xText),
+                  decoration: InputDecoration(
+                    hintText: '+2348012345678',
+                    hintStyle: TextStyle(color: context.xMuted),
+                    prefixIcon: Icon(Icons.phone_outlined, color: context.xMuted, size: 20),
+                    filled: true,
+                    fillColor: context.xCard,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                )),
+              if (_phoneCtrl.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text('A verification code will be sent to this number.',
+                    style: TextStyle(color: context.xMuted, fontSize: 12)),
+                ),
               SizedBox(height: 16),
               if (_error != null)
                 Container(
@@ -261,7 +405,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               SizedBox(
                 width: double.infinity, height: 52,
                 child: ElevatedButton(
-                  onPressed: _loading ? null : _register,
+                  onPressed: _loading ? null : (_phoneCtrl.text.trim().isEmpty ? _register : _sendOtp),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.xPrimary,
                     foregroundColor: Colors.black,
@@ -271,7 +415,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: _loading
                     ? SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                    : Text('Create Account',
+                    : Text(_phoneCtrl.text.trim().isNotEmpty ? 'Continue →' : 'Create Account',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),

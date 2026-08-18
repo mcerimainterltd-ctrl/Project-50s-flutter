@@ -35,6 +35,7 @@ class AuthService {
     required String lastName,
     required String dob,
     required String password,
+    String? phone,
   }) async {
     if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(dob))
       throw Exception('Invalid date of birth format');
@@ -43,6 +44,7 @@ class AuthService {
       'lastName':  lastName.trim(),
       'dob':       dob,
       'password':  password,
+      if (phone != null && phone.isNotEmpty) 'phone': phone.trim(),
     });
     final data = res.data as Map<String, dynamic>;
     if (data['success'] != true)
@@ -50,8 +52,11 @@ class AuthService {
     return XameUser.fromMap(data['user'] as Map<String, dynamic>);
   }
 
-  Future<LoginResult> login(String xameId, String password, {String? otp}) async {
-    final body = <String, dynamic>{'xameId': xameId.trim(), 'password': password};
+  Future<LoginResult> login(String xameId, String password, {String? otp, bool isPhone = false}) async {
+    final body = <String, dynamic>{
+      if (isPhone) 'phone': xameId.trim() else 'xameId': xameId.trim(),
+      'password': password,
+    };
     if (otp != null) body['otp'] = otp;
     // Build rich device User-Agent
     String ua = 'XamePage/2.1';
