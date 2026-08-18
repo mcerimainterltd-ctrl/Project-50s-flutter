@@ -127,6 +127,13 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
     // Keepalive heartbeat — called every 25s by SocketKeepaliveService
     _keepaliveChannel.setMethodCallHandler((call) async {
+        if (call.method == 'onNetworkAvailable') {
+          final user = ref.read(currentUserProvider);
+          if (user != null) {
+            ref.read(socketServiceProvider).connect(user.xameId);
+          }
+          return;
+        }
       if (call.method == 'heartbeat') {
         final user = ref.read(currentUserProvider);
         if (user != null) {

@@ -11,6 +11,9 @@ import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
+    companion object {
+        var channel: MethodChannel? = null
+    }
 
     private val CHANNEL = "com.xamepage.app/call"
 
@@ -54,6 +57,8 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/keepalive")
+        NetworkReceiver.register(this)
         super.configureFlutterEngine(flutterEngine)
         FlutterEngineCache.getInstance().put("main", flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,

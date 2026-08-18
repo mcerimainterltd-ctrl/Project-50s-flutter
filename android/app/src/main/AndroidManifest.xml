@@ -180,6 +180,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- Network connectivity receiver -->
+        <receiver
+            android:name=".NetworkReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
+            </intent-filter>
+        </receiver>
+
         <!-- Alarm receiver — wakes app every 5 minutes -->
         <receiver
             android:name=".AlarmReceiver"
