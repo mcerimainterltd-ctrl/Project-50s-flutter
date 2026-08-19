@@ -519,8 +519,6 @@ class SocketService {
   void emitMessageSeen(String r, List<String> ids) => emit('message-seen',       {'recipientId': r, 'messageIds': ids});
   void emitGetContacts(String id)                  => emit('get_contacts',        id);
   void emitGetChatHistory(String id)               => emit('get_chat_history',   {'userId': id});
-  void emitRequestOnlineUsers()                    => emit('request_online_users', null);
-  void emitUserOnline(String id)                   => emit('user-online',        {'userId': id, 'timestamp': DateTime.now().millisecondsSinceEpoch});
   void emitUserOffline(String id)                  => emit('user-offline',       {'userId': id});
   void emitHeartbeat(String id)                    => emit('heartbeat',          {'userId': id, 'timestamp': DateTime.now().millisecondsSinceEpoch});
   void emitCallRingingAck(String callerId)         => emit('call-ringing-ack',   {'callerId': callerId});
@@ -543,17 +541,6 @@ class SocketService {
   void emitMarkDiscoverySeen(String authorId) => emit('mark_discovery_seen', {'authorId': authorId});
   void emitDisappearingTimer(String contactId, String userId, String value) => emit("disappearing:timer-set", {"contactId": contactId, "userId": userId, "value": value});
 
-  void startHeartbeat(String xameId, {bool stealth = false}) {
-    stopHeartbeat();
-    // Watchdog — checks every 10s and reconnects if socket is dead
-    _watchdogTimer?.cancel();
-    _watchdogTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (!isConnected) {
-        debugPrint('🐕 Watchdog: socket dead — reconnecting');
-        _socket?.clearListeners();
-        _socket?.disconnect();
-        _socket = null;
-        connect(xameId, stealth: stealth);
       }
     });
     _heartbeatTimer = Timer.periodic(
@@ -576,10 +563,6 @@ class SocketService {
 
   void stopStealthMode() { _stealthTimer?.cancel(); _stealthTimer = null; }
 
-  void disconnect() {
-    stopHeartbeat(); stopStealthMode(); _offlineTimer?.cancel();
-    _socket?.clearListeners(); _socket?.disconnect(); _socket = null;
-    _connectionStateCtrl.add(SocketState.disconnected);
   }
 }
 
