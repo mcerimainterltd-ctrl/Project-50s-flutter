@@ -25,7 +25,6 @@ class MainActivity : FlutterFragmentActivity() {
         // so the user never sees the app pop up.
         if (intent?.getBooleanExtra("boot_launch", false) == true) {
             moveTaskToBack(true)
-            return
         }
 
         // Allow activity to show on lock screen and wake device
