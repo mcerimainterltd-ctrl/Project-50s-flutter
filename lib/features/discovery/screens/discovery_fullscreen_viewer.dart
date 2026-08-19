@@ -780,6 +780,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                   onViewers:    () => _openViewers(widget.post),
                   onCommenters: () => _openCommenters(widget.post),
                   onCollab:     () => _requestCollab(context),
+                  embedded:     widget.embedded,
                 ),
               ],
             ),
@@ -1303,6 +1304,7 @@ class _ActionColumn extends StatefulWidget {
   final VoidCallback? onViewers;
   final VoidCallback? onCommenters;
   final VoidCallback? onCollab;
+  final bool embedded;
 
   const _ActionColumn({
     Key? key,
@@ -1316,6 +1318,7 @@ class _ActionColumn extends StatefulWidget {
     this.onViewers,
     this.onCommenters,
     this.onCollab,
+    this.embedded = false,
   }) : super(key: key);
 
   @override
