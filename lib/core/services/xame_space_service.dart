@@ -1,10 +1,31 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class XameSpaceService {
   static const String baseUrl = 'https://app.xamepage.com/api/v3';
 
-  // Resolve space slug and acquire ephemeral guest session if needed
+  /// Resolve space slug & update guest session if returned
+  static Future<Map<String, dynamic>> fetchSpace(String slug) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token') ?? prefs.getString('guest_token') ?? '';
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/spaces/$slug'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+    if (data['success'] == true && data['guestToken'] != null) {
+      await prefs.setString('guest_token', data['guestToken']);
+    }
+    return data;
+  }
+
+  /// Resolve space object by slug
   static Future<Map<String, dynamic>?> resolveSpace(String slug) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/objects/space/$slug'));
@@ -17,7 +38,7 @@ class XameSpaceService {
     return null;
   }
 
-  // Fetch space messages
+  /// Fetch space messages
   static Future<List<dynamic>> fetchMessages(String slug, String token) async {
     try {
       final response = await http.get(
@@ -34,7 +55,7 @@ class XameSpaceService {
     return [];
   }
 
-  // Claim guest activity after sign-in
+  /// Claim guest activity after sign-in
   static Future<bool> claimGuestActivity(String userToken, String guestToken) async {
     try {
       final response = await http.post(

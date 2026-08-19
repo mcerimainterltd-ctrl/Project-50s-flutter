@@ -136,6 +136,47 @@ class SocketService {
   Stream<void>                      get confScreenStop    => _confScreenStopCtrl.stream;
   Stream<void>                      get confRoomClosed    => _confRoomClosedCtrl.stream;
 
+  // ── Lifecycle & Compatibility Helpers ─────────────────────────────────────
+  void emitUserOnline(String xameId) {
+    if (isConnected) {
+      emit("user-online", {
+        "userId": xameId,
+        "timestamp": DateTime.now().millisecondsSinceEpoch,
+      });
+    }
+  }
+
+  void emitRequestOnlineUsers() {
+    if (isConnected) {
+      emit("request_online_users", null);
+    }
+  }
+
+  void startHeartbeat(String xameId) {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 25), (_) {
+      if (isConnected) {
+        emit("heartbeat", {"userId": xameId});
+      }
+    });
+  }
+
+  void disconnect() {
+    _heartbeatTimer?.cancel();
+    _offlineTimer?.cancel();
+    _watchdogTimer?.cancel();
+    _socket?.disconnect();
+    _socket?.dispose();
+    _socket = null;
+    _connectionStateCtrl.add(SocketState.disconnected);
+  }
+
+  void emit(String event, dynamic data) {
+    if (_socket != null && _socket!.connected) {
+      _socket!.emit(event, data);
+    }
+  }
+
   bool get isConnected => _socket?.connected ?? false;
   IO.Socket? get rawSocket => _socket;
 
