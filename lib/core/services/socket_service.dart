@@ -507,7 +507,6 @@ class SocketService {
     socket.on("conference:room-closed",      (_) => _confRoomClosedCtrl.add(null));
   }
 
-  void emit(String event, dynamic data) {
     if (data != null) _socket?.emit(event, data);
     else _socket?.emit(event);
   }
