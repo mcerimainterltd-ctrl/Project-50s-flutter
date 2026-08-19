@@ -61,6 +61,13 @@ class MainActivity : FlutterFragmentActivity() {
                     Uri.parse("package:$packageName")))
             }
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.app.ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                1001
+            )
+        }
         prefs.edit().putInt("permissions_asked_version", versionCode).apply()
     }
 
