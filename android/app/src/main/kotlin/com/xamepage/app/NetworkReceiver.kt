@@ -31,7 +31,9 @@ class NetworkReceiver : BroadcastReceiver() {
                     super.onAvailable(network)
                     // Notify Flutter to reconnect socket
                     SocketKeepaliveService.start(context)
-                    MainActivity.channel?.invokeMethod("onNetworkAvailable", null)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        MainActivity.channel?.invokeMethod("onNetworkAvailable", null)
+                    }
                 }
             })
         }
