@@ -48,6 +48,21 @@ class SocketKeepaliveService : Service() {
         startForeground(NOTIF_ID, buildNotification())
         acquireWakeLock()
         handler.post(heartbeatRunnable)
+        registerNetworkCallback()
+    }
+
+    private fun registerNetworkCallback() {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val request = android.net.NetworkRequest.Builder()
+            .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        cm.registerNetworkCallback(request, object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: android.net.Network) {
+                super.onAvailable(network)
+                handler.post { pingFlutter() }
+                MainActivity.channel?.invokeMethod("onNetworkAvailable", null)
+            }
+        })
     }
 
     private fun getSavedUserId(): String? {
