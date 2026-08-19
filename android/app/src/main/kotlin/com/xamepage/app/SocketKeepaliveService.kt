@@ -59,8 +59,10 @@ class SocketKeepaliveService : Service() {
         cm.registerNetworkCallback(request, object : android.net.ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: android.net.Network) {
                 super.onAvailable(network)
-                handler.post { pingFlutter() }
-                MainActivity.channel?.invokeMethod("onNetworkAvailable", null)
+                handler.post {
+                    pingFlutter()
+                    MainActivity.channel?.invokeMethod("onNetworkAvailable", null)
+                }
             }
         })
     }
