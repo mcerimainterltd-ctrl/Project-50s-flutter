@@ -367,9 +367,56 @@ class _PhoneScreenState extends State<PhoneScreen>
         _contactsLoaded = true;
         _contactsLoading = false;
       });
+
+      // Match contacts against XamePage users
+      await _matchXameContacts(sorted);
+
     } catch (e) {
       if (mounted) setState(() => _contactsLoading = false);
       _snack('Failed to load contacts');
+    }
+  }
+
+  Future<void> _matchXameContacts(List<_DevContact> contacts) async {
+    try {
+      // Collect all phone numbers
+      final allPhones = contacts
+          .expand((c) => c.phones)
+          .toSet()
+          .toList();
+      if (allPhones.isEmpty) return;
+
+      // Batch send to server in chunks of 200
+      final Map<String, dynamic> matched = {};
+      for (int i = 0; i < allPhones.length; i += 200) {
+        final chunk = allPhones.sublist(i, (i + 200).clamp(0, allPhones.length));
+        final r = await http.post(
+          Uri.parse('${widget.serverUrl}/api/contacts/match'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'phones': chunk}),
+        ).timeout(const Duration(seconds: 15));
+        final d = jsonDecode(r.body);
+        if (d['success'] == true) {
+          matched.addAll(Map<String, dynamic>.from(d['matched'] ?? {}));
+        }
+      }
+      if (matched.isEmpty || !mounted) return;
+
+      // Mark matching contacts as isOnXame
+      bool anyMatch = false;
+      for (final c in contacts) {
+        for (final phone in c.phones) {
+          final normalized = phone.replaceAll(RegExp(r'[\s\-().]'), '');
+          if (matched.containsKey(normalized)) {
+            c.isOnXame = true;
+            anyMatch = true;
+            break;
+          }
+        }
+      }
+      if (anyMatch && mounted) setState(() {});
+    } catch (_) {
+      // Silent fail — contact matching is non-critical
     }
   }
 
