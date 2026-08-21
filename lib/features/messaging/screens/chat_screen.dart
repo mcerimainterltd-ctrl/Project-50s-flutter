@@ -595,9 +595,10 @@ class _MessageList extends StatelessWidget {
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (showDay) _DaySeparator(ts: msg.ts),
           MessageBubble(
-            message:    msg,
-            isSelf:     msg.direction == MessageDirection.sent,
-            isSelected: selected.contains(msg.id),
+            message:     msg,
+            isSelf:      msg.direction == MessageDirection.sent,
+            isSelected:  selected.contains(msg.id),
+            allMessages: messages,
             onLongPress: () => onLongPress(msg),
             onTap:       () => onTap(msg),
           ),
