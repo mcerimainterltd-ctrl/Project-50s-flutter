@@ -219,6 +219,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isTyping  = ref.watch(typingProvider).contains(widget.userId);
     final self      = ref.watch(currentUserProvider);
 
+    // Auto-scroll when new messages arrive
+    ref.listen(chatProvider(widget.userId), (prev, next) {
+      if (prev != null && next.length > prev.length) {
+        _scrollToBottom();
+      }
+    });
+
     return Scaffold(
       backgroundColor: XameColors.darkBg,
       appBar: _buildAppBar(contact, isTyping, messages),
