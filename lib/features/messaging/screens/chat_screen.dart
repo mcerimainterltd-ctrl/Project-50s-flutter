@@ -105,12 +105,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollToBottom();
   }
 
-  Future<void> _pickImage() async {
-    final file = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+  Future<void> _pickVideo() async {
+    final file = await _picker.pickVideo(source: ImageSource.gallery);
     if (file == null) return;
     setState(() => _showAttach = false);
     await ref.read(chatProvider(widget.userId).notifier)
-      .sendFile(dart_io.File(file.path), 'image/jpeg');
+        .sendFile(dart_io.File(file.path), 'video/mp4');
+    _scrollToBottom();
+  }
+
+  Future<void> _pickImage() async {
+    final files = await _picker.pickMultiImage(imageQuality: 85);
+    if (files.isEmpty) return;
+    setState(() => _showAttach = false);
+    for (final file in files) {
+      await ref.read(chatProvider(widget.userId).notifier)
+          .sendFile(dart_io.File(file.path), 'image/jpeg');
+    }
     _scrollToBottom();
   }
 
@@ -228,6 +239,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         // Attachment panel
         if (_showAttach) _AttachPanel(
           onImage:    _pickImage,
+          onVideo:    _pickVideo,
           onFile:     _pickFile,
           onCamera:   () async {
             final file = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
@@ -654,17 +666,18 @@ class _ReplyPreview extends StatelessWidget {
 
 // ── Attachment panel ──────────────────────────────────────────────────────
 class _AttachPanel extends StatelessWidget {
-  final VoidCallback onImage, onFile, onCamera, onDismiss;
+  final VoidCallback onImage, onFile, onCamera, onVideo, onDismiss;
   const _AttachPanel({required this.onImage, required this.onFile,
-    required this.onCamera, required this.onDismiss});
+    required this.onCamera, required this.onVideo, required this.onDismiss});
 
   @override
   Widget build(BuildContext context) => Container(
     color: XameColors.darkSurface,
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-      _AttachBtn(icon: Icons.photo_library_outlined, label: 'Gallery', onTap: onImage, color: XameColors.primary),
-      _AttachBtn(icon: Icons.camera_alt_outlined,    label: 'Camera',  onTap: onCamera, color: XameColors.secondary),
+      _AttachBtn(icon: Icons.photo_library_outlined, label: 'Image',  onTap: onImage, color: XameColors.primary),
+      _AttachBtn(icon: Icons.videocam_outlined,      label: 'Video',  onTap: onVideo, color: const Color(0xFF7C3AED)),
+      _AttachBtn(icon: Icons.camera_alt_outlined,    label: 'Camera', onTap: onCamera, color: XameColors.secondary),
       _AttachBtn(icon: Icons.insert_drive_file_outlined, label: 'File', onTap: onFile, color: XameColors.accent),
     ]),
   );
