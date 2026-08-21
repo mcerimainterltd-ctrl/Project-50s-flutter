@@ -10,6 +10,8 @@ import '../../../core/services/voice_service.dart';
 import '../../../core/services/translation_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -115,12 +117,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _pickImage() async {
-    final files = await _picker.pickMultiImage(imageQuality: 85);
-    if (files.isEmpty) return;
+    final assets = await AssetPicker.pickAssets(
+      context,
+      pickerConfig: const AssetPickerConfig(
+        requestType: RequestType.image,
+        maxAssets: 30,
+      ),
+    );
+    if (assets == null || assets.isEmpty) return;
     setState(() => _showAttach = false);
-    for (final file in files) {
-      await ref.read(chatProvider(widget.userId).notifier)
-          .sendFile(dart_io.File(file.path), 'image/jpeg');
+    final isAlbum = assets.length > 1;
+    final albumId = isAlbum ? const Uuid().v4() : null;
+    for (var i = 0; i < assets.length; i++) {
+      final file = await assets[i].originFile;
+      if (file == null) continue;
+      await ref.read(chatProvider(widget.userId).notifier).sendFile(
+        file, 'image/jpeg',
+        albumId:    isAlbum ? albumId : null,
+        albumIndex: isAlbum ? i : null,
+        albumTotal: isAlbum ? assets.length : null,
+      );
     }
     _scrollToBottom();
   }
