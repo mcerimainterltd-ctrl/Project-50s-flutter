@@ -1,0 +1,21 @@
+name: Check XamePage Signing Key
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reconstruct signing keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.jks
+
+      - name: Show public certificate fingerprint
+        run: |
+          keytool -list -v \
+            -keystore release.jks \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.KEY_ALIAS }}" \
+            | grep -E "Alias name:|Entry type:|SHA256:"
