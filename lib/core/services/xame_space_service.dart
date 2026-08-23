@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
-import '../config/constants.dart';
-import '../../features/spaces/models/space_model.dart';
+import '../../core/config/app_constants.dart';
+import '../features/spaces/models/space_model.dart';
 
 class XameSpaceService {
   static final _dio = Dio(BaseOptions(
@@ -11,29 +10,47 @@ class XameSpaceService {
     receiveTimeout: const Duration(seconds: 15),
   ));
 
-  // Stable anonymous guest identity, generated once and persisted locally.
-  static Future<String> _guestId() async {
+  // Fetch (and cache) a real session token for a logged-in user.
+  static Future<String?> _sessionToken(String? xameId) async {
+    if (xameId == null || xameId.isEmpty) return null;
     final p = await SharedPreferences.getInstance();
-    var id = p.getString('space_guest_id');
-    if (id == null) {
-      id = const Uuid().v4();
-      await p.setString('space_guest_id', id);
-    }
-    return id;
+    final cached = p.getString('space_session_token_$xameId');
+    if (cached != null) return cached;
+    try {
+      final r = await _dio.post('/session-token', data: {'xameId': xameId});
+      if (r.data['success'] == true) {
+        final token = r.data['token'] as String;
+        await p.setString('space_session_token_$xameId', token);
+        return token;
+      }
+    } catch (_) {}
+    return null;
   }
 
-  static Future<Map<String, dynamic>> _identity(String? userId, String? displayName) async {
-    if (userId != null && userId.isNotEmpty) return {'userId': userId};
-    final guestId = await _guestId();
-    return {'guestId': guestId, if (displayName != null) 'displayName': displayName};
+  static Future<String?> _guestToken() async {
+    final p = await SharedPreferences.getInstance();
+    return p.getString('space_guest_token');
+  }
+
+  static Future<void> _saveGuestToken(String? token) async {
+    if (token == null) return;
+    final p = await SharedPreferences.getInstance();
+    await p.setString('space_guest_token', token);
+  }
+
+  static Future<Map<String, String>> _headers({String? userId}) async {
+    final token = userId != null ? await _sessionToken(userId) : await _guestToken();
+    return {'Content-Type': 'application/json', if (token != null) 'Authorization': 'Bearer $token'};
   }
 
   // ── Fetch Space ──────────────────────────────────────────────────────────
   static Future<SpaceModel?> fetchSpace(String slug, {String? userId}) async {
     try {
-      final r = await _dio.get('/$slug',
-        queryParameters: userId != null ? {'userId': userId} : null);
-      if (r.data['success'] == true) return SpaceModel.fromJson(r.data['space']);
+      final r = await _dio.get('/$slug', options: Options(headers: await _headers(userId: userId)));
+      if (r.data['success'] == true) {
+        if (r.data['guestToken'] != null) await _saveGuestToken(r.data['guestToken']);
+        return SpaceModel.fromJson(r.data['space']);
+      }
     } catch (_) {}
     return null;
   }
@@ -45,8 +62,9 @@ class XameSpaceService {
   }) async {
     try {
       final r = await _dio.post('/create',
-        data: {'userId': userId, 'name': name, 'spaceSlug': spaceSlug, 'archetype': archetype,
-          'description': description, 'visibility': visibility, 'allowGuestPosting': allowGuestPosting});
+        data: {'name': name, 'spaceSlug': spaceSlug, 'archetype': archetype,
+          'description': description, 'visibility': visibility, 'allowGuestPosting': allowGuestPosting},
+        options: Options(headers: await _headers(userId: userId)));
       if (r.data['success'] == true) return SpaceModel.fromJson(r.data['space']);
     } catch (_) {}
     return null;
@@ -55,17 +73,20 @@ class XameSpaceService {
   // ── Join Space ───────────────────────────────────────────────────────────
   static Future<bool> joinSpace(String slug, {String? userId, String? displayName}) async {
     try {
-      final identity = await _identity(userId, displayName);
-      final r = await _dio.post('/$slug/join', data: identity);
+      final r = await _dio.post('/$slug/join',
+        data: displayName != null ? {'displayName': displayName} : <String, dynamic>{},
+        options: Options(headers: await _headers(userId: userId)));
+      if (r.data['guestToken'] != null) await _saveGuestToken(r.data['guestToken']);
       return r.data['success'] == true;
     } catch (_) { return false; }
   }
 
   // ── Get Messages ─────────────────────────────────────────────────────────
-  static Future<List<SpaceMessage>> fetchMessages(String slug, {String? before, int limit = 30}) async {
+  static Future<List<SpaceMessage>> fetchMessages(String slug, {String? userId, String? before, int limit = 30}) async {
     try {
       final r = await _dio.get('/$slug/messages',
-        queryParameters: {'limit': limit, if (before != null) 'before': before});
+        queryParameters: {'limit': limit, if (before != null) 'before': before},
+        options: Options(headers: await _headers(userId: userId)));
       if (r.data['success'] == true) {
         return (r.data['messages'] as List).map((m) => SpaceMessage.fromJson(m)).toList();
       }
@@ -80,10 +101,11 @@ class XameSpaceService {
     String? replyToId, String? replyToText,
   }) async {
     try {
-      final identity = await _identity(userId, displayName);
       final r = await _dio.post('/$slug/messages',
-        data: {...identity, 'text': text ?? '', 'mediaUrl': mediaUrl ?? '', 'mediaType': mediaType ?? '',
-          'fileName': fileName ?? '', 'replyToId': replyToId, 'replyToText': replyToText});
+        data: {'text': text ?? '', 'mediaUrl': mediaUrl ?? '', 'mediaType': mediaType ?? '',
+          'fileName': fileName ?? '', 'replyToId': replyToId, 'replyToText': replyToText,
+          if (displayName != null) 'displayName': displayName},
+        options: Options(headers: await _headers(userId: userId)));
       if (r.data['success'] == true) return SpaceMessage.fromJson(r.data['message']);
     } catch (_) {}
     return null;
@@ -92,23 +114,22 @@ class XameSpaceService {
   // ── React ────────────────────────────────────────────────────────────────
   static Future<void> reactToMessage(String slug, String msgId, String emoji, {String? userId}) async {
     try {
-      final identity = await _identity(userId, null);
-      await _dio.post('/$slug/messages/$msgId/react', data: {...identity, 'emoji': emoji});
+      await _dio.post('/$slug/messages/$msgId/react',
+        data: {'emoji': emoji}, options: Options(headers: await _headers(userId: userId)));
     } catch (_) {}
   }
 
   // ── Delete Message ───────────────────────────────────────────────────────
   static Future<void> deleteMessage(String slug, String msgId, {String? userId}) async {
     try {
-      await _dio.delete('/$slug/messages/$msgId',
-        queryParameters: userId != null ? {'userId': userId} : null);
+      await _dio.delete('/$slug/messages/$msgId', options: Options(headers: await _headers(userId: userId)));
     } catch (_) {}
   }
 
   // ── Get Media ────────────────────────────────────────────────────────────
-  static Future<List<SpaceMessage>> fetchMedia(String slug) async {
+  static Future<List<SpaceMessage>> fetchMedia(String slug, {String? userId}) async {
     try {
-      final r = await _dio.get('/$slug/media');
+      final r = await _dio.get('/$slug/media', options: Options(headers: await _headers(userId: userId)));
       if (r.data['success'] == true) {
         return (r.data['media'] as List).map((m) => SpaceMessage.fromJson(m)).toList();
       }
@@ -119,7 +140,7 @@ class XameSpaceService {
   // ── My Spaces ────────────────────────────────────────────────────────────
   static Future<List<SpaceModel>> fetchMySpaces(String userId) async {
     try {
-      final r = await _dio.get('/', queryParameters: {'userId': userId});
+      final r = await _dio.get('/', options: Options(headers: await _headers(userId: userId)));
       if (r.data['success'] == true) {
         return (r.data['spaces'] as List).map((s) => SpaceModel.fromJson(s)).toList();
       }
@@ -128,10 +149,10 @@ class XameSpaceService {
   }
 
   // ── Claim Guest Messages ─────────────────────────────────────────────────
-  static Future<void> claimGuestMessages(String slug, String userId) async {
+  static Future<void> claimGuestMessages(String slug, String userId, String guestId) async {
     try {
-      final guestId = await _guestId();
-      await _dio.post('/$slug/claim', data: {'guestId': guestId, 'userId': userId});
+      await _dio.post('/$slug/claim',
+        data: {'guestId': guestId}, options: Options(headers: await _headers(userId: userId)));
     } catch (_) {}
   }
 }
