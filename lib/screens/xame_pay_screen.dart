@@ -461,6 +461,12 @@ class _XamePayScreenState extends State<XamePayScreen>
       Future.microtask(() => _openTabFullscreen(idx));
     });
     _loadPrefs().then((_) => _init());
+    // Handle deep link: open Send tab pre-filled with target user
+    if (widget.initialTab == 'send' && widget.sendToUserId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openTabFullscreen(3, prefilledUserId: widget.sendToUserId);
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final socket = ProviderScope.containerOf(context).read(socketServiceProvider);
       _walletDebitSub = socket.walletDebit.listen((data) {
@@ -746,12 +752,12 @@ class _XamePayScreenState extends State<XamePayScreen>
 
   // ── TAB BAR ───────────────────────────────────────────────────────────────
 
-  void _openTabFullscreen(int idx) {
+  void _openTabFullscreen(int idx, {String? prefilledUserId}) {
     final tabs = [
       ('📱 Airtime',  _AirtimeTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
       ('📶 Data',     _DataTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
       ('🧾 Bills',    _BillsTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack)),
-      ('💸 Send',     _SendTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack, contacts: widget.xameContacts, pinEnabled: _pinEnabled)),
+      ('💸 Send',     _SendTab(region: _ri, balance: _displayBalance, serverUrl: widget.serverUrl, userId: widget.userId, currency: _dispCurrency, fmt: _fmt, onSuccess: _loadWallet, snack: _snack, contacts: widget.xameContacts, pinEnabled: _pinEnabled, prefilledUserId: prefilledUserId)),
       ('⋯ More',     _MoreTab(txs: _txs, fmt: _fmt, virtualAccount: _myVirtualAccount, userId: widget.userId, serverUrl: widget.serverUrl)),
     ];
     if (idx >= tabs.length) return;
@@ -2094,10 +2100,11 @@ class _SendTab extends StatefulWidget {
   final void Function(String) snack;
   final List<Map<String,String>> contacts;
   final bool pinEnabled;
+  final String? prefilledUserId;
   const _SendTab({required this.region, required this.balance,
       required this.serverUrl, required this.userId, required this.currency,
       required this.fmt, required this.onSuccess, required this.snack,
-      this.contacts = const [], this.pinEnabled = false});
+      this.contacts = const [], this.pinEnabled = false, this.prefilledUserId});
   @override State<_SendTab> createState() => _SendTabState();
 }
 
@@ -2125,7 +2132,7 @@ class _SendTabState extends State<_SendTab> {
       (c['id']   ?? '').toLowerCase().contains(_contactQuery.toLowerCase()))
     .toList();
 
-  @override void initState() { super.initState(); _fetchBanks(); _fetchBeneficiaries(); }
+  @override void initState() { super.initState(); _fetchBanks(); _fetchBeneficiaries(); if (widget.prefilledUserId != null) { WidgetsBinding.instance.addPostFrameCallback((_) { setState(() => _selContact = widget.prefilledUserId); }); } }
   @override void dispose() {
     _accCtrl.dispose(); _amtCtrl.dispose(); _srchCtrl.dispose();
     _contactSearchCtrl.dispose();
