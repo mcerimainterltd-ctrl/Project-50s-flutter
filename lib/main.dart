@@ -45,27 +45,31 @@ void main() async {
   final appLinks = AppLinks();
 
   // Handle deep link on cold start
+  String? initialDeepLink;
   try {
     final uri = await appLinks.getInitialLink();
     if (uri != null) {
-      String code = '';
-      if (uri.pathSegments.isNotEmpty && uri.pathSegments[0] == 'join') {
-        code = uri.pathSegments.length > 1 ? uri.pathSegments[1] : '';
-      } else if (uri.queryParameters.containsKey('ref')) {
-        code = uri.queryParameters['ref'] ?? '';
-      }
-      if (code.isNotEmpty) {
-        runApp(ProviderScope(
-          overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
-          child: XamePageApp(initialDeepLink: '/register?ref=$code'),
-        ));
-        return;
+      final segments = uri.pathSegments;
+      final first = segments.isNotEmpty ? segments[0] : '';
+      if (first == 'join' || uri.queryParameters.containsKey('ref')) {
+        final code = first == 'join'
+            ? (segments.length > 1 ? segments[1] : '')
+            : (uri.queryParameters['ref'] ?? '');
+        if (code.isNotEmpty) initialDeepLink = '/register?ref=$code';
+      } else if (first == 'chat' && segments.length > 1) {
+        initialDeepLink = '/chat/${segments[1]}';
+      } else if (first == 'call' && segments.length > 1) {
+        initialDeepLink = '/call/${segments[1]}?video=false&incoming=false';
+      } else if (first == 'pay' && segments.length > 1) {
+        initialDeepLink = '/pay/${segments[1]}';
+      } else if (first == 'u' && segments.length > 1) {
+        initialDeepLink = '/u/${segments[1]}';
       }
     }
   } catch (_) {}
 
   runApp(ProviderScope(
     overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
-    child: const XamePageApp(),
+    child: XamePageApp(initialDeepLink: initialDeepLink),
   ));
 }
