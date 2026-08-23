@@ -186,6 +186,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         );
       }),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
+      GoRoute(path: '/pay/:xameId', builder: (c, s) {
+        final user = ref.read(currentUserProvider);
+        final targetId = s.pathParameters['xameId'] ?? '';
+        return XamePayScreen(
+          userId:       user?.xameId ?? '',
+          serverUrl:    AppConstants.serverUrl,
+          currency:     'NGN',
+          initialTab:   'send',
+          sendToUserId: targetId,
+        );
+      }),
       GoRoute(path: '/spaces',         builder: (c, s) => const SpacesListScreen()),
       GoRoute(path: '/spaces/create',  builder: (c, s) => const CreateSpaceScreen()),
       GoRoute(path: '/spaces/:slug',   builder: (c, s) => SpaceScreen(spaceSlug: s.pathParameters['slug'] ?? '')),

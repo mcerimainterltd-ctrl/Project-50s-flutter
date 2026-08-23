@@ -423,12 +423,16 @@ class XamePayScreen extends StatefulWidget {
   final String userId, serverUrl;
   final VoidCallback? onBack;
   final List<Map<String,String>> xameContacts;
+  final String? initialTab;
+  final String? sendToUserId;
   const XamePayScreen({
     super.key,
     required this.userId,
     required this.serverUrl,
     this.onBack,
     this.xameContacts = const [],
+    this.initialTab,
+    this.sendToUserId,
   });
   @override State<XamePayScreen> createState() => _XamePayScreenState();
 }

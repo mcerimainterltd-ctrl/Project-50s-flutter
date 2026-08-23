@@ -49,13 +49,13 @@ class _SpaceScreenState extends ConsumerState<SpaceScreen> {
   }
 
   Future<void> _load() async {
-    final space = await XameSpaceService.fetchSpace(widget.spaceSlug);
+    final user  = ref.read(currentUserProvider);
+    final space = await XameSpaceService.fetchSpace(widget.spaceSlug, userId: user?.xameId);
     final msgs  = await XameSpaceService.fetchMessages(widget.spaceSlug);
     if (!mounted) return;
     setState(() { _space = space; _messages = msgs; _loading = false; });
     _scrollToBottom();
     // Join socket room
-    final user = ref.read(currentUserProvider);
     ref.read(socketServiceProvider).emit('space:join',
       {'spaceSlug': widget.spaceSlug, 'userId': user?.xameId ?? 'guest'});
   }
@@ -103,7 +103,9 @@ class _SpaceScreenState extends ConsumerState<SpaceScreen> {
     if (text.isEmpty || _sending) return;
     _msgCtrl.clear();
     setState(() { _sending = true; });
+    final user = ref.read(currentUserProvider);
     final msg = await XameSpaceService.sendMessage(widget.spaceSlug,
+      userId: user?.xameId, displayName: user?.preferredName ?? user?.firstName,
       text: text, replyToId: _replyTo?.id, replyToText: _replyTo?.text);
     if (!mounted) return;
     setState(() { _sending = false; _replyTo = null; });
@@ -175,7 +177,8 @@ class _SpaceScreenState extends ConsumerState<SpaceScreen> {
       currentUserId: ref.read(currentUserProvider)?.xameId ?? '',
       onReply: (m) => setState(() => _replyTo = m),
       onReact: (m, e) async {
-        await XameSpaceService.reactToMessage(widget.spaceSlug, m.id, e);
+        await XameSpaceService.reactToMessage(widget.spaceSlug, m.id, e,
+          userId: ref.read(currentUserProvider)?.xameId);
         final updated = await XameSpaceService.fetchMessages(widget.spaceSlug);
         if (mounted) setState(() => _messages = updated);
       },
