@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import '../../core/config/app_constants.dart';
-import '../features/spaces/models/space_model.dart';
+import '../config/constants.dart';
+import '../../features/spaces/models/space_model.dart';
 
 class XameSpaceService {
   static final _dio = Dio(BaseOptions(

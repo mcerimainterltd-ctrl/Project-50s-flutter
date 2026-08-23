@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/xame_space_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/providers/user_provider.dart';
+import '../../../core/services/auth_service.dart';
 import 'space_screen.dart';
 
 class CreateSpaceScreen extends ConsumerStatefulWidget {

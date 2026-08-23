@@ -6,7 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/services/xame_space_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/providers/user_provider.dart';
+import '../../../core/services/auth_service.dart';
 import '../models/space_model.dart';
 
 class SpaceScreen extends ConsumerStatefulWidget {
