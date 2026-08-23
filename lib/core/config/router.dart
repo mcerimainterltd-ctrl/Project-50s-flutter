@@ -11,6 +11,9 @@ import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
 import '../config/constants.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/spaces/screens/spaces_list_screen.dart';
+import '../../features/spaces/screens/space_screen.dart';
+import '../../features/spaces/screens/create_space_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/contacts/screens/contacts_screen.dart';
 import '../../features/messaging/screens/chat_screen.dart';
@@ -45,7 +48,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loggedIn    = user != null;
       final isAuthRoute = state.matchedLocation == '/login' ||
                           state.matchedLocation == '/register';
-      if (!loggedIn && !isAuthRoute) return '/login';
+      final isPublicRoute = state.matchedLocation.startsWith('/u/') ||
+                            state.matchedLocation.startsWith('/join/') ||
+                            state.matchedLocation.startsWith('/spaces/');
+      if (!loggedIn && !isAuthRoute && !isPublicRoute) return '/login';
       if (loggedIn  &&  isAuthRoute) return '/contacts';
       return null;
     },
@@ -179,7 +185,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           },
         );
       }),
-      GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),    ],
+      GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
+      GoRoute(path: '/spaces',         builder: (c, s) => const SpacesListScreen()),
+      GoRoute(path: '/spaces/create',  builder: (c, s) => const CreateSpaceScreen()),
+      GoRoute(path: '/spaces/:slug',   builder: (c, s) => SpaceScreen(spaceSlug: s.pathParameters['slug'] ?? '')),
+    ],
   );
 });
 // ignore: unused_import

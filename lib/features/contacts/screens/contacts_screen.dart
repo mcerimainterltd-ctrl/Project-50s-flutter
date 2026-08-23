@@ -545,6 +545,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             );
           }),
         ListTile(
+          leading: Icon(Icons.workspaces_outlined, color: context.xMuted),
+          title: Text('Spaces',
+            style: TextStyle(color: context.xText)),
+          onTap: () { Navigator.pop(context); context.go('/spaces'); }),
+        ListTile(
           leading: Icon(Icons.settings_outlined, color: context.xMuted),
           title: Text('Settings',
             style: TextStyle(color: context.xText)),

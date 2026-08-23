@@ -1,78 +1,137 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+import '../../core/config/app_constants.dart';
+import '../features/spaces/models/space_model.dart';
 
 class XameSpaceService {
-  static const String baseUrl = 'https://app.xamepage.com/api/v3';
+  static final _dio = Dio(BaseOptions(
+    baseUrl: '${AppConstants.serverUrl}/api/v3/spaces',
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 15),
+  ));
 
-  /// Resolve space slug & update guest session if returned
-  static Future<Map<String, dynamic>> fetchSpace(String slug) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token') ?? prefs.getString('guest_token') ?? '';
-
-    final response = await http.get(
-      Uri.parse('$baseUrl/spaces/$slug'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-      },
-    );
-
-    final data = jsonDecode(response.body);
-    if (data['success'] == true && data['guestToken'] != null) {
-      await prefs.setString('guest_token', data['guestToken']);
+  // Stable anonymous guest identity, generated once and persisted locally.
+  static Future<String> _guestId() async {
+    final p = await SharedPreferences.getInstance();
+    var id = p.getString('space_guest_id');
+    if (id == null) {
+      id = const Uuid().v4();
+      await p.setString('space_guest_id', id);
     }
-    return data;
+    return id;
   }
 
-  /// Resolve space object by slug
-  static Future<Map<String, dynamic>?> resolveSpace(String slug) async {
+  static Future<Map<String, dynamic>> _identity(String? userId, String? displayName) async {
+    if (userId != null && userId.isNotEmpty) return {'userId': userId};
+    final guestId = await _guestId();
+    return {'guestId': guestId, if (displayName != null) 'displayName': displayName};
+  }
+
+  // ── Fetch Space ──────────────────────────────────────────────────────────
+  static Future<SpaceModel?> fetchSpace(String slug, {String? userId}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/objects/space/$slug'));
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-    } catch (e) {
-      print('Error resolving space: $e');
-    }
+      final r = await _dio.get('/$slug',
+        queryParameters: userId != null ? {'userId': userId} : null);
+      if (r.data['success'] == true) return SpaceModel.fromJson(r.data['space']);
+    } catch (_) {}
     return null;
   }
 
-  /// Fetch space messages
-  static Future<List<dynamic>> fetchMessages(String slug, String token) async {
+  // ── Create Space ─────────────────────────────────────────────────────────
+  static Future<SpaceModel?> createSpace({
+    required String userId, required String name, required String spaceSlug, required String archetype,
+    String description = '', String visibility = 'public_link', bool allowGuestPosting = true,
+  }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/objects/space/$slug/messages'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['messages'] ?? [];
+      final r = await _dio.post('/create',
+        data: {'userId': userId, 'name': name, 'spaceSlug': spaceSlug, 'archetype': archetype,
+          'description': description, 'visibility': visibility, 'allowGuestPosting': allowGuestPosting});
+      if (r.data['success'] == true) return SpaceModel.fromJson(r.data['space']);
+    } catch (_) {}
+    return null;
+  }
+
+  // ── Join Space ───────────────────────────────────────────────────────────
+  static Future<bool> joinSpace(String slug, {String? userId, String? displayName}) async {
+    try {
+      final identity = await _identity(userId, displayName);
+      final r = await _dio.post('/$slug/join', data: identity);
+      return r.data['success'] == true;
+    } catch (_) { return false; }
+  }
+
+  // ── Get Messages ─────────────────────────────────────────────────────────
+  static Future<List<SpaceMessage>> fetchMessages(String slug, {String? before, int limit = 30}) async {
+    try {
+      final r = await _dio.get('/$slug/messages',
+        queryParameters: {'limit': limit, if (before != null) 'before': before});
+      if (r.data['success'] == true) {
+        return (r.data['messages'] as List).map((m) => SpaceMessage.fromJson(m)).toList();
       }
-    } catch (e) {
-      print('Error fetching messages: $e');
-    }
+    } catch (_) {}
     return [];
   }
 
-  /// Claim guest activity after sign-in
-  static Future<bool> claimGuestActivity(String userToken, String guestToken) async {
+  // ── Send Message ─────────────────────────────────────────────────────────
+  static Future<SpaceMessage?> sendMessage(String slug, {
+    String? userId, String? displayName,
+    String? text, String? mediaUrl, String? mediaType, String? fileName,
+    String? replyToId, String? replyToText,
+  }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/claim-guest'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $userToken',
-        },
-        body: jsonEncode({'guestToken': guestToken}),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['success'] == true;
+      final identity = await _identity(userId, displayName);
+      final r = await _dio.post('/$slug/messages',
+        data: {...identity, 'text': text ?? '', 'mediaUrl': mediaUrl ?? '', 'mediaType': mediaType ?? '',
+          'fileName': fileName ?? '', 'replyToId': replyToId, 'replyToText': replyToText});
+      if (r.data['success'] == true) return SpaceMessage.fromJson(r.data['message']);
+    } catch (_) {}
+    return null;
+  }
+
+  // ── React ────────────────────────────────────────────────────────────────
+  static Future<void> reactToMessage(String slug, String msgId, String emoji, {String? userId}) async {
+    try {
+      final identity = await _identity(userId, null);
+      await _dio.post('/$slug/messages/$msgId/react', data: {...identity, 'emoji': emoji});
+    } catch (_) {}
+  }
+
+  // ── Delete Message ───────────────────────────────────────────────────────
+  static Future<void> deleteMessage(String slug, String msgId, {String? userId}) async {
+    try {
+      await _dio.delete('/$slug/messages/$msgId',
+        queryParameters: userId != null ? {'userId': userId} : null);
+    } catch (_) {}
+  }
+
+  // ── Get Media ────────────────────────────────────────────────────────────
+  static Future<List<SpaceMessage>> fetchMedia(String slug) async {
+    try {
+      final r = await _dio.get('/$slug/media');
+      if (r.data['success'] == true) {
+        return (r.data['media'] as List).map((m) => SpaceMessage.fromJson(m)).toList();
       }
-    } catch (e) {
-      print('Error claiming guest activity: $e');
-    }
-    return false;
+    } catch (_) {}
+    return [];
+  }
+
+  // ── My Spaces ────────────────────────────────────────────────────────────
+  static Future<List<SpaceModel>> fetchMySpaces(String userId) async {
+    try {
+      final r = await _dio.get('/', queryParameters: {'userId': userId});
+      if (r.data['success'] == true) {
+        return (r.data['spaces'] as List).map((s) => SpaceModel.fromJson(s)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // ── Claim Guest Messages ─────────────────────────────────────────────────
+  static Future<void> claimGuestMessages(String slug, String userId) async {
+    try {
+      final guestId = await _guestId();
+      await _dio.post('/$slug/claim', data: {'guestId': guestId, 'userId': userId});
+    } catch (_) {}
   }
 }

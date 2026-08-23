@@ -32,6 +32,12 @@ class SocketService {
   final _msgStatusCtrl        = StreamController<MsgStatusUpdate>.broadcast();
   final _msgSeenCtrl          = StreamController<MsgSeenUpdate>.broadcast();
   final _onlineUsersCtrl      = StreamController<List<String>>.broadcast();
+  // Spaces
+  final _spaceMessageCtrl     = StreamController<Map<String, dynamic>>.broadcast();
+  final _spaceTypingCtrl      = StreamController<Map<String, dynamic>>.broadcast();
+  final _spaceUserJoinedCtrl  = StreamController<Map<String, dynamic>>.broadcast();
+  final _spaceUserLeftCtrl    = StreamController<Map<String, dynamic>>.broadcast();
+  final _spaceReactionCtrl    = StreamController<Map<String, dynamic>>.broadcast();
   final _contactsListCtrl     = StreamController<List<Map<String, dynamic>>>.broadcast();
   final _chatHistoryCtrl      = StreamController<dynamic>.broadcast();
   final _incomingCallCtrl     = StreamController<IncomingCallData>.broadcast();
@@ -464,6 +470,27 @@ class SocketService {
       ConferenceScreenShareData(userId: d?["userId"])));
     socket.on("conference:screen-share-stopped", (_) => _confScreenStopCtrl.add(null));
     socket.on("conference:room-closed",      (_) => _confRoomClosedCtrl.add(null));
+
+    // Space listeners
+    socket.on("space:message",     (d) { if (d != null) _spaceMessageCtrl.add(Map<String,dynamic>.from(d as Map)); });
+    socket.on("space:typing",      (d) { if (d != null) _spaceTypingCtrl.add(Map<String,dynamic>.from(d as Map)); });
+    socket.on("space:user_joined", (d) { if (d != null) _spaceUserJoinedCtrl.add(Map<String,dynamic>.from(d as Map)); });
+    socket.on("space:user_left",   (d) { if (d != null) _spaceUserLeftCtrl.add(Map<String,dynamic>.from(d as Map)); });
+    socket.on("space:reaction",    (d) { if (d != null) _spaceReactionCtrl.add(Map<String,dynamic>.from(d as Map)); });
+  }
+
+  // Space streams
+  Stream<Map<String, dynamic>> get spaceMessage    => _spaceMessageCtrl.stream;
+  Stream<Map<String, dynamic>> get spaceTyping     => _spaceTypingCtrl.stream;
+  Stream<Map<String, dynamic>> get spaceUserJoined => _spaceUserJoinedCtrl.stream;
+  Stream<Map<String, dynamic>> get spaceUserLeft   => _spaceUserLeftCtrl.stream;
+  Stream<Map<String, dynamic>> get spaceReaction   => _spaceReactionCtrl.stream;
+
+  // Generic on() for custom events
+  Stream<dynamic> on(String event) {
+    final ctrl = StreamController<dynamic>.broadcast();
+    _socket?.on(event, (data) => ctrl.add(data));
+    return ctrl.stream;
   }
 
   void emit(String event, dynamic data) {
