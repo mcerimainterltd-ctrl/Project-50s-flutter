@@ -192,7 +192,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         return XamePayScreen(
           userId:       user?.xameId ?? '',
           serverUrl:    AppConstants.serverUrl,
-          currency:     'NGN',
           initialTab:   'send',
           sendToUserId: targetId,
         );

@@ -18,13 +18,14 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
         when (type) {
             "incoming_call" -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    // Android 12+: can't start foreground service from FCM background
-                    showHeadsUpNotification(callerName, callType)
-                } else {
-                    // Android 11 and below: start CallService first for wake lock + lock screen
+                // Show full-screen heads-up notification on all Android versions
+                showHeadsUpNotification(callerName, callType)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    // Android 11 and below: start CallService for wake lock + lock screen
                     CallService.start(this, callerName, callType)
-                    showHeadsUpNotification(callerName, callType)
+                } else {
+                    // Android 12+: wake Flutter engine via SocketKeepaliveService
+                    SocketKeepaliveService.start(this)
                 }
             }
             "scheduled_call_due" -> {
