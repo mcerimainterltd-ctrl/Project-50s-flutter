@@ -51,19 +51,27 @@ void main() async {
     if (uri != null) {
       final segments = uri.pathSegments;
       final first = segments.isNotEmpty ? segments[0] : '';
-      if (first == 'join' || uri.queryParameters.containsKey('ref')) {
-        final code = first == 'join'
-            ? (segments.length > 1 ? segments[1] : '')
+
+      // Custom xamepage:// links use the URI host for the action:
+      // xamepage://chat/<userId>, xamepage://call/<userId>, etc.
+      final action = uri.scheme == 'xamepage' ? uri.host : first;
+      final id = uri.scheme == 'xamepage'
+          ? (segments.isNotEmpty ? segments[0] : '')
+          : (segments.length > 1 ? segments[1] : '');
+
+      if (action == 'join' || uri.queryParameters.containsKey('ref')) {
+        final code = action == 'join'
+            ? id
             : (uri.queryParameters['ref'] ?? '');
         if (code.isNotEmpty) initialDeepLink = '/register?ref=$code';
-      } else if (first == 'chat' && segments.length > 1) {
-        initialDeepLink = '/chat/${segments[1]}';
-      } else if (first == 'call' && segments.length > 1) {
-        initialDeepLink = '/call/${segments[1]}?video=false&incoming=false';
-      } else if (first == 'pay' && segments.length > 1) {
-        initialDeepLink = '/pay/${segments[1]}';
-      } else if (first == 'u' && segments.length > 1) {
-        initialDeepLink = '/u/${segments[1]}';
+      } else if (action == 'chat' && id.isNotEmpty) {
+        initialDeepLink = '/chat/$id';
+      } else if (action == 'call' && id.isNotEmpty) {
+        initialDeepLink = '/call/$id?video=false&incoming=false';
+      } else if (action == 'pay' && id.isNotEmpty) {
+        initialDeepLink = '/pay/$id';
+      } else if (action == 'u' && id.isNotEmpty) {
+        initialDeepLink = '/u/$id';
       }
     }
   } catch (_) {}
