@@ -467,6 +467,13 @@ class _XamePayScreenState extends State<XamePayScreen>
         _openTabFullscreen(3, prefilledUserId: widget.sendToUserId);
       });
     }
+    // Handle deep link: open Add Money so a visitor can pay this XamePay user
+    // (they're paying the account owner, not sending to a contact — a different flow)
+    if (widget.initialTab == 'add') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showAddMoney();
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final socket = ProviderScope.containerOf(context).read(socketServiceProvider);
       _walletDebitSub = socket.walletDebit.listen((data) {
