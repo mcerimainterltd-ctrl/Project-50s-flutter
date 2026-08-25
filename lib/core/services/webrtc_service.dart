@@ -135,6 +135,7 @@ class WebRTCService {
     });
 
     _socket.callAnswer.listen((data) async {
+      print('[WEBRTC] ANSWER RECEIVED sender=${data.senderId} type=${data.answer['type']} sdpLength=${data.answer['sdp']?.length ?? 0}');
       // Recipient answered — stop outgoing ringtone and timeout
       _callTimeoutTimer?.cancel();
       _callCancelled = true;
@@ -159,9 +160,15 @@ class WebRTCService {
     });
 
     _socket.iceCandidate.listen((data) {
+      print('[WEBRTC] REMOTE ICE RECEIVED sender=${data.senderId} candidate=${data.candidate['candidate']}');
       final c = RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']);
-      if (_pc != null && _remoteDescriptionSet) { _pc!.addCandidate(c); } 
-      else { _pendingIce.add(c); }
+      if (_pc != null && _remoteDescriptionSet) {
+        print('[WEBRTC] ADDING REMOTE ICE IMMEDIATELY');
+        _pc!.addCandidate(c);
+      } else {
+        print('[WEBRTC] QUEUING REMOTE ICE');
+        _pendingIce.add(c);
+      }
     });
   }
 
@@ -173,6 +180,7 @@ class WebRTCService {
     
     // 2. Create Offer (This now contains the media info)
     var offer = await _pc!.createOffer();
+    print('[WEBRTC] OFFER CREATED type=${offer.type} sdpLength=${offer.sdp?.length ?? 0}');
     await _pc!.setLocalDescription(offer);
     // Emit offer
     _socket.emitCallUser(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
@@ -268,9 +276,24 @@ class WebRTCService {
         }
       }
     };
-    _pc!.onIceCandidate = (c) => _socket.emitIceCandidate(currentRemoteUserId!, {'candidate': c.candidate, 'sdpMid': c.sdpMid, 'sdpMLineIndex': c.sdpMLineIndex});
+    _pc!.onIceCandidate = (c) {
+      print('[WEBRTC] LOCAL ICE GENERATED candidate=${c.candidate}');
+      _socket.emitIceCandidate(
+        currentRemoteUserId!,
+        {
+          'candidate': c.candidate,
+          'sdpMid': c.sdpMid,
+          'sdpMLineIndex': c.sdpMLineIndex,
+        },
+      );
+    };
     
     _pc!.onTrack = (e) {
+      print(
+        '[WEBRTC] ONTRACK '
+        'kind=${e.track.kind} '
+        'streams=${e.streams.length}',
+      );
       if (e.streams.isNotEmpty) {
         // Force the stream to the renderer immediately
         _remoteRenderer.srcObject = e.streams[0];
@@ -286,10 +309,16 @@ class WebRTCService {
     };
 
     // We MUST await the hardware before moving to the next step in joinCall/startCall
+    print('[MEDIA] REQUESTING getUserMedia video=$v');
     localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true, 
       'video': v ? {'facingMode': 'user'} : false
     });
+    print(
+      '[MEDIA] getUserMedia DONE '
+      'audio=${localStream?.getAudioTracks().length ?? 0} '
+      'video=${localStream?.getVideoTracks().length ?? 0}',
+    );
     
     _localRenderer.srcObject = localStream;
     // Notify listeners that the stream is ready to be rendered
