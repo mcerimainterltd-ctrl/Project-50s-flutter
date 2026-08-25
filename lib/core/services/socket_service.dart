@@ -71,6 +71,7 @@ class SocketService {
   final _newDiscoveryPostCtrl = StreamController<String>.broadcast();
   final _reactionUpdateCtrl   = StreamController<Map<String, dynamic>>.broadcast();
   final _walletRequestCtrl     = StreamController<Map<String, dynamic>>.broadcast();
+  final _webCallRequestCtrl    = StreamController<Map<String, dynamic>>.broadcast();
   final _contactRequestCtrl   = StreamController<Map<String, dynamic>>.broadcast();
   final _contactRequestAcceptedCtrl = StreamController<Map<String, dynamic>>.broadcast();
 
@@ -110,6 +111,7 @@ class SocketService {
   Stream<Map<String, dynamic>>      get profileUpdated   => _profileUpdatedCtrl.stream;
   Stream<ContactStatusData>         get contactStatus    => _contactStatusCtrl.stream;
   Stream<Map<String, dynamic>>      get walletRequest          => _walletRequestCtrl.stream;
+  Stream<Map<String, dynamic>>      get webCallRequest         => _webCallRequestCtrl.stream;
   Stream<Map<String, dynamic>>      get contactRequest         => _contactRequestCtrl.stream;
   Stream<Map<String, dynamic>>      get contactRequestAccepted => _contactRequestAcceptedCtrl.stream;
   Stream<String>                    get forceLogout      => _forceLogoutCtrl.stream;
@@ -326,6 +328,9 @@ class SocketService {
     });
     socket.on('wallet_request', (d) {
       if (d != null) _walletRequestCtrl.add(Map<String, dynamic>.from(d));
+    });
+    socket.on('web_call_request', (d) {
+      if (d != null) _webCallRequestCtrl.add(Map<String, dynamic>.from(d));
     });
     socket.on('contact_request', (d) {
       if (d != null) _contactRequestCtrl.add(Map<String, dynamic>.from(d));

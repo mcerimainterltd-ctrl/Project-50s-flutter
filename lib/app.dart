@@ -67,6 +67,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initShareListener();
     _initContactRequestListener();
     _initWalletRequestListener();
+    _initWebCallRequestListener();
     // Auto-connect socket as soon as user is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(currentUserProvider);
@@ -196,6 +197,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
 
   StreamSubscription? _walletRequestSub;
+  StreamSubscription? _webCallRequestSub;
   StreamSubscription? _collabRequestSub;
   StreamSubscription? _collabAcceptedSub;
   StreamSubscription? _collabAuthorizedSub;
@@ -543,6 +545,27 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     });
   }
 
+  void _initWebCallRequestListener() {
+    _webCallRequestSub = ref.read(socketServiceProvider)
+        .webCallRequest.listen((data) async {
+      final fromName = data['fromName'] as String? ?? 'Someone';
+      final callUrl = data['callUrl'] as String? ?? '';
+
+      // Heads-up notification
+      ref.read(pushServiceProvider).showAlertNotification(
+        '📞 Web Call',
+        '$fromName wants to call you on XamePage',
+      );
+
+      if (callUrl.isEmpty) return;
+
+      final uri = Uri.tryParse(callUrl);
+      if (uri != null) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    });
+  }
+
   void _initContactRequestListener() {
     // Incoming contact request
     ref.read(socketServiceProvider).contactRequest.listen((data) {
@@ -700,6 +723,22 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         ]),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _shareSub?.cancel();
+    _shareSubscription?.cancel();
+    _contactRequestAcceptedSub?.cancel();
+    _walletRequestSub?.cancel();
+    _webCallRequestSub?.cancel();
+    _collabRequestSub?.cancel();
+    _collabAcceptedSub?.cancel();
+    _collabAuthorizedSub?.cancel();
+    _collabCancelledSub?.cancel();
+    _collabSubmittedSub?.cancel();
+    _inactivityTimer?.cancel();
+    super.dispose();
   }
 
   Widget build(BuildContext context) {
