@@ -15,7 +15,7 @@ import '../../../core/services/socket_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/config/constants.dart';
 import '../screen_share.dart';
-import '../conference.dart';
+import '../../calls/screens/conference_screen.dart';
 
 class CallScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -42,7 +42,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   bool _isLocalMain  = false;
   bool _isScreenSharing = false;
   late ScreenShareService  _screenShare;
-  ConferenceService?       _conference;
   bool _showControls = true;
   String? _callEndReason;
   Offset _thumbnailOffset = const Offset(20, 100);
@@ -57,14 +56,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final socket = ref.read(socketServiceProvider);
     final user   = ref.read(currentUserProvider);
     _screenShare = ScreenShareService(socket);
-    if (user != null) {
-      _conference   = ConferenceService(
-        socket:      socket,
-        screenShare: _screenShare,
-        userId:      user.xameId,
-        displayName: user.preferredName ?? user.firstName,
-      );
-    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final service = ref.read(webRTCServiceProvider);
       await service.initRenderers();
@@ -709,12 +700,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
 
   void _openConference() {
-    if (_conference == null) return;
-    _conference!.create();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => ConferenceOverlay(service: _conference!),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ConferenceScreen(),
+      ),
     );
   }
 
