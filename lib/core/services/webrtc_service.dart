@@ -102,7 +102,9 @@ class WebRTCService {
       if (data.callerId == _socket.currentUserId) return; // Ignore self
       if (_callState == CallState.incoming || _callState == CallState.active) return; // Already in a call
       currentRemoteUserId = data.callerId;
+      _currentCallId = data.callId;
       _pendingOffer = data.offer;
+      print('[WEBRTC] INCOMING CALL ID: $_currentCallId');
       isIncomingVideo = data.callType == 'video';
       // Resolve caller display name from contacts cache
       final contacts = CacheService.loadContacts();
@@ -182,15 +184,23 @@ class WebRTCService {
     var offer = await _pc!.createOffer();
     print('[WEBRTC] OFFER CREATED type=${offer.type} sdpLength=${offer.sdp?.length ?? 0}');
     await _pc!.setLocalDescription(offer);
+    // Capture callId BEFORE emitting call-user.
+    // The server can emit call-ringing immediately.
+    _socket.onCallInitiated((id) {
+      if (id.isNotEmpty) {
+        _currentCallId = id;
+        print('[WEBRTC] CALL ID RECEIVED: $_currentCallId');
+      }
+    });
+
     // Emit offer
     _socket.emitCallUser(userId, {'sdp': offer.sdp, 'type': offer.type}, isVideo ? 'video' : 'voice');
+
     // Only play outgoing if not already cancelled/answered
     if (!_callCancelled && _callState == CallState.outgoing) {
       await Helper.setSpeakerphoneOn(false);
       _audio.playOutgoing();
     }
-    // Capture callId from server
-    _socket.onCallInitiated((id) => _currentCallId = id);
     // Start timeout — record missed if no answer within callTimeoutSeconds
     _callStartTime = DateTime.now();
     _callTimeoutTimer = Timer(
@@ -357,7 +367,11 @@ class WebRTCService {
     _callCancelled = true;
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
-    _socket.emitCallRejected(currentRemoteUserId ?? "", "declined");
+    _socket.emitCallRejected(
+      currentRemoteUserId ?? "",
+      "declined",
+      callId: _currentCallId,
+    );
     _callState = CallState.ended; _callStateController.add(CallState.ended);
     _incomingCallController.add(false);
   }
@@ -371,7 +385,11 @@ class WebRTCService {
     try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
     try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
     if (callerCancelled && currentRemoteUserId != null) {
-      _socket.emitCallRejected(currentRemoteUserId!, "cancelled");
+      _socket.emitCallRejected(
+        currentRemoteUserId!,
+        "cancelled",
+        callId: _currentCallId,
+      );
     } else if (!isTimeout) {
       _socket.emitCallEnded(currentRemoteUserId ?? '', callId: _currentCallId);
     }

@@ -520,13 +520,23 @@ class SocketService {
 
   // Listen for callId assigned by server after emitting call-user
   void onCallInitiated(void Function(String callId) cb) {
-    _socket?.off('call-ringing-id');
-    _socket?.on('call-ringing', (d) => cb(d?['callId'] ?? ''));
+    _socket?.off('call-ringing');
+    _socket?.on('call-ringing', (d) {
+      final callId = d?['callId'];
+      if (callId != null && callId.toString().isNotEmpty) {
+        cb(callId.toString());
+      }
+    });
   }
   void emitMakeAnswer(String r, dynamic a)         => emit('make-answer',        {'recipientId': r, 'answer': a});
   void emitIceCandidate(String r, dynamic c)       => emit('ice-candidate',      {'recipientId': r, 'candidate': c});
   void emitCallAccepted(String r, {String? callId})=> emit('call-accepted',      {'recipientId': r, if (callId != null) 'callId': callId});
-  void emitCallRejected(String r, String reason)   => emit('call-rejected',      {'recipientId': r, 'reason': reason});
+  void emitCallRejected(String r, String reason, {String? callId}) =>
+      emit('call-rejected', {
+        'recipientId': r,
+        'reason': reason,
+        if (callId != null) 'callId': callId,
+      });
   void emitCallEnded(String r, {String? callId})       => emit('call-ended',         {'recipientId': r, if (callId != null) 'callId': callId});
   void emitCallHold(String r)                      => emit('call-hold',          {'recipientId': r});
   void emitCallResume(String r)                    => emit('call-resume',        {'recipientId': r});
