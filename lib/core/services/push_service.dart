@@ -24,6 +24,8 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushService {
+  final _incomingCallController = StreamController<Map<String, String>>.broadcast();
+  Stream<Map<String, String>> get onIncomingCall => _incomingCallController.stream;
   final _fcm   = FirebaseMessaging.instance;
   final _local = FlutterLocalNotificationsPlugin();
   GlobalKey<NavigatorState>? _navigatorKey;
@@ -135,7 +137,7 @@ class PushService {
   void _handleForeground(RemoteMessage msg) {
     final data = msg.data;
     final type = data['type'];
-    if (type == 'incoming_call') return; // Handled by socket
+    if (type == 'incoming_call' || type == 'incoming-call') { _incomingCallController.add(data); return; }
     if (type == 'message') {
       final settings = SettingsNotifier.currentSettings;
       if (!settings.msgSound && !settings.msgVibration) return;
