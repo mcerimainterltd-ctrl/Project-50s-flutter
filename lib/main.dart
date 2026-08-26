@@ -77,7 +77,6 @@ void main() async {
   } catch (_) {}
 
   runApp(ProviderScope(
-        navigatorKey.currentState!.pushReplacementNamed('/incoming-call');
 
       }
 
@@ -89,8 +88,6 @@ void main() async {
   ));
   WidgetsBinding.instance.addPostFrameCallback((_) {
     PushService.setOnIncomingCall((data) {
-      if (navigatorKey.currentState != null) {
-        navigatorKey.currentState!.pushReplacementNamed('/incoming-call');
       }
     });
   });

@@ -267,14 +267,6 @@ class _PulsingCallTypeState extends State<_PulsingCallType> with SingleTickerPro
   @override
   void initState() {
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    if (args != null && args.containsKey('offer')) {
-      final webrtc = ref.read(webRTCServiceProvider);
-      webrtc.setIncomingCall(args['callerId'], args['offer'], args['callType'] ?? 'voice');
-    }
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: 1500))..repeat(reverse: true);
-  }
-  @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) {
