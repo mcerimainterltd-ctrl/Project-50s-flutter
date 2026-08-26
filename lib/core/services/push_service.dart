@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -142,7 +143,7 @@ class PushService {
   void _handleForeground(RemoteMessage msg) {
     final data = msg.data;
     final type = data['type'];
-    if (type == 'incoming_call' || type == 'incoming-call') { Get.toNamed('/incoming-call'); return; }
+    if (type == 'incoming_call' || type == 'incoming-call') { Get.toNamed('/incoming-call', arguments: data); return; }
     if (type == 'message') {
       final settings = SettingsNotifier.currentSettings;
       if (!settings.msgSound && !settings.msgVibration) return;
