@@ -28,8 +28,8 @@ class WebRTCService {
     _callState = CallState.incoming;
     _callStateController.add(CallState.incoming);
     final contacts = CacheService.loadContacts();
-    final match = contacts.where((c) => c[id] == callerId || c[xameId] == callerId).firstOrNull;
-    callerDisplayName = (match?[name] as String?)?.isNotEmpty == true ? match![name] as String : callerId;
+    final match = contacts.where((c) => c['id'] == callerId || c['xameId'] == callerId).firstOrNull;
+    callerDisplayName = (match?['name'] as String?)?.isNotEmpty == true ? match!['name'] as String : callerId;
     _incomingCallController.add(true);
   }
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
