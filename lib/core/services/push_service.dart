@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -24,6 +25,9 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushService {
+  static final PushService _instance = PushService._internal();
+  factory PushService() => _instance;
+  PushService._internal();
   final _incomingCallController = StreamController<Map<String, String>>.broadcast();
   Stream<Map<String, String>> get onIncomingCall => _incomingCallController.stream;
   final _fcm   = FirebaseMessaging.instance;

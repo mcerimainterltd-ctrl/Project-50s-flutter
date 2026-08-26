@@ -77,6 +77,21 @@ void main() async {
   } catch (_) {}
 
   runApp(ProviderScope(
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    final pushService = PushService();
+
+    pushService.onIncomingCall.listen((data) {
+
+      if (navigatorKey.currentState != null) {
+
+        navigatorKey.currentState!.pushReplacementNamed(/incoming-call);
+
+      }
+
+    });
+
+  });
     overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
     child: XamePageApp(initialDeepLink: initialDeepLink),
   ));
