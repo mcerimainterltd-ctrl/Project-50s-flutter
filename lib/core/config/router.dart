@@ -29,6 +29,7 @@ import '../../screens/xame_pay_screen.dart';
 import '../../features/contacts/providers/contacts_provider.dart';
 import '../../screens/phone_screen.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
+import '../../features/calls/screens/conference_screen.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;
@@ -82,7 +83,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         )),
       GoRoute(path: '/incoming-call',
         builder: (context, state) => const IncomingCallScreen()),
-      GoRoute(path: '/conference',    builder: (c, s) => _Placeholder('Conference')),
+      GoRoute(path: '/conference',    builder: (c, s) => const ConferenceScreen()),
       GoRoute(path: '/call-history',  builder: (c, s) => CallHistoryScreen(onBack: () => c.go('/contacts'))),
       GoRoute(path: '/contact-requests', builder: (c, s) => const ContactRequestsScreen()),
       GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl)),

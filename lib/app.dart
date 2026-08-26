@@ -547,22 +547,21 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
   void _initWebCallRequestListener() {
     _webCallRequestSub = ref.read(socketServiceProvider)
-        .webCallRequest.listen((data) async {
+        .webCallRequest.listen((data) {
       final fromName = data['fromName'] as String? ?? 'Someone';
-      final callUrl = data['callUrl'] as String? ?? '';
 
-      // Heads-up notification
+      // Native notification only.
+      // Do NOT launch https://app.xamepage.com/web-call/... here:
+      // that deliberately sends an installed XamePage user back
+      // into the old PWA.
       ref.read(pushServiceProvider).showAlertNotification(
         '📞 Web Call',
         '$fromName wants to call you on XamePage',
       );
 
-      if (callUrl.isEmpty) return;
-
-      final uri = Uri.tryParse(callUrl);
-      if (uri != null) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      debugPrint(
+        'Native web call request received from $fromName: $data',
+      );
     });
   }
 

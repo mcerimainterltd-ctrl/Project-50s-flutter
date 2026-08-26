@@ -39,12 +39,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
     final webrtcSvc = ref.read(webRTCServiceProvider);
     _stateSub = webrtcSvc.callState.listen((state) {
       if (!mounted || _isPopping) return;
-      if (state == CallState.active) {
-        _isPopping = true;
-        final userId = webrtcSvc.currentRemoteUserId ?? '';
-        final isVideo = webrtcSvc.isIncomingVideo;
-        context.pushReplacement('/call/$userId?video=$isVideo&incoming=true');
-      } else if (state == CallState.ended) {
+      if (state == CallState.ended) {
         _safePop();
       }
     });
@@ -211,8 +206,11 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                         icon: isVideo ? Icons.videocam : Icons.call,
                         label: "Accept",
                         color: context.xAccent,
-                        onTap: () {
-                          _isPopping = true; // prevent double-pop
+                        onTap: () async {
+                          if (_isPopping) return;
+                          _isPopping = true;
+                          await webrtc.joinCall(isVideo);
+                          if (!mounted) return;
                           context.pushReplacement('/call/$userId?video=$isVideo&incoming=true');
                         },
                         isAccept: true,

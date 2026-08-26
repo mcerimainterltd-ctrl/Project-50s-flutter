@@ -61,8 +61,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       await service.initRenderers();
       if (!widget.isIncoming) {
         service.startCall(widget.userId, widget.isVideo);
-      } else {
-        service.joinCall(widget.isVideo);
       }
       service.callState.listen((s) async {
         if (!mounted) return;
