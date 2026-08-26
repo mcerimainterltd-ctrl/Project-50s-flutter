@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -25,6 +24,13 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushService {
+  static void Function(Map<String, dynamic>)? _onIncomingCall;
+
+  static void setOnIncomingCall(void Function(Map<String, dynamic>) callback) {
+
+    _onIncomingCall = callback;
+
+  }
   final _fcm   = FirebaseMessaging.instance;
   final _local = FlutterLocalNotificationsPlugin();
   GlobalKey<NavigatorState>? _navigatorKey;
