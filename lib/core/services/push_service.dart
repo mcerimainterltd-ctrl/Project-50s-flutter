@@ -142,7 +142,7 @@ class PushService {
   void _handleForeground(RemoteMessage msg) {
     final data = msg.data;
     final type = data['type'];
-    if (type == 'incoming_call' || type == 'incoming-call') { PushService._onIncomingCall?.call(data); return; }
+    if (type == 'incoming_call' || type == 'incoming-call') { Get.toNamed('/incoming-call'); return; }
     if (type == 'message') {
       final settings = SettingsNotifier.currentSettings;
       if (!settings.msgSound && !settings.msgVibration) return;

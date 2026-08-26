@@ -77,13 +77,20 @@ void main() async {
   } catch (_) {}
 
   runApp(ProviderScope(
+        navigatorKey.currentState!.pushReplacementNamed('/incoming-call');
+
+      }
+
+    });
+
+  });
     overrides: [if (savedUser != null) currentUserProvider.overrideWith((ref) => savedUser)],
     child: XamePageApp(initialDeepLink: initialDeepLink),
   ));
   WidgetsBinding.instance.addPostFrameCallback((_) {
     PushService.setOnIncomingCall((data) {
       if (navigatorKey.currentState != null) {
-        navigatorKey.currentState!.pushReplacementNamed('/incoming-call', arguments: data);
+        navigatorKey.currentState!.pushReplacementNamed('/incoming-call');
       }
     });
   });
