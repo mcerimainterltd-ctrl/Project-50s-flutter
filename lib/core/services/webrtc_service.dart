@@ -21,6 +21,17 @@ final webRTCServiceProvider = Provider((ref) {
 });
 
 class WebRTCService {
+  void setIncomingCall(String callerId, Map offer, String callType) {
+    currentRemoteUserId = callerId;
+    _pendingOffer = offer;
+    isIncomingVideo = callType == 'video';
+    _callState = CallState.incoming;
+    _callStateController.add(CallState.incoming);
+    final contacts = CacheService.loadContacts();
+    final match = contacts.where((c) => c[id] == callerId || c[xameId] == callerId).firstOrNull;
+    callerDisplayName = (match?[name] as String?)?.isNotEmpty == true ? match![name] as String : callerId;
+    _incomingCallController.add(true);
+  }
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
 

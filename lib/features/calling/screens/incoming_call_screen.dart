@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show ModalRoute;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -34,6 +35,11 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
 
   @override
   void initState() {
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    if (args != null && args.containsKey('offer')) {
+      final webrtc = ref.read(webRTCServiceProvider);
+      webrtc.setIncomingCall(args['callerId'], args['offer'], args['callType'] ?? 'voice');
+    }
     super.initState();
     final socket = ref.read(socketServiceProvider);
     final webrtcSvc = ref.read(webRTCServiceProvider);
@@ -260,6 +266,11 @@ class _PulsingCallTypeState extends State<_PulsingCallType> with SingleTickerPro
   late AnimationController _ctrl;
   @override
   void initState() {
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    if (args != null && args.containsKey('offer')) {
+      final webrtc = ref.read(webRTCServiceProvider);
+      webrtc.setIncomingCall(args['callerId'], args['offer'], args['callType'] ?? 'voice');
+    }
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: 1500))..repeat(reverse: true);
   }
