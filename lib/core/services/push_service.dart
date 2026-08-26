@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -25,11 +25,6 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushService {
-  static final PushService _instance = PushService._internal();
-  factory PushService() => _instance;
-  PushService._internal();
-  final _incomingCallController = StreamController<Map<String, String>>.broadcast();
-  Stream<Map<String, String>> get onIncomingCall => _incomingCallController.stream;
   final _fcm   = FirebaseMessaging.instance;
   final _local = FlutterLocalNotificationsPlugin();
   GlobalKey<NavigatorState>? _navigatorKey;
@@ -141,7 +136,7 @@ class PushService {
   void _handleForeground(RemoteMessage msg) {
     final data = msg.data;
     final type = data['type'];
-    if (type == 'incoming_call' || type == 'incoming-call') { _incomingCallController.add(data); return; }
+    if (type == 'incoming_call' || type == 'incoming-call') { Get.toNamed('/incoming-call'); return; }
     if (type == 'message') {
       final settings = SettingsNotifier.currentSettings;
       if (!settings.msgSound && !settings.msgVibration) return;
