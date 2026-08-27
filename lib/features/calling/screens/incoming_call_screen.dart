@@ -35,12 +35,12 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
 
   @override
   void initState() {
-    super.initState();
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null && args.containsKey('offer')) {
       final webrtc = ref.read(webRTCServiceProvider);
       webrtc.setIncomingCall(args['callerId'], args['offer'], args['callType'] ?? 'voice');
     }
+    super.initState();
     final socket = ref.read(socketServiceProvider);
     final webrtcSvc = ref.read(webRTCServiceProvider);
     _stateSub = webrtcSvc.callState.listen((state) {
@@ -266,3 +266,170 @@ class _PulsingCallTypeState extends State<_PulsingCallType> with SingleTickerPro
   late AnimationController _ctrl;
   @override
   void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: 1500))..repeat(reverse: true);
+  }
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween(begin: 0.2, end: 0.7).animate(_ctrl),
+      child: Text(widget.text, style: TextStyle(color: context.xText, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 3)),
+    );
+  }
+}
+
+// ── Add Call Sheet ────────────────────────────────────────────────────────────
+class _AddCallSheet extends StatefulWidget {
+  final List<ContactModel> contacts;
+  final String currentUserId;
+  final void Function(String contactId) onSelect;
+
+  _AddCallSheet({required this.contacts, required this.currentUserId,
+      required this.onSelect});
+
+  @override
+  State<_AddCallSheet> createState() => _AddCallSheetState();
+}
+
+class _AddCallSheetState extends State<_AddCallSheet> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.contacts
+        .where((c) => c.id != widget.currentUserId)
+        .where((c) => _search.isEmpty ||
+            c.name.toLowerCase().contains(_search.toLowerCase()) ||
+            c.id.toLowerCase().contains(_search.toLowerCase()))
+        .toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      maxChildSize: 0.92,
+      builder: (_, ctrl) => Container(
+        decoration: BoxDecoration(
+          color: context.xSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Column(children: [
+              Center(child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(2)),
+              )),
+              Row(children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: context.xPrimary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.person_add_outlined,
+                      color: context.xPrimary, size: 20),
+                ),
+                SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text('Add to Call', style: TextStyle(color: context.xText,
+                      fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text('Select a contact to add',
+                      style: TextStyle(color: context.xMuted, fontSize: 12)),
+                ]),
+              ]),
+              SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: context.xCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
+                ),
+                child: TextField(
+                  onChanged: (v) => setState(() => _search = v),
+                  style: TextStyle(color: context.xText, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Search contacts...',
+                    hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+                    prefixIcon: Icon(Icons.search,
+                        color: context.xMuted.withValues(alpha: 0.3), size: 18),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 11),
+                  ),
+                ),
+              ),
+              SizedBox(height: 8),
+            ]),
+          ),
+          Expanded(
+            child: ListView.separated(
+              controller: ctrl,
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+              itemCount: filtered.length,
+              separatorBuilder: (_, __) => SizedBox(height: 8),
+              itemBuilder: (_, i) {
+                final c = filtered[i];
+                return GestureDetector(
+                  onTap: () => widget.onSelect(c.id),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: context.xCard,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: context.xPrimary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(child: Text(
+                            c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                            style: TextStyle(
+                                color: context.xPrimary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16))),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c.name, style: TextStyle(
+                              color: context.xText, fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                          Text(c.id, style: TextStyle(
+                              color: context.xMuted, fontSize: 12)),
+                        ],
+                      )),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: context.xPrimary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: context.xPrimary
+                              .withValues(alpha: 0.3)),
+                        ),
+                        child: Text('Add',
+                            style: TextStyle(color: context.xPrimary,
+                                fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                    ]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
