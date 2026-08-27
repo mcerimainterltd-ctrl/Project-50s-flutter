@@ -266,3 +266,16 @@ class _PulsingCallTypeState extends State<_PulsingCallType> with SingleTickerPro
   late AnimationController _ctrl;
   @override
   void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
+  }
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween(begin: 0.2, end: 0.7).animate(_ctrl),
+      child: Text(widget.text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 3)),
+    );
+  }
+}
