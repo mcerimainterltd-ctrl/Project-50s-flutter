@@ -91,8 +91,14 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
     final contactsAsync = ref.watch(contactsProvider);
     final contact = contactsAsync.valueOrNull?.where((c) => c.id == userId).firstOrNull;
 
-    final String displayName = contact?.name ?? userId;
-    final String? profilePic = (contact?.isProfilePicHidden ?? false) ? null : contact?.profilePic;
+    // Web callers provide their real name through WebRTCService.
+    // Normal XamePage calls continue using the contacts cache.
+    final String displayName = webrtc.callerDisplayName.isNotEmpty
+        ? webrtc.callerDisplayName
+        : (contact?.name ?? userId);
+
+    final String? profilePic =
+        (contact?.isProfilePicHidden ?? false) ? null : contact?.profilePic;
 
     return Scaffold(
       backgroundColor: context.xBg,

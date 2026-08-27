@@ -117,15 +117,35 @@ class WebRTCService {
       _pendingOffer = data.offer;
       print('[WEBRTC] INCOMING CALL ID: $_currentCallId');
       isIncomingVideo = data.callType == 'video';
-      // Resolve caller display name from contacts cache
+      // Resolve caller name.
+      // Web callers provide their real name in data.caller, while
+      // normal XamePage calls continue using the contacts cache.
       final contacts = CacheService.loadContacts();
-      final match = contacts.where((c) => c['id'] == data.callerId || c['xameId'] == data.callerId).firstOrNull;
-      callerDisplayName = (match?['name'] as String?)?.isNotEmpty == true
-          ? match!['name'] as String
-          : data.callerId;
-      // Silence unknown callers
+      final match = contacts.where(
+        (c) => c['id'] == data.callerId || c['xameId'] == data.callerId,
+      ).firstOrNull;
+
+      final webCallerName =
+          (data.caller['preferredName'] ?? data.caller['displayName'])
+              ?.toString()
+              .trim();
+
+      if (webCallerName != null && webCallerName.isNotEmpty) {
+        callerDisplayName = webCallerName;
+      } else {
+        callerDisplayName = (match?['name'] as String?)?.isNotEmpty == true
+            ? match!['name'] as String
+            : data.callerId;
+      }
+
+      // A web caller has a supplied caller name even though they are
+      // not necessarily present in the recipient's contacts.
+      final isWebCaller = webCallerName != null && webCallerName.isNotEmpty;
+
+      // Silence unknown callers, except web callers whose identity/name
+      // was explicitly supplied by the web-call request.
       final settings = SettingsNotifier.currentSettings;
-      if (settings.silenceUnknown && match == null) {
+      if (settings.silenceUnknown && match == null && !isWebCaller) {
         rejectCall();
         return;
       }
