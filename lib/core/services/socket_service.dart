@@ -520,7 +520,6 @@ class SocketService {
 
   // Listen for callId assigned by server after emitting call-user
   void onCallInitiated(void Function(String callId) cb) {
-    _socket?.off('call-ringing');
     _socket?.on('call-ringing', (d) {
       final callId = d?['callId'];
       if (callId != null && callId.toString().isNotEmpty) {
