@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/services/xame_space_service.dart';
@@ -44,6 +45,11 @@ class _SpacesListScreenState extends ConsumerState<SpacesListScreen> {
     backgroundColor: XameColors.darkBg,
     appBar: AppBar(
       backgroundColor: XameColors.darkSurface,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+        tooltip: 'Back',
+        onPressed: () => context.go('/contacts'),
+      ),
       title: const Text('Spaces', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
       actions: [
         IconButton(icon: const Icon(Icons.add, color: Colors.white),

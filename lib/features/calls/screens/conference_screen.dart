@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -434,6 +435,19 @@ class _ConferenceLobby extends ConsumerWidget {
     final ctrl = TextEditingController();
     return Scaffold(
       backgroundColor: context.xBg,
+      appBar: AppBar(
+        backgroundColor: context.xBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: context.xText),
+          tooltip: 'Back',
+          onPressed: () => context.go('/contacts'),
+        ),
+        title: const Text(
+          'Conference',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
       body: Center(child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(mainAxisSize: MainAxisSize.min, children: [

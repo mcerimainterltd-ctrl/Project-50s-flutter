@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -35,6 +36,11 @@ class PublicWebProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: context.xBg,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: context.xText),
+          tooltip: 'Back',
+          onPressed: () => context.go('/contacts'),
+        ),
         title: const Text(
           'Public Web Profile',
           style: TextStyle(fontWeight: FontWeight.w800),
