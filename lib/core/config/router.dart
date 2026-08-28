@@ -22,6 +22,7 @@ import '../../features/calling/screens/incoming_call_screen.dart';
 import '../../features/calls/screens/call_history_screen.dart';
 import '../../features/contacts/screens/contact_requests_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/profile/screens/public_web_profile_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/settings_lock_screen.dart';
 import '../../core/services/settings_lock_service.dart';
@@ -187,6 +188,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         );
       }),
       GoRoute(path: '/profile',       builder: (c, s) => const ProfileScreen()),
+      GoRoute(path: '/public-web-profile', builder: (c, s) => const PublicWebProfileScreen()),
       GoRoute(path: '/pay/:xameId', builder: (c, s) {
         final user = ref.read(currentUserProvider);
         return XamePayScreen(
