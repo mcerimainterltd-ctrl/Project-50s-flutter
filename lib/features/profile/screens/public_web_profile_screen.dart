@@ -31,9 +31,9 @@ class PublicWebProfileScreen extends ConsumerWidget {
         : user.firstName;
 
     return Scaffold(
-      backgroundColor: context.xBackground,
+      backgroundColor: context.xBg,
       appBar: AppBar(
-        backgroundColor: context.xBackground,
+        backgroundColor: context.xBg,
         elevation: 0,
         title: const Text(
           'Public Web Profile',

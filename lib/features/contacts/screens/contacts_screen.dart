@@ -550,6 +550,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             style: TextStyle(color: context.xText)),
           onTap: () { Navigator.pop(context); context.go('/spaces'); }),
         ListTile(
+          leading: Icon(Icons.video_call_outlined, color: context.xMuted),
+          title: Text('Conference',
+            style: TextStyle(color: context.xText)),
+          onTap: () {
+            Navigator.pop(context);
+            context.go('/conference');
+          }),
+        ListTile(
           leading: Icon(Icons.public_rounded, color: context.xMuted),
           title: Text('Public Web Profile',
             style: TextStyle(color: context.xText)),
