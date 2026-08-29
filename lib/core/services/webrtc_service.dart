@@ -281,14 +281,17 @@ class WebRTCService {
     }
 
     await _pc!.setLocalDescription(answer);
-    // Flush buffered ICE candidates now that local description is set
+    // Disable buffering — from now on candidates are sent immediately as they arrive
+    // Also flush any that were buffered before setLocalDescription
     _iceBufferEnabled = false;
-    for (final c in _iceBuffer) {
-      _socket.emitIceCandidate(currentRemoteUserId!, {
-        'candidate': c.candidate,
-        'sdpMid': c.sdpMid,
-        'sdpMLineIndex': c.sdpMLineIndex,
-      });
+    for (final c in List.from(_iceBuffer)) {
+      if (currentRemoteUserId != null) {
+        _socket.emitIceCandidate(currentRemoteUserId!, {
+          'candidate': c.candidate,
+          'sdpMid': c.sdpMid,
+          'sdpMLineIndex': c.sdpMLineIndex,
+        });
+      }
     }
     _iceBuffer.clear();
 
