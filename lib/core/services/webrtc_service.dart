@@ -279,7 +279,18 @@ class WebRTCService {
     }
 
     await _pc!.setLocalDescription(answer);
-    _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
+
+    print('[WEBRTC] ABOUT TO EMIT MAKE-ANSWER '
+        'recipient=$currentRemoteUserId '
+        'type=${answer.type} '
+        'sdpLength=${answer.sdp?.length ?? 0}');
+
+    _socket.emitMakeAnswer(currentRemoteUserId!, {
+      'sdp': answer.sdp,
+      'type': answer.type,
+    });
+
+    print('[WEBRTC] MAKE-ANSWER EMIT COMPLETE');
     // Notify server call was accepted so CallHistory status updates
     _socket.emitCallAccepted(currentRemoteUserId!, callId: _currentCallId);
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
