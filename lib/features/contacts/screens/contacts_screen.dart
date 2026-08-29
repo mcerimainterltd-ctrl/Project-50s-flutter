@@ -478,18 +478,16 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
       backgroundColor: context.xCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => SafeArea(child: Column(
-        mainAxisSize: MainAxisSize.min, children: [
+      builder: (_) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
         SizedBox(height: 8),
         Container(width: 36, height: 4,
           decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(2))),
 
-        ListTile(
-          leading: Icon(Icons.photo_library_outlined, color: context.xMuted),
-          title: Text('My Portfolio',
-            style: TextStyle(color: context.xText)),
-          onTap: () => context.push("/gallery")),
         ListTile(
           leading: Icon(Icons.call_outlined, color: context.xMuted),
           title: Text('Calls',
@@ -576,7 +574,10 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             style: TextStyle(color: XameColors.danger)),
           onTap: () { Navigator.pop(context); _signOut(); }),
         SizedBox(height: 16),
-      ])),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
