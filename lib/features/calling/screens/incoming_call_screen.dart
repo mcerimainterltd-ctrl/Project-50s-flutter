@@ -219,10 +219,23 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                         label: "Accept",
                         color: context.xAccent,
                         onTap: () async {
+                          print('[CALL-UI] ACCEPT TAPPED isVideo=$isVideo userId=$userId');
                           if (_isPopping) return;
                           _isPopping = true;
-                          await webrtc.joinCall(isVideo);
+
+                          print('[CALL-UI] ABOUT TO CALL joinCall');
+                          try {
+                            await webrtc.joinCall(isVideo);
+                            print('[CALL-UI] joinCall RETURNED SUCCESSFULLY');
+                          } catch (e, st) {
+                            print('[CALL-UI] joinCall FAILED: $e');
+                            print('[CALL-UI] STACK: $st');
+                            _isPopping = false;
+                            return;
+                          }
+
                           if (!mounted) return;
+                          print('[CALL-UI] NAVIGATING TO ACTIVE CALL');
                           context.pushReplacement('/call/$userId?video=$isVideo&incoming=true');
                         },
                         isAccept: true,

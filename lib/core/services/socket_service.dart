@@ -499,6 +499,15 @@ class SocketService {
   }
 
   void emit(String event, dynamic data) {
+    if (event == 'make-answer') {
+      final answer = data is Map ? data['answer'] : null;
+      print('[SOCKET-DIAG] make-answer emit '
+          'connected=${_socket?.connected} '
+          'recipient=${data is Map ? data['recipientId'] : null} '
+          'type=${answer is Map ? answer['type'] : null} '
+          'sdpLength=${answer is Map ? (answer['sdp']?.toString().length ?? 0) : 0}');
+    }
+
     if (data != null) _socket?.emit(event, data);
     else _socket?.emit(event);
   }
