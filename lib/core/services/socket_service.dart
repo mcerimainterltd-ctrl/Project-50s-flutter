@@ -536,7 +536,15 @@ class SocketService {
       }
     });
   }
-  void emitMakeAnswer(String r, dynamic a)         => emit('make-answer',        {'recipientId': r, 'answer': a});
+  void emitMakeAnswer(String r, dynamic a) {
+    print('[SOCKET] emitMakeAnswer to=$r connected=${_socket?.connected} socketId=${_socket?.id}');
+    if (_socket == null || !(_socket!.connected)) {
+      print('[SOCKET] WARNING: socket not connected when emitting make-answer — queuing reconnect');
+      _socket?.connect();
+    }
+    emit('make-answer', {'recipientId': r, 'answer': a});
+    print('[SOCKET] emitMakeAnswer SENT');
+  }
   void emitIceCandidate(String r, dynamic c)       => emit('ice-candidate',      {'recipientId': r, 'candidate': c});
   void emitCallAccepted(String r, {String? callId})=> emit('call-accepted',      {'recipientId': r, if (callId != null) 'callId': callId});
   void emitCallRejected(String r, String reason, {String? callId}) =>
