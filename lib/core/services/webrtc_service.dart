@@ -255,6 +255,29 @@ class WebRTCService {
     
     // 3. Create Answer (Now it will include the tracks we added in _setup)
     var answer = await _pc!.createAnswer();
+
+    final answerSdp = answer.sdp ?? '';
+    final audioSection = answerSdp
+        .split('m=')
+        .where((section) => section.startsWith('audio '))
+        .toList();
+    final videoSection = answerSdp
+        .split('m=')
+        .where((section) => section.startsWith('video '))
+        .toList();
+
+    print('[WEBRTC] ANSWER SDP AUDIO: ${audioSection.isNotEmpty}');
+    if (audioSection.isNotEmpty) {
+      print('[WEBRTC] ANSWER AUDIO SECTION:');
+      print(audioSection.first.split('m=').first);
+    }
+
+    print('[WEBRTC] ANSWER SDP VIDEO: ${videoSection.isNotEmpty}');
+    if (videoSection.isNotEmpty) {
+      print('[WEBRTC] ANSWER VIDEO SECTION:');
+      print(videoSection.first.split('m=').first);
+    }
+
     await _pc!.setLocalDescription(answer);
     _socket.emitMakeAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type});
     // Notify server call was accepted so CallHistory status updates
