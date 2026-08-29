@@ -217,6 +217,18 @@ class WebRTCService {
     var offer = await _pc!.createOffer();
     print('[WEBRTC] OFFER CREATED type=${offer.type} sdpLength=${offer.sdp?.length ?? 0}');
     await _pc!.setLocalDescription(offer);
+    // Flush ICE buffer immediately for outgoing calls
+    _iceBufferEnabled = false;
+    for (final c in List.from(_iceBuffer)) {
+      if (currentRemoteUserId != null) {
+        _socket.emitIceCandidate(currentRemoteUserId!, {
+          'candidate': c.candidate,
+          'sdpMid': c.sdpMid,
+          'sdpMLineIndex': c.sdpMLineIndex,
+        });
+      }
+    }
+    _iceBuffer.clear();
     // Capture callId BEFORE emitting call-user.
     // The server can emit call-ringing immediately.
     _socket.onCallInitiated((id) {
