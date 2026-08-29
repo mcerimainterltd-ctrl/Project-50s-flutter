@@ -45,6 +45,8 @@ class WebRTCService {
   CallState _callState = CallState.idle;
   final SocketService _socket;
   RTCPeerConnection? _pc;
+  bool _iceBufferEnabled = false;
+  final List<RTCIceCandidate> _iceBuffer = [];
   MediaStream? localStream;
   String? currentRemoteUserId;
   String  callerDisplayName = 'Unknown';
@@ -279,7 +281,16 @@ class WebRTCService {
     }
 
     await _pc!.setLocalDescription(answer);
-    flushIce();
+    // Flush buffered ICE candidates now that local description is set
+    _iceBufferEnabled = false;
+    for (final c in _iceBuffer) {
+      _socket.emitIceCandidate(currentRemoteUserId!, {
+        'candidate': c.candidate,
+        'sdpMid': c.sdpMid,
+        'sdpMLineIndex': c.sdpMLineIndex,
+      });
+    }
+    _iceBuffer.clear();
 
     print('[WEBRTC] ABOUT TO EMIT MAKE-ANSWER '
         'recipient=$currentRemoteUserId '
@@ -352,11 +363,11 @@ class WebRTCService {
         }
       }
     };
-    bool _localDescSet = false;
-    final List<RTCIceCandidate> _iceBuffer = [];
+    _iceBufferEnabled = true;
+    _iceBuffer.clear();
     _pc!.onIceCandidate = (c) {
-      print('[WEBRTC] LOCAL ICE GENERATED candidate=${c.candidate} localDescSet=$_localDescSet');
-      if (!_localDescSet) {
+      print('[WEBRTC] LOCAL ICE GENERATED candidate=${c.candidate} buffering=$_iceBufferEnabled');
+      if (_iceBufferEnabled) {
         _iceBuffer.add(c);
         return;
       }
@@ -369,18 +380,6 @@ class WebRTCService {
         },
       );
     };
-    // Flush buffered ICE after setLocalDescription
-    void flushIce() {
-      _localDescSet = true;
-      for (final c in _iceBuffer) {
-        _socket.emitIceCandidate(currentRemoteUserId!, {
-          'candidate': c.candidate,
-          'sdpMid': c.sdpMid,
-          'sdpMLineIndex': c.sdpMLineIndex,
-        });
-      }
-      _iceBuffer.clear();
-    }
     
     _pc!.onTrack = (e) {
       print(
