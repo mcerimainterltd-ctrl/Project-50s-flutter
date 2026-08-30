@@ -1003,7 +1003,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
       BetterPlayerConfiguration(
         autoPlay: true,
         aspectRatio: 16 / 9,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         controlsConfiguration: BetterPlayerControlsConfiguration(
           enableFullscreen: true,
           enableMute: true,
@@ -1016,7 +1016,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
           progressBarHandleColor: XameColors.primary,
           progressBarBackgroundColor: Colors.white24,
         ),
-        placeholder: _thumb != null ? Image.memory(_thumb!, fit: BoxFit.cover) : null,
+        placeholder: _thumb != null ? Image.memory(_thumb!, fit: BoxFit.contain) : null,
       ),
       betterPlayerDataSource: source,
     );
