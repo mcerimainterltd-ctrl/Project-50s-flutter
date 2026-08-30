@@ -703,17 +703,17 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
       IconData icon) => Container(
     margin: const EdgeInsets.only(bottom: 0),
     decoration: BoxDecoration(
-      color: XameColors.darkCard,
+      color: context.xCard,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: XameColors.darkSurface),
+      border: Border.all(color: context.xMuted.withValues(alpha: 0.1)),
     ),
     child: TextField(
       controller: ctrl,
-      style: TextStyle(color: XameColors.darkBg, fontSize: 14),
+      style: TextStyle(color: context.xText, fontSize: 14),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.3)),
-        prefixIcon: Icon(icon, color: XameColors.darkSurface.withValues(alpha: 0.3), size: 18),
+        hintStyle: TextStyle(color: context.xMuted.withValues(alpha: 0.3)),
+        prefixIcon: Icon(icon, color: context.xMuted.withValues(alpha: 0.3), size: 18),
         border: InputBorder.none,
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 14, vertical: 12),
