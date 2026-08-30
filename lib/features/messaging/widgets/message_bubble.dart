@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -974,7 +975,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
 
       if (cached != null) {
         try {
-          final codec = await instantiateImageCodec(cached);
+          final codec = await ui.instantiateImageCodec(cached);
           final frame = await codec.getNextFrame();
           final width = frame.image.width;
           final height = frame.image.height;
@@ -1026,7 +1027,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
 
       if (bytes != null) {
         try {
-          final codec = await instantiateImageCodec(bytes);
+          final codec = await ui.instantiateImageCodec(bytes);
           final frame = await codec.getNextFrame();
           final width = frame.image.width;
           final height = frame.image.height;
