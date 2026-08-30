@@ -1119,3 +1119,366 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
     );
   }
 }
+
+// ── Group Chat Screen ─────────────────────────────────────────────────────────
+class GroupChatScreen extends StatefulWidget {
+  final XameGroup group;
+  final String currentUserId;
+  final GroupsService service;
+  const GroupChatScreen({super.key, required this.group,
+      required this.currentUserId, required this.service});
+  @override State<GroupChatScreen> createState() => _GroupChatScreenState();
+}
+
+class _GroupChatScreenState extends State<GroupChatScreen> {
+  final _ctrl     = TextEditingController();
+  final _scroll   = ScrollController();
+  bool _loading   = true;
+  bool _typing    = false;
+  String? _typer;
+  List<GroupMessage> _msgs = [];
+  late XameGroup _group;
+
+  @override
+  void initState() {
+    super.initState();
+    _group = widget.group;
+    _load();
+    widget.service.onMessage = (msg, groupId) {
+      if (groupId == _group.groupId && mounted) {
+        setState(() => _msgs.add(msg));
+        _scrollDown();
+      }
+    };
+    widget.service.onTyping = (groupId, name) {
+      if (groupId == _group.groupId && mounted) {
+        setState(() { _typing = true; _typer = name; });
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) setState(() { _typing = false; _typer = null; });
+        });
+      }
+    };
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose(); _scroll.dispose();
+    widget.service.onMessage = null;
+    widget.service.onTyping  = null;
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    await widget.service.loadMessages(_group.groupId);
+    if (mounted) setState(() {
+      _msgs    = List.from(widget.service.activeMessages);
+      _loading = false;
+    });
+    _scrollDown();
+  }
+
+  void _scrollDown() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(_scroll.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut);
+      }
+    });
+  }
+
+  void _send() {
+    final text = _ctrl.text.trim();
+    if (text.isEmpty) return;
+    widget.service.sendMessage(_group.groupId, text);
+    _ctrl.clear();
+  }
+
+  bool get _isAdmin =>
+      _group.createdBy == widget.currentUserId ||
+      _group.members.any((m) =>
+          m.userId == widget.currentUserId && m.role == 'admin');
+
+  String _fmt(int ts) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(ts).toLocal();
+    final h  = dt.hour.toString().padLeft(2, '0');
+    final m  = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: context.xBg,
+    appBar: AppBar(
+      backgroundColor: context.xCard,
+      elevation: 0,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back, color: context.xText),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: GestureDetector(
+        onTap: () => _showGroupInfo(),
+        child: Row(children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: context.xPrimary.withValues(alpha: 0.2),
+            backgroundImage: _group.avatar != null
+                ? NetworkImage(_group.avatar!) : null,
+            child: _group.avatar == null
+                ? Text(_group.name.isNotEmpty ? _group.name[0].toUpperCase() : 'G',
+                    style: TextStyle(color: context.xPrimary,
+                        fontWeight: FontWeight.w700))
+                : null,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(_group.name, style: TextStyle(color: context.xText,
+                  fontSize: 15, fontWeight: FontWeight.w700)),
+              Text('${_group.members.length} members',
+                  style: TextStyle(color: context.xMuted, fontSize: 12)),
+            ],
+          )),
+        ]),
+      ),
+      actions: [
+        if (_isAdmin)
+          IconButton(
+            icon: Icon(Icons.admin_panel_settings_outlined,
+                color: context.xPrimary),
+            onPressed: _showGroupInfo,
+          ),
+      ],
+    ),
+    body: Column(children: [
+      Expanded(
+        child: _loading
+            ? Center(child: CircularProgressIndicator(color: context.xPrimary))
+            : _msgs.isEmpty
+                ? Center(child: Text('No messages yet. Say hello! 👋',
+                    style: TextStyle(color: context.xMuted)))
+                : ListView.builder(
+                    controller: _scroll,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    itemCount: _msgs.length,
+                    itemBuilder: (_, i) {
+                      final msg   = _msgs[i];
+                      final isMe  = msg.senderId == widget.currentUserId;
+                      final showName = !isMe && (i == 0 ||
+                          _msgs[i - 1].senderId != msg.senderId);
+                      return Align(
+                        alignment: isMe
+                            ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.75),
+                          child: Column(
+                            crossAxisAlignment: isMe
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              if (showName)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 4, bottom: 2),
+                                  child: Text(msg.senderName,
+                                      style: TextStyle(
+                                          color: context.xPrimary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700)),
+                                ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isMe
+                                      ? context.xPrimary
+                                      : context.xCard,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(14),
+                                    topRight: const Radius.circular(14),
+                                    bottomLeft: Radius.circular(isMe ? 14 : 4),
+                                    bottomRight: Radius.circular(isMe ? 4 : 14),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Flexible(child: Text(msg.text ?? '',
+                                        style: TextStyle(
+                                            color: isMe
+                                                ? Colors.white
+                                                : context.xText,
+                                            fontSize: 14))),
+                                    const SizedBox(width: 6),
+                                    Text(_fmt(msg.ts),
+                                        style: TextStyle(
+                                            color: isMe
+                                                ? Colors.white70
+                                                : context.xMuted,
+                                            fontSize: 10)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+      ),
+      if (_typing && _typer != null)
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 4),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text('$_typer is typing...',
+                style: TextStyle(color: context.xMuted, fontSize: 12,
+                    fontStyle: FontStyle.italic)),
+          ),
+        ),
+      Container(
+        padding: EdgeInsets.only(
+            left: 12, right: 8, top: 8,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 8),
+        decoration: BoxDecoration(
+          color: context.xCard,
+          border: Border(top: BorderSide(
+              color: context.xMuted.withValues(alpha: 0.1))),
+        ),
+        child: Row(children: [
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              style: TextStyle(color: context.xText, fontSize: 14),
+              onChanged: (_) => widget.service.emitTyping(
+                  _group.groupId, widget.currentUserId),
+              decoration: InputDecoration(
+                hintText: 'Message ${_group.name}...',
+                hintStyle: TextStyle(color: context.xMuted),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 4, vertical: 8),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.send_rounded, color: context.xPrimary),
+            onPressed: _send,
+          ),
+        ]),
+      ),
+    ]),
+  );
+
+  void _showGroupInfo() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.xCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _GroupInfoPanel(
+        group: _group,
+        currentUserId: widget.currentUserId,
+        service: widget.service,
+        isAdmin: _isAdmin,
+        onUpdated: (g) => setState(() => _group = g),
+      ),
+    );
+  }
+}
+
+// ── Group Info Panel ──────────────────────────────────────────────────────────
+class _GroupInfoPanel extends StatefulWidget {
+  final XameGroup group;
+  final String currentUserId;
+  final GroupsService service;
+  final bool isAdmin;
+  final void Function(XameGroup) onUpdated;
+  const _GroupInfoPanel({required this.group, required this.currentUserId,
+      required this.service, required this.isAdmin, required this.onUpdated});
+  @override State<_GroupInfoPanel> createState() => _GroupInfoPanelState();
+}
+
+class _GroupInfoPanelState extends State<_GroupInfoPanel> {
+  late XameGroup _group;
+
+  @override
+  void initState() { super.initState(); _group = widget.group; }
+
+  Future<void> _removeMember(String userId) async {
+    final ok = await widget.service.removeMember(_group.groupId, userId);
+    if (ok && mounted) {
+      setState(() => _group.members.removeWhere((m) => m.userId == userId));
+      widget.onUpdated(_group);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => DraggableScrollableSheet(
+    expand: false, initialChildSize: 0.6,
+    builder: (_, sc) => ListView(
+      controller: sc,
+      padding: const EdgeInsets.all(20),
+      children: [
+        Center(child: Container(width: 40, height: 4,
+            decoration: BoxDecoration(color: context.xMuted.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2)))),
+        const SizedBox(height: 16),
+        // Group avatar
+        Center(child: CircleAvatar(
+          radius: 40,
+          backgroundColor: context.xPrimary.withValues(alpha: 0.2),
+          backgroundImage: _group.avatar != null
+              ? NetworkImage(_group.avatar!) : null,
+          child: _group.avatar == null
+              ? Text(_group.name.isNotEmpty ? _group.name[0].toUpperCase() : 'G',
+                  style: TextStyle(color: context.xPrimary, fontSize: 28,
+                      fontWeight: FontWeight.w700))
+              : null,
+        )),
+        const SizedBox(height: 12),
+        Center(child: Text(_group.name, style: TextStyle(color: context.xText,
+            fontSize: 20, fontWeight: FontWeight.w700))),
+        if (_group.description != null && _group.description!.isNotEmpty)
+          Center(child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(_group.description!,
+                style: TextStyle(color: context.xMuted, fontSize: 13),
+                textAlign: TextAlign.center),
+          )),
+        const SizedBox(height: 20),
+        Text('${_group.members.length} Members',
+            style: TextStyle(color: context.xMuted, fontSize: 12,
+                fontWeight: FontWeight.w700, letterSpacing: 1)),
+        const SizedBox(height: 8),
+        ..._group.members.map((m) => ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            backgroundColor: context.xPrimary.withValues(alpha: 0.15),
+            child: Text(m.name.isNotEmpty ? m.name[0].toUpperCase() : '?',
+                style: TextStyle(color: context.xPrimary,
+                    fontWeight: FontWeight.w700)),
+          ),
+          title: Text(m.name, style: TextStyle(color: context.xText,
+              fontSize: 14, fontWeight: FontWeight.w600)),
+          subtitle: Text(m.role == 'admin' ? '👑 Admin' : 'Member',
+              style: TextStyle(color: m.role == 'admin'
+                  ? context.xPrimary : context.xMuted, fontSize: 12)),
+          trailing: widget.isAdmin && m.userId != widget.currentUserId
+              ? IconButton(
+                  icon: Icon(Icons.remove_circle_outline,
+                      color: Colors.redAccent, size: 20),
+                  onPressed: () => _removeMember(m.userId),
+                )
+              : null,
+        )),
+      ],
+    ),
+  );
+}

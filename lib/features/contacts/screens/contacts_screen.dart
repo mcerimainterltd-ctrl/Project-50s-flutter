@@ -524,7 +524,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
               contacts: (ref.read(contactsProvider).value ?? []).map((c) => {"id": c.id, "name": c.name}).toList(),
               currentUserId: user.xameId,
               onOpenChat: (group) {
-                debugPrint("Open group chat: ${group.groupId}");
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => GroupChatScreen(
+                    group: group,
+                    currentUserId: user.xameId,
+                    service: svc,
+                  ),
+                ));
               },
             );
           }),
