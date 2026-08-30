@@ -1080,23 +1080,22 @@ class _VideoBubbleState extends State<_VideoBubble> {
       BetterPlayerConfiguration(
         autoPlay: true,
 
-        // The CHAT VIDEO BUBBLE is intentionally portrait.
-        aspectRatio: 9 / 16,
+        // Fixed, compact portrait CHAT frame.
+        aspectRatio: 4 / 5,
 
         // Never crop the uploaded video.
         fit: BoxFit.contain,
 
-        eventListener: (event) {
-          if (event.betterPlayerEventType == BetterPlayerEventType.finished &&
-              mounted) {
-            _playerCtrl?.dispose();
-            setState(() {
-              _playerCtrl = null;
-              _playing = false;
-            });
-          }
-        },
+        // Keep fullscreen portrait too.
+        deviceOrientationsOnFullScreen: const [
+          DeviceOrientation.portraitUp,
+        ],
+        deviceOrientationsAfterFullScreen: const [
+          DeviceOrientation.portraitUp,
+        ],
 
+        // Do NOT destroy the video/controller when playback finishes.
+        // Leaving the controller alive allows the user to replay it.
         controlsConfiguration:
             BetterPlayerControlsConfiguration(
           enableFullscreen: true,
@@ -1121,6 +1120,11 @@ class _VideoBubbleState extends State<_VideoBubble> {
       betterPlayerDataSource: _dataSource(),
     );
 
+    if (!mounted) {
+      controller.dispose();
+      return;
+    }
+
     setState(() {
       _playerCtrl = controller;
       _playing = true;
@@ -1133,12 +1137,11 @@ class _VideoBubbleState extends State<_VideoBubble> {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width * 0.72;
-
-    // Portrait chat frame.
-    final maxH = MediaQuery.of(context).size.height * 0.55;
-    final portraitH = w * 16 / 9;
-    final h = portraitH.clamp(220.0, maxH).toDouble();
+    // Compact portrait chat video frame.
+    // Keep the bubble substantially smaller than the previous 9:16 frame.
+    final w = MediaQuery.of(context).size.width * 0.58;
+    final maxH = MediaQuery.of(context).size.height * 0.44;
+    final h = (w * 5 / 4).clamp(190.0, maxH).toDouble();
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
