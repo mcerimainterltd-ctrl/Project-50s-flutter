@@ -1083,8 +1083,8 @@ class _VideoBubbleState extends State<_VideoBubble> {
         // Fixed, compact portrait CHAT frame.
         aspectRatio: 4 / 5,
 
-        // Never crop the uploaded video.
-        fit: BoxFit.contain,
+        // Fill the portrait chat frame; crop only as needed to fill the frame.
+        fit: BoxFit.cover,
 
         // Keep fullscreen portrait too.
         deviceOrientationsOnFullScreen: const [
@@ -1113,7 +1113,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
         placeholder: _thumb != null
             ? Image.memory(
                 _thumb!,
-                fit: BoxFit.contain,
+                fit: BoxFit.cover,
               )
             : null,
       ),
@@ -1171,7 +1171,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
                     else if (_thumb != null)
                       Image.memory(
                         _thumb!,
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover,
                       )
                     else
                       Container(
