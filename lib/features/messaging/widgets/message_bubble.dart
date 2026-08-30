@@ -953,6 +953,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
   Uint8List? _thumb;
   bool _thumbLoading = true;
   bool _playing = false;
+  double _videoAspectRatio = 16 / 9;
   BetterPlayerController? _playerCtrl;
 
   @override
@@ -969,42 +970,134 @@ class _VideoBubbleState extends State<_VideoBubble> {
 
   Future<void> _loadThumbnail() async {
     if (_videoThumbCache.containsKey(widget.url)) {
-      if (mounted) setState(() {
-        _thumb = _videoThumbCache[widget.url];
-        _thumbLoading = false;
-      });
+      final cached = _videoThumbCache[widget.url];
+
+      if (cached != null) {
+        try {
+          final codec = await instantiateImageCodec(cached);
+          final frame = await codec.getNextFrame();
+          final width = frame.image.width;
+          final height = frame.image.height;
+
+          if (width > 0 && height > 0 && mounted) {
+            setState(() {
+              _videoAspectRatio = width / height;
+              _thumb = cached;
+              _thumbLoading = false;
+            });
+            return;
+          }
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        setState(() {
+          _thumb = cached;
+          _thumbLoading = false;
+        });
+      }
       return;
     }
+
     try {
-      final source = (widget.localPath != null && File(widget.localPath!).existsSync())
-          ? widget.localPath! : _resolveUrl(widget.url);
+      final source =
+          (widget.localPath != null &&
+                  File(widget.localPath!).existsSync())
+              ? widget.localPath!
+              : _resolveUrl(widget.url);
+
       if (source.isEmpty) {
         _videoThumbCache[widget.url] = null;
-        if (mounted) setState(() => _thumbLoading = false);
+        if (mounted) {
+          setState(() => _thumbLoading = false);
+        }
         return;
       }
+
       final bytes = await VideoThumbnail.thumbnailData(
-        video: source, imageFormat: ImageFormat.JPEG,
-        maxWidth: 480, quality: 72, timeMs: 0);
+        video: source,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 480,
+        quality: 72,
+        timeMs: 0,
+      );
+
       _videoThumbCache[widget.url] = bytes;
-      if (mounted) setState(() { _thumb = bytes; _thumbLoading = false; });
+
+      if (bytes != null) {
+        try {
+          final codec = await instantiateImageCodec(bytes);
+          final frame = await codec.getNextFrame();
+          final width = frame.image.width;
+          final height = frame.image.height;
+
+          if (width > 0 && height > 0 && mounted) {
+            setState(() {
+              _videoAspectRatio = width / height;
+              _thumb = bytes;
+              _thumbLoading = false;
+            });
+            return;
+          }
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        setState(() {
+          _thumb = bytes;
+          _thumbLoading = false;
+        });
+      }
     } catch (_) {
       _videoThumbCache[widget.url] = null;
-      if (mounted) setState(() => _thumbLoading = false);
+
+      if (mounted) {
+        setState(() => _thumbLoading = false);
+      }
     }
   }
 
-  void _playInline() {
-    final source = (widget.localPath != null && File(widget.localPath!).existsSync())
-        ? BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.localPath!)
-        : BetterPlayerDataSource(BetterPlayerDataSourceType.network, _resolveUrl(widget.url));
+  BetterPlayerDataSource _dataSource() {
+    if (widget.localPath != null &&
+        File(widget.localPath!).existsSync()) {
+      return BetterPlayerDataSource(
+        BetterPlayerDataSourceType.file,
+        widget.localPath!,
+      );
+    }
 
-    _playerCtrl = BetterPlayerController(
+    return BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      _resolveUrl(widget.url),
+    );
+  }
+
+  void _playInline() {
+    _playerCtrl?.dispose();
+
+    final controller = BetterPlayerController(
       BetterPlayerConfiguration(
         autoPlay: true,
-        aspectRatio: 16 / 9,
+
+        // The CHAT VIDEO BUBBLE is intentionally portrait.
+        aspectRatio: 9 / 16,
+
+        // Never crop the uploaded video.
         fit: BoxFit.contain,
-        controlsConfiguration: BetterPlayerControlsConfiguration(
+
+        eventListener: (event) {
+          if (event.betterPlayerEventType == BetterPlayerEventType.finished &&
+              mounted) {
+            _playerCtrl?.dispose();
+            setState(() {
+              _playerCtrl = null;
+              _playing = false;
+            });
+          }
+        },
+
+        controlsConfiguration:
+            BetterPlayerControlsConfiguration(
           enableFullscreen: true,
           enableMute: true,
           enablePlayPause: true,
@@ -1016,47 +1109,108 @@ class _VideoBubbleState extends State<_VideoBubble> {
           progressBarHandleColor: XameColors.primary,
           progressBarBackgroundColor: Colors.white24,
         ),
-        placeholder: _thumb != null ? Image.memory(_thumb!, fit: BoxFit.contain) : null,
+
+        placeholder: _thumb != null
+            ? Image.memory(
+                _thumb!,
+                fit: BoxFit.contain,
+              )
+            : null,
       ),
-      betterPlayerDataSource: source,
+      betterPlayerDataSource: _dataSource(),
     );
-    setState(() => _playing = true);
+
+    setState(() {
+      _playerCtrl = controller;
+      _playing = true;
+    });
+  }
+
+  void _replayVideo() {
+    _playInline();
   }
 
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width * 0.72;
-    final h = w * 9 / 16;
+
+    // Portrait chat frame.
+    final maxH = MediaQuery.of(context).size.height * 0.55;
+    final portraitH = w * 16 / 9;
+    final h = portraitH.clamp(220.0, maxH).toDouble();
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(14),
+      ),
       child: SizedBox(
-        width: w, height: h,
+        width: w,
+        height: h,
         child: _playing && _playerCtrl != null
-          ? BetterPlayer(controller: _playerCtrl!)
-          : GestureDetector(
-              onTap: _playInline,
-              child: Stack(fit: StackFit.expand, children: [
-                if (_thumbLoading)
-                  _Shimmer(width: w, height: h, radius: 0)
-                else if (_thumb != null)
-                  Image.memory(_thumb!, fit: BoxFit.cover)
-                else
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft, end: Alignment.bottomRight,
-                        colors: [context.xBg, context.xSurface, context.xCard])),
-                    child: Center(child: Icon(Icons.movie_outlined,
-                        color: context.xMuted.withValues(alpha: 0.5), size: 48))),
-                Center(child: Container(
-                  width: 52, height: 52,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: Colors.black54),
-                  child: const Icon(Icons.play_arrow_rounded,
-                      color: Colors.white, size: 32))),
-              ]),
-            ),
+            ? GestureDetector(
+                onDoubleTap: _replayVideo,
+                child: BetterPlayer(
+                  controller: _playerCtrl!,
+                ),
+              )
+            : GestureDetector(
+                onTap: _playInline,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (_thumbLoading)
+                      _Shimmer(
+                        width: w,
+                        height: h,
+                        radius: 0,
+                      )
+                    else if (_thumb != null)
+                      Image.memory(
+                        _thumb!,
+                        fit: BoxFit.contain,
+                      )
+                    else
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              context.xBg,
+                              context.xSurface,
+                              context.xCard,
+                            ],
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.movie_outlined,
+                            color: context.xMuted.withValues(
+                              alpha: 0.5,
+                            ),
+                            size: 48,
+                          ),
+                        ),
+                      ),
+
+                    Center(
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black54,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }
