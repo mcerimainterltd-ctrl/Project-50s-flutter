@@ -1155,8 +1155,20 @@ class _VideoBubbleState extends State<_VideoBubble> {
     final sourceRect =
         box.localToGlobal(Offset.zero) & box.size;
 
-    await Navigator.of(context).push(
-      PageRouteBuilder(
+    final position =
+        controller.videoPlayerController?.value.position ??
+            Duration.zero;
+
+    // Keep Mode 1 alive, but pause it while Mode 2 owns playback.
+    if (controller.isPlaying() == true) {
+      await controller.pause();
+    }
+
+    if (!mounted) return;
+
+    final returnedPosition =
+        await Navigator.of(context).push<Duration>(
+      PageRouteBuilder<Duration>(
         opaque: false,
         barrierColor: Colors.transparent,
         transitionDuration:
@@ -1165,8 +1177,10 @@ class _VideoBubbleState extends State<_VideoBubble> {
             const Duration(milliseconds: 300),
         pageBuilder: (_, animation, __) =>
             _MagnifiedVideoPage(
-          controller: controller,
+          dataSource: _dataSource(),
+          startAt: position,
           sourceRect: sourceRect,
+          thumbnail: _thumb,
         ),
         transitionsBuilder: (_, animation, __, child) =>
             child,
@@ -1175,10 +1189,23 @@ class _VideoBubbleState extends State<_VideoBubble> {
 
     if (!mounted) return;
 
-    // The same BetterPlayer controller remains owned by
-    // this bubble. Rebuild the bubble after Mode 2 closes
-    // so its original player is immediately restored.
-    setState(() {});
+    // Restore Mode 1's controller instead of replacing it.
+    if (returnedPosition != null &&
+        controller.videoPlayerController != null) {
+      try {
+        await controller.seekTo(returnedPosition);
+      } catch (_) {}
+    }
+
+    try {
+      if (controller.isPlaying() == false) {
+        await controller.play();
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -1198,7 +1225,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
         width: w,
         height: h,
         child: _playing && _playerCtrl != null
-            ? GestureDetector(
+            ? BetterPlayerMultipleGestureDetector(
                 onDoubleTap: _openMagnifiedMode,
                 child: BetterPlayer(
                   controller: _playerCtrl!,
@@ -1268,14 +1295,88 @@ class _VideoBubbleState extends State<_VideoBubble> {
   }
 }
 
-class _MagnifiedVideoPage extends StatelessWidget {
-  final BetterPlayerController controller;
+class _MagnifiedVideoPage extends StatefulWidget {
+  final BetterPlayerDataSource dataSource;
+  final Duration startAt;
   final Rect sourceRect;
+  final Uint8List? thumbnail;
 
   const _MagnifiedVideoPage({
-    required this.controller,
+    required this.dataSource,
+    required this.startAt,
     required this.sourceRect,
+    required this.thumbnail,
   });
+
+  @override
+  State<_MagnifiedVideoPage> createState() =>
+      _MagnifiedVideoPageState();
+}
+
+class _MagnifiedVideoPageState
+    extends State<_MagnifiedVideoPage> {
+  BetterPlayerController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = BetterPlayerController(
+      BetterPlayerConfiguration(
+        autoPlay: true,
+        aspectRatio: 4 / 5,
+        fit: BoxFit.cover,
+        autoDispose: true,
+        deviceOrientationsOnFullScreen: const [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ],
+        deviceOrientationsAfterFullScreen: const [
+          DeviceOrientation.portraitUp,
+        ],
+        controlsConfiguration:
+            BetterPlayerControlsConfiguration(
+          enableFullscreen: true,
+          enableMute: true,
+          enablePlayPause: true,
+          enableProgressBar: true,
+          enableSkips: false,
+          controlBarColor: Colors.black54,
+          iconsColor: Colors.white,
+          progressBarPlayedColor: XameColors.primary,
+          progressBarHandleColor: XameColors.primary,
+          progressBarBackgroundColor: Colors.white24,
+        ),
+        placeholder: widget.thumbnail != null
+            ? Image.memory(
+                widget.thumbnail!,
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
+      betterPlayerDataSource:
+          BetterPlayerDataSource(
+        widget.dataSource.type,
+        widget.dataSource.url,
+        startAt: widget.startAt,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    _controller = null;
+    super.dispose();
+  }
+
+  void _close() {
+    final position =
+        _controller?.videoPlayerController?.value.position ??
+            widget.startAt;
+
+    Navigator.of(context).pop(position);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1290,11 +1391,12 @@ class _MagnifiedVideoPage extends StatelessWidget {
       body: AnimatedBuilder(
         animation: routeAnimation,
         builder: (context, child) {
-          final t = Curves.easeOutCubic
-              .transform(routeAnimation.value);
+          final t = Curves.easeOutCubic.transform(
+            routeAnimation.value,
+          );
 
           final rect = Rect.lerp(
-            sourceRect,
+            widget.sourceRect,
             targetRect,
             t,
           )!;
@@ -1304,27 +1406,25 @@ class _MagnifiedVideoPage extends StatelessWidget {
             children: [
               IgnorePointer(
                 child: ColoredBox(
-                  color: Colors.black.withValues(alpha: t),
+                  color: Colors.black.withValues(
+                    alpha: t,
+                  ),
                 ),
               ),
 
               Positioned.fromRect(
                 rect: rect,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(
-                    14 * (1 - t),
-                  ),
+                  borderRadius:
+                      BorderRadius.circular(14 * (1 - t)),
                   child: SizedBox.expand(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: sourceRect.width,
-                        height: sourceRect.height,
-                        child: BetterPlayer(
-                          controller: controller,
-                        ),
-                      ),
-                    ),
+                    child: _controller == null
+                        ? const Center(
+                            child: CircularProgressIndicator(),
+                          )
+                        : BetterPlayer(
+                            controller: _controller!,
+                          ),
                   ),
                 ),
               ),
@@ -1343,8 +1443,7 @@ class _MagnifiedVideoPage extends StatelessWidget {
                       child: InkWell(
                         customBorder:
                             const CircleBorder(),
-                        onTap: () =>
-                            Navigator.of(context).pop(),
+                        onTap: _close,
                         child: const Padding(
                           padding: EdgeInsets.all(10),
                           child: Icon(
