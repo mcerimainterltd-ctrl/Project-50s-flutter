@@ -1135,8 +1135,43 @@ class _VideoBubbleState extends State<_VideoBubble> {
     _playInline();
   }
 
+  Future<void> _openMagnifiedMode() async {
+    if (_playerCtrl == null) {
+      _playInline();
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+    }
+
+    final controller = _playerCtrl;
+    if (controller == null || !mounted) return;
+
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+
+    final sourceRect =
+        box.localToGlobal(Offset.zero) & box.size;
+
+    await Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        transitionDuration:
+            const Duration(milliseconds: 350),
+        reverseTransitionDuration:
+            const Duration(milliseconds: 300),
+        pageBuilder: (_, animation, __) =>
+            _MagnifiedVideoPage(
+          controller: controller,
+          sourceRect: sourceRect,
+        ),
+        transitionsBuilder: (_, animation, __, child) =>
+            child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+
     // Compact portrait chat video frame.
     // Keep the bubble substantially smaller than the previous 9:16 frame.
     final w = MediaQuery.of(context).size.width * 0.58;
@@ -1152,13 +1187,14 @@ class _VideoBubbleState extends State<_VideoBubble> {
         height: h,
         child: _playing && _playerCtrl != null
             ? GestureDetector(
-                onDoubleTap: _replayVideo,
+                onDoubleTap: _openMagnifiedMode,
                 child: BetterPlayer(
                   controller: _playerCtrl!,
                 ),
               )
             : GestureDetector(
                 onTap: _playInline,
+                onDoubleTap: _openMagnifiedMode,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -1215,6 +1251,103 @@ class _VideoBubbleState extends State<_VideoBubble> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+}
+
+class _MagnifiedVideoPage extends StatelessWidget {
+  final BetterPlayerController controller;
+  final Rect sourceRect;
+
+  const _MagnifiedVideoPage({
+    required this.controller,
+    required this.sourceRect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final targetRect = Offset.zero & screenSize;
+
+    final routeAnimation =
+        ModalRoute.of(context)!.animation!;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: AnimatedBuilder(
+        animation: routeAnimation,
+        builder: (context, child) {
+          final t = Curves.easeOutCubic
+              .transform(routeAnimation.value);
+
+          final rect = Rect.lerp(
+            sourceRect,
+            targetRect,
+            t,
+          )!;
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              IgnorePointer(
+                child: ColoredBox(
+                  color: Colors.black.withValues(alpha: t),
+                ),
+              ),
+
+              Positioned.fromRect(
+                rect: rect,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    14 * (1 - t),
+                  ),
+                  child: SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: sourceRect.width,
+                        height: sourceRect.height,
+                        child: BetterPlayer(
+                          controller: controller,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              if (t > 0.85)
+                Positioned(
+                  top:
+                      MediaQuery.of(context).padding.top + 12,
+                  right: 12,
+                  child: Opacity(
+                    opacity: ((t - 0.85) / 0.15)
+                        .clamp(0.0, 1.0),
+                    child: Material(
+                      color: Colors.black54,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder:
+                            const CircleBorder(),
+                        onTap: () =>
+                            Navigator.of(context).pop(),
+                        child: const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
