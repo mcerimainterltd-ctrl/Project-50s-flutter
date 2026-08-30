@@ -1086,9 +1086,13 @@ class _VideoBubbleState extends State<_VideoBubble> {
         // Fill the portrait chat frame; crop only as needed to fill the frame.
         fit: BoxFit.cover,
 
-        // Keep fullscreen portrait too.
+        // XamePage modes:
+        // Mode 1 = portrait bubble.
+        // Mode 2 = portrait magnified presentation.
+        // Mode 3 = normal BetterPlayer fullscreen in landscape.
         deviceOrientationsOnFullScreen: const [
-          DeviceOrientation.portraitUp,
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
         ],
         deviceOrientationsAfterFullScreen: const [
           DeviceOrientation.portraitUp,
@@ -1138,11 +1142,12 @@ class _VideoBubbleState extends State<_VideoBubble> {
   Future<void> _openMagnifiedMode() async {
     if (_playerCtrl == null) {
       _playInline();
-      await Future<void>.delayed(const Duration(milliseconds: 80));
     }
 
+    if (!mounted) return;
+
     final controller = _playerCtrl;
-    if (controller == null || !mounted) return;
+    if (controller == null) return;
 
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
@@ -1167,6 +1172,13 @@ class _VideoBubbleState extends State<_VideoBubble> {
             child,
       ),
     );
+
+    if (!mounted) return;
+
+    // The same BetterPlayer controller remains owned by
+    // this bubble. Rebuild the bubble after Mode 2 closes
+    // so its original player is immediately restored.
+    setState(() {});
   }
 
   @override
