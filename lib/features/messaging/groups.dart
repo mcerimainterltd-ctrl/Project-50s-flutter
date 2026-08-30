@@ -10,12 +10,14 @@ import 'package:xamepage/core/theme/app_theme.dart';
 // ── Models ────────────────────────────────────────────────────────────────────
 class GroupMember {
   final String userId, name, role;
+  final String? addedBy;
   const GroupMember({required this.userId, required this.name,
-      required this.role});
+      required this.role, this.addedBy});
   factory GroupMember.fromJson(Map<String, dynamic> j) => GroupMember(
-    userId: j['userId'] as String,
-    name:   j['name']   as String? ?? '',
-    role:   j['role']   as String? ?? 'member',
+    userId:  j['userId']  as String,
+    name:    j['name']    as String? ?? '',
+    role:    j['role']    as String? ?? 'member',
+    addedBy: j['addedBy'] as String?,
   );
 }
 
@@ -151,6 +153,38 @@ class GroupsService {
 
   void emitTyping(String groupId, String name) =>
       _socket.emitGroupTyping(groupId, _userId, name);
+
+  Future<bool> leaveGroup(String groupId) async {
+    try {
+      final res = await http.post(
+        Uri.parse('\${AppConstants.serverUrl}/api/groups/\$groupId/leave'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': _userId}),
+      );
+      final d = jsonDecode(res.body);
+      if (d['success'] == true) {
+        _groups.removeWhere((g) => g.groupId == groupId);
+        return true;
+      }
+    } catch (e) { debugPrint('[Groups] Leave error: \$e'); }
+    return false;
+  }
+
+  Future<bool> deleteGroup(String groupId) async {
+    try {
+      final res = await http.delete(
+        Uri.parse('\${AppConstants.serverUrl}/api/groups/\$groupId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': _userId}),
+      );
+      final d = jsonDecode(res.body);
+      if (d['success'] == true) {
+        _groups.removeWhere((g) => g.groupId == groupId);
+        return true;
+      }
+    } catch (e) { debugPrint('[Groups] Delete error: \$e'); }
+    return false;
+  }
 
   Future<bool> addMember(String groupId, String userId) async {
     try {
@@ -1467,9 +1501,21 @@ class _GroupInfoPanelState extends State<_GroupInfoPanel> {
           ),
           title: Text(m.name, style: TextStyle(color: context.xText,
               fontSize: 14, fontWeight: FontWeight.w600)),
-          subtitle: Text(m.role == 'admin' ? '👑 Admin' : 'Member',
-              style: TextStyle(color: m.role == 'admin'
-                  ? context.xPrimary : context.xMuted, fontSize: 12)),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(m.role == 'admin' ? '👑 Admin' : 'Member',
+                  style: TextStyle(color: m.role == 'admin'
+                      ? context.xPrimary : context.xMuted, fontSize: 12)),
+              if (m.addedBy != null && m.addedBy!.isNotEmpty &&
+                  m.userId != _group.createdBy)
+                Text('Added by ${_group.members.firstWhere(
+                    (x) => x.userId == m.addedBy,
+                    orElse: () => GroupMember(userId: '', name: m.addedBy!, role: 'member')).name}',
+                    style: TextStyle(color: context.xMuted.withValues(alpha: 0.6),
+                        fontSize: 11)),
+            ],
+          ),
           trailing: widget.isAdmin && m.userId != widget.currentUserId
               ? IconButton(
                   icon: Icon(Icons.remove_circle_outline,
@@ -1478,6 +1524,83 @@ class _GroupInfoPanelState extends State<_GroupInfoPanel> {
                 )
               : null,
         )),
+        const SizedBox(height: 20),
+        // Leave / Delete group
+        if (_group.createdBy != widget.currentUserId)
+          SizedBox(width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.exit_to_app, color: Colors.orangeAccent),
+              label: const Text('Leave Group',
+                  style: TextStyle(color: Colors.orangeAccent)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.orangeAccent),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    backgroundColor: context.xCard,
+                    title: Text('Leave Group?',
+                        style: TextStyle(color: context.xText)),
+                    content: Text('You will no longer receive messages from this group.',
+                        style: TextStyle(color: context.xMuted)),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false),
+                          child: Text('Cancel', style: TextStyle(color: context.xMuted))),
+                      TextButton(onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Leave', style: TextStyle(color: Colors.orangeAccent))),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  final ok = await widget.service.leaveGroup(_group.groupId);
+                  if (ok && context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+                }
+              },
+            ),
+          ),
+        if (widget.isAdmin)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: SizedBox(width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                label: const Text('Delete Group',
+                    style: TextStyle(color: Colors.redAccent)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.redAccent),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      backgroundColor: context.xCard,
+                      title: Text('Delete Group?',
+                          style: TextStyle(color: context.xText)),
+                      content: Text('This will permanently delete the group and all messages.',
+                          style: TextStyle(color: context.xMuted)),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context, false),
+                            child: Text('Cancel', style: TextStyle(color: context.xMuted))),
+                        TextButton(onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Delete', style: TextStyle(color: Colors.redAccent))),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    final ok = await widget.service.deleteGroup(_group.groupId);
+                    if (ok && context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+                  }
+                },
+              ),
+            ),
+          ),
       ],
     ),
   );
