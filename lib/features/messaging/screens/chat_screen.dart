@@ -52,7 +52,80 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.read(socketServiceProvider).emitGetChatHistory(widget.userId);
       // Scroll after brief delay to allow history to arrive
       Future.delayed(const Duration(milliseconds: 800), _scrollToBottom);
+
+      // Files received through Android/iOS share sheet are handed to this
+      // chat as sharedFiles.  The old flow opened the chat but never sent
+      // those files.
+      if (widget.sharedFiles != null && widget.sharedFiles!.isNotEmpty) {
+        Future.delayed(const Duration(milliseconds: 300), _sendSharedFiles);
+      }
     });
+  }
+
+
+  Future<void> _sendSharedFiles() async {
+    final files = widget.sharedFiles;
+    if (files == null || files.isEmpty) return;
+
+    for (final shared in files) {
+      try {
+        final path = shared.path as String?;
+        if (path == null || path.isEmpty) continue;
+
+        // receive_sharing_intent normally supplies an absolute local path.
+        // Also tolerate file:// paths.
+        final filePath = path.startsWith('file://')
+            ? Uri.parse(path).toFilePath()
+            : path;
+
+        final file = dart_io.File(filePath);
+        if (!await file.exists()) {
+          debugPrint('XamePage share: file does not exist: $filePath');
+          continue;
+        }
+
+        String mime = '';
+        try {
+          mime = (shared.mimeType as String?) ?? '';
+        } catch (_) {}
+
+        if (mime.isEmpty) {
+          final lower = filePath.toLowerCase();
+          if (lower.endsWith('.jpg') ||
+              lower.endsWith('.jpeg')) {
+            mime = 'image/jpeg';
+          } else if (lower.endsWith('.png')) {
+            mime = 'image/png';
+          } else if (lower.endsWith('.gif')) {
+            mime = 'image/gif';
+          } else if (lower.endsWith('.webp')) {
+            mime = 'image/webp';
+          } else if (lower.endsWith('.mp4')) {
+            mime = 'video/mp4';
+          } else if (lower.endsWith('.mov')) {
+            mime = 'video/quicktime';
+          } else if (lower.endsWith('.pdf')) {
+            mime = 'application/pdf';
+          } else if (lower.endsWith('.doc')) {
+            mime = 'application/msword';
+          } else if (lower.endsWith('.docx')) {
+            mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          } else if (lower.endsWith('.txt')) {
+            mime = 'text/plain';
+          } else {
+            mime = 'application/octet-stream';
+          }
+        }
+
+        await ref.read(chatProvider(widget.userId).notifier)
+            .sendFile(file, mime);
+      } catch (e, st) {
+        debugPrint('XamePage share send error: $e');
+        debugPrint('$st');
+      }
+    }
+
+    _scrollToBottom();
   }
 
   @override

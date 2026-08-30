@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -336,15 +337,23 @@ String _fmtSize(int? bytes) {
 
 // ─── Text content ─────────────────────────────────────────────────────────
 class _TextContent extends ConsumerWidget {
-  final String text; final bool isSelf;
+  final String text;
+  final bool isSelf;
   final Map<String, dynamic>? actionButton;
-  _TextContent({required this.text, required this.isSelf, this.actionButton});
+
+  _TextContent({
+    required this.text,
+    required this.isSelf,
+    this.actionButton,
+  });
 
   bool get _isEmojiOnly {
     final c = text.trim();
     if (c.isEmpty) return false;
-    return RegExp(r'^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\s]+$', unicode: true)
-        .hasMatch(c);
+    return RegExp(
+      r'^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\s]+$',
+      unicode: true,
+    ).hasMatch(c);
   }
 
   double _fontSize(WidgetRef ref) {
@@ -354,42 +363,138 @@ class _TextContent extends ConsumerWidget {
     return 15;
   }
 
+  static final RegExp _urlPattern = RegExp(
+    r'(https?://[^\s]+)',
+    caseSensitive: false,
+  );
+
+  String _cleanUrl(String value) {
+    // Remove punctuation that normally follows a URL in a sentence.
+    return value.replaceFirst(RegExp(r'[.,!?;:)\]}]+$'), '');
+  }
+
+  Widget _buildMessageText(BuildContext context, WidgetRef ref) {
+    final style = TextStyle(
+      color: context.xBubbleSentText,
+      fontSize: _fontSize(ref),
+      height: 1.4,
+    );
+
+    if (_isEmojiOnly) {
+      return Text(text.trim(), style: const TextStyle(fontSize: 36));
+    }
+
+    final matches = _urlPattern.allMatches(text).toList();
+    if (matches.isEmpty) {
+      return Text(text, style: style);
+    }
+
+    final spans = <TextSpan>[];
+    var cursor = 0;
+
+    for (final match in matches) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(text: text.substring(cursor, match.start)));
+      }
+
+      final raw = match.group(0)!;
+      final url = _cleanUrl(raw);
+
+      spans.add(
+        TextSpan(
+          text: url,
+          style: style.copyWith(
+            color: Colors.lightBlueAccent,
+            decoration: TextDecoration.underline,
+            decorationThickness: 1.2,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () async {
+              final uri = Uri.tryParse(url);
+              if (uri == null) return;
+
+              final canOpen = await canLaunchUrl(uri);
+              if (canOpen) {
+                await launchUrl(
+                  uri,
+                  mode: LaunchMode.externalApplication,
+                );
+              }
+            },
+        ),
+      );
+
+      // Preserve punctuation removed from the clickable URL.
+      if (url.length < raw.length) {
+        spans.add(
+          TextSpan(
+            text: raw.substring(url.length),
+            style: style,
+          ),
+        );
+      }
+
+      cursor = match.end;
+    }
+
+    if (cursor < text.length) {
+      spans.add(TextSpan(text: text.substring(cursor)));
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: style,
+        children: spans,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final textWidget = _isEmojiOnly
-        ? Text(text.trim(), style: TextStyle(fontSize: 36))
-        : Text(text,
-              style: TextStyle(
-                  color: context.xBubbleSentText,
-                  fontSize: _fontSize(ref),
-                  height: 1.4));
+    final textWidget = _buildMessageText(context, ref);
 
     final label = actionButton?['label'] as String?;
-    final url   = actionButton?['url']   as String?;
-    if (label == null || url == null || url.isEmpty) return textWidget;
+    final url = actionButton?['url'] as String?;
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      textWidget,
-      const SizedBox(height: 10),
-      GestureDetector(
-        onTap: () async {
-          final uri = Uri.tryParse(url);
-          if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
-        },
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: context.xPrimary,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(label,
+    if (label == null || url == null || url.isEmpty) {
+      return textWidget;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        textWidget,
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () async {
+            final uri = Uri.tryParse(url);
+            if (uri != null) {
+              await launchUrl(
+                uri,
+                mode: LaunchMode.externalApplication,
+              );
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: context.xPrimary,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              label,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
