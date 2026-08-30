@@ -59,6 +59,9 @@ class CacheService {
       'fileUrl':     m.fileUrl,
       'fileName':    m.fileName,
       'fileMime':    m.fileMime,
+      'fileSize':    m.fileSize,
+      'localPath':   m.localPath,
+      'actionButton':m.actionButton,
       'reactions':   m.reactions,
       'isDeleted':  m.isDeleted,
       'callType':    m.callType,
@@ -102,6 +105,11 @@ class CacheService {
           fileUrl:     m['fileUrl']     as String?,
           fileName:    m['fileName']    as String?,
           fileMime:    m['fileMime']    as String?,
+          fileSize:    (m['fileSize'] as num?)?.toInt(),
+          localPath:   m['localPath']   as String?,
+          actionButton: m['actionButton'] != null
+            ? Map<String, dynamic>.from(m['actionButton'] as Map)
+            : null,
           reactions:   m['reactions'] != null
             ? Map<String,String>.from(m['reactions'] as Map) : null,
           isDeleted:    m['isDeleted']   as bool? ?? false,
