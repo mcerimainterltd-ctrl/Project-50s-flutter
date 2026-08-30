@@ -1358,9 +1358,25 @@ class _MagnifiedVideoPageState
           BetterPlayerDataSource(
         widget.dataSource.type,
         widget.dataSource.url,
-        startAt: widget.startAt,
       ),
     );
+
+    // BetterPlayerDataSource does not support startAt in
+    // better_player_enhanced 0.0.5. Seek after initialization.
+    if (widget.startAt > Duration.zero) {
+      var positionRestored = false;
+
+      _controller!.addEventsListener((event) {
+        if (positionRestored ||
+            event.betterPlayerEventType !=
+                BetterPlayerEventType.initialized) {
+          return;
+        }
+
+        positionRestored = true;
+        _controller?.seekTo(widget.startAt);
+      });
+    }
   }
 
   @override
