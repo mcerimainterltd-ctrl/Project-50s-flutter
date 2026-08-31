@@ -173,9 +173,8 @@ class GroupsService {
   Future<bool> deleteGroup(String groupId) async {
     try {
       final res = await http.delete(
-        Uri.parse('\${AppConstants.serverUrl}/api/groups/\$groupId'),
+        Uri.parse('\${AppConstants.serverUrl}/api/groups/\$groupId?userId=\$_userId'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': _userId}),
       );
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
