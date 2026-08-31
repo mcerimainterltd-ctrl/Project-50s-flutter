@@ -1341,8 +1341,8 @@ class _MagnifiedVideoPageState
     _controller = BetterPlayerController(
       BetterPlayerConfiguration(
         autoPlay: true,
-        aspectRatio: 4 / 5,
-        fit: BoxFit.cover,
+        aspectRatio: 9 / 16,
+        fit: BoxFit.contain,
         autoDispose: true,
         deviceOrientationsOnFullScreen: const [
           DeviceOrientation.landscapeLeft,
