@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/config/constants.dart';
-import '../../../core/providers/user_provider.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -71,7 +71,7 @@ class _SpacesListScreenState extends ConsumerState<SpacesListScreen> {
               itemCount: _spaces.length,
               itemBuilder: (_, i) => _SpaceCard(space: _spaces[i],
                 emoji: _archetypeEmoji[_spaces[i].archetype] ?? '🌍',
-                onDeleted: () => setState(() => _spaces.removeAt(i)))));
+                onDeleted: () => setState(() => _spaces.removeAt(i))))));
 
   Widget _buildEmpty() => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
     const Text('🌍', style: TextStyle(fontSize: 64)),
