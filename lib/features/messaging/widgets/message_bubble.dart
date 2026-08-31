@@ -145,8 +145,27 @@ class MessageBubble extends ConsumerWidget {
                                     fontSize: 11, fontStyle: FontStyle.italic)),
                           ]),
                         ),
-                      _buildContent(context),
-                      _buildTimeRow(context),
+                      if (message.type == MessageType.video)
+                        Stack(
+                          children: [
+                            _buildContent(context),
+                            Positioned(
+                              bottom: 6, right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: _buildTimeRow(context),
+                              ),
+                            ),
+                          ],
+                        )
+                      else ...[
+                        _buildContent(context),
+                        _buildTimeRow(context),
+                      ],
                       if ((message.reactions ?? {}).isNotEmpty)
                         _ReactionBar(reactions: message.reactions!, isSelf: isSelf),
                     ],
@@ -1218,9 +1237,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
     final h = (w / _videoAspectRatio).clamp(120.0, maxH).toDouble();
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(14),
-      ),
+      borderRadius: BorderRadius.circular(14),
       child: SizedBox(
         width: w,
         height: h,
