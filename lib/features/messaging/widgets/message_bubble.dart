@@ -1211,11 +1211,11 @@ class _VideoBubbleState extends State<_VideoBubble> {
   @override
   Widget build(BuildContext context) {
 
-    // Compact portrait chat video frame.
-    // Keep the bubble substantially smaller than the previous 9:16 frame.
-    final w = MediaQuery.of(context).size.width * 0.58;
-    final maxH = MediaQuery.of(context).size.height * 0.44;
-    final h = (w * 5 / 4).clamp(190.0, maxH).toDouble();
+    // Full-width video bubble — width fills the message area,
+    // height derived from the video's actual aspect ratio.
+    final w = MediaQuery.of(context).size.width * 0.78;
+    final maxH = MediaQuery.of(context).size.height * 0.65;
+    final h = (w / _videoAspectRatio).clamp(120.0, maxH).toDouble();
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
