@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../../core/config/constants.dart';
+import '../../../core/providers/user_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -66,8 +70,8 @@ class _SpacesListScreenState extends ConsumerState<SpacesListScreen> {
               padding: const EdgeInsets.all(16),
               itemCount: _spaces.length,
               itemBuilder: (_, i) => _SpaceCard(space: _spaces[i],
-                emoji: _archetypeEmoji[_spaces[i].archetype] ?? '🌍'))),
-  );
+                emoji: _archetypeEmoji[_spaces[i].archetype] ?? '🌍',
+                onDeleted: () => setState(() => _spaces.removeAt(i)))));
 
   Widget _buildEmpty() => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
     const Text('🌍', style: TextStyle(fontSize: 64)),
@@ -90,13 +94,53 @@ class _SpacesListScreenState extends ConsumerState<SpacesListScreen> {
   ]));
 }
 
-class _SpaceCard extends StatelessWidget {
+class _SpaceCard extends ConsumerWidget {
   final SpaceModel space;
   final String emoji;
-  const _SpaceCard({required this.space, required this.emoji});
+  final VoidCallback? onDeleted;
+  const _SpaceCard({required this.space, required this.emoji, this.onDeleted});
+
+  Future<void> _deleteSpace(BuildContext context, String userId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: XameColors.darkCard,
+        title: const Text('Delete Space?', style: TextStyle(color: Colors.white)),
+        content: const Text('This will permanently delete the space and all messages.',
+            style: TextStyle(color: Colors.white54)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete', style: TextStyle(color: Colors.redAccent))),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      final res = await http.delete(
+        Uri.parse('\${AppConstants.serverUrl}/api/v3/spaces/\${space.spaceSlug}?userId=\$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      final d = jsonDecode(res.body);
+      if (d['success'] == true) {
+        onDeleted?.call();
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(d['message'] ?? 'Delete failed')));
+      }
+    } catch (_) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network error')));
+    }
+  }
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userId = ref.read(currentUserProvider)?.xameId ?? '';
+    final isOwner = space.creatorId == userId;
+    return GestureDetector(
+    onLongPress: isOwner ? () => _deleteSpace(context, userId) : null,
     onTap: () => Navigator.push(context,
       MaterialPageRoute(builder: (_) => SpaceScreen(spaceSlug: space.spaceSlug))),
     child: Container(
