@@ -1080,11 +1080,11 @@ class _VideoBubbleState extends State<_VideoBubble> {
       BetterPlayerConfiguration(
         autoPlay: true,
 
-        // Fixed, compact portrait CHAT frame.
-        aspectRatio: 4 / 5,
+        // Use video's native aspect ratio to avoid cropping.
+        aspectRatio: _videoAspectRatio,
 
-        // Fill the portrait chat frame; crop only as needed to fill the frame.
-        fit: BoxFit.cover,
+        // Contain — show full video without cropping.
+        fit: BoxFit.contain,
 
         // XamePage modes:
         // Mode 1 = portrait bubble.
