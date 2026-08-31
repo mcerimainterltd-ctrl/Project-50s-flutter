@@ -184,8 +184,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final file = await _picker.pickVideo(source: ImageSource.gallery);
     if (file == null) return;
     setState(() => _showAttach = false);
+    final ext = file.path.split('.').last.toLowerCase();
+    const mimeByExt = {
+      'mp4': 'video/mp4',
+      'webm': 'video/webm',
+      'ogg': 'video/ogg',
+      'mov': 'video/quicktime',
+      'mkv': 'video/x-matroska',
+      'avi': 'video/x-msvideo',
+      '3gp': 'video/3gpp',
+    };
+    final mime = mimeByExt[ext] ?? 'video/mp4';
+
     await ref.read(chatProvider(widget.userId).notifier)
-        .sendFile(dart_io.File(file.path), 'video/mp4');
+        .sendFile(dart_io.File(file.path), mime);
     _scrollToBottom();
   }
 
