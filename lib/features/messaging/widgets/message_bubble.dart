@@ -1342,7 +1342,7 @@ class _MagnifiedVideoPageState
       BetterPlayerConfiguration(
         autoPlay: true,
         aspectRatio: 9 / 16,
-        fit: BoxFit.contain,
+        fit: BoxFit.cover,
         autoDispose: true,
         deviceOrientationsOnFullScreen: const [
           DeviceOrientation.landscapeLeft,
