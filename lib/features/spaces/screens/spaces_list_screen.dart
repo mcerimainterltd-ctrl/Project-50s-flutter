@@ -179,3 +179,5 @@ class _SpaceCard extends ConsumerWidget {
     ),
   );
 }
+
+}
