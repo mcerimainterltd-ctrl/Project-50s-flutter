@@ -2,6 +2,7 @@
 // XameTV — Dynamic channel system powered by iptv-org/iptv
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -110,9 +111,9 @@ class TvChannelService {
     }
     try {
       final res = await http.get(Uri.parse(_url),
-          headers: {'User-Agent':'XamePage/2.1'}).timeout(const Duration(seconds:30));
+          headers: {'User-Agent':'XamePage/2.1'}).timeout(const Duration(seconds:90));
       if (res.statusCode == 200) {
-        _mem = parseM3u(res.body);
+        _mem = await compute(parseM3u, res.body);
         await prefs.setString(_key, jsonEncode(_mem!.map((c)=>c.toJson()).toList()));
         await prefs.setInt(_timeKey, DateTime.now().millisecondsSinceEpoch);
         return _mem!;
