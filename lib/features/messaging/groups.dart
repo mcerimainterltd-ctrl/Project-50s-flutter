@@ -158,7 +158,7 @@ class GroupsService {
     try {
       final res = await http.post(
         Uri.parse('\${AppConstants.serverUrl}/api/groups/\$groupId/leave'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('${AppConstants.serverUrl}/api/groups/$groupId/leave'),
         body: jsonEncode({'userId': _userId}),
       );
       final d = jsonDecode(res.body);
@@ -166,14 +166,14 @@ class GroupsService {
         _groups.removeWhere((g) => g.groupId == groupId);
         return true;
       }
-    } catch (e) { debugPrint('[Groups] Leave error: \$e'); }
+    } catch (e) { debugPrint('[Groups] Leave error: $e'); }
     return false;
   }
 
   Future<bool> deleteGroup(String groupId) async {
     try {
       final res = await http.post(
-        Uri.parse('\${AppConstants.serverUrl}/api/groups/\$groupId/delete'),
+        Uri.parse('${AppConstants.serverUrl}/api/groups/$groupId/delete'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': _userId}),
       );
@@ -181,7 +181,7 @@ class GroupsService {
       if (d['success'] == true) {
         _groups.removeWhere((g) => g.groupId == groupId);
         return true;
-      }
+    } catch (e) { debugPrint('[Groups] Delete error: $e'); }
     } catch (e) { debugPrint('[Groups] Delete error: \$e'); }
     return false;
   }
