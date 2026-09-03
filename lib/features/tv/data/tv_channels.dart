@@ -2,10 +2,10 @@
 // XameTV — Dynamic channel system powered by iptv-org/iptv
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xamepage/core/config/constants.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 
 class TvChannel {
@@ -90,7 +90,6 @@ class TvChannelService {
   static const _key     = 'xametv_v4';
   static const _timeKey = 'xametv_time_v4';
   static const _ttl     = Duration(hours: 24);
-  static const _url     = 'https://iptv-org.github.io/iptv/index.m3u';
   static List<TvChannel>? _mem;
 
   static Future<List<TvChannel>> fetchChannels({bool force=false}) async {
@@ -110,15 +109,42 @@ class TvChannelService {
       }
     }
     try {
-      final res = await http.get(Uri.parse(_url),
-          headers: {'User-Agent':'XamePage/2.1'}).timeout(const Duration(seconds:90));
+      final res = await http.get(
+        Uri.parse('${AppConstants.serverUrl}/api/xametv/channels'),
+        headers: {'User-Agent': 'XamePage/2.1'},
+      ).timeout(const Duration(seconds: 90));
+
       if (res.statusCode == 200) {
-        _mem = await compute(parseM3u, res.body);
-        await prefs.setString(_key, jsonEncode(_mem!.map((c)=>c.toJson()).toList()));
-        await prefs.setInt(_timeKey, DateTime.now().millisecondsSinceEpoch);
-        return _mem!;
+        final body = jsonDecode(res.body);
+
+        if (body is Map<String, dynamic> && body['success'] == true) {
+          final rawChannels = body['channels'];
+
+          if (rawChannels is List) {
+            _mem = rawChannels
+                .whereType<Map>()
+                .map((j) => TvChannel.fromJson(
+                      Map<String, dynamic>.from(j),
+                    ))
+                .where((c) => c.streamUrl.isNotEmpty)
+                .toList();
+
+            await prefs.setString(
+              _key,
+              jsonEncode(_mem!.map((c) => c.toJson()).toList()),
+            );
+
+            await prefs.setInt(
+              _timeKey,
+              DateTime.now().millisecondsSinceEpoch,
+            );
+
+            return _mem!;
+          }
+        }
       }
     } catch (_) {}
+
     final raw = prefs.getString(_key);
     if (raw != null) {
       try {
