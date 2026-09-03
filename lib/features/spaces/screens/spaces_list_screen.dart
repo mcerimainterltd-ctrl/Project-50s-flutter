@@ -120,7 +120,7 @@ class _SpaceCard extends ConsumerWidget {
     if (confirm != true) return;
     try {
       final res = await http.post(
-        Uri.parse('\${AppConstants.serverUrl}/api/v3/spaces/\${space.spaceSlug}/delete'),
+        Uri.parse('${AppConstants.serverUrl}/api/v3/spaces/${space.spaceSlug}/delete'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': userId}),
       );
