@@ -173,6 +173,10 @@
 
         <!-- Socket Keepalive Service -->
         <service
+            android:name=".DataSyncService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+        <service
             android:name=".SocketKeepaliveService"
             android:exported="false"
             android:foregroundServiceType="dataSync"

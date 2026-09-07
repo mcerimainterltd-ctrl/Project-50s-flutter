@@ -106,19 +106,36 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   }
 
   Future<void> _globalRefresh() async {
-    final socket = ref.read(socketServiceProvider);
-    final user   = ref.read(currentUserProvider);
-    if (user == null) return;
-    // Reconnect socket if disconnected
-    if (socket.currentUserId == null) {
-      socket.connect(user.xameId);
-    } else {
-      socket.emitGetContacts(user.xameId);
-      socket.emitRequestOnlineUsers();
+    const dataSyncChannel = MethodChannel('com.xamepage.app/data_sync');
+
+    await dataSyncChannel.invokeMethod('startDataSync');
+
+    try {
+      final socket = ref.read(socketServiceProvider);
+      final user   = ref.read(currentUserProvider);
+      if (user == null) return;
+
+      // Reconnect socket if disconnected
+      if (socket.currentUserId == null) {
+        socket.connect(user.xameId);
+      } else {
+        socket.emitGetContacts(user.xameId);
+        socket.emitGetChatHistory(user.xameId);
+        socket.emitRequestOnlineUsers();
+      }
+
+      // Invalidate providers to trigger re-fetch
+      ref.invalidate(contactsProvider);
+      ref.invalidate(callHistoryProvider);
+
+      // Allow the socket/API refresh to complete while the
+      // foreground data-sync service is active.
+      await Future.delayed(const Duration(seconds: 2));
+    } finally {
+      try {
+        await dataSyncChannel.invokeMethod('stopDataSync');
+      } catch (_) {}
     }
-    // Invalidate providers to trigger re-fetch
-    ref.invalidate(contactsProvider);
-    ref.invalidate(callHistoryProvider);
   }
 
   @override

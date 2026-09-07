@@ -122,6 +122,23 @@ class MainActivity : FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.xamepage.app/data_sync"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "startDataSync" -> {
+                    DataSyncService.start(this)
+                    result.success(null)
+                }
+                "stopDataSync" -> {
+                    DataSyncService.stop(this)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
