@@ -59,8 +59,21 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final service = ref.read(webRTCServiceProvider);
       await service.initRenderers();
-      if (!widget.isIncoming) {
+      if (!widget.isIncoming &&
+          service.callStateStreamValue == CallState.idle) {
         service.startCall(widget.userId, widget.isVideo);
+      } else if (service.callStateStreamValue == CallState.active ||
+          service.callStateStreamValue == CallState.outgoing ||
+          service.callStateStreamValue == CallState.incoming) {
+        final elapsed = service.minimizedElapsedSeconds;
+        if (elapsed > 0) {
+          _seconds = elapsed;
+        }
+        service.restoreCall();
+        if (service.callStateStreamValue == CallState.active &&
+            !_timerStarted) {
+          _startTimer();
+        }
       }
       service.callState.listen((s) async {
         if (!mounted) return;
@@ -171,9 +184,48 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       return _endReasonScreen(_callEndReason!, photoUrl, name, initials);
     }
 
-    return widget.isVideo
+    final callContent = widget.isVideo
         ? _videoUI(webrtc, hasRemote, name, topPad, botPad)
         : _voiceUI(webrtc, name, photoUrl, initials, topPad, botPad);
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        callContent,
+
+        // UI-only minimize control. It does NOT end or interrupt the call.
+        Positioned(
+          top: topPad + 10,
+          left: 10,
+          child: SafeArea(
+            child: Material(
+              color: Colors.black54,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () {
+                  ref.read(webRTCServiceProvider).minimizeCall(
+                    isIncoming: widget.isIncoming,
+                    isVideo: widget.isVideo,
+                    elapsedSeconds: _seconds,
+                  );
+                  context.go('/contacts');
+                },
+                child: const SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   // ═══════════════════════════════════════════════════════════

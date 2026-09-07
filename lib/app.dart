@@ -764,9 +764,205 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       routerConfig: ref.watch(routerProvider),
+      builder: (context, child) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            child ?? const SizedBox.shrink(),
+            const _ActiveCallMiniBar(),
+          ],
+        );
+      },
       theme:      theme.toThemeData(),
       darkTheme:  theme.toThemeData(),
       themeMode:  theme.isDark ? ThemeMode.dark : ThemeMode.light,
     );
   }
+}
+
+
+class _ActiveCallMiniBar extends ConsumerStatefulWidget {
+  const _ActiveCallMiniBar();
+
+  @override
+  ConsumerState<_ActiveCallMiniBar> createState() =>
+      _ActiveCallMiniBarState();
+}
+
+class _ActiveCallMiniBarState extends ConsumerState<_ActiveCallMiniBar> {
+  StreamSubscription<bool>? _minimizedSub;
+  Timer? _ticker;
+
+  bool _visible = false;
+  String? _userId;
+  bool _isIncoming = false;
+  bool _isVideo = false;
+  int _baseSeconds = 0;
+  DateTime? _startedAt;
+
+  int get _elapsed {
+    final started = _startedAt;
+    if (started == null) return _baseSeconds;
+    return _baseSeconds + DateTime.now().difference(started).inSeconds;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final service = ref.read(webRTCServiceProvider);
+
+    if (service.isCallMinimized) {
+      _capture(service);
+      _visible = true;
+      _startTicker();
+    }
+
+    _minimizedSub = service.callMinimizedStream.listen((minimized) {
+      if (!mounted) return;
+
+      if (minimized) {
+        _capture(service);
+        setState(() => _visible = true);
+        _startTicker();
+      } else {
+        _stopTicker();
+        setState(() => _visible = false);
+      }
+    });
+  }
+
+  void _capture(WebRTCService service) {
+    _userId = service.currentRemoteUserId;
+    _isIncoming = service.minimizedCallIsIncoming;
+    _isVideo = service.minimizedCallIsVideo;
+    _baseSeconds = service.minimizedElapsedSeconds;
+    _startedAt = DateTime.now();
+  }
+
+  void _startTicker() {
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _visible) {
+        setState(() {});
+      }
+    });
+  }
+
+  void _stopTicker() {
+    _ticker?.cancel();
+    _ticker = null;
+  }
+
+  void _restore() {
+    final service = ref.read(webRTCServiceProvider);
+    final userId = service.currentRemoteUserId ?? _userId;
+
+    if (userId == null || userId.isEmpty) return;
+
+    final path =
+        '/call/${Uri.encodeComponent(userId)}'
+        '?video=$_isVideo&incoming=$_isIncoming';
+
+    service.restoreCall();
+    ref.read(routerProvider).go(path);
+  }
+
+  @override
+  void dispose() {
+    _minimizedSub?.cancel();
+    _stopTicker();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_visible || _userId == null) {
+      return const SizedBox.shrink();
+    }
+
+    final contacts =
+        ref.watch(contactsProvider).valueOrNull ?? [];
+
+    final contact = contacts
+        .where((c) => c.id == _userId)
+        .firstOrNull;
+
+    final name = contact?.name ?? _userId!;
+
+    return Positioned(
+      left: 12,
+      right: 12,
+      bottom: 12,
+      child: SafeArea(
+        top: false,
+        child: Material(
+          color: Colors.black87,
+          elevation: 12,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: _restore,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 15,
+                vertical: 10,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: Colors.greenAccent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Icon(
+                    _isVideo
+                        ? Icons.videocam_rounded
+                        : Icons.call_rounded,
+                    color: Colors.white,
+                    size: 21,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _formatMiniCallDuration(_elapsed),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.open_in_full_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _formatMiniCallDuration(int seconds) {
+  final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+  final secs = (seconds % 60).toString().padLeft(2, '0');
+  return '$minutes:$secs';
 }

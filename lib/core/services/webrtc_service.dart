@@ -43,6 +43,56 @@ class WebRTCService {
   RTCVideoRenderer get localRenderer => _localRenderer;
   RTCVideoRenderer get remoteRenderer => _remoteRenderer;
   CallState _callState = CallState.idle;
+
+  // UI-only minimize state. This NEVER affects the WebRTC connection.
+  bool _callMinimized = false;
+  final _callMinimizedController = StreamController<bool>.broadcast();
+
+  int _minimizedElapsedSeconds = 0;
+  DateTime? _minimizedStartedAt;
+  bool _minimizedCallIsIncoming = false;
+  bool _minimizedCallIsVideo = false;
+
+  Stream<bool> get callMinimizedStream => _callMinimizedController.stream;
+  bool get isCallMinimized => _callMinimized;
+
+  int get minimizedElapsedSeconds {
+    final started = _minimizedStartedAt;
+    if (started == null) return _minimizedElapsedSeconds;
+    return _minimizedElapsedSeconds +
+        DateTime.now().difference(started).inSeconds;
+  }
+
+  bool get minimizedCallIsIncoming => _minimizedCallIsIncoming;
+  bool get minimizedCallIsVideo => _minimizedCallIsVideo;
+
+  void minimizeCall({
+    required bool isIncoming,
+    required bool isVideo,
+    required int elapsedSeconds,
+  }) {
+    if (_callState != CallState.active) return;
+
+    _minimizedCallIsIncoming = isIncoming;
+    _minimizedCallIsVideo = isVideo;
+    _minimizedElapsedSeconds = elapsedSeconds;
+    _minimizedStartedAt = DateTime.now();
+
+    if (!_callMinimized) {
+      _callMinimized = true;
+      _callMinimizedController.add(true);
+    }
+  }
+
+  void restoreCall() {
+    if (_callMinimized) {
+      _minimizedElapsedSeconds = minimizedElapsedSeconds;
+      _minimizedStartedAt = null;
+      _callMinimized = false;
+      _callMinimizedController.add(false);
+    }
+  }
+
   final SocketService _socket;
   RTCPeerConnection? _pc;
   bool _iceBufferEnabled = false;
@@ -540,6 +590,14 @@ class WebRTCService {
     _callTimeoutTimer = null;
     _currentCallId = null;
     currentRemoteUserId = null;
+    if (_callMinimized) {
+      _callMinimized = false;
+      _callMinimizedController.add(false);
+    }
+    _minimizedElapsedSeconds = 0;
+    _minimizedStartedAt = null;
+    _minimizedCallIsIncoming = false;
+    _minimizedCallIsVideo = false;
     _callState = CallState.idle;
   }
 
