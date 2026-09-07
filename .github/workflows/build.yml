@@ -39,9 +39,6 @@ jobs:
       - name: Install NDK
         run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
 
-      - name: Install Android 17 SDK
-        run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-37"
-
       - name: Cache pub
         uses: actions/cache@v4
         with:
