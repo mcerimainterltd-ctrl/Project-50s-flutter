@@ -239,9 +239,10 @@ class MessageBubble extends ConsumerWidget {
             localPath: message.localPath);
       case MessageType.audio:
         return _AudioBubble(
-            url:      message.fileUrl ?? '',
-            fileName: message.fileName ?? 'audio',
-            isSelf:   isSelf);
+            url:       message.fileUrl ?? '',
+            fileName:  message.fileName ?? 'audio',
+            isSelf:    isSelf,
+            localPath: message.localPath);
       case MessageType.file:
         return _FileBubble(
             url:       message.fileUrl ?? '',
@@ -304,6 +305,7 @@ class _ShimmerState extends State<_Shimmer>
     _anim = Tween<double>(begin: -1, end: 2).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
+
 
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
@@ -1748,9 +1750,15 @@ class _DocStyle {
 // ─── Audio bubble ─────────────────────────────────────────────────────────
 class _AudioBubble extends StatefulWidget {
   final String url, fileName;
-  final bool   isSelf;
-  const _AudioBubble(
-      {required this.url, required this.fileName, required this.isSelf});
+  final bool isSelf;
+  final String? localPath;
+
+  const _AudioBubble({
+    required this.url,
+    required this.fileName,
+    required this.isSelf,
+    this.localPath,
+  });
   @override
   State<_AudioBubble> createState() => _AudioBubbleState();
 }
@@ -1777,7 +1785,21 @@ class _AudioBubbleState extends State<_AudioBubble> {
         if (mounted) setState(() { _playing = false; _position = Duration.zero; });
       }
     }));
-    _player!.setUrl(widget.url).catchError((_) {});
+    _prepareAudio();
+  }
+
+  Future<void> _prepareAudio() async {
+    try {
+      if (widget.localPath != null &&
+          widget.localPath!.isNotEmpty &&
+          File(widget.localPath!).existsSync()) {
+        await _player!.setFilePath(widget.localPath!);
+      } else if (widget.url.isNotEmpty) {
+        await _player!.setUrl(_resolveUrl(widget.url));
+      }
+    } catch (_) {
+      // Playback will retry from the selected source when the user taps play.
+    }
   }
 
   @override
@@ -1796,8 +1818,30 @@ class _AudioBubbleState extends State<_AudioBubble> {
       if (_position >= _duration && _duration > Duration.zero) {
         await _player?.seek(Duration.zero);
       }
-      await _player?.play();
-      setState(() => _playing = true);
+      try {
+        await _player?.play();
+        if (mounted) setState(() => _playing = true);
+      } catch (_) {
+        try {
+          if (widget.localPath != null &&
+              widget.localPath!.isNotEmpty &&
+              File(widget.localPath!).existsSync()) {
+            await _player?.setFilePath(widget.localPath!);
+          } else if (widget.url.isNotEmpty) {
+            await _player?.setUrl(_resolveUrl(widget.url));
+          }
+          await _player?.play();
+          if (mounted) setState(() => _playing = true);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Unable to play this voice note'),
+              ),
+            );
+          }
+        }
+      }
     }
   }
 

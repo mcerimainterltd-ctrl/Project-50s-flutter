@@ -10,6 +10,7 @@ import '../../../core/services/voice_service.dart';
 import '../../../core/services/translation_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/services/auth_service.dart';
@@ -227,8 +228,62 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _pickFile() async {
-    // TODO: use file_picker package for documents
-    setState(() => _showAttach = false);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+        withData: false,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final picked = result.files.single;
+      final path = picked.path;
+      if (path == null || path.isEmpty) return;
+
+      setState(() => _showAttach = false);
+
+      final ext = picked.extension?.toLowerCase() ?? '';
+      const mimeByExt = {
+        'pdf':  'application/pdf',
+        'doc':  'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls':  'application/vnd.ms-excel',
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt':  'application/vnd.ms-powerpoint',
+        'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'txt':  'text/plain',
+        'csv':  'text/csv',
+        'zip':  'application/zip',
+        'rar':  'application/vnd.rar',
+        '7z':   'application/x-7z-compressed',
+        'mp3':  'audio/mpeg',
+        'aac':  'audio/aac',
+        'wav':  'audio/wav',
+        'ogg':  'audio/ogg',
+        'm4a':  'audio/x-m4a',
+        'mp4':  'video/mp4',
+        'mov':  'video/quicktime',
+        'mkv':  'video/x-matroska',
+        'avi':  'video/x-msvideo',
+        '3gp':  'video/3gpp',
+      };
+
+      final mime = mimeByExt[ext] ?? 'application/octet-stream';
+
+      await ref.read(chatProvider(widget.userId).notifier)
+          .sendFile(dart_io.File(path), mime);
+
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to open file picker: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   void _enterSelectMode(String msgId) {
