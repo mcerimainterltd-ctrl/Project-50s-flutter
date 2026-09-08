@@ -85,7 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/incoming-call',
         builder: (context, state) => const IncomingCallScreen()),
       GoRoute(path: '/conference',    builder: (c, s) => const ConferenceScreen()),
-      GoRoute(path: '/call-history',  builder: (c, s) => CallHistoryScreen(onBack: () => c.go('/contacts'))),
+      GoRoute(path: '/call-history',  builder: (c, s) => CallsHubScreen()),
       GoRoute(path: '/contact-requests', builder: (c, s) => const ContactRequestsScreen()),
       GoRoute(path: '/dialpad',       builder: (c, s) => PhoneScreen(userId: ref.read(currentUserProvider)?.xameId ?? '', serverUrl: AppConstants.serverUrl)),
       GoRoute(path: '/app-lock', builder: (c, s) {

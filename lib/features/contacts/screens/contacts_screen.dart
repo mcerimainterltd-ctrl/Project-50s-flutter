@@ -509,7 +509,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           leading: Icon(Icons.call_outlined, color: context.xMuted),
           title: Text('Calls',
             style: TextStyle(color: context.xText)),
-          onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const CallHistoryScreen())); }),
+          onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => CallsHubScreen())); }),
         ListTile(
           leading: Icon(Icons.campaign_outlined, color: context.xMuted),
           title: Text("Mass Messaging",
