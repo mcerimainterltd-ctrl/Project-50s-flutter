@@ -20,6 +20,7 @@ import '../../features/messaging/screens/chat_screen.dart';
 import '../../features/calling/screens/call_screen.dart';
 import '../../features/calling/screens/incoming_call_screen.dart';
 import '../../features/calls/screens/call_history_screen.dart';
+import '../../features/calls/screens/calls_hub_screen.dart';
 import '../../features/contacts/screens/contact_requests_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/public_web_profile_screen.dart';
