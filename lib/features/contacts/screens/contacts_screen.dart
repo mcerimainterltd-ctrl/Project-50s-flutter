@@ -31,6 +31,7 @@ import '../providers/contacts_provider.dart';
 import '../../../shared/widgets/pin_lock_screen.dart';
 import '../../../core/services/wallet_lock_service.dart';
 import '../../messaging/broadcast.dart';
+import '../../messaging/screens/message_schedule_screen.dart';
 import '../../messaging/groups.dart';
 import '../../calling/call_schedule.dart';
 
@@ -572,12 +573,12 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             style: TextStyle(color: context.xText)),
           onTap: () { Navigator.pop(context); context.go('/spaces'); }),
         ListTile(
-          leading: Icon(Icons.video_call_outlined, color: context.xMuted),
-          title: Text('Conference',
+          leading: Icon(Icons.schedule_outlined, color: context.xMuted),
+          title: Text('Message Schedule',
             style: TextStyle(color: context.xText)),
           onTap: () {
             Navigator.pop(context);
-            context.go('/conference');
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const MessageScheduleScreen()));
           }),
         ListTile(
           leading: Icon(Icons.public_rounded, color: context.xMuted),
