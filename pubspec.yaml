@@ -1,7 +1,7 @@
 name: xamepage
 description: "A new Flutter project."
 publish_to: 'none'
-version: 2.1.1+1728
+version: 2.1.1+1746
 
 environment:
   sdk: '>=3.2.0 <4.0.0'

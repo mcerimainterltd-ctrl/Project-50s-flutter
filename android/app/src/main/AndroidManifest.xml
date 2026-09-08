@@ -211,8 +211,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Alarm receiver — wakes app every 5 minutes -->
-        <receiver
         <meta-data android:name="flutterEmbedding" android:value="2"/>
     </application>
     <queries>
