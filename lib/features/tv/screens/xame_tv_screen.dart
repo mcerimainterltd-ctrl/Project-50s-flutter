@@ -620,6 +620,45 @@ class _XameTvScreenState extends State<XameTvScreen>
                       child:const Icon(Icons.close_rounded,color:Colors.white38,size:18)),
                 ]),
               )),
+              Padding(
+                padding:const EdgeInsets.fromLTRB(12,8,12,8),
+                child:Container(
+                  height:42,
+                  decoration:BoxDecoration(
+                    color:Colors.white12,
+                    borderRadius:BorderRadius.circular(22),
+                    border:Border.all(
+                      color:Colors.white.withOpacity(0.18),
+                    ),
+                  ),
+                  child:TextField(
+                    controller:_searchCtrl,
+                    style:const TextStyle(
+                      color:Colors.white,
+                      fontSize:13,
+                    ),
+                    decoration:const InputDecoration(
+                      hintText:'Search channels, country, language...',
+                      hintStyle:TextStyle(
+                        color:Colors.white30,
+                        fontSize:11,
+                      ),
+                      prefixIcon:Icon(
+                        Icons.search_rounded,
+                        color:Colors.white38,
+                        size:18,
+                      ),
+                      ),
+                      border:InputBorder.none,
+                      contentPadding:EdgeInsets.symmetric(vertical:12),
+                    ),
+                    onChanged:(q){
+                      setState(()=>_searchQuery=q);
+                      _applyFilter();
+                    },
+                  ),
+                ),
+              ),
               const Divider(color:Colors.white10,height:1),
               Expanded(child:ListView.builder(
                 controller:_listCtrl,
