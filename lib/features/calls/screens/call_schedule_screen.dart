@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import '../../../core/config/constants.dart';
+import '../../../core/config/router.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../core/services/webrtc_service.dart';
@@ -101,6 +102,13 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
     } catch (_) {}
   }
 
+  void _openScheduledCall(String recipientId, bool isVideo) {
+    final router = _ref.read(routerProvider);
+    router.push(
+      '/call/$recipientId?video=${isVideo ? 'true' : 'false'}',
+    );
+  }
+
   void _listenSocket() {
     Future.doWhile(() async {
       if (!mounted) return false;
@@ -119,9 +127,7 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
           final contacts = _ref.read(contactsProvider).valueOrNull ?? [];
           final contact  = contacts.where((c) => c.id == recipientId).firstOrNull;
           if (call != null) await _showCallNotif(call, contact?.name ?? recipientId);
-          try {
-            await _ref.read(webRTCServiceProvider).startCall(recipientId, callType == 'video');
-          } catch (e) { debugPrint('[CallSchedule] socket auto-dial error: $e'); }
+          _openScheduledCall(recipientId, callType == 'video');
           if (call == null || call.recurrence == 'once') {
             state = state.where((c) => c.scheduleId != scheduleId).toList();
           }
@@ -145,9 +151,10 @@ class ScheduledCallsNotifier extends StateNotifier<List<ScheduledCall>> {
     final contacts = _ref.read(contactsProvider).valueOrNull ?? [];
     final contact  = contacts.where((c) => c.id == call.recipientId).firstOrNull;
     await _showCallNotif(call, contact?.name ?? call.recipientId);
-    try {
-      await _ref.read(webRTCServiceProvider).startCall(call.recipientId, call.callType == 'video');
-    } catch (e) { debugPrint('[CallSchedule] local auto-dial error: $e'); }
+    _openScheduledCall(
+      call.recipientId,
+      call.callType == 'video',
+    );
     if (call.recurrence == 'daily') {
       final next = ScheduledCall(
         scheduleId: call.scheduleId, callerId: call.callerId,
