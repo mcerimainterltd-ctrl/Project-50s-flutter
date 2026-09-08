@@ -648,7 +648,6 @@ class _XameTvScreenState extends State<XameTvScreen>
                         color:Colors.white38,
                         size:18,
                       ),
-                      ),
                       border:InputBorder.none,
                       contentPadding:EdgeInsets.symmetric(vertical:12),
                     ),
