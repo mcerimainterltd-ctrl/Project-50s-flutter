@@ -1,5 +1,6 @@
 class AppConstants {
   static const serverUrl             = 'https://app.xamepage.com';
+  static const mediaWorkerUrl = 'https://media.xamepage.com';
   static const appVersion            = '2.1.1';
   static const appBuildNumber         = 478;
   static const apiAppVersion          = '\$serverUrl/api/app/version';

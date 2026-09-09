@@ -15,6 +15,7 @@ final activeContactIdProvider  = StateProvider<String?>((ref) => null);
 class ChatService {
   final SocketService _socket;
   final _dio     = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+  final _mediaDio = Dio(BaseOptions(baseUrl: AppConstants.mediaWorkerUrl));
   final _storage = const FlutterSecureStorage();
   final _uuid    = const Uuid();
   Timer? _typingTimer;
@@ -54,37 +55,210 @@ class ChatService {
   }
 
   Future<XameMessage> sendFile({
-    required String recipientId,
-    required File   file,
-    required String mimeType,
-    String? caption,
-    bool    viewOnce = false,
+    required String  recipientId,
+    required File    file,
+    required String  mimeType,
+    String?  caption,
+    bool     viewOnce = false,
   }) async {
-    final v = validateFile(file, mimeType);
-    if (!v.isValid) throw Exception(v.error);
-    final fd  = FormData.fromMap({'file': await MultipartFile.fromFile(file.path), 'userId': await _selfId()});
-    final res = await _dio.post('/api/upload-file', data: fd);
-    final url = res.data['url'] as String;
-    final msg = XameMessage(
-      id: _uuid.v4(), senderId: await _selfId(),
-      recipientId: recipientId, text: caption ?? '',
-      type: _typeFromMime(mimeType), direction: MessageDirection.sent,
-      ts: DateTime.now().millisecondsSinceEpoch, status: 'sending',
-      fileUrl: url, fileName: file.path.split('/').last,
-      fileSize: await file.length(), viewOnce: viewOnce,
+    // Validate file first — mirrors: const validation = validateFile(file)
+    final validation = validateFile(file, mimeType);
+    if (!validation.isValid) throw Exception(validation.error);
+
+    final fileName = file.path.split('/').last;
+    final fileSize = await file.length();
+    final sessionToken = await _storage.read(
+      key: AppConstants.keySessionToken,
     );
+
+    if (sessionToken == null || sessionToken.isEmpty) {
+      throw Exception('No active session.');
+    }
+
+    final initResponse = await _dio.post(
+      '/api/media/upload-init',
+      data: {
+        'fileName': fileName,
+        'contentType': mimeType,
+        'size': fileSize,
+        'folder': 'chat',
+      },
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $sessionToken',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+
+    final initData = initResponse.data as Map<String, dynamic>;
+
+    if (initData['success'] != true ||
+        initData['key'] == null ||
+        initData['uploadId'] == null ||
+        initData['capability'] == null) {
+      throw Exception('Media upload initialization failed.');
+    }
+
+    final key = initData['key'] as String;
+    final uploadId = initData['uploadId'] as String;
+    final capability = initData['capability'] as String;
+
+    const chunkSize = 8 * 1024 * 1024;
+    final totalParts = (fileSize + chunkSize - 1) ~/ chunkSize;
+    final completedParts = <Map<String, dynamic>>[];
+
+    late final String fileUrl;
+
+    try {
+      for (var partNumber = 1; partNumber <= totalParts; partNumber++) {
+        final start = (partNumber - 1) * chunkSize;
+        final end = (start + chunkSize < fileSize)
+            ? start + chunkSize
+            : fileSize;
+        final partLength = end - start;
+
+        Map<String, dynamic>? partResult;
+        Object? lastError;
+
+        for (var attempt = 1; attempt <= 3; attempt++) {
+          try {
+            final response = await _mediaDio.put(
+              '/multipart/part',
+              queryParameters: {
+                'key': key,
+                'uploadId': uploadId,
+                'partNumber': partNumber,
+              },
+              data: file.openRead(start, end),
+              options: Options(
+                headers: {
+                  'Authorization': 'Bearer $capability',
+                  'Content-Type': 'application/octet-stream',
+                  'Content-Length': partLength,
+                },
+              ),
+              onSendProgress: (sent, total) {
+                if (kDebugMode && total > 0) {
+                  final overallSent =
+                      start + (sent > total ? total : sent);
+                  final progress = overallSent / fileSize;
+                  debugPrint(
+                    'Media upload ${(progress * 100).toStringAsFixed(1)}%',
+                  );
+                }
+              },
+            );
+
+            final data = response.data as Map<String, dynamic>;
+
+            if (data['success'] != true || data['etag'] == null) {
+              throw Exception('Multipart part upload failed.');
+            }
+
+            partResult = {
+              'partNumber': partNumber,
+              'etag': data['etag'],
+            };
+            break;
+          } catch (e) {
+            lastError = e;
+            if (attempt < 3) {
+              await Future<void>.delayed(
+                Duration(seconds: attempt),
+              );
+            }
+          }
+        }
+
+        if (partResult == null) {
+          throw Exception(
+            'Multipart part $partNumber failed after 3 attempts: $lastError',
+          );
+        }
+
+        completedParts.add(partResult);
+      }
+
+      final completeResponse = await _mediaDio.post(
+        '/multipart/complete',
+        data: {
+          'key': key,
+          'uploadId': uploadId,
+          'parts': completedParts,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $capability',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      final completeData =
+          completeResponse.data as Map<String, dynamic>;
+
+      if (completeData['success'] != true ||
+          completeData['url'] == null) {
+        throw Exception('Media upload completion failed.');
+      }
+
+      fileUrl = completeData['url'] as String;
+
+    } catch (e) {
+      try {
+        await _mediaDio.post(
+          '/multipart/abort',
+          data: {
+            'key': key,
+            'uploadId': uploadId,
+          },
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $capability',
+              'Content-Type': 'application/json',
+            },
+          ),
+        );
+      } catch (_) {
+        // Best-effort multipart cleanup.
+      }
+      rethrow;
+    }
+
+    final msg = XameMessage(
+      id:          _uuid.v4(),
+      senderId:    await _getSelfId(),
+      recipientId: recipientId,
+      text:        caption ?? '',
+      type:        _typeFromMime(mimeType),
+      direction:   MessageDirection.sent,
+      ts:          DateTime.now().millisecondsSinceEpoch,
+      status:      'sending',
+      fileUrl:     fileUrl,
+      fileName:    file.path.split('/').last,
+      fileSize:    fileSize,
+      viewOnce:    viewOnce,
+    );
+
     _addToCache(recipientId, msg);
+
     _socket.emit('send-message', {
       'recipientId': recipientId,
       'message': {
-        'id': msg.id, 'text': caption ?? '', 'ts': msg.ts,
-        'file': {'url': url, 'name': msg.fileName, 'type': mimeType, 'size': msg.fileSize},
+        'id':      msg.id,
+        'text':    caption ?? '',
+        'ts':      msg.ts,
+        'file':    {'url': fileUrl, 'name': msg.fileName, 'type': mimeType, 'size': msg.fileSize},
         'viewOnce': viewOnce,
       },
     });
+
     return msg;
   }
 
+  // ── handleIncomingMessage() — mirrors socket.on('receive-message') ─────────
+  // Called by the UI layer after receiving from SocketService.receiveMessage stream
   XameMessage incomingFromSocket(Map<String, dynamic> data) {
     final senderId = data['senderId'] as String;
     final m        = data['message']  as Map<String, dynamic>;
