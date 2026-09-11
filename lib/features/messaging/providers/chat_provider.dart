@@ -43,7 +43,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
   final List<StreamSubscription> _subs = [];
   final Set<String> _pausedUploads = <String>{};
   final Map<String, Completer<void>> _uploadResumeWaiters =
-      <String, Completer<void>>();
+      {};
 
   ChatNotifier(this._ref, this._contactId) : super([]) {
     final cached = CacheService.loadChat(_contactId);
