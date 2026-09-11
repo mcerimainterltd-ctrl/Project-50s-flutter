@@ -47,7 +47,6 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:showOnLockScreen="true"
             android:turnScreenOn="true"
