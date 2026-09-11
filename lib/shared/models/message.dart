@@ -10,6 +10,7 @@ class XameMessage {
   final MessageDirection direction;
   final int              ts;
   final String           status;
+  final double           uploadProgress;
   final bool             isDisappearing;
   final int?             expiresAt;
   final String?          replyToId;
@@ -64,13 +65,25 @@ class XameMessage {
     this.albumId,
     this.albumIndex,
     this.albumTotal,
+    this.uploadProgress = 0.0,
   });
 
-XameMessage copyWith({String? status, Map<String, String>? reactions, String? localPath, bool? isDeleted, String? callType, String? callStatus, int? callDuration}) => XameMessage(
+XameMessage copyWith({
+    String? status,
+    Map<String, String>? reactions,
+    String? localPath,
+    bool? isDeleted,
+    String? callType,
+    String? callStatus,
+    int? callDuration,
+    double? uploadProgress,
+  }) => XameMessage(
     id:             id,             senderId:      senderId,
     recipientId:    recipientId,    text:          text,
     type:           type,           direction:     direction,
-    ts:             ts,             status:        status ?? this.status,
+    ts:             ts,
+    status:         status ?? this.status,
+    uploadProgress: uploadProgress ?? this.uploadProgress,
     isDisappearing: isDisappearing, expiresAt:     expiresAt,
     replyToId:      replyToId,      replyToText:   replyToText,
     replyToFileUrl: replyToFileUrl, replyToFileMime: replyToFileMime,

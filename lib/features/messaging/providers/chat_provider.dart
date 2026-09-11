@@ -34,6 +34,12 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     receiveTimeout: const Duration(seconds: 30),
     sendTimeout:    const Duration(minutes: 10), // large video uploads need time
   ));
+  final _mediaDio = Dio(BaseOptions(
+    baseUrl: AppConstants.mediaWorkerUrl,
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(minutes: 10),
+    sendTimeout: const Duration(minutes: 10),
+  ));
   final List<StreamSubscription> _subs = [];
 
   ChatNotifier(this._ref, this._contactId) : super([]) {
@@ -267,68 +273,211 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
   // Internal upload worker — called by sendFile()
   Future<void> _doUpload({
-    required String msgId,      required File   file,
-    required String mimeType,   required String? caption,
-    required bool   viewOnce,   required String fileName,
-    required int?   fileSize,   required int    ts,
+    required String msgId,
+    required File file,
+    required String mimeType,
+    required String? caption,
+    required bool viewOnce,
+    required String fileName,
+    required int? fileSize,
+    required int ts,
     required MessageType msgType,
-    String? albumId, int? albumIndex, int? albumTotal,
+    String? albumId,
+    int? albumIndex,
+    int? albumTotal,
   }) async {
     final self = _ref.read(currentUserProvider);
     if (self == null) return;
+
     try {
-      // Validate MIME — if not in allowed list, use octet-stream fallback
-      // so the server still accepts it rather than rejecting outright
-      final effectiveMime = AppConstants.allAllowedTypes.contains(mimeType)
-          ? mimeType
-          : 'application/octet-stream';
+      final effectiveMime =
+          AppConstants.allAllowedTypes.contains(mimeType)
+              ? mimeType
+              : 'application/octet-stream';
 
-      // Upload via server's ImageKit endpoint
-      final form = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path,
-            contentType: DioMediaType.parse(effectiveMime)),
-      });
-
-      int _lastPct = 0;
-      final res = await _dio.post(
-        '/api/upload-file',
-        data: form,
-        onSendProgress: (sent, total) {
-          if (total <= 0) return;
-          final pct = (sent / total * 100).round();
-          if (pct != _lastPct && pct % 10 == 0) {
-            _lastPct = pct;
-            state = state.map((m) => m.id == msgId
-                ? m.copyWith(status: 'uploading')
-                : m).toList();
-          }
-        },
+      final sessionToken = await _storage.read(
+        key: AppConstants.keySessionToken,
       );
 
-      final data    = res.data as Map<String, dynamic>?;
-      final fileUrl = (data?['success'] == true) ? (data?['url'] as String?) : null;
+      if (sessionToken == null || sessionToken.isEmpty) {
+        throw Exception('No active session.');
+      }
 
-      if (data != null && fileUrl != null) {
-        // SUCCESS — replace pending with final message
-        final finalMsg = XameMessage(
-          id: msgId,         senderId:    self.xameId,
-          recipientId: _contactId,        text:        caption ?? '',
-          type: msgType,     direction:   MessageDirection.sent,
-          ts: ts,            status:      'sending',
-          fileUrl: fileUrl,  fileName:    fileName,
-          fileMime: mimeType, fileSize:   fileSize,   viewOnce: viewOnce,
-          localPath: file.path,
-          albumId: albumId, albumIndex: albumIndex, albumTotal: albumTotal,
+      final initResponse = await _dio.post(
+        '/api/media/upload-init',
+        data: {
+          'fileName': fileName,
+          'contentType': effectiveMime,
+          'size': fileSize,
+          'folder': 'chat',
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $sessionToken',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      final initData = initResponse.data as Map<String, dynamic>;
+
+      if (initData['success'] != true ||
+          initData['key'] == null ||
+          initData['uploadId'] == null ||
+          initData['capability'] == null) {
+        throw Exception('Media upload initialization failed.');
+      }
+
+      final key = initData['key'] as String;
+      final uploadId = initData['uploadId'] as String;
+      final capability = initData['capability'] as String;
+
+      const chunkSize = 8 * 1024 * 1024;
+      final totalBytes = fileSize ?? await file.length();
+      final totalParts = (totalBytes + chunkSize - 1) ~/ chunkSize;
+      final completedParts = <Map<String, dynamic>>[];
+
+      var completedBytes = 0;
+
+      _updateUploadProgress(msgId, 0.0);
+
+      try {
+        for (var partNumber = 1;
+            partNumber <= totalParts;
+            partNumber++) {
+          final startByte = (partNumber - 1) * chunkSize;
+          final endByte = (startByte + chunkSize < totalBytes)
+              ? startByte + chunkSize
+              : totalBytes;
+          final partLength = endByte - startByte;
+
+          Map<String, dynamic>? partResult;
+          Object? lastError;
+
+          for (var attempt = 1; attempt <= 3; attempt++) {
+            try {
+              final response = await _mediaDio.put(
+                '/multipart/part',
+                queryParameters: {
+                  'key': key,
+                  'uploadId': uploadId,
+                  'partNumber': partNumber,
+                },
+                data: file.openRead(startByte, endByte),
+                options: Options(
+                  headers: {
+                    'Authorization': 'Bearer $capability',
+                    'Content-Type': 'application/octet-stream',
+                    'Content-Length': partLength,
+                  },
+                ),
+                onSendProgress: (sent, total) {
+                  final safeSent = sent > partLength ? partLength : sent;
+                  final overallBytes = completedBytes + safeSent;
+                  final progress =
+                      (overallBytes / totalBytes).clamp(0.0, 1.0);
+
+                  _updateUploadProgress(msgId, progress);
+                },
+              );
+
+              final data = response.data as Map<String, dynamic>;
+
+              if (data['success'] != true || data['etag'] == null) {
+                throw Exception('Multipart part upload failed.');
+              }
+
+              partResult = {
+                'partNumber': partNumber,
+                'etag': data['etag'],
+              };
+              break;
+            } catch (e) {
+              lastError = e;
+
+              if (attempt < 3) {
+                await Future<void>.delayed(
+                  Duration(seconds: attempt),
+                );
+              }
+            }
+          }
+
+          if (partResult == null) {
+            throw Exception(
+              'Multipart part $partNumber failed after 3 attempts: $lastError',
+            );
+          }
+
+          completedParts.add(partResult);
+          completedBytes += partLength;
+
+          _updateUploadProgress(
+            msgId,
+            (completedBytes / totalBytes).clamp(0.0, 1.0),
+          );
+        }
+
+        final completeResponse = await _mediaDio.post(
+          '/multipart/complete',
+          data: {
+            'key': key,
+            'uploadId': uploadId,
+            'parts': completedParts,
+          },
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $capability',
+              'Content-Type': 'application/json',
+            },
+          ),
         );
-        state = state.map((m) => m.id == msgId ? finalMsg : m).toList();
+
+        final completeData =
+            completeResponse.data as Map<String, dynamic>;
+
+        if (completeData['success'] != true ||
+            completeData['url'] == null) {
+          throw Exception('Media upload completion failed.');
+        }
+
+        final fileUrl = completeData['url'] as String;
+
+        final finalMsg = XameMessage(
+          id: msgId,
+          senderId: self.xameId,
+          recipientId: _contactId,
+          text: caption ?? '',
+          type: msgType,
+          direction: MessageDirection.sent,
+          ts: ts,
+          status: 'sending',
+          fileUrl: fileUrl,
+          fileName: fileName,
+          fileMime: mimeType,
+          fileSize: fileSize,
+          viewOnce: viewOnce,
+          localPath: file.path,
+          albumId: albumId,
+          albumIndex: albumIndex,
+          albumTotal: albumTotal,
+          uploadProgress: 1.0,
+        );
+
+        state = state.map(
+          (m) => m.id == msgId ? finalMsg : m,
+        ).toList();
+
         CacheService.saveChat(_contactId, state);
 
         _ref.read(socketServiceProvider).emit('send-message', {
           'recipientId': _contactId,
           'message': {
-            'id': msgId, 'text': caption ?? '', 'ts': ts,
+            'id': msgId,
+            'text': caption ?? '',
+            'ts': ts,
             'file': {
-              'url':  fileUrl,
+              'url': fileUrl,
               'name': fileName,
               'type': effectiveMime,
               'size': fileSize,
@@ -339,39 +488,116 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
             if (albumTotal != null) 'albumTotal': albumTotal,
           },
         });
-      } else {
-        // Server returned success:false — mark failed, keep bubble visible
-        _markFailed(msgId);
+      } catch (e) {
+        try {
+          await _mediaDio.post(
+            '/multipart/abort',
+            data: {
+              'key': key,
+              'uploadId': uploadId,
+            },
+            options: Options(
+              headers: {
+                'Authorization': 'Bearer $capability',
+                'Content-Type': 'application/json',
+              },
+            ),
+          );
+        } catch (_) {
+          // Best-effort multipart cleanup.
+        }
+
+        rethrow;
       }
     } on DioException catch (e) {
-      debugPrint('DioException during upload: ${e.type} — ${e.message}');
+      debugPrint(
+        'R2 chat upload DioException: ${e.type} — ${e.message}',
+      );
       debugPrint('Response: ${e.response?.data}');
-      _markFailed(msgId,
-          hint: e.response?.data?['message'] as String? ??
-                e.message ??
-                'Upload failed — check connection');
+
+      _markFailed(
+        msgId,
+        hint: e.response?.data?['message'] as String? ??
+            e.message ??
+            'Upload failed — check connection',
+      );
     } catch (e, st) {
-      debugPrint('Upload error: $e');
+      debugPrint('R2 chat upload error: $e');
       debugPrint('Stack: $st');
-      _markFailed(msgId, hint: 'Error: ${e.toString().substring(0, e.toString().length.clamp(0, 100))}');
+
+      _markFailed(
+        msgId,
+        hint: 'Error: ${e.toString().substring(
+              0,
+              e.toString().length.clamp(0, 100),
+            )}',
+      );
     }
   }
 
-  // Mark a message as failed — keeps it in the list so user sees it
-  void _markFailed(String msgId, {String? hint}) {
-    state = state.map((m) => m.id == msgId
-        ? m.copyWith(status: 'failed')
-        : m).toList();
+  void _updateUploadProgress(String msgId, double progress) {
+    final safeProgress = progress.clamp(0.0, 1.0);
+
+    state = state.map((m) {
+      if (m.id != msgId) return m;
+
+      return m.copyWith(
+        status: 'uploading',
+        uploadProgress: safeProgress,
+      );
+    }).toList();
   }
 
-  // Retry a failed file upload — called from bubble long-press menu
+  // Mark a message as failed — keeps it visible for retry.
+  void _markFailed(String msgId, {String? hint}) {
+    state = state.map((m) {
+      if (m.id != msgId) return m;
+
+      return m.copyWith(
+        status: 'failed',
+        uploadProgress: m.uploadProgress,
+      );
+    }).toList();
+
+    if (hint != null) {
+      debugPrint('Upload failed [$msgId]: $hint');
+    }
+  }
+
+  // Retry the existing failed upload using the SAME message ID.
   Future<void> retryFile(XameMessage msg, File file) async {
-    // Reset to uploading
-    state = state.map((m) => m.id == msg.id
-        ? m.copyWith(status: 'uploading')
-        : m).toList();
-    await sendFile(file, msg.fileMime ?? 'application/octet-stream',
-        caption: msg.text, viewOnce: msg.viewOnce);
+    if (msg.status != 'failed') return;
+
+    final fileSize = msg.fileSize ?? await file.length();
+
+    state = state.map((m) {
+      if (m.id != msg.id) return m;
+
+      return m.copyWith(
+        status: 'uploading',
+        uploadProgress: 0.0,
+        localPath: file.path,
+      );
+    }).toList();
+
+    try {
+      await _doUpload(
+        msgId: msg.id,
+        file: file,
+        mimeType: msg.fileMime ?? 'application/octet-stream',
+        caption: msg.text,
+        viewOnce: msg.viewOnce,
+        fileName: msg.fileName ?? file.path.split('/').last,
+        fileSize: fileSize,
+        ts: msg.ts,
+        msgType: msg.type,
+        albumId: msg.albumId,
+        albumIndex: msg.albumIndex,
+        albumTotal: msg.albumTotal,
+      );
+    } catch (e) {
+      _markFailed(msg.id, hint: e.toString());
+    }
   }
 
   // ── Fetch history ─────────────────────────────────────────────────────

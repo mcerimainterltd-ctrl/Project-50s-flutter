@@ -274,7 +274,7 @@ class MessageBubble extends ConsumerWidget {
         Text(time, style: TextStyle(color: context.xMuted, fontSize: 10)),
         if (isSelf) ...[
           const SizedBox(width: 4),
-          _StatusTick(status: message.status),
+          _StatusTick(message: message),
         ],
       ]),
     );
@@ -522,23 +522,78 @@ class _TextContent extends ConsumerWidget {
 
 // ─── Status ticks ─────────────────────────────────────────────────────────
 class _StatusTick extends StatelessWidget {
-  final String status;
-  _StatusTick({required this.status});
+  final XameMessage message;
+
+  const _StatusTick({required this.message});
+
   @override
   Widget build(BuildContext context) {
-    if (status == 'uploading')
-      return SizedBox(
-          width: 14, height: 14,
-          child: CircularProgressIndicator(strokeWidth: 1.5, color: context.xText.withValues(alpha: 0.54)));
-    if (status == 'failed')
+    final status = message.status;
+
+    if (status == 'uploading') {
+      final percent = (message.uploadProgress * 100)
+          .clamp(0.0, 100.0)
+          .round();
+
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              value: message.uploadProgress > 0
+                  ? message.uploadProgress
+                  : null,
+              strokeWidth: 1.5,
+              color: context.xText.withValues(alpha: 0.54),
+            ),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            '$percent%',
+            style: TextStyle(
+              color: context.xText.withValues(alpha: 0.70),
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (status == 'failed') {
       return Tooltip(
         message: 'Upload failed — long press to retry',
-        child: Icon(Icons.error_outline, size: 14, color: context.xDanger));
-    if (status == 'seen')
-      return Icon(Icons.done_all, size: 14, color: context.xPrimary);
-    if (status == 'delivered')
-      return Icon(Icons.done_all, size: 14, color: context.xMuted);
-    return Icon(Icons.done, size: 14, color: context.xMuted);
+        child: Icon(
+          Icons.error_outline,
+          size: 14,
+          color: context.xDanger,
+        ),
+      );
+    }
+
+    if (status == 'seen') {
+      return Icon(
+        Icons.done_all,
+        size: 14,
+        color: context.xPrimary,
+      );
+    }
+
+    if (status == 'delivered') {
+      return Icon(
+        Icons.done_all,
+        size: 14,
+        color: context.xMuted,
+      );
+    }
+
+    return Icon(
+      Icons.done,
+      size: 14,
+      color: context.xMuted,
+    );
   }
 }
 

@@ -690,6 +690,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Navigator.pop(context);
               showTranslateSheet(context, ref, msg.text);
             }),
+        if (msg.status == 'failed' && msg.localPath != null)
+          ListTile(
+            leading: const Icon(Icons.refresh, color: Colors.orangeAccent),
+            title: const Text(
+              'Retry upload',
+              style: TextStyle(color: Colors.white),
+            ),
+            onTap: () async {
+              Navigator.pop(context);
+
+              final file = File(msg.localPath!);
+
+              if (!await file.exists()) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Original file is no longer available.'),
+                  ),
+                );
+                return;
+              }
+
+              await ref
+                  .read(chatProvider(widget.userId).notifier)
+                  .retryFile(msg, file);
+            },
+          ),
+
         ListTile(leading: const Icon(Icons.select_all, color: Colors.white70),
           title: const Text('Select', style: TextStyle(color: Colors.white)),
           onTap: () { Navigator.pop(context); _enterSelectMode(msg.id); }),

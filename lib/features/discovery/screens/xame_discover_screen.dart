@@ -206,6 +206,7 @@ class DiscoveryApiService {
       }
 
       var completedBytes = 0;
+      var lastReportedBytes = 0;
       final uploadedMedia = <Map<String, dynamic>>[];
 
       for (var fileIndex = 0; fileIndex < allFiles.length; fileIndex++) {
@@ -281,7 +282,10 @@ class DiscoveryApiService {
                       final overallSent =
                           completedBytes +
                           (sent > total ? total : sent);
-                      onProgress(overallSent, totalSize);
+                      if (overallSent > lastReportedBytes) {
+                        lastReportedBytes = overallSent;
+                        onProgress(lastReportedBytes, totalSize);
+                      }
                     }
                   },
                 );
