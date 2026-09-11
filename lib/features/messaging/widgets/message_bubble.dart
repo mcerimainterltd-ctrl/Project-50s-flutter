@@ -15,6 +15,7 @@ import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/chat_provider.dart';
 import '../../settings/screens/settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/settings/screens/settings_screen.dart';
@@ -148,7 +149,7 @@ class MessageBubble extends ConsumerWidget {
                       if (message.type == MessageType.video)
                         Stack(
                           children: [
-                            _buildContent(context),
+                            _buildContent(context, ref),
                             Positioned(
                               bottom: 6, right: 8,
                               child: Container(
@@ -163,7 +164,7 @@ class MessageBubble extends ConsumerWidget {
                           ],
                         )
                       else ...[
-                        _buildContent(context),
+                        _buildContent(context, ref),
                         _buildTimeRow(context),
                       ],
                       if ((message.reactions ?? {}).isNotEmpty)
@@ -208,7 +209,7 @@ class MessageBubble extends ConsumerWidget {
   bool get _needsPadding =>
       message.type == MessageType.text || message.type == MessageType.file || message.type == MessageType.call;
 
-  Widget _buildContent(BuildContext context) {
+  Widget _buildContent(BuildContext context, WidgetRef ref) {
     if (message.isDeleted) {
       return Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.block, size: 13, color: context.xMuted),
@@ -244,12 +245,33 @@ class MessageBubble extends ConsumerWidget {
             isSelf:    isSelf,
             localPath: message.localPath);
       case MessageType.file:
-        return _FileBubble(
-            url:       message.fileUrl ?? '',
-            fileName:  message.fileName ?? 'file',
-            mime:      message.fileMime ?? '',
-            fileSize:  message.fileSize,
-            localPath: message.localPath);
+          final chat = ref.read(
+            chatProvider(message.recipientId).notifier,
+          );
+          return _FileBubble(
+              url:             message.fileUrl ?? '',
+              fileName:        message.fileName ?? 'file',
+              mime:            message.fileMime ?? '',
+              fileSize:        message.fileSize,
+              localPath:       message.localPath,
+              status:          message.status,
+              uploadProgress:  message.uploadProgress,
+              onPauseUpload:   isSelf && message.status == 'uploading'
+                  ? () => chat.pauseUpload(message.id)
+                  : null,
+              onResumeUpload:  isSelf && message.status == 'paused'
+                  ? () => chat.resumeUpload(message.id)
+                  : null,
+              onRetryUpload:   isSelf &&
+                      message.status == 'failed' &&
+                      message.localPath != null
+                  ? () async {
+                      final file = File(message.localPath!);
+                      if (await file.exists()) {
+                        await chat.retryFile(message, file);
+                      }
+                    }
+                  : null));
       case MessageType.text:
         return _TextContent(text: message.text, isSelf: isSelf, actionButton: message.actionButton);
       case MessageType.call:
@@ -1559,10 +1581,23 @@ class _FileBubble extends StatefulWidget {
   final String  url, fileName, mime;
   final int?    fileSize;
   final String? localPath;
+  final String  status;
+  final double  uploadProgress;
+  final VoidCallback? onPauseUpload;
+  final VoidCallback? onResumeUpload;
+  final VoidCallback? onRetryUpload;
+
   const _FileBubble({
-    required this.url,      required this.fileName,
-    required this.mime,     this.fileSize,
+    required this.url,
+    required this.fileName,
+    required this.mime,
+    this.fileSize,
     this.localPath,
+    required this.status,
+    required this.uploadProgress,
+    this.onPauseUpload,
+    this.onResumeUpload,
+    this.onRetryUpload,
   });
   @override
   State<_FileBubble> createState() => _FileBubbleState();
@@ -1722,6 +1757,19 @@ class _FileBubbleState extends State<_FileBubble> {
         XameColors.accent, const Color(0xFF23000B1A), 'FILE');
   }
 
+  Widget _buildUploadControls(BuildContext context) {
+    if (widget.status == "uploading" && widget.onPauseUpload != null) {
+      final percent = (widget.uploadProgress * 100).clamp(0.0, 100.0).round();
+      return Row(mainAxisSize: MainAxisSize.min, children: [Text("$percent%", style: TextStyle(color: context.xMuted, fontSize: 10, fontWeight: FontWeight.w600)), IconButton(tooltip: "Pause upload", onPressed: widget.onPauseUpload, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 28, minHeight: 28), icon: Icon(Icons.pause_circle_outline, color: context.xMuted, size: 20))]);
+    }
+    if (widget.status == "paused" && widget.onResumeUpload != null) {
+      final percent = (widget.uploadProgress * 100).clamp(0.0, 100.0).round();
+      return Row(mainAxisSize: MainAxisSize.min, children: [Text("$percent%", style: TextStyle(color: context.xMuted, fontSize: 10, fontWeight: FontWeight.w600)), IconButton(tooltip: "Continue upload", onPressed: widget.onResumeUpload, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 28, minHeight: 28), icon: Icon(Icons.play_circle_outline, color: context.xMuted, size: 20))]);
+    }
+    if (widget.status == "failed" && widget.onRetryUpload != null) return IconButton(tooltip: "Retry upload", onPressed: widget.onRetryUpload, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 28, minHeight: 28), icon: Icon(Icons.refresh_rounded, color: context.xMuted, size: 20));
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
     final st = _style;
@@ -1788,6 +1836,7 @@ class _FileBubbleState extends State<_FileBubble> {
           if (!_opening)
             Icon(Icons.download_rounded,
                 color: st.color.withValues(alpha: 0.6), size: 20),
+        _buildUploadControls(context),
         ]),
       ),
     );
