@@ -3,6 +3,9 @@ package com.xamepage.app
 import android.os.Build
 import android.os.Bundle
 import android.net.Uri
+import android.content.Intent
+import androidx.core.content.FileProvider
+import java.io.File
 import android.provider.Settings
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -117,6 +120,40 @@ class MainActivity : FlutterFragmentActivity() {
                             val success = MediaSaverService.saveFromUrl(this, url, fileName, mimeType)
                             runOnUiThread { result.success(success) }
                         }.start()
+                    }
+                    "installApk" -> {
+                        val path = call.argument<String>("path") ?: ""
+                        try {
+                            val apkFile = File(path)
+                            if (!apkFile.exists()) {
+                                result.success(false)
+                                return@setMethodCallHandler
+                            }
+
+                            val apkUri = FileProvider.getUriForFile(
+                                this,
+                                "$packageName.fileprovider",
+                                apkFile
+                            )
+
+                            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(
+                                    apkUri,
+                                    "application/vnd.android.package-archive"
+                                )
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                clipData = android.content.ClipData.newRawUri(
+                                    "XamePage APK",
+                                    apkUri
+                                )
+                            }
+
+                            startActivity(installIntent)
+                            result.success(true)
+                        } catch (_: Exception) {
+                            result.success(false)
+                        }
                     }
                     else -> result.notImplemented()
                 }

@@ -1599,18 +1599,34 @@ class _FileBubble extends StatefulWidget {
     this.onResumeUpload,
     this.onRetryUpload,
   });
+
   @override
   State<_FileBubble> createState() => _FileBubbleState();
 }
 
 class _FileBubbleState extends State<_FileBubble> {
   Uint8List? _pdfThumb;
-  bool _pdfLoading  = false;
-  bool _opening     = false;
-  double _progress  = 0;
+  bool _pdfLoading = false;
+  bool _opening = false;
 
-  bool get _isPdf => widget.mime.toLowerCase().contains('pdf') ||
+  double _downloadProgress = 0.0;
+  String _downloadState = 'idle';
+  String? _downloadPath;
+  CancelToken? _downloadCancelToken;
+
+  bool get _isPdf =>
+      widget.mime.toLowerCase().contains('pdf') ||
       widget.fileName.toLowerCase().endsWith('.pdf');
+
+  bool get _isApk =>
+      widget.mime.toLowerCase() ==
+          'application/vnd.android.package-archive' ||
+      widget.fileName.toLowerCase().endsWith('.apk');
+
+  bool get _hasLocalFile {
+    final path = widget.localPath ?? _downloadPath;
+    return path != null && File(path).existsSync();
+  }
 
   @override
   void initState() {
@@ -1618,242 +1634,828 @@ class _FileBubbleState extends State<_FileBubble> {
     if (_isPdf) _loadPdfThumb();
   }
 
+  @override
+  void dispose() {
+    _downloadCancelToken?.cancel('bubble disposed');
+    super.dispose();
+  }
+
   Future<void> _loadPdfThumb() async {
-    if (_pdfThumbCache.containsKey(widget.url)) {
-      if (mounted) setState(() {
-        _pdfThumb   = _pdfThumbCache[widget.url];
+    final cacheKey = widget.url.isNotEmpty ? widget.url : widget.fileName;
+
+    if (_pdfThumbCache.containsKey(cacheKey)) {
+      if (!mounted) return;
+      setState(() {
+        _pdfThumb = _pdfThumbCache[cacheKey];
         _pdfLoading = false;
       });
       return;
     }
-    setState(() => _pdfLoading = true);
+
+    if (widget.localPath != null &&
+        File(widget.localPath!).existsSync()) {
+      try {
+        final doc = await PdfDocument.openFile(widget.localPath!);
+        final page = await doc.getPage(1);
+        final img = await page.render(
+          width: 480,
+          height: (480 * page.height / page.width).roundToDouble(),
+          format: PdfPageImageFormat.jpeg,
+          backgroundColor: '#FFFFFF',
+        );
+        await page.close();
+        await doc.close();
+
+        _pdfThumbCache[cacheKey] = img?.bytes;
+        if (mounted) {
+          setState(() {
+            _pdfThumb = img?.bytes;
+            _pdfLoading = false;
+          });
+        }
+        return;
+      } catch (_) {}
+    }
+
+    if (widget.url.isEmpty) return;
+
+    if (mounted) setState(() => _pdfLoading = true);
+
     try {
-      // Download PDF to temp, render page 1
-      final dir  = await getTemporaryDirectory();
-      final path = '${dir.path}/${widget.url.hashCode}.pdf';
-      final pdfCached = File(path);
-      if (!pdfCached.existsSync() || pdfCached.lengthSync() == 0) {
-        if (pdfCached.existsSync()) await pdfCached.delete();
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/${cacheKey.hashCode}.pdf';
+      final cached = File(path);
+
+      if (!cached.existsSync() || cached.lengthSync() == 0) {
+        if (cached.existsSync()) await cached.delete();
         await Dio(BaseOptions(
           connectTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(minutes: 5),
         )).download(_resolveUrl(widget.url), path);
       }
-      final doc  = await PdfDocument.openFile(path);
+
+      final doc = await PdfDocument.openFile(path);
       final page = await doc.getPage(1);
-      final img  = await page.render(
-        width:           480,
-        height:          (480 * page.height / page.width).roundToDouble(),
-        format:          PdfPageImageFormat.jpeg,
+      final img = await page.render(
+        width: 480,
+        height: (480 * page.height / page.width).roundToDouble(),
+        format: PdfPageImageFormat.jpeg,
         backgroundColor: '#FFFFFF',
       );
       await page.close();
       await doc.close();
-      _pdfThumbCache[widget.url] = img?.bytes;
-      if (mounted) setState(() {
-        _pdfThumb   = img?.bytes;
-        _pdfLoading = false;
-      });
+
+      _pdfThumbCache[cacheKey] = img?.bytes;
+      if (mounted) {
+        setState(() {
+          _pdfThumb = img?.bytes;
+          _pdfLoading = false;
+        });
+      }
     } catch (_) {
-      _pdfThumbCache[widget.url] = null;
+      _pdfThumbCache[cacheKey] = null;
       if (mounted) setState(() => _pdfLoading = false);
     }
   }
 
-  Future<void> _openFile() async {
-    setState(() { _opening = true; _progress = 0; });
+  Future<String> _downloadFile() async {
+    final dir = await getTemporaryDirectory();
+    final safeName = widget.fileName.isNotEmpty
+        ? widget.fileName.replaceAll(RegExp(r'[/\\]'), '_')
+        : 'xamepage_file';
+
+    return '${dir.path}/xamepage_${widget.url.hashCode}_$safeName';
+  }
+
+  Future<void> _startOrResumeDownload() async {
+    if (widget.url.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File is not available yet')),
+        );
+      }
+      return;
+    }
+
+    final existingPath = widget.localPath ?? _downloadPath;
+    if (existingPath != null && File(existingPath).existsSync()) {
+      _downloadPath = existingPath;
+      await _openLocalFile(existingPath);
+      return;
+    }
+
+    final path = _downloadPath ?? await _downloadFile();
+    _downloadPath = path;
+
+    final file = File(path);
+    final offset = file.existsSync() ? await file.length() : 0;
+
+    if (mounted) {
+      setState(() {
+        _downloadState = 'downloading';
+        _downloadProgress =
+            widget.fileSize != null && widget.fileSize! > 0
+                ? (offset / widget.fileSize!).clamp(0.0, 1.0)
+                : 0.0;
+      });
+    }
+
+    final cancel = CancelToken();
+    _downloadCancelToken = cancel;
+
     try {
-      // 1. Use local path directly if file still exists on device
-      if (widget.localPath != null && File(widget.localPath!).existsSync()) {
-        if (mounted) setState(() => _opening = false);
-        final isApk = widget.mime.toLowerCase() ==
-                'application/vnd.android.package-archive' ||
-            widget.fileName.toLowerCase().endsWith('.apk');
-        final mimeType = isApk
-            ? 'application/vnd.android.package-archive'
-            : (widget.mime.isNotEmpty ? widget.mime : null);
-        final result = await OpenFilex.open(widget.localPath!, type: mimeType);
-        if (result.type != ResultType.done && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('No app found to open this file (${result.message})'),
-              backgroundColor: XameColors.darkCard));
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(minutes: 10),
+      ));
+
+      final response = await dio.get<ResponseBody>(
+        _resolveUrl(widget.url),
+        cancelToken: cancel,
+        options: Options(
+          responseType: ResponseType.stream,
+          headers: offset > 0 ? {'Range': 'bytes=$offset-'} : null,
+          followRedirects: true,
+          validateStatus: (code) => code != null && code >= 200 && code < 400,
+        ),
+      );
+
+      final responseBody = response.data;
+      if (responseBody == null) {
+        throw Exception('Empty download response');
+      }
+
+      final isPartial = response.statusCode == 206;
+      final startingOffset = isPartial ? offset : 0;
+
+      if (!isPartial && offset > 0) {
+        await file.writeAsBytes(const <int>[], flush: true);
+      }
+
+      final sink = file.openWrite(
+        mode: startingOffset > 0 ? FileMode.append : FileMode.write,
+      );
+
+      var received = startingOffset;
+      final contentLength = responseBody.contentLength;
+      final total = widget.fileSize != null && widget.fileSize! > 0
+          ? widget.fileSize!
+          : (contentLength > 0 ? startingOffset + contentLength : 0);
+
+      try {
+        await for (final chunk in responseBody.stream) {
+          if (cancel.isCancelled) break;
+          sink.add(chunk);
+          received += chunk.length;
+
+          if (mounted && total > 0) {
+            setState(() {
+              _downloadProgress =
+                  (received / total).clamp(0.0, 1.0);
+            });
+          }
         }
+      } finally {
+        await sink.flush();
+        await sink.close();
+      }
+
+      if (cancel.isCancelled) {
+        if (mounted) setState(() => _downloadState = 'paused');
         return;
       }
 
-      // 2. No local file — need remote URL to download
-      if (widget.url.isEmpty) {
-        if (mounted) {
-          setState(() => _opening = false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('File not available — upload may still be in progress'),
-              backgroundColor: Colors.orange));
-        }
-        return;
+      if (!file.existsSync() || await file.length() == 0) {
+        throw Exception('Downloaded file is empty');
       }
 
-      // 3. Download to cache then open
-      final dir  = await getTemporaryDirectory();
-      final name = widget.fileName.isNotEmpty
-          ? widget.fileName
-          : widget.url.split('/').last.split('?').first;
-      final path = '${dir.path}/$name';
-      final cached = File(path);
-      if (!cached.existsSync() || cached.lengthSync() == 0) {
-        if (cached.existsSync()) await cached.delete();
-        final resolvedUrl = _resolveUrl(widget.url);
-        await Dio(BaseOptions(
-          connectTimeout: Duration(seconds: 30),
-          receiveTimeout: Duration(minutes: 5),
-        )).download(resolvedUrl, path,
-            onReceiveProgress: (r, t) {
-          if (t > 0 && mounted) setState(() => _progress = r / t);
+      if (mounted) {
+        setState(() {
+          _downloadProgress = 1.0;
+          _downloadState = 'completed';
         });
       }
-      if (mounted) setState(() => _opening = false);
-      final isApk = widget.mime.toLowerCase() ==
-              'application/vnd.android.package-archive' ||
-          widget.fileName.toLowerCase().endsWith('.apk');
-      final result = await OpenFilex.open(
-        path,
-        type: isApk
-            ? 'application/vnd.android.package-archive'
-            : (widget.mime.isNotEmpty ? widget.mime : null),
-      );
-      if (result.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('No app found to open this file type'),
-            backgroundColor: XameColors.darkCard));
+
+      await _openLocalFile(path);
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        if (mounted) setState(() => _downloadState = 'paused');
+        return;
+      }
+
+      if (mounted) {
+        setState(() => _downloadState = 'failed');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: ${e.message ?? e}')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _opening = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Download failed: $e'),
-            backgroundColor: Colors.redAccent));
+        setState(() => _downloadState = 'failed');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: $e')),
+        );
       }
+    } finally {
+      _downloadCancelToken = null;
     }
   }
 
-  // ── Per-type visual config ───────────────────────────────────────────
+  void _pauseDownload() {
+    if (_downloadState != 'downloading') return;
+    _downloadCancelToken?.cancel('paused by user');
+  }
+
+  Future<void> _openLocalFile(String path) async {
+    if (!File(path).existsSync()) {
+      if (mounted) setState(() => _downloadState = 'failed');
+      return;
+    }
+
+    if (mounted) setState(() => _opening = true);
+
+    try {
+      if (_isApk) {
+        final ok = await const MethodChannel(
+          'com.xamepage.app/android_bridge',
+        ).invokeMethod<bool>('installApk', {'path': path});
+
+        if (ok != true && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to start APK installation')),
+          );
+        }
+      } else {
+        final result = await OpenFilex.open(
+          path,
+          type: widget.mime.isNotEmpty ? widget.mime : null,
+        );
+
+        if (result.type != ResultType.done && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'No app found to open this file (${result.message})',
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to open file: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
+
+  Future<void> _handleMainTap() async {
+    if (_opening) return;
+
+    final local = widget.localPath ?? _downloadPath;
+
+    if (local != null && File(local).existsSync()) {
+      await _openLocalFile(local);
+      return;
+    }
+
+    if (_downloadState == 'downloading') return;
+
+    await _startOrResumeDownload();
+  }
+
   _DocStyle get _style {
     final m = widget.mime.toLowerCase();
     final n = widget.fileName.toLowerCase();
-    if (m.contains('pdf')   || n.endsWith('.pdf'))
-      return _DocStyle(Icons.picture_as_pdf_outlined,
-          XameColors.danger, Color(0xFF23111100), 'PDF');
-    if (m.contains('word')  || n.endsWith('.doc') || n.endsWith('.docx'))
-      return _DocStyle(Icons.description_outlined,
-          XameColors.primary, Color(0xFF23001155), 'WORD');
-    if (m.contains('sheet') || m.contains('excel') ||
-        n.endsWith('.xls')  || n.endsWith('.xlsx'))
-      return _DocStyle(Icons.table_chart_outlined,
-          XameColors.accent, Color(0xFF23001100), 'EXCEL');
-    if (m.contains('presentation') || m.contains('powerpoint') ||
-        n.endsWith('.ppt')  || n.endsWith('.pptx'))
-      return _DocStyle(Icons.slideshow_outlined,
-          XameColors.danger, Color(0xFF23110000), 'PPT');
-    if (m.contains('zip')   || m.contains('rar') || m.contains('tar') ||
-        n.endsWith('.zip')  || n.endsWith('.rar'))
-      return _DocStyle(Icons.folder_zip_outlined,
-          XameColors.accent, Color(0xFF23110B00), 'ZIP');
-    if (m.contains('audio') || n.endsWith('.mp3') || n.endsWith('.aac'))
-      return _DocStyle(Icons.audio_file_outlined,
-          XameColors.secondary, Color(0xFF23050011), 'AUDIO');
-    if (m.contains('video') || n.endsWith('.mp4') || n.endsWith('.mov'))
-      return _DocStyle(Icons.video_file_outlined,
-          XameColors.accent, Color(0xFF23001111), 'VIDEO');
-    if (m.contains('text')  || n.endsWith('.txt'))
-      return _DocStyle(Icons.article_outlined,
-          XameColors.darkBg.withValues(alpha: 0.7), Color(0xFF23111111), 'TXT');
-    return _DocStyle(Icons.insert_drive_file_outlined,
-        XameColors.accent, const Color(0xFF23000B1A), 'FILE');
+
+    if (_isApk)
+      return _DocStyle(
+        Icons.android_outlined,
+        XameColors.primary,
+        const Color(0xFF23001155),
+        'APK',
+      );
+
+    if (m.contains('pdf') || n.endsWith('.pdf'))
+      return _DocStyle(
+        Icons.picture_as_pdf_outlined,
+        XameColors.danger,
+        const Color(0xFF23111100),
+        'PDF',
+      );
+
+    if (m.contains('word') || n.endsWith('.doc') || n.endsWith('.docx'))
+      return _DocStyle(
+        Icons.description_outlined,
+        XameColors.primary,
+        const Color(0xFF23001155),
+        'WORD',
+      );
+
+    if (m.contains('sheet') ||
+        m.contains('excel') ||
+        n.endsWith('.xls') ||
+        n.endsWith('.xlsx'))
+      return _DocStyle(
+        Icons.table_chart_outlined,
+        XameColors.accent,
+        const Color(0xFF23001100),
+        'EXCEL',
+      );
+
+    if (m.contains('presentation') ||
+        m.contains('powerpoint') ||
+        n.endsWith('.ppt') ||
+        n.endsWith('.pptx'))
+      return _DocStyle(
+        Icons.slideshow_outlined,
+        XameColors.danger,
+        const Color(0xFF23110000),
+        'PPT',
+      );
+
+    if (m.contains('zip') ||
+        m.contains('rar') ||
+        m.contains('tar') ||
+        n.endsWith('.zip') ||
+        n.endsWith('.rar'))
+      return _DocStyle(
+        Icons.folder_zip_outlined,
+        XameColors.accent,
+        const Color(0xFF23110B00),
+        'ZIP',
+      );
+
+    if (m.contains('audio') ||
+        n.endsWith('.mp3') ||
+        n.endsWith('.aac'))
+      return _DocStyle(
+        Icons.audio_file_outlined,
+        XameColors.secondary,
+        const Color(0xFF23050011),
+        'AUDIO',
+      );
+
+    if (m.contains('video') ||
+        n.endsWith('.mp4') ||
+        n.endsWith('.mov'))
+      return _DocStyle(
+        Icons.video_file_outlined,
+        XameColors.accent,
+        const Color(0xFF23001111),
+        'VIDEO',
+      );
+
+    if (m.contains('text') || n.endsWith('.txt'))
+      return _DocStyle(
+        Icons.article_outlined,
+        XameColors.darkBg.withValues(alpha: 0.7),
+        const Color(0xFF23111111),
+        'TXT',
+      );
+
+    return _DocStyle(
+      Icons.insert_drive_file_outlined,
+      XameColors.accent,
+      const Color(0xFF23000B1A),
+      'FILE',
+    );
   }
 
-  Widget _buildUploadControls(BuildContext context) {
-    if (widget.status == "uploading" && widget.onPauseUpload != null) {
-      final percent = (widget.uploadProgress * 100).clamp(0.0, 100.0).round();
-      return Row(mainAxisSize: MainAxisSize.min, children: [Text("$percent%", style: TextStyle(color: context.xMuted, fontSize: 10, fontWeight: FontWeight.w600)), IconButton(tooltip: "Pause upload", onPressed: widget.onPauseUpload, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 28, minHeight: 28), icon: Icon(Icons.pause_circle_outline, color: context.xMuted, size: 20))]);
+  Widget _buildThumbnail(BuildContext context, _DocStyle st) {
+    final cacheKey = widget.url.isNotEmpty ? widget.url : widget.fileName;
+
+    return SizedBox(
+      width: 70,
+      height: 82,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_isPdf && _pdfThumb != null)
+              Image.memory(
+                _pdfThumb!,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.medium,
+              )
+            else
+              Container(
+                color: st.bgTint,
+                child: Center(
+                  child: _pdfLoading && _isPdf
+                      ? SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: st.color,
+                          ),
+                        )
+                      : Icon(st.icon, color: st.color, size: 34),
+                ),
+              ),
+            if (_isPdf && _pdfThumb != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 5,
+                  ),
+                  color: Colors.black.withValues(alpha: 0.58),
+                  child: Text(
+                    st.label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Positioned(
+                left: 7,
+                right: 7,
+                bottom: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: st.color,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    st.label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: CustomPaint(
+                size: const Size(18, 18),
+                painter: _FileFoldPainter(
+                  color: context.xCard,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransferControl(BuildContext context) {
+    if (_downloadState == 'downloading') {
+      return IconButton(
+        tooltip: 'Pause download',
+        onPressed: _pauseDownload,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(
+          minWidth: 38,
+          minHeight: 38,
+        ),
+        icon: const Icon(Icons.pause_circle_filled_rounded, size: 28),
+      );
     }
-    if (widget.status == "paused" && widget.onResumeUpload != null) {
-      final percent = (widget.uploadProgress * 100).clamp(0.0, 100.0).round();
-      return Row(mainAxisSize: MainAxisSize.min, children: [Text("$percent%", style: TextStyle(color: context.xMuted, fontSize: 10, fontWeight: FontWeight.w600)), IconButton(tooltip: "Continue upload", onPressed: widget.onResumeUpload, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 28, minHeight: 28), icon: Icon(Icons.play_circle_outline, color: context.xMuted, size: 20))]);
+
+    if (_downloadState == 'paused') {
+      return IconButton(
+        tooltip: 'Continue download',
+        onPressed: _startOrResumeDownload,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(
+          minWidth: 38,
+          minHeight: 38,
+        ),
+        icon: const Icon(Icons.play_circle_fill_rounded, size: 28),
+      );
     }
-    if (widget.status == "failed" && widget.onRetryUpload != null) return IconButton(tooltip: "Retry upload", onPressed: widget.onRetryUpload, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 28, minHeight: 28), icon: Icon(Icons.refresh_rounded, color: context.xMuted, size: 20));
-    return const SizedBox.shrink();
+
+    if (_downloadState == 'failed') {
+      return IconButton(
+        tooltip: 'Retry download',
+        onPressed: _startOrResumeDownload,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(
+          minWidth: 38,
+          minHeight: 38,
+        ),
+        icon: const Icon(Icons.refresh_rounded, size: 27),
+      );
+    }
+
+    if (widget.status == 'uploading' &&
+        widget.onPauseUpload != null) {
+      final percent =
+          (widget.uploadProgress * 100).clamp(0.0, 100.0).round();
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$percent%',
+            style: TextStyle(
+              color: context.xMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Pause upload',
+            onPressed: widget.onPauseUpload,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 38,
+              minHeight: 34,
+            ),
+            icon: const Icon(Icons.pause_circle_filled_rounded, size: 27),
+          ),
+        ],
+      );
+    }
+
+    if (widget.status == 'paused' &&
+        widget.onResumeUpload != null) {
+      final percent =
+          (widget.uploadProgress * 100).clamp(0.0, 100.0).round();
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$percent%',
+            style: TextStyle(
+              color: context.xMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Continue upload',
+            onPressed: widget.onResumeUpload,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 38,
+              minHeight: 34,
+            ),
+            icon: const Icon(Icons.play_circle_fill_rounded, size: 27),
+          ),
+        ],
+      );
+    }
+
+    if (widget.status == 'failed' &&
+        widget.onRetryUpload != null) {
+      return IconButton(
+        tooltip: 'Retry upload',
+        onPressed: widget.onRetryUpload,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(
+          minWidth: 38,
+          minHeight: 38,
+        ),
+        icon: const Icon(Icons.refresh_rounded, size: 27),
+      );
+    }
+
+    if (_hasLocalFile) {
+      return Icon(
+        _isApk ? Icons.install_mobile_rounded : Icons.open_in_new_rounded,
+        color: stColor.withValues(alpha: 0.75),
+        size: 22,
+      );
+    }
+
+    return Icon(
+      Icons.download_rounded,
+      color: context.xMuted.withValues(alpha: 0.8),
+      size: 22,
+    );
+  }
+
+  Color get stColor => _style.color;
+
+  String _transferText() {
+    if (widget.status == 'uploading') {
+      final p = (widget.uploadProgress * 100).clamp(0.0, 100.0).round();
+      return 'Uploading $p%';
+    }
+
+    if (widget.status == 'paused') {
+      final p = (widget.uploadProgress * 100).clamp(0.0, 100.0).round();
+      return 'Upload paused · $p%';
+    }
+
+    if (widget.status == 'failed' &&
+        widget.onRetryUpload != null) {
+      return 'Upload failed';
+    }
+
+    if (_downloadState == 'downloading') {
+      return 'Downloading ${(_downloadProgress * 100).round()}%';
+    }
+
+    if (_downloadState == 'paused') {
+      return 'Download paused · ${(_downloadProgress * 100).round()}%';
+    }
+
+    if (_downloadState == 'failed') {
+      return 'Download failed · tap retry';
+    }
+
+    if (_hasLocalFile) {
+      return _isApk ? 'Ready to install' : 'Ready to open';
+    }
+
+    return 'Tap to download';
+  }
+
+  Widget _buildProgress(BuildContext context) {
+    final uploading =
+        widget.status == 'uploading' || widget.status == 'paused';
+    final downloading =
+        _downloadState == 'downloading' || _downloadState == 'paused';
+
+    if (!uploading && !downloading) {
+      return const SizedBox.shrink();
+    }
+
+    final value = uploading
+        ? widget.uploadProgress.clamp(0.0, 1.0)
+        : _downloadProgress.clamp(0.0, 1.0);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 7),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: LinearProgressIndicator(
+          value: value,
+          minHeight: 4,
+          backgroundColor: stColor.withValues(alpha: 0.12),
+          color: stColor,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final st = _style;
 
-    return GestureDetector(
-      onTap: _opening ? null : _openFile,
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 200, maxWidth: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: context.xCard.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: st.color.withValues(alpha: 0.15)),
+    return Container(
+      constraints: const BoxConstraints(
+        minWidth: 250,
+        maxWidth: 340,
+      ),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: context.xCard.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: st.color.withValues(alpha: 0.16),
         ),
-        child: Row(children: [
-          // ── File type icon pill ───────────────────────────────────
-          Container(
-            width: 44, height: 44,
-            decoration: BoxDecoration(
-              color: st.color.withValues(alpha: 0.12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: st.color.withValues(alpha: 0.25)),
+              onTap: _opening ? null : _handleMainTap,
+              child: _buildThumbnail(context, st),
             ),
-            child: _opening
-                ? Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: CircularProgressIndicator(
-                        value: _progress > 0 ? _progress : null,
-                        color: st.color, strokeWidth: 2))
-                : Icon(st.icon, color: st.color, size: 22),
           ),
-          const SizedBox(width: 10),
-          // ── Name + meta ───────────────────────────────────────────
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.fileName,
-                  style: TextStyle(color: context.xText, fontSize: 13,
-                      fontWeight: FontWeight.w600),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 3),
-              Row(children: [
-                if (widget.fileSize != null) ...[
-                  Text(_fmtSize(widget.fileSize),
-                      style: TextStyle(color: context.xMuted, fontSize: 11)),
-                  Text('  ·  ',
-                      style: TextStyle(color: context.xMuted, fontSize: 11)),
-                ],
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: st.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(4),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: _opening ? null : _handleMainTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 2,
+                    horizontal: 2,
                   ),
-                  child: Text(st.label,
-                      style: TextStyle(color: st.color, fontSize: 10,
-                          fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.fileName.isNotEmpty
+                            ? widget.fileName
+                            : 'XamePage file',
+                        style: TextStyle(
+                          color: context.xText,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          if (widget.fileSize != null)
+                            Text(
+                              _fmtSize(widget.fileSize),
+                              style: TextStyle(
+                                color: context.xMuted,
+                                fontSize: 10.5,
+                              ),
+                            ),
+                          if (widget.fileSize != null)
+                            Text(
+                              '  ·  ',
+                              style: TextStyle(
+                                color: context.xMuted,
+                                fontSize: 10.5,
+                              ),
+                            ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: st.color.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              st.label,
+                              style: TextStyle(
+                                color: st.color,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.7,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _transferText(),
+                        style: TextStyle(
+                          color: context.xMuted,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      _buildProgress(context),
+                    ],
+                  ),
                 ),
-              ]),
-            ],
-          )),
-          const SizedBox(width: 8),
-          // ── Download arrow ────────────────────────────────────────
-          if (!_opening)
-            Icon(Icons.download_rounded,
-                color: st.color.withValues(alpha: 0.6), size: 20),
-        _buildUploadControls(context),
-        ]),
+              ),
+            ),
+          ),
+          const SizedBox(width: 5),
+          _buildTransferControl(context),
+        ],
       ),
     );
   }
+}
+
+class _FileFoldPainter extends CustomPainter {
+  final Color color;
+
+  const _FileFoldPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path()
+      ..moveTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, 0)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _FileFoldPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _DocStyle {
