@@ -41,6 +41,9 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     sendTimeout: const Duration(minutes: 10),
   ));
   final List<StreamSubscription> _subs = [];
+  final Set<String> _pausedUploads = <String>{};
+  final Map<String, Completer<void>> _uploadResumeWaiters =
+      <String, Completer<void>>();
 
   ChatNotifier(this._ref, this._contactId) : super([]) {
     final cached = CacheService.loadChat(_contactId);
@@ -250,21 +253,13 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     );
     state = [...state, pending];
 
-    // Scale timeout with file size: 2min base + 1min per 5MB, max 10min
-    final sizeMb       = (fileSize ?? 0) / (1024 * 1024);
-    final timeoutMins  = (2 + (sizeMb / 5)).ceil().clamp(2, 10);
-    final uploadFuture = _doUpload(
-      msgId: msgId, file: file, mimeType: mimeType,
-      caption: caption, viewOnce: viewOnce,
-      fileName: fileName, fileSize: fileSize, ts: ts,
-      msgType: msgType,
-      albumId: albumId, albumIndex: albumIndex, albumTotal: albumTotal,
-    );
     try {
-      await uploadFuture.timeout(
-        Duration(minutes: timeoutMins),
-        onTimeout: () => _markFailed(msgId,
-            hint: 'Upload timed out after \${timeoutMins}min — try on a faster connection'),
+      await _doUpload(
+        msgId: msgId, file: file, mimeType: mimeType,
+        caption: caption, viewOnce: viewOnce,
+        fileName: fileName, fileSize: fileSize, ts: ts,
+        msgType: msgType,
+        albumId: albumId, albumIndex: albumIndex, albumTotal: albumTotal,
       );
     } catch (e) {
       _markFailed(msgId, hint: e.toString());
@@ -416,6 +411,29 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
             msgId,
             (completedBytes / totalBytes).clamp(0.0, 1.0),
           );
+
+          if (_pausedUploads.contains(msgId)) {
+            state = state.map(
+              (m) => m.id == msgId
+                  ? m.copyWith(status: 'paused')
+                  : m,
+            ).toList();
+
+            final waiter = _uploadResumeWaiters.putIfAbsent(
+              msgId,
+              () => Completer<void>(),
+            );
+
+            await waiter.future;
+
+            if (!_pausedUploads.contains(msgId)) {
+              state = state.map(
+                (m) => m.id == msgId
+                    ? m.copyWith(status: 'uploading')
+                    : m,
+              ).toList();
+            }
+          }
         }
 
         final completeResponse = await _mediaDio.post(
@@ -442,6 +460,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         }
 
         final fileUrl = completeData['url'] as String;
+        _clearUploadPause(msgId);
 
         final finalMsg = XameMessage(
           id: msgId,
@@ -510,6 +529,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
         rethrow;
       }
     } on DioException catch (e) {
+      _clearUploadPause(msgId);
       debugPrint(
         'R2 chat upload DioException: ${e.type} — ${e.message}',
       );
@@ -522,6 +542,7 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
             'Upload failed — check connection',
       );
     } catch (e, st) {
+      _clearUploadPause(msgId);
       debugPrint('R2 chat upload error: $e');
       debugPrint('Stack: $st');
 
@@ -561,6 +582,38 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
     if (hint != null) {
       debugPrint('Upload failed [$msgId]: $hint');
+    }
+  }
+
+  void pauseUpload(String msgId) {
+    _pausedUploads.add(msgId);
+    _uploadResumeWaiters.putIfAbsent(
+      msgId,
+      () => Completer<void>(),
+    );
+  }
+
+  void resumeUpload(String msgId) {
+    _pausedUploads.remove(msgId);
+
+    final waiter = _uploadResumeWaiters.remove(msgId);
+    if (waiter != null && !waiter.isCompleted) {
+      waiter.complete();
+    }
+
+    state = state.map(
+      (m) => m.id == msgId && m.status == 'paused'
+          ? m.copyWith(status: 'uploading')
+          : m,
+    ).toList();
+  }
+
+  void _clearUploadPause(String msgId) {
+    _pausedUploads.remove(msgId);
+
+    final waiter = _uploadResumeWaiters.remove(msgId);
+    if (waiter != null && !waiter.isCompleted) {
+      waiter.complete();
     }
   }
 
@@ -791,6 +844,12 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
 
   @override
   void dispose() {
+    for (final waiter in _uploadResumeWaiters.values) {
+      if (!waiter.isCompleted) waiter.complete();
+    }
+    _uploadResumeWaiters.clear();
+    _pausedUploads.clear();
+
     for (final s in _subs) s.cancel();
     super.dispose();
   }

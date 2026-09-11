@@ -271,7 +271,7 @@ class MessageBubble extends ConsumerWidget {
                         await chat.retryFile(message, file);
                       }
                     }
-                  : null));
+                  : null);
       case MessageType.text:
         return _TextContent(text: message.text, isSelf: isSelf, actionButton: message.actionButton);
       case MessageType.call:
