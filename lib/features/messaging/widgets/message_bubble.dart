@@ -2237,10 +2237,19 @@ class _FileBubbleState extends State<_FileBubble> {
     }
 
     if (_hasLocalFile) {
-      return Icon(
-        _isApk ? Icons.install_mobile_rounded : Icons.open_in_new_rounded,
-        color: stColor.withValues(alpha: 0.75),
-        size: 22,
+      return IconButton(
+        tooltip: _isApk ? 'Install APK' : 'Open file',
+        onPressed: _opening ? null : _handleMainTap,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(
+          minWidth: 38,
+          minHeight: 38,
+        ),
+        icon: Icon(
+          _isApk ? Icons.install_mobile_rounded : Icons.open_in_new_rounded,
+          color: stColor.withValues(alpha: 0.75),
+          size: 22,
+        ),
       );
     }
 

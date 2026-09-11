@@ -136,7 +136,19 @@ class MainActivity : FlutterFragmentActivity() {
                                 apkFile
                             )
 
-                            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                                !packageManager.canRequestPackageInstalls()
+                            ) {
+                                val settingsIntent = Intent(
+                                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                    Uri.parse("package:$packageName")
+                                )
+                                startActivity(settingsIntent)
+                                result.success(false)
+                                return@setMethodCallHandler
+                            }
+
+                            val installIntent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
                                 setDataAndType(
                                     apkUri,
                                     "application/vnd.android.package-archive"
@@ -151,7 +163,12 @@ class MainActivity : FlutterFragmentActivity() {
 
                             startActivity(installIntent)
                             result.success(true)
-                        } catch (_: Exception) {
+                        } catch (e: Exception) {
+                            android.util.Log.e(
+                                "XamePage",
+                                "APK installation failed for: $path",
+                                e
+                            )
                             result.success(false)
                         }
                     }
