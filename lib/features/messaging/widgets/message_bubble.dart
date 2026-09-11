@@ -1666,7 +1666,12 @@ class _FileBubbleState extends State<_FileBubble> {
       // 1. Use local path directly if file still exists on device
       if (widget.localPath != null && File(widget.localPath!).existsSync()) {
         if (mounted) setState(() => _opening = false);
-        final mimeType = widget.mime.isNotEmpty ? widget.mime : null;
+        final isApk = widget.mime.toLowerCase() ==
+                'application/vnd.android.package-archive' ||
+            widget.fileName.toLowerCase().endsWith('.apk');
+        final mimeType = isApk
+            ? 'application/vnd.android.package-archive'
+            : (widget.mime.isNotEmpty ? widget.mime : null);
         final result = await OpenFilex.open(widget.localPath!, type: mimeType);
         if (result.type != ResultType.done && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1706,7 +1711,15 @@ class _FileBubbleState extends State<_FileBubble> {
         });
       }
       if (mounted) setState(() => _opening = false);
-      final result = await OpenFilex.open(path);
+      final isApk = widget.mime.toLowerCase() ==
+              'application/vnd.android.package-archive' ||
+          widget.fileName.toLowerCase().endsWith('.apk');
+      final result = await OpenFilex.open(
+        path,
+        type: isApk
+            ? 'application/vnd.android.package-archive'
+            : (widget.mime.isNotEmpty ? widget.mime : null),
+      );
       if (result.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('No app found to open this file type'),
