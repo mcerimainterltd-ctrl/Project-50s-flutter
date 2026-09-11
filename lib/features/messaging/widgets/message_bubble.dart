@@ -221,29 +221,89 @@ class MessageBubble extends ConsumerWidget {
       ]);
     }
     switch (message.type) {
-      case MessageType.image:
+      case MessageType.image: {
         final albumSiblings = (message.albumId != null && allMessages != null)
             ? allMessages!.where((m) => m.albumId == message.albumId).toList()
             : <XameMessage>[];
+        final chat = ref.read(chatProvider(message.recipientId).notifier);
         return _ImageBubble(
             url: message.fileUrl ?? '',
             caption: message.text,
             viewOnce: message.viewOnce,
             albumIndex: message.albumIndex,
             albumTotal: message.albumTotal,
-            albumSiblings: albumSiblings);
-      case MessageType.video:
+            albumSiblings: albumSiblings,
+            status: message.status,
+            uploadProgress: message.uploadProgress,
+            onPauseUpload: isSelf && message.status == 'uploading'
+                ? () => chat.pauseUpload(message.id)
+                : null,
+            onResumeUpload: isSelf && message.status == 'paused'
+                ? () => chat.resumeUpload(message.id)
+                : null,
+            onRetryUpload: isSelf &&
+                    message.status == 'failed' &&
+                    message.localPath != null
+                ? () async {
+                    final file = File(message.localPath!);
+                    if (await file.exists()) {
+                      await chat.retryFile(message, file);
+                    }
+                  }
+                : null);
+      }
+      case MessageType.video: {
+        final chat = ref.read(chatProvider(message.recipientId).notifier);
         return _VideoBubble(
             url:       message.fileUrl ?? '',
             fileName:  message.fileName ?? 'video',
             fileSize:  message.fileSize,
-            localPath: message.localPath);
-      case MessageType.audio:
+            localPath: message.localPath,
+            status: message.status,
+            uploadProgress: message.uploadProgress,
+            onPauseUpload: isSelf && message.status == 'uploading'
+                ? () => chat.pauseUpload(message.id)
+                : null,
+            onResumeUpload: isSelf && message.status == 'paused'
+                ? () => chat.resumeUpload(message.id)
+                : null,
+            onRetryUpload: isSelf &&
+                    message.status == 'failed' &&
+                    message.localPath != null
+                ? () async {
+                    final file = File(message.localPath!);
+                    if (await file.exists()) {
+                      await chat.retryFile(message, file);
+                    }
+                  }
+                : null);
+      }
+      case MessageType.audio: {
+        final chat = ref.read(chatProvider(message.recipientId).notifier);
         return _AudioBubble(
             url:       message.fileUrl ?? '',
             fileName:  message.fileName ?? 'audio',
             isSelf:    isSelf,
-            localPath: message.localPath);
+            localPath: message.localPath,
+            status: message.status,
+            uploadProgress: message.uploadProgress,
+            onPauseUpload: isSelf && message.status == 'uploading'
+                ? () => chat.pauseUpload(message.id)
+                : null,
+            onResumeUpload: isSelf && message.status == 'paused'
+                ? () => chat.resumeUpload(message.id)
+                : null,
+            onRetryUpload: isSelf &&
+                    message.status == 'failed' &&
+                    message.localPath != null
+                ? () async {
+                    final file = File(message.localPath!);
+                    if (await file.exists()) {
+                      await chat.retryFile(message, file);
+                    }
+                  }
+                : null);
+      }
       case MessageType.file:
           final chat = ref.read(
             chatProvider(message.recipientId).notifier,
@@ -690,15 +750,83 @@ class _ReplyQuote extends StatelessWidget {
 }
 
 // ─── Image bubble ─────────────────────────────────────────────────────────
+class _UploadStatusOverlay extends StatelessWidget {
+  final String status;
+  final double progress;
+  final VoidCallback? onPause;
+  final VoidCallback? onResume;
+  final VoidCallback? onRetry;
+
+  const _UploadStatusOverlay({
+    required this.status,
+    required this.progress,
+    this.onPause,
+    this.onResume,
+    this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (status != "uploading" && status != "paused" && status != "failed") {
+      return const SizedBox.shrink();
+    }
+    final percent = (progress.clamp(0.0, 1.0) * 100).round();
+    final isPaused = status == "paused";
+    final isFailed = status == "failed";
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.55),
+        child: Center(
+          child: GestureDetector(
+            onTap: isFailed ? onRetry : (isPaused ? onResume : onPause),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black54,
+                  ),
+                  child: Icon(
+                    isFailed ? Icons.refresh_rounded : (isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                if (!isFailed) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    "$percent%",
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ImageBubble extends StatelessWidget {
   final String url, caption;
   final bool   viewOnce;
   final int?   albumIndex;
   final int?   albumTotal;
   final List<XameMessage> albumSiblings;
+  final String status;
+  final double uploadProgress;
+  final VoidCallback? onPauseUpload;
+  final VoidCallback? onResumeUpload;
+  final VoidCallback? onRetryUpload;
   _ImageBubble(
       {required this.url, required this.caption, required this.viewOnce,
-       this.albumIndex, this.albumTotal, this.albumSiblings = const []});
+       this.albumIndex, this.albumTotal, this.albumSiblings = const [],
+       this.status = '', this.uploadProgress = 0.0,
+       this.onPauseUpload, this.onResumeUpload, this.onRetryUpload});
 
   void _openFullScreen(BuildContext context) {
     if (albumSiblings.length > 1) {
@@ -757,7 +885,8 @@ class _ImageBubble extends StatelessWidget {
       final displayCount = allUrls.length > 4 ? 4 : allUrls.length;
       final overflow = allUrls.length - 4;
 
-      return GestureDetector(
+      return Stack(children: [
+        GestureDetector(
         onTap: () => _openFullScreen(context),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ClipRRect(
@@ -818,11 +947,20 @@ class _ImageBubble extends StatelessWidget {
               child: Text(caption,
                   style: TextStyle(color: context.xText, fontSize: 13))),
         ]),
-      );
+        ),
+        _UploadStatusOverlay(
+          status: status,
+          progress: uploadProgress,
+          onPause: onPauseUpload,
+          onResume: onResumeUpload,
+          onRetry: onRetryUpload,
+        ),
+      ]);
     }
 
     final showBadge = albumTotal != null && albumTotal! > 1;
-    return GestureDetector(
+    return Stack(children: [
+      GestureDetector(
       onTap: () => _openFullScreen(context),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Stack(children: [
@@ -863,7 +1001,15 @@ class _ImageBubble extends StatelessWidget {
             child: Text(caption,
                 style: TextStyle(color: context.xText, fontSize: 13))),
       ]),
-    );
+      ),
+      _UploadStatusOverlay(
+        status: status,
+        progress: uploadProgress,
+        onPause: onPauseUpload,
+        onResume: onResumeUpload,
+        onRetry: onRetryUpload,
+      ),
+    ]);
   }
 }
 
@@ -1040,9 +1186,15 @@ class _VideoBubble extends StatefulWidget {
   final String  url, fileName;
   final int?    fileSize;
   final String? localPath;
+  final String  status;
+  final double  uploadProgress;
+  final VoidCallback? onPauseUpload;
+  final VoidCallback? onResumeUpload;
+  final VoidCallback? onRetryUpload;
   const _VideoBubble(
       {required this.url, required this.fileName, this.fileSize,
-       this.localPath});
+       this.localPath, this.status = '', this.uploadProgress = 0.0,
+       this.onPauseUpload, this.onResumeUpload, this.onRetryUpload});
   @override
   State<_VideoBubble> createState() => _VideoBubbleState();
 }
@@ -1315,7 +1467,9 @@ class _VideoBubbleState extends State<_VideoBubble> {
     final maxH = MediaQuery.of(context).size.height * 0.65;
     final h = (w / _videoAspectRatio).clamp(120.0, maxH).toDouble();
 
-    return ClipRRect(
+    return Stack(
+      children: [
+      ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: SizedBox(
         width: w,
@@ -1387,6 +1541,15 @@ class _VideoBubbleState extends State<_VideoBubble> {
                 ),
               ),
       ),
+      ),
+      _UploadStatusOverlay(
+        status: widget.status,
+        progress: widget.uploadProgress,
+        onPause: widget.onPauseUpload,
+        onResume: widget.onResumeUpload,
+        onRetry: widget.onRetryUpload,
+      ),
+      ],
     );
   }
 }
@@ -2480,12 +2643,22 @@ class _AudioBubble extends StatefulWidget {
   final String url, fileName;
   final bool isSelf;
   final String? localPath;
+  final String status;
+  final double uploadProgress;
+  final VoidCallback? onPauseUpload;
+  final VoidCallback? onResumeUpload;
+  final VoidCallback? onRetryUpload;
 
   const _AudioBubble({
     required this.url,
     required this.fileName,
     required this.isSelf,
     this.localPath,
+    this.status = '',
+    this.uploadProgress = 0.0,
+    this.onPauseUpload,
+    this.onResumeUpload,
+    this.onRetryUpload,
   });
   @override
   State<_AudioBubble> createState() => _AudioBubbleState();
@@ -2583,7 +2756,8 @@ class _AudioBubbleState extends State<_AudioBubble> {
         ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
 
-    return Container(
+    return Stack(children: [
+      Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
       constraints: BoxConstraints(minWidth: 200, maxWidth: 280),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -2634,7 +2808,15 @@ class _AudioBubbleState extends State<_AudioBubble> {
           ),
         ),
       ]),
-    );
+      ),
+      _UploadStatusOverlay(
+        status: widget.status,
+        progress: widget.uploadProgress,
+        onPause: widget.onPauseUpload,
+        onResume: widget.onResumeUpload,
+        onRetry: widget.onRetryUpload,
+      ),
+    ]);
   }
 }
 
