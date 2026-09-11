@@ -8,6 +8,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:math';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:async';
@@ -19,6 +20,7 @@ import 'author_gallery_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:video_compress/video_compress.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -42,6 +44,11 @@ import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── API Service ───────────────────────────────────────────────────────────────
 class DiscoveryApiService {
+  static final _mediaDio = Dio(
+    BaseOptions(baseUrl: AppConstants.mediaWorkerUrl),
+  );
+  static const _storage = FlutterSecureStorage();
+
   static final _dio = Dio(BaseOptions(
     baseUrl:        AppConstants.serverUrl,
     connectTimeout: const Duration(seconds: 30),
@@ -180,29 +187,393 @@ class DiscoveryApiService {
   }) async {
     try {
       final allFiles = mediaFiles.isNotEmpty ? mediaFiles : [mediaFile];
-      final formData = FormData.fromMap({
-        'authorId':     authorId,
-        'title':        title,
-        'caption':      caption,
-        'region':       region,
-        'category':     category,
-        'mediaType':    mediaType,
-        'isWhisper':    isWhisper.toString(),
-        'isCollabOpen': isCollabOpen.toString(),
-        'musicTitle':   musicTitle,
-        if (musicUrl.isNotEmpty) 'musicUrl': musicUrl,
-      });
-      for (final f in allFiles) {
-        formData.files.add(MapEntry('media', await MultipartFile.fromFile(f.path)));
+
+      final sessionToken = await _storage.read(
+        key: AppConstants.keySessionToken,
+      );
+
+      if (sessionToken == null || sessionToken.isEmpty) {
+        return 'No active session.';
       }
+
+      final totalBytes = await Future.wait(
+        allFiles.map((file) => file.length()),
+      );
+      final totalSize = totalBytes.fold<int>(0, (sum, size) => sum + size);
+
+      if (totalSize <= 0) {
+        return 'Media required';
+      }
+
+      var completedBytes = 0;
+      final uploadedMedia = <Map<String, dynamic>>[];
+
+      for (var fileIndex = 0; fileIndex < allFiles.length; fileIndex++) {
+        final file = allFiles[fileIndex];
+        final fileName = file.path.split('/').last;
+        final fileSize = totalBytes[fileIndex];
+        final contentType =
+            mediaType == 'video' ? 'video/mp4' : 'image/jpeg';
+
+        final initResponse = await _dio.post(
+          '/api/media/upload-init',
+          data: {
+            'fileName': fileName,
+            'contentType': contentType,
+            'size': fileSize,
+            'folder': 'discovery',
+          },
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $sessionToken',
+              'Content-Type': 'application/json',
+            },
+          ),
+        );
+
+        final initData = initResponse.data as Map<String, dynamic>;
+
+        if (initData['success'] != true ||
+            initData['key'] == null ||
+            initData['uploadId'] == null ||
+            initData['capability'] == null) {
+          throw Exception('Media upload initialization failed.');
+        }
+
+        final key = initData['key'] as String;
+        final uploadId = initData['uploadId'] as String;
+        final capability = initData['capability'] as String;
+
+        const chunkSize = 8 * 1024 * 1024;
+        final totalParts = (fileSize + chunkSize - 1) ~/ chunkSize;
+        final completedParts = <Map<String, dynamic>>[];
+
+        try {
+          for (var partNumber = 1; partNumber <= totalParts; partNumber++) {
+            final startByte = (partNumber - 1) * chunkSize;
+            final endByte = (startByte + chunkSize < fileSize)
+                ? startByte + chunkSize
+                : fileSize;
+            final partLength = endByte - startByte;
+
+            Map<String, dynamic>? partResult;
+            Object? lastError;
+
+            for (var attempt = 1; attempt <= 3; attempt++) {
+              try {
+                final response = await _mediaDio.put(
+                  '/multipart/part',
+                  queryParameters: {
+                    'key': key,
+                    'uploadId': uploadId,
+                    'partNumber': partNumber,
+                  },
+                  data: file.openRead(startByte, endByte),
+                  options: Options(
+                    headers: {
+                      'Authorization': 'Bearer $capability',
+                      'Content-Type': 'application/octet-stream',
+                      'Content-Length': partLength,
+                    },
+                  ),
+                  onSendProgress: (sent, total) {
+                    if (onProgress != null && total > 0) {
+                      final overallSent =
+                          completedBytes +
+                          (sent > total ? total : sent);
+                      onProgress(overallSent, totalSize);
+                    }
+                  },
+                );
+
+                final data = response.data as Map<String, dynamic>;
+
+                if (data['success'] != true || data['etag'] == null) {
+                  throw Exception('Multipart part upload failed.');
+                }
+
+                partResult = {
+                  'partNumber': partNumber,
+                  'etag': data['etag'],
+                };
+                break;
+              } catch (e) {
+                lastError = e;
+                if (attempt < 3) {
+                  await Future<void>.delayed(
+                    Duration(seconds: attempt),
+                  );
+                }
+              }
+            }
+
+            if (partResult == null) {
+              throw Exception(
+                'Multipart part $partNumber failed after 3 attempts: $lastError',
+              );
+            }
+
+            completedParts.add(partResult);
+          }
+
+          final completeResponse = await _mediaDio.post(
+            '/multipart/complete',
+            data: {
+              'key': key,
+              'uploadId': uploadId,
+              'parts': completedParts,
+            },
+            options: Options(
+              headers: {
+                'Authorization': 'Bearer $capability',
+                'Content-Type': 'application/json',
+              },
+            ),
+          );
+
+          final completeData =
+              completeResponse.data as Map<String, dynamic>;
+
+          if (completeData['success'] != true ||
+              completeData['url'] == null) {
+            throw Exception('Media upload completion failed.');
+          }
+
+          uploadedMedia.add({
+            'url': completeData['url'] as String,
+            'type': mediaType == 'video' ? 'video' : 'image',
+          });
+
+          completedBytes += fileSize;
+
+          onProgress?.call(completedBytes, totalSize);
+        } catch (e) {
+          try {
+            await _mediaDio.post(
+              '/multipart/abort',
+              data: {
+                'key': key,
+                'uploadId': uploadId,
+              },
+              options: Options(
+                headers: {
+                  'Authorization': 'Bearer $capability',
+                  'Content-Type': 'application/json',
+                },
+              ),
+            );
+          } catch (_) {}
+
+          rethrow;
+        }
+      }
+
+      final mediaUrl = uploadedMedia.first['url'] as String;
+
+      String thumbnailUrl = '';
+
+      if (mediaType == 'video') {
+        final primaryVideo = allFiles.first;
+        final thumbPath = await VideoThumbnail.thumbnailFile(
+          video: primaryVideo.path,
+          imageFormat: ImageFormat.JPEG,
+          maxWidth: 720,
+          quality: 80,
+        );
+
+        if (thumbPath == null || thumbPath.isEmpty) {
+          throw Exception('Failed to generate video thumbnail.');
+        }
+
+        final thumbnailFile = File(thumbPath);
+        final thumbnailSize = await thumbnailFile.length();
+
+        if (thumbnailSize <= 0) {
+          throw Exception('Generated video thumbnail is empty.');
+        }
+
+        final thumbName =
+            '${primaryVideo.path.split('/').last}_thumbnail.jpg';
+
+        final thumbInit = await _dio.post(
+          '/api/media/upload-init',
+          data: {
+            'fileName': thumbName,
+            'contentType': 'image/jpeg',
+            'size': thumbnailSize,
+            'folder': 'discovery',
+          },
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $sessionToken',
+              'Content-Type': 'application/json',
+            },
+          ),
+        );
+
+        final thumbInitData =
+            thumbInit.data as Map<String, dynamic>;
+
+        if (thumbInitData['success'] != true ||
+            thumbInitData['key'] == null ||
+            thumbInitData['uploadId'] == null ||
+            thumbInitData['capability'] == null) {
+          throw Exception('Thumbnail upload initialization failed.');
+        }
+
+        final thumbKey = thumbInitData['key'] as String;
+        final thumbUploadId = thumbInitData['uploadId'] as String;
+        final thumbCapability =
+            thumbInitData['capability'] as String;
+
+        const thumbChunkSize = 8 * 1024 * 1024;
+        final thumbPartsCount =
+            (thumbnailSize + thumbChunkSize - 1) ~/ thumbChunkSize;
+        final thumbParts = <Map<String, dynamic>>[];
+
+        try {
+          for (var partNumber = 1;
+              partNumber <= thumbPartsCount;
+              partNumber++) {
+            final startByte = (partNumber - 1) * thumbChunkSize;
+            final endByte = (startByte + thumbChunkSize < thumbnailSize)
+                ? startByte + thumbChunkSize
+                : thumbnailSize;
+            final partLength = endByte - startByte;
+
+            Map<String, dynamic>? partResult;
+            Object? lastError;
+
+            for (var attempt = 1; attempt <= 3; attempt++) {
+              try {
+                final response = await _mediaDio.put(
+                  '/multipart/part',
+                  queryParameters: {
+                    'key': thumbKey,
+                    'uploadId': thumbUploadId,
+                    'partNumber': partNumber,
+                  },
+                  data: thumbnailFile.openRead(startByte, endByte),
+                  options: Options(
+                    headers: {
+                      'Authorization': 'Bearer $thumbCapability',
+                      'Content-Type': 'application/octet-stream',
+                      'Content-Length': partLength,
+                    },
+                  ),
+                );
+
+                final partData =
+                    response.data as Map<String, dynamic>;
+
+                if (partData['success'] != true ||
+                    partData['etag'] == null) {
+                  throw Exception('Thumbnail multipart upload failed.');
+                }
+
+                partResult = {
+                  'partNumber': partNumber,
+                  'etag': partData['etag'],
+                };
+                break;
+              } catch (e) {
+                lastError = e;
+                if (attempt < 3) {
+                  await Future<void>.delayed(
+                    Duration(seconds: attempt),
+                  );
+                }
+              }
+            }
+
+            if (partResult == null) {
+              throw Exception(
+                'Thumbnail part $partNumber failed after 3 attempts: $lastError',
+              );
+            }
+
+            thumbParts.add(partResult);
+          }
+
+          final thumbComplete = await _mediaDio.post(
+            '/multipart/complete',
+            data: {
+              'key': thumbKey,
+              'uploadId': thumbUploadId,
+              'parts': thumbParts,
+            },
+            options: Options(
+              headers: {
+                'Authorization': 'Bearer $thumbCapability',
+                'Content-Type': 'application/json',
+              },
+            ),
+          );
+
+          final thumbCompleteData =
+              thumbComplete.data as Map<String, dynamic>;
+
+          if (thumbCompleteData['success'] != true ||
+              thumbCompleteData['url'] == null) {
+            throw Exception('Thumbnail upload completion failed.');
+          }
+
+          thumbnailUrl = thumbCompleteData['url'] as String;
+        } catch (e) {
+          try {
+            await _mediaDio.post(
+              '/multipart/abort',
+              data: {
+                'key': thumbKey,
+                'uploadId': thumbUploadId,
+              },
+              options: Options(
+                headers: {
+                  'Authorization': 'Bearer $thumbCapability',
+                  'Content-Type': 'application/json',
+                },
+              ),
+            );
+          } catch (_) {}
+
+          rethrow;
+        } finally {
+          try {
+            await thumbnailFile.delete();
+          } catch (_) {}
+        }
+      }
+
       final res = await _dio.post(
         '/api/discover/post',
-        data: formData,
-        onSendProgress: onProgress,
+        data: {
+          'authorId': authorId,
+          'title': title,
+          'caption': caption,
+          'region': region,
+          'category': category,
+          'mediaType': mediaType,
+          'isWhisper': isWhisper.toString(),
+          'isCollabOpen': isCollabOpen.toString(),
+          'musicTitle': musicTitle,
+          if (musicUrl.isNotEmpty) 'musicUrl': musicUrl,
+          'mediaUrl': mediaUrl,
+          'mediaUrls': uploadedMedia,
+          if (thumbnailUrl.isNotEmpty) 'thumbnailUrl': thumbnailUrl,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $sessionToken',
+            'Content-Type': 'application/json',
+          },
+        ),
       );
+
       final data = res.data as Map<String, dynamic>;
       return data['success'] == true ? null : data['message'] as String?;
-    } catch (e) { return 'Upload failed: \$e'; }
+    } catch (e) {
+      return 'Upload failed: $e';
+    }
   }
 
   static Future<String?> createStory({

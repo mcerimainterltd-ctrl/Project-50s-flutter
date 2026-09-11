@@ -538,15 +538,32 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                   GestureDetector(
                     onTap: _playVideo,
                     child: Stack(fit: StackFit.expand, children: [
-                      CachedNetworkImage(
-                        imageUrl: widget.thumbnailUrl?.isNotEmpty == true
-                            ? widget.thumbnailUrl!
-                            : widget.mediaUrl.replaceFirst('/upload/', '/upload/so_0/'),
-                        fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => Container(
+                      if (widget.thumbnailUrl?.isNotEmpty == true)
+                        CachedNetworkImage(
+                          imageUrl: widget.thumbnailUrl!,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => Container(
+                            color: context.xSurface,
+                            child: Icon(Icons.movie_outlined,
+                                color: context.xMuted.withValues(alpha: 0.25), size: 48)),
+                        )
+                      else if (widget.mediaUrl.startsWith(
+                          'https://media.xamepage.com/media/'))
+                        Container(
                           color: context.xSurface,
                           child: Icon(Icons.movie_outlined,
-                              color: context.xMuted.withValues(alpha: 0.25), size: 48))),
+                              color: context.xMuted.withValues(alpha: 0.25), size: 48),
+                        )
+                      else
+                        CachedNetworkImage(
+                          imageUrl: widget.mediaUrl.replaceFirst(
+                              '/upload/', '/upload/so_0/'),
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => Container(
+                            color: context.xSurface,
+                            child: Icon(Icons.movie_outlined,
+                                color: context.xMuted.withValues(alpha: 0.25), size: 48)),
+                        ),
                       Center(child: Container(
                         width: 64, height: 64,
                         decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black54),
