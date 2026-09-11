@@ -318,6 +318,8 @@ class DiscoveryApiService {
             }
 
             completedParts.add(partResult);
+              completedBytes += partLength;
+              onProgress?.call(completedBytes, totalSize);
           }
 
           final completeResponse = await _mediaDio.post(
@@ -348,7 +350,6 @@ class DiscoveryApiService {
             'type': mediaType == 'video' ? 'video' : 'image',
           });
 
-          completedBytes += fileSize;
 
           onProgress?.call(completedBytes, totalSize);
         } catch (e) {
