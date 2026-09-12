@@ -6,6 +6,7 @@ import 'webrtc_service.dart';
 import 'audio_service.dart';
 import 'auth_service.dart';
 import 'push_service.dart';
+import 'storage_health_service.dart';
 
 final lifecycleServiceProvider = Provider<LifecycleService>((ref) {
   return LifecycleService(ref);
@@ -53,6 +54,10 @@ class LifecycleService with WidgetsBindingObserver {
           final push = _ref.read(pushServiceProvider);
           push.reRegisterToken(user.xameId);
         }
+
+        // Refresh device storage health whenever XamePage returns to foreground.
+        _ref.read(storageHealthServiceProvider).checkNow();
+
         debugPrint('XamePage: App foregrounded — refreshing presence');
         break;
 

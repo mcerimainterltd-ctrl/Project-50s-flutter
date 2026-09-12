@@ -2,6 +2,7 @@ package com.xamepage.app
 
 import android.os.Build
 import android.os.Bundle
+import android.os.StatFs
 import android.net.Uri
 import android.content.Intent
 import androidx.core.content.FileProvider
@@ -108,6 +109,24 @@ class MainActivity : FlutterFragmentActivity() {
                         result.success(null)
                     }
                     "getDeviceBrand" -> result.success(android.os.Build.MANUFACTURER)
+                    "getStorageInfo" -> {
+                        try {
+                            val stat = StatFs(android.os.Environment.getDataDirectory().path)
+                            result.success(
+                                mapOf(
+                                    "availableBytes" to stat.availableBytes,
+                                    "totalBytes" to stat.totalBytes
+                                )
+                            )
+                        } catch (e: Exception) {
+                            android.util.Log.e(
+                                "XamePage",
+                                "Storage information lookup failed",
+                                e
+                            )
+                            result.error("STORAGE_INFO_FAILED", e.message, null)
+                        }
+                    }
                     "isBatteryOptimized" -> {
                         val pm = getSystemService(android.os.PowerManager::class.java)
                         result.success(!pm.isIgnoringBatteryOptimizations(packageName))

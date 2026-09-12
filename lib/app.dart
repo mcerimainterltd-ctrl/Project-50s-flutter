@@ -27,6 +27,7 @@ import 'package:xamepage/core/theme/app_theme.dart';
 import 'package:xamepage/features/contacts/providers/contacts_provider.dart';
 import 'package:xamepage/features/calls/screens/call_history_screen.dart';
 import 'package:xamepage/core/services/cache_service.dart';
+import 'package:xamepage/core/services/storage_health_service.dart';
 
 const _keepaliveChannel = MethodChannel('com.xamepage.app/keepalive');
 
@@ -95,6 +96,9 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkBatteryOptimization());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(storageHealthServiceProvider).checkNow();
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _initFcmNavigation());
     if (widget.initialDeepLink != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -769,6 +773,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
           fit: StackFit.expand,
           children: [
             child ?? const SizedBox.shrink(),
+            const _StorageHealthOverlay(),
             const _ActiveCallMiniBar(),
           ],
         );
@@ -780,6 +785,124 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   }
 }
 
+
+class _StorageHealthOverlay extends ConsumerStatefulWidget {
+  const _StorageHealthOverlay();
+
+  @override
+  ConsumerState<_StorageHealthOverlay> createState() =>
+      _StorageHealthOverlayState();
+}
+
+class _StorageHealthOverlayState
+    extends ConsumerState<_StorageHealthOverlay> {
+  StorageHealthStatus _lastStatus = StorageHealthStatus.healthy;
+  bool _dialogShowing = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    ref.listenManual<StorageHealthService>(
+      storageHealthServiceProvider,
+      (previous, next) {
+        if (!mounted) return;
+
+        final status = next.status;
+        final enteredCritical =
+            status == StorageHealthStatus.critical &&
+            _lastStatus != StorageHealthStatus.critical;
+
+        _lastStatus = status;
+
+        if (enteredCritical) {
+          _showCriticalStorageDialog(next);
+        }
+      },
+    );
+  }
+
+  Future<void> _showCriticalStorageDialog(
+      StorageHealthService storage) async {
+    if (_dialogShowing || !mounted) return;
+
+    _dialogShowing = true;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Critical storage'),
+          content: Text(
+            'Your device has only ${storage.availableText} available. '
+            'Free storage to prevent problems with downloads, media, '
+            'updates, and XamePage operation.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    _dialogShowing = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final storage = ref.watch(storageHealthServiceProvider);
+
+    if (!storage.showBanner) {
+      return const SizedBox.shrink();
+    }
+
+    final top = MediaQuery.of(context).padding.top + 8;
+
+    return Positioned(
+      top: top,
+      left: 12,
+      right: 12,
+      child: Material(
+        elevation: 6,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).colorScheme.surface,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.storage_rounded,
+                size: 22,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  storage.bannerMessage,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _ActiveCallMiniBar extends ConsumerStatefulWidget {
   const _ActiveCallMiniBar();
