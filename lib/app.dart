@@ -800,6 +800,9 @@ class _ActiveCallMiniBarState extends ConsumerState<_ActiveCallMiniBar> {
   int _baseSeconds = 0;
   DateTime? _startedAt;
 
+  // Floating mini-call position, expressed as left/top offsets.
+  Offset? _miniPosition;
+
   int get _elapsed {
     final started = _startedAt;
     if (started == null) return _baseSeconds;
@@ -889,69 +892,119 @@ class _ActiveCallMiniBarState extends ConsumerState<_ActiveCallMiniBar> {
         .firstOrNull;
 
     final name = contact?.name ?? _userId!;
+    final screen = MediaQuery.sizeOf(context);
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+
+    const margin = 12.0;
+    const miniHeight = 58.0;
+    const maxMiniWidth = 360.0;
+
+    final miniWidth =
+        (screen.width - (margin * 2))
+            .clamp(0.0, maxMiniWidth)
+            .toDouble();
+
+    final maxLeft =
+        (screen.width - miniWidth - margin)
+            .clamp(margin, double.infinity)
+            .toDouble();
+
+    final maxTop =
+        (screen.height - miniHeight - margin)
+            .clamp(margin, double.infinity)
+            .toDouble();
+
+    final defaultTop =
+        (screen.height -
+                miniHeight -
+                safeBottom -
+                76.0)
+            .clamp(margin, maxTop)
+            .toDouble();
+
+    final position =
+        _miniPosition ??
+        Offset(margin, defaultTop);
 
     return Positioned(
-      left: 12,
-      right: 12,
-      bottom: 12,
+      left: position.dx.clamp(margin, maxLeft).toDouble(),
+      top: position.dy.clamp(margin, maxTop).toDouble(),
       child: SafeArea(
         top: false,
-        child: Material(
-          color: Colors.black87,
-          elevation: 12,
-          borderRadius: BorderRadius.circular(18),
-          child: InkWell(
+        bottom: false,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanUpdate: (details) {
+            final current = _miniPosition ?? position;
+
+            setState(() {
+              _miniPosition = Offset(
+                (current.dx + details.delta.dx)
+                    .clamp(margin, maxLeft)
+                    .toDouble(),
+                (current.dy + details.delta.dy)
+                    .clamp(margin, maxTop)
+                    .toDouble(),
+              );
+            });
+          },
+          onTap: _restore,
+          child: Material(
+            color: Colors.black87,
+            elevation: 12,
             borderRadius: BorderRadius.circular(18),
-            onTap: _restore,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 15,
-                vertical: 10,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
-                      color: Colors.greenAccent,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Icon(
-                    _isVideo
-                        ? Icons.videocam_rounded
-                        : Icons.call_rounded,
-                    color: Colors.white,
-                    size: 21,
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+            child: SizedBox(
+              width: miniWidth,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Colors.greenAccent,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                  ),
-                  Text(
-                    _formatMiniCallDuration(_elapsed),
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
+                    const SizedBox(width: 10),
+                    Icon(
+                      _isVideo
+                          ? Icons.videocam_rounded
+                          : Icons.call_rounded,
+                      color: Colors.white,
+                      size: 21,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.open_in_full_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ],
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _formatMiniCallDuration(_elapsed),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.open_in_full_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -959,6 +1012,7 @@ class _ActiveCallMiniBarState extends ConsumerState<_ActiveCallMiniBar> {
       ),
     );
   }
+
 }
 
 String _formatMiniCallDuration(int seconds) {
