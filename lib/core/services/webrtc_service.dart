@@ -93,6 +93,25 @@ class WebRTCService {
     }
   }
 
+  Future<void> setSpeakerphone(bool enabled) async {
+    _speakerOn = enabled;
+    await Helper.setSpeakerphoneOn(enabled);
+  }
+
+  Future<void> restoreCallAudio() async {
+    if (_callState != CallState.active || _pc == null) return;
+
+    try {
+      for (final track
+          in localStream?.getAudioTracks() ?? <MediaStreamTrack>[]) {
+        track.enabled = true;
+      }
+      await Helper.setSpeakerphoneOn(_speakerOn);
+    } catch (_) {
+      // Keep the active WebRTC call alive if audio-route recovery fails.
+    }
+  }
+
   final SocketService _socket;
   RTCPeerConnection? _pc;
   bool _iceBufferEnabled = false;
@@ -101,6 +120,7 @@ class WebRTCService {
   String? currentRemoteUserId;
   String  callerDisplayName = 'Unknown';
   bool isIncomingVideo = true;
+  bool _speakerOn = false;
   
   final AudioService _audio = AudioService();
   static const _channel = MethodChannel('com.xamepage.app/call');

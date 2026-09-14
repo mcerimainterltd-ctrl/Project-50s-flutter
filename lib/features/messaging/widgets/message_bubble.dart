@@ -1542,6 +1542,34 @@ class _VideoBubbleState extends State<_VideoBubble> {
               ),
       ),
       ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Material(
+            color: Colors.black54,
+            shape: const CircleBorder(),
+            child: _downloading
+                ? const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Download video',
+                    icon: const Icon(
+                      Icons.download_outlined,
+                      color: Colors.white,
+                    ),
+                    onPressed: _downloadVideo,
+                  ),
+          ),
+        ),
       _UploadStatusOverlay(
         status: widget.status,
         progress: widget.uploadProgress,

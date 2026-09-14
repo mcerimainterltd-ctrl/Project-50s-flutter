@@ -436,7 +436,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                               webrtc.localStream?.getVideoTracks()[0].switchCamera()),
                           _vBtn(Icons.volume_up, _isSpeakerOn, 'Speaker', () {
                             setState(() => _isSpeakerOn = !_isSpeakerOn);
-                            Helper.setSpeakerphoneOn(_isSpeakerOn);
+                            ref.read(webRTCServiceProvider).setSpeakerphone(_isSpeakerOn);
                           }),
                           _vBtn(Icons.screen_share_outlined, _isScreenSharing, "Share", _toggleScreenShare),
                           _endBtn(webrtc),
@@ -653,7 +653,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                             active: _isSpeakerOn,
                             onTap: () {
                               setState(() => _isSpeakerOn = !_isSpeakerOn);
-                              Helper.setSpeakerphoneOn(_isSpeakerOn);
+                              ref.read(webRTCServiceProvider).setSpeakerphone(_isSpeakerOn);
                             },
                           ),
                         ],

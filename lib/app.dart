@@ -991,6 +991,7 @@ class _ActiveCallMiniBarState extends ConsumerState<_ActiveCallMiniBar> {
         '?video=$_isVideo&incoming=$_isIncoming';
 
     service.restoreCall();
+      service.restoreCallAudio();
     ref.read(routerProvider).go(path);
   }
 
