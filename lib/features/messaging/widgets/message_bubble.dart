@@ -1206,6 +1206,51 @@ class _VideoBubbleState extends State<_VideoBubble> {
   bool _playing = false;
   double _videoAspectRatio = 16 / 9;
   BetterPlayerController? _playerCtrl;
+  bool _downloading = false;
+
+  Future<void> _downloadVideo() async {
+    if (_downloading) return;
+
+    setState(() => _downloading = true);
+    try {
+      const bridge =
+          MethodChannel('com.xamepage.app/android_bridge');
+
+      final fileName =
+          'xamepage_video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+
+      final success = await bridge.invokeMethod<bool>('saveMedia', {
+        'url': _resolveUrl(widget.url),
+        'fileName': fileName,
+        'mimeType': 'video/mp4',
+      });
+
+      if (mounted) {
+        setState(() => _downloading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success == true
+                  ? 'Video saved to Movies/XamePage'
+                  : 'Save failed — please try again',
+            ),
+            backgroundColor:
+                success == true ? Colors.green : Colors.redAccent,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _downloading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Save failed'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
