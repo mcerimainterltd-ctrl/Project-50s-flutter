@@ -7,7 +7,11 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../config/constants.dart';
 import 'package:xamepage/core/services/audio_service.dart';
 
-final socketServiceProvider = Provider<SocketService>((ref) => SocketService());
+final socketServiceProvider = Provider<SocketService>((ref) {
+  final service = SocketService();
+  ref.onDispose(service.dispose);
+  return service;
+});
 
 final socketStateProvider = StreamProvider<SocketState>((ref) {
   return ref.watch(socketServiceProvider).connectionState;
@@ -580,6 +584,79 @@ class SocketService {
         if (isConnected && !stealth) emitHeartbeat(xameId);
       });
     if (isConnected && !stealth) emitHeartbeat(xameId);
+  }
+
+
+  void dispose() {
+    stopHeartbeat();
+    stopStealthMode();
+    _offlineTimer?.cancel();
+    _offlineTimer = null;
+
+    _socket?.clearListeners();
+    _socket?.disconnect();
+    _socket = null;
+
+    _connectionStateCtrl.close();
+    _receiveMessageCtrl.close();
+    _typingCtrl.close();
+    _stopTypingCtrl.close();
+    _msgStatusCtrl.close();
+    _msgSeenCtrl.close();
+    _onlineUsersCtrl.close();
+    _spaceMessageCtrl.close();
+    _spaceTypingCtrl.close();
+    _spaceUserJoinedCtrl.close();
+    _spaceUserLeftCtrl.close();
+    _spaceReactionCtrl.close();
+    _contactsListCtrl.close();
+    _chatHistoryCtrl.close();
+    _incomingCallCtrl.close();
+    _callAnswerCtrl.close();
+    _iceCandidateCtrl.close();
+    _callAcceptedCtrl.close();
+    _callRejectedCtrl.close();
+    _callRingingCtrl.close();
+    _callEndedCtrl.close();
+    _callHeldCtrl.close();
+    _callResumedCtrl.close();
+    _callAcknowledgedCtrl.close();
+    _messagesDeletedCtrl.close();
+    _callMessageCtrl.close();
+    _disappearExpiredCtrl.close();
+    _walletReceiveCtrl.close();
+    _collabRequestCtrl.close();
+    _collabMessageCtrl.close();
+    _collabAcceptedCtrl.close();
+    _collabUpdatedCtrl.close();
+    _collabLayoutUpdatedCtrl.close();
+    _collabCancelledCtrl.close();
+    _collabAuthorizedCtrl.close();
+    _collabSubmittedCtrl.close();
+    _walletDebitCtrl.close();
+    _profileUpdatedCtrl.close();
+    _contactStatusCtrl.close();
+    _forceLogoutCtrl.close();
+    _missedCallCountCtrl.close();
+    _callUnansweredAckCtrl.close();
+    _newDiscoveryPostCtrl.close();
+    _reactionUpdateCtrl.close();
+    _walletRequestCtrl.close();
+    _webCallRequestCtrl.close();
+    _contactRequestCtrl.close();
+    _contactRequestAcceptedCtrl.close();
+    _confPeerJoinedCtrl.close();
+    _confPeerLeftCtrl.close();
+    _confOfferCtrl.close();
+    _confAnswerCtrl.close();
+    _confIceCtrl.close();
+    _confMicToggleCtrl.close();
+    _confHandCtrl.close();
+    _confMutedByHostCtrl.close();
+    _confRemovedByHostCtrl.close();
+    _confScreenStartCtrl.close();
+    _confScreenStopCtrl.close();
+    _confRoomClosedCtrl.close();
   }
 
   void stopHeartbeat() { _heartbeatTimer?.cancel(); _heartbeatTimer = null; _watchdogTimer?.cancel(); _watchdogTimer = null; }
