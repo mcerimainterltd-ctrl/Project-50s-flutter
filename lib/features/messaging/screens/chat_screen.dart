@@ -322,6 +322,223 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _exitSelectMode();
   }
 
+  Future<void> _forwardSelected() async {
+    if (_selected.isEmpty) return;
+
+    final contacts = ref.read(contactsProvider).valueOrNull ?? [];
+    if (contacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No contacts available')),
+      );
+      return;
+    }
+
+    final selectedRecipients = <String>{};
+
+    final recipientIds = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: XameColors.darkCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        String query = '';
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final filtered = contacts.where((c) {
+              if (c.id == widget.userId) return false;
+              if (query.trim().isEmpty) return true;
+
+              final q = query.trim().toLowerCase();
+              return c.name.toLowerCase().contains(q) ||
+                  c.id.toLowerCase().contains(q);
+            }).toList();
+
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.78,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Forward to',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${selectedRecipients.length} selected',
+                            style: TextStyle(
+                              color: context.xMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                      child: TextField(
+                        onChanged: (value) {
+                          setSheetState(() => query = value);
+                        },
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search contacts...',
+                          hintStyle: TextStyle(color: context.xMuted),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: context.xMuted,
+                          ),
+                          filled: true,
+                          fillColor: XameColors.darkSurface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No contacts found',
+                                style: TextStyle(color: context.xMuted),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: filtered.length,
+                              itemBuilder: (_, index) {
+                                final contact = filtered[index];
+                                final selected =
+                                    selectedRecipients.contains(contact.id);
+
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor:
+                                        XameColors.primary.withValues(alpha: 0.15),
+                                    backgroundImage:
+                                        contact.profilePic != null &&
+                                                contact.profilePic!.isNotEmpty &&
+                                                !contact.isProfilePicHidden
+                                            ? CachedNetworkImageProvider(
+                                                contact.profilePic!,
+                                              )
+                                            : null,
+                                    child: contact.profilePic == null ||
+                                            contact.profilePic!.isEmpty ||
+                                            contact.isProfilePicHidden
+                                        ? Text(
+                                            contact.name.isNotEmpty
+                                                ? contact.name[0].toUpperCase()
+                                                : '?',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  title: Text(
+                                    contact.name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    contact.id,
+                                    style: TextStyle(color: context.xMuted),
+                                  ),
+                                  trailing: Icon(
+                                    selected
+                                        ? Icons.check_circle
+                                        : Icons.radio_button_unchecked,
+                                    color: selected
+                                        ? XameColors.primary
+                                        : context.xMuted,
+                                  ),
+                                  onTap: () {
+                                    setSheetState(() {
+                                      if (selected) {
+                                        selectedRecipients.remove(contact.id);
+                                      } else {
+                                        selectedRecipients.add(contact.id);
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: selectedRecipients.isEmpty
+                              ? null
+                              : () => Navigator.pop(
+                                    sheetContext,
+                                    selectedRecipients.toList(),
+                                  ),
+                          icon: const Icon(Icons.forward_rounded),
+                          label: Text(
+                            selectedRecipients.isEmpty
+                                ? 'Select contacts'
+                                : 'Forward to ${selectedRecipients.length}',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (recipientIds == null || recipientIds.isEmpty || !mounted) return;
+
+    ref.read(chatProvider(widget.userId).notifier).forwardMessages(
+          _selected.toList(),
+          recipientIds,
+        );
+
+    final count = _selected.length;
+    _exitSelectMode();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$count ${count == 1 ? 'message' : 'messages'} forwarded',
+        ),
+        backgroundColor: XameColors.darkCard,
+      ),
+    );
+  }
+
   void _showDeleteMenu(List<XameMessage> messages) {
     final hasSent = messages.any((m) =>
       _selected.contains(m.id) && m.direction == MessageDirection.sent);
@@ -461,10 +678,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         title: Text('${_selected.length} selected',
           style: const TextStyle(color: Colors.white, fontSize: 16)),
         actions: [
-          IconButton(icon: const Icon(Icons.copy, color: Colors.white70),
-            onPressed: () => _copySelected(messages)),
-          IconButton(icon: const Icon(Icons.delete_outline, color: Colors.white70),
-            onPressed: () => _showDeleteMenu(messages)),
+          IconButton(
+            icon: const Icon(Icons.forward_rounded, color: Colors.white70),
+            tooltip: 'Forward',
+            onPressed: _forwardSelected,
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy, color: Colors.white70),
+            tooltip: 'Copy',
+            onPressed: () => _copySelected(messages),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.white70),
+            tooltip: 'Delete',
+            onPressed: () => _showDeleteMenu(messages),
+          ),
         ],
       );
     }
