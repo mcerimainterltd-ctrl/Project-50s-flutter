@@ -544,7 +544,10 @@ class SocketService {
     print('[SOCKET] emitMakeAnswer to=$r connected=${_socket?.connected} socketId=${_socket?.id}');
     if (_socket == null || !(_socket!.connected)) {
       print('[SOCKET] WARNING: socket not connected when emitting make-answer — queuing reconnect');
-      _socket?.connect();
+      final userId = currentUserId;
+      if (userId != null && userId.isNotEmpty) {
+        connect(userId);
+      }
     }
     emit('make-answer', {'recipientId': r, 'answer': a});
     print('[SOCKET] emitMakeAnswer SENT');
@@ -572,9 +575,6 @@ class SocketService {
     _watchdogTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (!isConnected) {
         debugPrint('🐕 Watchdog: socket dead — reconnecting');
-        _socket?.clearListeners();
-        _socket?.disconnect();
-        _socket = null;
         connect(xameId, stealth: stealth);
       }
     });
