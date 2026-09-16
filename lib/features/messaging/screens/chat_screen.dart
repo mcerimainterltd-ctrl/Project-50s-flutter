@@ -140,10 +140,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(_scrollCtrl.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-      }
+      if (!mounted || !_scrollCtrl.hasClients) return;
+
+      // Wait one additional frame so ListView has finished laying out
+      // newly received/inserted messages before reading maxScrollExtent.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollCtrl.hasClients) return;
+
+        final position = _scrollCtrl.position;
+        final target = position.maxScrollExtent;
+
+        if ((position.pixels - target).abs() < 1) return;
+
+        _scrollCtrl.animateTo(
+          target,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      });
     });
   }
 
