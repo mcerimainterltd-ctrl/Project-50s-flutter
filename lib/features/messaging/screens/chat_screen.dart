@@ -49,10 +49,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.read(activeChatIdProvider.notifier).state = widget.userId;
       ref.read(chatProvider(widget.userId).notifier).markAllSeen();
       ref.read(contactsProvider.notifier).markRead(widget.userId);
-      // Request per-contact history via socket
+      // Request per-contact history via socket.
+      // Auto-scroll is driven by the chat-provider listener below,
+      // including cached messages already present when this screen opens.
       ref.read(socketServiceProvider).emitGetChatHistory(widget.userId);
-      // Scroll after brief delay to allow history to arrive
-      Future.delayed(const Duration(milliseconds: 800), _scrollToBottom);
 
       // Files received through Android/iOS share sheet are handed to this
       // chat as sharedFiles.  The old flow opened the chat but never sent
@@ -590,12 +590,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isTyping  = ref.watch(typingProvider).contains(widget.userId);
     final self      = ref.watch(currentUserProvider);
 
-    // Auto-scroll when new messages arrive
-    ref.listen(chatProvider(widget.userId), (prev, next) {
-      if (prev != null && next.length > prev.length) {
-        _scrollToBottom();
-      }
-    });
+    // Auto-scroll whenever the actual message set changes.
+    // fireImmediately also handles cached messages already present.
+    ref.listen<List<XameMessage>>(
+      chatProvider(widget.userId),
+      (prev, next) {
+        if (next.isEmpty) return;
+        final shouldScroll = prev == null || prev.isEmpty || prev.length != next.length || prev.last.id != next.last.id;
+        if (shouldScroll) _scrollToBottom();
+      },
+      fireImmediately: true,
+    );
 
     return Scaffold(
       backgroundColor: XameColors.darkBg,
