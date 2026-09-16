@@ -34,6 +34,7 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _msgCtrl      = TextEditingController();
   final _scrollCtrl   = ScrollController();
+  bool _didInitialChatScroll = false;
   final _picker       = ImagePicker();
   bool  _showAttach   = false;
   Timer? _typingTimer;
@@ -590,8 +591,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isTyping  = ref.watch(typingProvider).contains(widget.userId);
     final self      = ref.watch(currentUserProvider);
 
+    // Scroll once when cached/history messages are first available.
+    if (messages.isNotEmpty && !_didInitialChatScroll) {
+      _didInitialChatScroll = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToBottom();
+      });
+    }
+
     // Auto-scroll whenever the actual message set changes.
-    // fireImmediately also handles cached messages already present.
     ref.listen<List<XameMessage>>(
       chatProvider(widget.userId),
       (prev, next) {
@@ -599,7 +607,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final shouldScroll = prev == null || prev.isEmpty || prev.length != next.length || prev.last.id != next.last.id;
         if (shouldScroll) _scrollToBottom();
       },
-      fireImmediately: true,
     );
 
     return Scaffold(
