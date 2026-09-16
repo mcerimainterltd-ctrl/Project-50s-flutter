@@ -280,6 +280,63 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text('Tap to copy · Save this ID — you need it to log in.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: context.xMuted, fontSize: 13)),
+                if (_phoneCtrl.text.trim().isNotEmpty) ...[
+                  SizedBox(height: 20),
+                  Text(
+                    'Phone Number',
+                    style: TextStyle(
+                      color: context.xText.withValues(alpha: 0.54),
+                      fontSize: 13,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(
+                        ClipboardData(text: _phoneCtrl.text.trim()),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Phone number copied to clipboard'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.xCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: context.xPrimary.withValues(alpha: 0.7),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _phoneCtrl.text.trim(),
+                            style: TextStyle(
+                              color: context.xPrimary,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.copy_rounded,
+                            color: context.xPrimary,
+                            size: 17,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 SizedBox(height: 40),
                 SizedBox(
                   width: double.infinity, height: 52,
