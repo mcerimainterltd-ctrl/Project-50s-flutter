@@ -47,8 +47,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Offset _thumbnailOffset = const Offset(20, 100);
 
   int    _seconds      = 0;
+    final ValueNotifier<int> _secondsNotifier = ValueNotifier<int>(0);
   Timer? _timer;
   bool   _timerStarted = false;
+  StreamSubscription? _callStateSub;
+  StreamSubscription? _remoteStreamSub;
+  StreamSubscription? _callEndReasonSub;
+  StreamSubscription? _callHeldSub;
+  StreamSubscription? _callResumedSub;
 
   @override
   void initState() {
@@ -58,7 +64,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _screenShare = ScreenShareService(socket);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final service = ref.read(webRTCServiceProvider);
-      await service.initRenderers();
       if (!widget.isIncoming &&
           service.callStateStreamValue == CallState.idle) {
         service.startCall(widget.userId, widget.isVideo);
@@ -75,7 +80,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           _startTimer();
         }
       }
-      service.callState.listen((s) async {
+      _callStateSub = service.callState.listen((s) async {
         if (!mounted) return;
         setState(() {});
         if (s == CallState.active && !_timerStarted) _startTimer();
@@ -122,10 +127,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           if (mounted) context.go('/contacts');
         }
       });
-      service.remoteStream$.listen((_) {
+      _remoteStreamSub = service.remoteStream$.listen((_) {
         if (mounted) setState(() {});
       });
-      service.callEndReasonStream.listen((reason) {
+      _callEndReasonSub = service.callEndReasonStream.listen((reason) {
         if (!mounted || widget.isIncoming) return;
         switch (reason) {
           case 'declined':     setState(() => _callEndReason = 'Declined');            break;
@@ -137,10 +142,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
           case 'unreachable':  setState(() => _callEndReason = 'Not Reachable');       break;
         }
       });
-      ref.read(socketServiceProvider).callHeld.listen((_) {
+      _callHeldSub = ref.read(socketServiceProvider).callHeld.listen((_) {
         if (mounted) setState(() => _amHeld = true);
       });
-      ref.read(socketServiceProvider).callResumed.listen((_) {
+      _callResumedSub = ref.read(socketServiceProvider).callResumed.listen((_) {
         if (mounted) setState(() => _amHeld = false);
       });
     });
@@ -149,14 +154,22 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   void _startTimer() {
     if (_timerStarted) return;
     _timerStarted = true;
+    _secondsNotifier.value = _seconds;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _seconds++);
+      _seconds++;
+      _secondsNotifier.value = _seconds;
     });
   }
 
   @override
   void dispose() {
+    _callStateSub?.cancel();
+    _remoteStreamSub?.cancel();
+    _callEndReasonSub?.cancel();
+    _callHeldSub?.cancel();
+    _callResumedSub?.cancel();
     _timer?.cancel();
+    _secondsNotifier.dispose();
     super.dispose();
   }
 
@@ -174,7 +187,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final initials  = name.trim().split(' ').take(2)
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
 
-    if (hasRemote && !_timerStarted) _startTimer();
 
     final topPad = MediaQuery.of(context).padding.top;
     final botPad = MediaQuery.of(context).padding.bottom;
@@ -354,9 +366,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         Icon(Icons.circle,
                             color: XameColors.accent, size: 8),
                         SizedBox(width: 6),
-                        Text(_fmt(_seconds),
-                          style: TextStyle(
-                              color: Colors.white, fontSize: 13)),
+                        ValueListenableBuilder<int>(
+                          valueListenable: _secondsNotifier,
+                          builder: (_, seconds, __) => Text(_fmt(seconds),
+                            style: TextStyle(
+                                color: Colors.white, fontSize: 13)),
+                        ),
                       ]),
                     ),
                   ]),
@@ -462,7 +477,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final callState  = webrtc.callStateStreamValue;
     final isActive   = callState == CallState.active || _timerStarted;
     final statusText = isActive
-        ? _fmt(_seconds)
+        ? _fmt(_secondsNotifier.value)
         : callState == CallState.outgoing
             ? (webrtc.isRinging ? 'Ringing...' : 'Calling $name...')
             : 'Connecting...';
@@ -571,20 +586,30 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
               SizedBox(height: 12),
 
-              // ── Status / timer ────────────────────────────────────
-              AnimatedSwitcher(
-                duration: Duration(milliseconds: 400),
-                child: Text(statusText,
-                  key: ValueKey(statusText),
-                  style: TextStyle(
-                    color: isActive
-                        ? XameColors.accent : Colors.white.withValues(alpha: 0.7),
-                    fontSize: 18,
-                    fontWeight: isActive
-                        ? FontWeight.w600 : FontWeight.w400,
-                  ),
+                // ── Status / timer ────────────────────────────────────
+                ValueListenableBuilder<int>(
+                  valueListenable: _secondsNotifier,
+                  builder: (_, seconds, __) {
+                    final displayStatusText =
+                        isActive ? _fmt(seconds) : statusText;
+                    return AnimatedSwitcher(
+                      duration: Duration(milliseconds: 400),
+                      child: Text(
+                        displayStatusText,
+                        key: ValueKey(displayStatusText),
+                        style: TextStyle(
+                          color: isActive
+                              ? XameColors.accent
+                              : Colors.white.withValues(alpha: 0.7),
+                          fontSize: 18,
+                          fontWeight: isActive
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ),
 
               const Spacer(flex: 3),
 

@@ -27,6 +27,7 @@ class SocketService {
   Timer? _watchdogTimer;
   Timer? _stealthTimer;
   Timer? _offlineTimer;
+  StreamSubscription<String>? _callInitiatedSub;
 
   final _connectionStateCtrl  = StreamController<SocketState>.broadcast();
   final AudioService _audio = AudioService();
@@ -50,6 +51,7 @@ class SocketService {
   final _callAcceptedCtrl     = StreamController<String>.broadcast();
   final _callRejectedCtrl     = StreamController<CallRejectedData>.broadcast();
   final _callRingingCtrl      = StreamController<void>.broadcast();
+  final _callRingingIdCtrl    = StreamController<String>.broadcast();
   final _callEndedCtrl        = StreamController<String>.broadcast();
   final _callHeldCtrl         = StreamController<String>.broadcast();
   final _callResumedCtrl      = StreamController<String>.broadcast();
@@ -96,6 +98,7 @@ class SocketService {
   Stream<String>                    get callAccepted     => _callAcceptedCtrl.stream;
   Stream<CallRejectedData>          get callRejected     => _callRejectedCtrl.stream;
   Stream<void>                      get callRinging      => _callRingingCtrl.stream;
+  Stream<String>                    get callRingingId    => _callRingingIdCtrl.stream;
   Stream<String>                    get callEnded        => _callEndedCtrl.stream;
   Stream<String>                    get callHeld         => _callHeldCtrl.stream;
   Stream<String>                    get callResumed      => _callResumedCtrl.stream;
@@ -381,7 +384,13 @@ class SocketService {
     socket.on('call-accepted', (d) {
       if (d?['recipientId'] != null) _callAcceptedCtrl.add(d['recipientId']);
     });
-    socket.on('call-ringing', (d) => _callRingingCtrl.add(null));
+    socket.on('call-ringing', (d) {
+      _callRingingCtrl.add(null);
+      final callId = d?['callId'];
+      if (callId != null && callId.toString().isNotEmpty) {
+        _callRingingIdCtrl.add(callId.toString());
+      }
+    });
     socket.on('call-rejected', (d) => _callRejectedCtrl.add(
       CallRejectedData(senderId: d?['senderId'],
         reason: d?['reason'] ?? 'user-rejected')));
@@ -533,12 +542,8 @@ class SocketService {
 
   // Listen for callId assigned by server after emitting call-user
   void onCallInitiated(void Function(String callId) cb) {
-    _socket?.on('call-ringing', (d) {
-      final callId = d?['callId'];
-      if (callId != null && callId.toString().isNotEmpty) {
-        cb(callId.toString());
-      }
-    });
+    _callInitiatedSub?.cancel();
+    _callInitiatedSub = callRingingId.listen(cb);
   }
   void emitMakeAnswer(String r, dynamic a) {
     print('[SOCKET] emitMakeAnswer to=$r connected=${_socket?.connected} socketId=${_socket?.id}');
@@ -617,6 +622,7 @@ class SocketService {
     _callAcceptedCtrl.close();
     _callRejectedCtrl.close();
     _callRingingCtrl.close();
+    _callRingingIdCtrl.close();
     _callEndedCtrl.close();
     _callHeldCtrl.close();
     _callResumedCtrl.close();
