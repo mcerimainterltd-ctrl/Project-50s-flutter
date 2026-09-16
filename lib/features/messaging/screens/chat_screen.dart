@@ -33,8 +33,6 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _msgCtrl      = TextEditingController();
-  final _scrollCtrl   = ScrollController();
-  bool _didInitialChatScroll = false;
   final _picker       = ImagePicker();
   bool  _showAttach   = false;
   Timer? _typingTimer;
@@ -127,39 +125,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     }
 
-    _scrollToBottom();
+
   }
 
   @override
   void dispose() {
     ref.read(activeChatIdProvider.notifier).state = null;
     _msgCtrl.dispose();
-    _scrollCtrl.dispose();
     _typingTimer?.cancel();
     super.dispose();
-  }
-
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollCtrl.hasClients) return;
-
-      // Wait one additional frame so ListView has finished laying out
-      // newly received/inserted messages before reading maxScrollExtent.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_scrollCtrl.hasClients) return;
-
-        final position = _scrollCtrl.position;
-        final target = position.maxScrollExtent;
-
-        if ((position.pixels - target).abs() < 1) return;
-
-        _scrollCtrl.animateTo(
-          target,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-        );
-      });
-    });
   }
 
   // Mirrors: typing indicator logic in chat.js
@@ -193,7 +167,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       replyToText: _replyTo?.text,
     );
     setState(() => _replyTo = null);
-    _scrollToBottom();
+
   }
 
   Future<void> _pickVideo() async {
@@ -214,7 +188,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     await ref.read(chatProvider(widget.userId).notifier)
         .sendFile(dart_io.File(file.path), mime);
-    _scrollToBottom();
+
   }
 
   Future<void> _pickImage() async {
@@ -239,7 +213,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         albumTotal: isAlbum ? assets.length : null,
       );
     }
-    _scrollToBottom();
+
   }
 
   Future<void> _pickFile() async {
@@ -289,7 +263,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await ref.read(chatProvider(widget.userId).notifier)
           .sendFile(dart_io.File(path), mime);
 
-      _scrollToBottom();
+
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -591,24 +565,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isTyping  = ref.watch(typingProvider).contains(widget.userId);
     final self      = ref.watch(currentUserProvider);
 
-    // Scroll once when cached/history messages are first available.
-    if (messages.isNotEmpty && !_didInitialChatScroll) {
-      _didInitialChatScroll = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToBottom();
-      });
-    }
-
-    // Auto-scroll whenever the actual message set changes.
-    ref.listen<List<XameMessage>>(
-      chatProvider(widget.userId),
-      (prev, next) {
-        if (next.isEmpty) return;
-        final shouldScroll = prev == null || prev.isEmpty || prev.length != next.length || prev.last.id != next.last.id;
-        if (shouldScroll) _scrollToBottom();
-      },
-    );
-
     return Scaffold(
       backgroundColor: XameColors.darkBg,
       appBar: _buildAppBar(contact, isTyping, messages),
@@ -623,7 +579,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ? _EmptyChat(name: contact?.name ?? widget.userId)
               : _MessageList(
                   messages:    messages,
-                  scrollCtrl:  _scrollCtrl,
                   selfId:      self?.xameId ?? '',
                   selected:    _selected,
                   selectMode:  _selectMode,
@@ -653,7 +608,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             setState(() => _showAttach = false);
             await ref.read(chatProvider(widget.userId).notifier)
               .sendFile(dart_io.File(file.path), 'image/jpeg');
-            _scrollToBottom();
+
           },
           onDismiss: () => setState(() => _showAttach = false),
         ),
@@ -990,7 +945,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 // ── Message list ──────────────────────────────────────────────────────────
 class _MessageList extends StatelessWidget {
   final List<XameMessage>    messages;
-  final ScrollController     scrollCtrl;
   final String               selfId;
   final Set<String>          selected;
   final bool                 selectMode;
@@ -998,7 +952,7 @@ class _MessageList extends StatelessWidget {
   final Function(XameMessage) onTap;
 
   const _MessageList({
-    required this.messages,   required this.scrollCtrl,
+    required this.messages,
     required this.selfId,     required this.selected,
     required this.selectMode, required this.onLongPress,
     required this.onTap,
@@ -1008,21 +962,24 @@ class _MessageList extends StatelessWidget {
   Widget build(BuildContext context) {
     // Group by day — mirrors dayLabel() logic
     return ListView.builder(
-      controller:  scrollCtrl,
-      padding:     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      itemCount:   messages.length,
+      reverse:      true,
+      padding:      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      itemCount:    messages.length,
       itemBuilder: (ctx, i) {
-        final msg   = messages[i];
-        final prev  = i > 0 ? messages[i - 1] : null;
+        final msgIndex = messages.length - 1 - i;
+        final msg      = messages[msgIndex];
+        final next     = msgIndex > 0 ? messages[msgIndex - 1] : null;
 
-        // Day separator
-        final showDay = prev == null ||
+        // In the reversed list, the day separator belongs after
+        // the oldest message for that day.
+        final showDay = next == null ||
           !_sameDay(DateTime.fromMillisecondsSinceEpoch(msg.ts),
-                    DateTime.fromMillisecondsSinceEpoch(prev.ts));
+                    DateTime.fromMillisecondsSinceEpoch(next.ts));
 
-        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (showDay) _DaySeparator(ts: msg.ts),
-          MessageBubble(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            MessageBubble(
             message:     msg,
             isSelf:      msg.direction == MessageDirection.sent,
             isSelected:  selected.contains(msg.id),
@@ -1030,6 +987,7 @@ class _MessageList extends StatelessWidget {
             onLongPress: () => onLongPress(msg),
             onTap:       () => onTap(msg),
           ),
+          if (showDay) _DaySeparator(ts: msg.ts),
         ]);
       },
     );
