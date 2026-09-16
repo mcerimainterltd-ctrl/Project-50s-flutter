@@ -24,13 +24,6 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // If launched silently by SocketKeepaliveService on boot,
-        // initialize the Flutter engine but move immediately to background
-        // so the user never sees the app pop up.
-        if (intent?.getBooleanExtra("boot_launch", false) == true) {
-            moveTaskToBack(true)
-        }
-
         // Allow activity to show on lock screen and wake device
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
@@ -45,7 +38,6 @@ class MainActivity : FlutterFragmentActivity() {
             )
         }
         requestOneTimePermissions()
-        SocketKeepaliveService.start(this)
     }
 
     private fun requestOneTimePermissions() {
@@ -76,7 +68,6 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/keepalive")
-        NetworkReceiver.register(this)
         super.configureFlutterEngine(flutterEngine)
         FlutterEngineCache.getInstance().put("main", flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,

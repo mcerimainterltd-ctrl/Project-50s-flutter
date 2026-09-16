@@ -31,50 +31,23 @@ class SocketKeepaliveService : Service() {
         }
     }
 
-    private val handler  = Handler(Looper.getMainLooper())
-    private var wakeLock: PowerManager.WakeLock? = null
-    private var engineLaunchAttempted = false
-
-    private val heartbeatRunnable = object : Runnable {
-        override fun run() {
-            pingFlutter()
-            handler.postDelayed(this, 25_000L)
-        }
-    }
-
+    private val handler = Handler(Looper.getMainLooper())
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         startForeground(NOTIF_ID, buildNotification())
-        acquireWakeLock()
-        handler.post(heartbeatRunnable)
-        registerNetworkCallback()
-    }
 
-    private fun registerNetworkCallback() {
-        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-        val request = android.net.NetworkRequest.Builder()
-            .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-        cm.registerNetworkCallback(request, object : android.net.ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: android.net.Network) {
-                super.onAvailable(network)
-                handler.post {
-                    pingFlutter()
-                    MainActivity.channel?.invokeMethod("onNetworkAvailable", null)
-                }
-            }
-        })
-    }
-
-    private fun getSavedUserId(): String? {
-        // Flutter stores SharedPreferences with "flutter." prefix
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(PREFS_KEY, null)
+        // This service is a short-lived wake bridge for FCM incoming calls.
+        // SocketService remains the single Socket.IO owner.
+        handler.post {
+            pingFlutter()
+            handler.postDelayed({
+                stopSelf()
+            }, 15_000L)
+        }
     }
 
     private fun pingFlutter() {
-        if (wakeLock?.isHeld == false) acquireWakeLock()
         val engine: FlutterEngine? = FlutterEngineCache.getInstance().get("main")
         if (engine != null) {
             // Flutter engine is running — send heartbeat
@@ -85,24 +58,10 @@ class SocketKeepaliveService : Service() {
             } catch (e: Exception) {
                 // Engine not ready yet — skip this beat
             }
-        } else if (!engineLaunchAttempted) {
-            // Engine not running — check if user is logged in
-            val userId = getSavedUserId()
-            if (!userId.isNullOrEmpty()) {
-                // Launch app to initialize Flutter engine and connect socket
-                engineLaunchAttempted = true
-                try {
-                    val launchIntent = Intent(this, MainActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                        putExtra("boot_launch", true)
-                    }
-                    startActivity(launchIntent)
-                } catch (e: Exception) {
-                    engineLaunchAttempted = false
-                }
-            }
-            // If no userId saved, user is not logged in — skip silently
+        } else {
+            // Flutter is not running. Do not launch an Activity from the
+            // background. The incoming-call notification/full-screen intent
+            // is responsible for bringing the call UI forward.
         }
     }
 
@@ -115,7 +74,7 @@ class SocketKeepaliveService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("XamePage")
-            .setContentText("Connected — ready for calls")
+            .setContentText("Preparing XamePage call")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setShowWhen(false)
@@ -139,21 +98,12 @@ class SocketKeepaliveService : Service() {
         }
     }
 
-    private fun acquireWakeLock() {
-        val pm = getSystemService(POWER_SERVICE) as PowerManager
-        wakeLock = pm.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            "xamepage:SocketKeepalive"
-        ).apply { acquire(12 * 60 * 60 * 1000L) }
-    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
-        handler.removeCallbacks(heartbeatRunnable)
-        wakeLock?.release()
+        handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
 

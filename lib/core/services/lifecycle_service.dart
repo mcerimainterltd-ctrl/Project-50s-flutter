@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -15,10 +16,13 @@ final lifecycleServiceProvider = Provider<LifecycleService>((ref) {
 class LifecycleService with WidgetsBindingObserver {
   final Ref _ref;
   bool _wasConnected = true;
+  bool _connectivityEventSeen = false;
+  StreamSubscription? _connectivitySub;
 
   LifecycleService(this._ref) {
     WidgetsBinding.instance.addObserver(this);
     _listenConnectivity();
+    _initializeConnectivity();
   }
 
   // ── App lifecycle ──────────────────────────────────────────────────────────
@@ -48,7 +52,6 @@ class LifecycleService with WidgetsBindingObserver {
             // Reconnect and restart heartbeat
             socket.connect(user.xameId);
             socket.startHeartbeat(user.xameId);
-            socket.emitUserOnline(user.xameId);
           }
           // Always re-save FCM token on foreground
           final push = _ref.read(pushServiceProvider);
@@ -72,27 +75,50 @@ class LifecycleService with WidgetsBindingObserver {
   }
 
   // ── Network connectivity ───────────────────────────────────────────────────
+  Future<void> _initializeConnectivity() async {
+    try {
+      final results = await Connectivity().checkConnectivity();
+      if (!_connectivityEventSeen) {
+        _wasConnected =
+            results.any((r) => r != ConnectivityResult.none);
+        debugPrint(
+          'XamePage: Initial network state: '
+          '${_wasConnected ? 'online' : 'offline'}',
+        );
+      }
+    } catch (e) {
+      debugPrint('XamePage: Initial connectivity check failed: $e');
+    }
+  }
+
   void _listenConnectivity() {
-    Connectivity().onConnectivityChanged.listen((results) {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      _connectivityEventSeen = true;
       final isOnline = results.any((r) => r != ConnectivityResult.none);
       final socket   = _ref.read(socketServiceProvider);
       final user     = _ref.read(currentUserProvider);
 
       if (isOnline && !_wasConnected) {
-        // Network restored
         debugPrint('XamePage: Network restored — reconnecting');
+
         if (user != null) {
-          if (!socket.isConnected) socket.connect(user.xameId);
+          if (!socket.isConnected) {
+            socket.connect(user.xameId);
+          }
+
           socket.startHeartbeat(user.xameId);
-          socket.emitUserOnline(user.xameId);
-          // Re-save FCM token so push works immediately after reconnect
+
+          if (socket.isConnected) {
+            socket.emitUserOnline(user.xameId);
+          }
+
           final push = _ref.read(pushServiceProvider);
           push.reRegisterToken(user.xameId);
         }
       } else if (!isOnline && _wasConnected) {
-        // Network lost
         debugPrint('XamePage: Network lost');
       }
+
       _wasConnected = isOnline;
     });
   }
@@ -115,6 +141,8 @@ class LifecycleService with WidgetsBindingObserver {
   }
 
   void dispose() {
+    _connectivitySub?.cancel();
+    _connectivitySub = null;
     WidgetsBinding.instance.removeObserver(this);
   }
 }

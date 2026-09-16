@@ -27,6 +27,8 @@ class SocketService {
   Timer? _watchdogTimer;
   Timer? _stealthTimer;
   Timer? _offlineTimer;
+  String? _heartbeatUserId;
+  bool _heartbeatStealth = false;
   StreamSubscription<String>? _callInitiatedSub;
 
   final _connectionStateCtrl  = StreamController<SocketState>.broadcast();
@@ -574,21 +576,51 @@ class SocketService {
   void emitDisappearingTimer(String contactId, String userId, String value) => emit("disappearing:timer-set", {"contactId": contactId, "userId": userId, "value": value});
 
   void startHeartbeat(String xameId, {bool stealth = false}) {
+    // SocketService is the single heartbeat/recovery authority.
+    // Repeated lifecycle/network/Android recovery calls must not
+    // destroy and recreate healthy timers.
+    final sameSession =
+        _heartbeatUserId == xameId &&
+        _heartbeatStealth == stealth &&
+        _heartbeatTimer != null &&
+        _watchdogTimer != null;
+
+    if (sameSession) {
+      if (isConnected && !stealth) {
+        emitHeartbeat(xameId);
+      }
+      return;
+    }
+
     stopHeartbeat();
-    // Watchdog — checks every 10s and reconnects if socket is dead
-    _watchdogTimer?.cancel();
+
+    _heartbeatUserId = xameId;
+    _heartbeatStealth = stealth;
+
+    // Watchdog — checks every 10s and reconnects if socket is dead.
     _watchdogTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      final userId = _heartbeatUserId;
+      if (userId == null || userId.isEmpty) return;
+
       if (!isConnected) {
         debugPrint('🐕 Watchdog: socket dead — reconnecting');
-        connect(xameId, stealth: stealth);
+        connect(userId, stealth: _heartbeatStealth);
       }
     });
+
     _heartbeatTimer = Timer.periodic(
       Duration(milliseconds: AppConstants.heartbeatIntervalMs),
       (_) {
-        if (isConnected && !stealth) emitHeartbeat(xameId);
-      });
-    if (isConnected && !stealth) emitHeartbeat(xameId);
+        final userId = _heartbeatUserId;
+        if (userId != null && isConnected && !_heartbeatStealth) {
+          emitHeartbeat(userId);
+        }
+      },
+    );
+
+    if (isConnected && !stealth) {
+      emitHeartbeat(xameId);
+    }
   }
 
 
@@ -665,7 +697,14 @@ class SocketService {
     _confRoomClosedCtrl.close();
   }
 
-  void stopHeartbeat() { _heartbeatTimer?.cancel(); _heartbeatTimer = null; _watchdogTimer?.cancel(); _watchdogTimer = null; }
+  void stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _watchdogTimer?.cancel();
+    _watchdogTimer = null;
+    _heartbeatUserId = null;
+    _heartbeatStealth = false;
+  }
 
   void startStealthMode(String xameId) {
     stopStealthMode();
