@@ -51,7 +51,6 @@ class SocketKeepaliveService : Service() {
         val engine: FlutterEngine? = FlutterEngineCache.getInstance().get("main")
         if (engine != null) {
             // Flutter engine is running — send heartbeat
-            engineLaunchAttempted = false
             try {
                 MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL_NAME)
                     .invokeMethod("heartbeat", null)
