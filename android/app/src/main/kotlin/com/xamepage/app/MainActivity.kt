@@ -66,16 +66,32 @@ class MainActivity : FlutterFragmentActivity() {
         prefs.edit().putInt("permissions_asked_version", versionCode).apply()
     }
 
+    override fun provideFlutterEngine(context: android.content.Context): FlutterEngine? {
+        return FlutterEngineCache.getInstance().get("main")
+            ?: super.provideFlutterEngine(context)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/keepalive")
+        channel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "startKeepalive" -> {
+                    val userId = call.argument<String>("userId")
+                    SocketKeepaliveService.start(this, userId)
+                    result.success(null)
+                }
+                "stopKeepalive" -> {
+                    SocketKeepaliveService.stop(this)
+                    result.success(null)
+                }
+                "heartbeat" -> {
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
         super.configureFlutterEngine(flutterEngine)
         FlutterEngineCache.getInstance().put("main", flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
-            SocketKeepaliveService.CHANNEL_NAME)
-            .setMethodCallHandler { call, result ->
-                if (call.method == "heartbeat") result.success(null)
-                else result.notImplemented()
-            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/android_bridge")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -257,7 +273,8 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun onDestroy() {
-        FlutterEngineCache.getInstance().remove("main")
+        // Keep the cached Flutter engine available to SocketKeepaliveService
+        // while the app process is being supervised in the background.
         super.onDestroy()
     }
 }

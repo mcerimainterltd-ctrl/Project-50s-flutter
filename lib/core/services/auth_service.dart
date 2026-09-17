@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/services.dart';
 import '../config/constants.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../shared/models/xame_user.dart';
@@ -102,9 +103,19 @@ class AuthService {
     } catch (_) {}
     await _storage.delete(key: AppConstants.keySessionToken);
     await _storage.delete(key: AppConstants.keyUser);
+    try {
+      await const MethodChannel('com.xamepage.app/keepalive')
+          .invokeMethod('stopKeepalive');
+    } catch (_) {}
   }
 
-  Future<void> forceLogout() => _storage.deleteAll();
+  Future<void> forceLogout() async {
+    await _storage.deleteAll();
+    try {
+      await const MethodChannel('com.xamepage.app/keepalive')
+          .invokeMethod('stopKeepalive');
+    } catch (_) {}
+  }
 
   Future<XameUser?> getSavedUser() async {
     final raw = await _storage.read(key: AppConstants.keyUser);

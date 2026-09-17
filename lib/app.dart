@@ -73,10 +73,14 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(currentUserProvider);
       if (user != null) {
+        const keepalive = MethodChannel('com.xamepage.app/keepalive');
+        keepalive.invokeMethod('startKeepalive', {'userId': user.xameId});
         ref.read(socketServiceProvider).connect(user.xameId);
       }
       ref.listenManual(currentUserProvider, (prev, next) {
         if (next != null && prev?.xameId != next.xameId) {
+          const keepalive = MethodChannel('com.xamepage.app/keepalive');
+          keepalive.invokeMethod('startKeepalive', {'userId': next.xameId});
           ref.read(socketServiceProvider).connect(next.xameId);
         }
       });

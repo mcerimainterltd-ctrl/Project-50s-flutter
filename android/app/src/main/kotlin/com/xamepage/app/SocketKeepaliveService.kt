@@ -4,8 +4,10 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.os.*
+import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
 
@@ -18,7 +20,14 @@ class SocketKeepaliveService : Service() {
         const val PREFS_NAME   = "FlutterSharedPreferences"
         const val PREFS_KEY    = "flutter.xamepage_user_id"
 
-        fun start(context: Context) {
+        fun start(context: Context, userId: String? = null) {
+            if (!userId.isNullOrBlank()) {
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putString(PREFS_KEY, userId)
+                    .apply()
+            }
+
             val intent = Intent(context, SocketKeepaliveService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 context.startForegroundService(intent)
@@ -27,40 +36,100 @@ class SocketKeepaliveService : Service() {
         }
 
         fun stop(context: Context) {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .remove(PREFS_KEY)
+                .apply()
             context.stopService(Intent(context, SocketKeepaliveService::class.java))
         }
     }
 
     private val handler = Handler(Looper.getMainLooper())
-    override fun onCreate() {
-        super.onCreate()
-        createNotificationChannel()
-        startForeground(NOTIF_ID, buildNotification())
+    private var wakeLock: PowerManager.WakeLock? = null
 
-        // This service is a short-lived wake bridge for FCM incoming calls.
-        // SocketService remains the single Socket.IO owner.
-        handler.post {
+    private val heartbeatRunnable = object : Runnable {
+        override fun run() {
+            renewWakeLock()
             pingFlutter()
-            handler.postDelayed({
-                stopSelf()
-            }, 15_000L)
+            handler.postDelayed(this, 25_000L)
         }
     }
 
-    private fun pingFlutter() {
-        val engine: FlutterEngine? = FlutterEngineCache.getInstance().get("main")
-        if (engine != null) {
-            // Flutter engine is running — send heartbeat
-            try {
-                MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL_NAME)
-                    .invokeMethod("heartbeat", null)
-            } catch (e: Exception) {
-                // Engine not ready yet — skip this beat
-            }
+    override fun onCreate() {
+        super.onCreate()
+
+        val userId = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getString(PREFS_KEY, null)
+
+        if (userId.isNullOrBlank()) {
+            stopSelf()
+            return
+        }
+
+        createNotificationChannel()
+
+        val notification = buildNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIF_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
         } else {
-            // Flutter is not running. Do not launch an Activity from the
-            // background. The incoming-call notification/full-screen intent
-            // is responsible for bringing the call UI forward.
+            startForeground(NOTIF_ID, notification)
+        }
+
+        acquireWakeLock()
+        handler.post(heartbeatRunnable)
+    }
+
+    private fun pingFlutter() {
+        val engine = getOrCreateFlutterEngine() ?: return
+
+        try {
+            MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL_NAME)
+                .invokeMethod("heartbeat", null)
+        } catch (_: Exception) {
+            // Flutter engine temporarily unavailable.
+        }
+    }
+
+    private fun getOrCreateFlutterEngine(): FlutterEngine? {
+        FlutterEngineCache.getInstance().get("main")?.let {
+            return it
+        }
+
+        return try {
+            val engine = FlutterEngine(applicationContext)
+
+            FlutterEngineCache.getInstance().put("main", engine)
+
+            engine.dartExecutor.executeDartEntrypoint(
+                DartExecutor.DartEntrypoint.createDefault()
+            )
+
+            engine
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun acquireWakeLock() {
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+
+        if (wakeLock?.isHeld == true) return
+
+        wakeLock = pm.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "xamepage:SocketKeepalive"
+        ).apply {
+            acquire(12 * 60 * 60 * 1000L)
+        }
+    }
+
+    private fun renewWakeLock() {
+        if (wakeLock?.isHeld != true) {
+            acquireWakeLock()
         }
     }
 
@@ -73,7 +142,7 @@ class SocketKeepaliveService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("XamePage")
-            .setContentText("Preparing XamePage call")
+            .setContentText("XamePage is connected and ready for calls")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setShowWhen(false)
@@ -98,11 +167,14 @@ class SocketKeepaliveService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_NOT_STICKY
+        renewWakeLock()
+        return START_STICKY
     }
 
     override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null)
+        handler.removeCallbacks(heartbeatRunnable)
+        wakeLock?.release()
+        wakeLock = null
         super.onDestroy()
     }
 
