@@ -720,7 +720,6 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
-    if (user != null) {
 
     // Pre-warm providers when user is logged in
     if (user != null) {
