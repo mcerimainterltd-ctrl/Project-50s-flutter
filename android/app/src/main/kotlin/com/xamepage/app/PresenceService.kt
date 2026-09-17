@@ -157,10 +157,6 @@ class PresenceService : Service() {
                 emitOnline()
             }
 
-            socket?.on(Socket.EVENT_RECONNECT) {
-                emitOnline()
-            }
-
             socket?.on(Socket.EVENT_DISCONNECT) {
                 // Socket.IO's native reconnection remains enabled.
             }

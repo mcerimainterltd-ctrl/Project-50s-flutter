@@ -76,8 +76,13 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
         ref.read(socketServiceProvider).connect(user.xameId);
       }
       ref.listenManual(currentUserProvider, (prev, next) {
+        if (next == null && prev != null) {
+          PresenceService.stop();
+          return;
+        }
         if (next != null && prev?.xameId != next.xameId) {
           ref.read(socketServiceProvider).connect(next.xameId);
+          PresenceService.start(next.xameId);
         }
       });
     });
