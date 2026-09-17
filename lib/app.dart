@@ -28,6 +28,7 @@ import 'package:xamepage/features/contacts/providers/contacts_provider.dart';
 import 'package:xamepage/features/calls/screens/call_history_screen.dart';
 import 'package:xamepage/core/services/cache_service.dart';
 import 'package:xamepage/core/services/storage_health_service.dart';
+import 'core/services/presence_service.dart';
 
 
 class XamePageApp extends ConsumerStatefulWidget {
