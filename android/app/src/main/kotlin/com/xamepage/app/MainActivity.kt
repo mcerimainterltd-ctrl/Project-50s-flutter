@@ -72,8 +72,12 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/keepalive")
-        channel.setMethodCallHandler { call, result ->
+        val keepaliveChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.xamepage.app/keepalive"
+        )
+        channel = keepaliveChannel
+        keepaliveChannel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startKeepalive" -> {
                     val userId = call.argument<String>("userId")
