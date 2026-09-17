@@ -103,18 +103,10 @@ class AuthService {
     } catch (_) {}
     await _storage.delete(key: AppConstants.keySessionToken);
     await _storage.delete(key: AppConstants.keyUser);
-    try {
-      await const MethodChannel('com.xamepage.app/keepalive')
-          .invokeMethod('stopKeepalive');
-    } catch (_) {}
   }
 
   Future<void> forceLogout() async {
     await _storage.deleteAll();
-    try {
-      await const MethodChannel('com.xamepage.app/keepalive')
-          .invokeMethod('stopKeepalive');
-    } catch (_) {}
   }
 
   Future<XameUser?> getSavedUser() async {

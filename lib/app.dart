@@ -29,7 +29,6 @@ import 'package:xamepage/features/calls/screens/call_history_screen.dart';
 import 'package:xamepage/core/services/cache_service.dart';
 import 'package:xamepage/core/services/storage_health_service.dart';
 
-const _keepaliveChannel = MethodChannel('com.xamepage.app/keepalive');
 
 class XamePageApp extends ConsumerStatefulWidget {
   final String? initialDeepLink;
@@ -73,14 +72,10 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(currentUserProvider);
       if (user != null) {
-        const keepalive = MethodChannel('com.xamepage.app/keepalive');
-        keepalive.invokeMethod('startKeepalive', {'userId': user.xameId});
         ref.read(socketServiceProvider).connect(user.xameId);
       }
       ref.listenManual(currentUserProvider, (prev, next) {
         if (next != null && prev?.xameId != next.xameId) {
-          const keepalive = MethodChannel('com.xamepage.app/keepalive');
-          keepalive.invokeMethod('startKeepalive', {'userId': next.xameId});
           ref.read(socketServiceProvider).connect(next.xameId);
         }
       });
@@ -133,31 +128,6 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       return null;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _resetInactivityTimer());
-
-    // Keepalive heartbeat — called every 25s by SocketKeepaliveService
-    _keepaliveChannel.setMethodCallHandler((call) async {
-        if (call.method == 'onNetworkAvailable') {
-          final user = ref.read(currentUserProvider);
-          if (user != null) {
-            ref.read(socketServiceProvider).connect(user.xameId);
-          }
-          return;
-        }
-      if (call.method == 'heartbeat') {
-        final user = ref.read(currentUserProvider);
-        if (user != null) {
-          final socket = ref.read(socketServiceProvider);
-          if (socket.isConnected) {
-            socket.emitHeartbeat(user.xameId);
-          } else {
-            // Socket dead — reconnect and restart heartbeat
-            socket.connect(user.xameId);
-            socket.startHeartbeat(user.xameId);
-          }
-        }
-      }
-    });
-
 
     // Initialize lifecycle service — handles reconnect on network/resume
     ref.read(lifecycleServiceProvider);
@@ -751,10 +721,6 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     if (user != null) {
-      // Persist xameId for native SocketKeepaliveService to read on boot
-      SharedPreferences.getInstance().then((prefs) =>
-          prefs.setString('xamepage_user_id', user.xameId));
-    }
 
     // Pre-warm providers when user is logged in
     if (user != null) {

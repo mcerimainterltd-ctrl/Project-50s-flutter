@@ -23,9 +23,6 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
                     // Android 11 and below: start CallService for wake lock + lock screen
                     CallService.start(this, callerName, callType)
-                } else {
-                    // Android 12+: wake Flutter engine via SocketKeepaliveService
-                    SocketKeepaliveService.start(this)
                 }
             }
             "scheduled_call_due" -> {
