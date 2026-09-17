@@ -65,8 +65,9 @@ class LifecycleService with WidgetsBindingObserver {
         break;
 
       case AppLifecycleState.detached:
-        // App being killed — clean up everything
-        _cleanup();
+        // App/activity teardown is NOT logout.
+        // Keep authenticated presence/reconnection owned by SocketService.
+        debugPrint('XamePage: App detached — preserving authenticated presence');
         break;
 
       default:
