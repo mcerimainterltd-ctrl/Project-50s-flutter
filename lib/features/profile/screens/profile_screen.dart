@@ -19,8 +19,17 @@ import '../../../core/services/socket_service.dart';
 // ── Providers ─────────────────────────────────────────────────────────────────
 final _sessionsProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, String>((ref, userId) async {
+  const storage = FlutterSecureStorage();
+  final token = await storage.read(key: AppConstants.keySessionToken);
+  if (token == null || token.isEmpty) return [];
+
   final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-  final res  = await dio.get('/api/sessions/$userId');
+  final res = await dio.get(
+    '/api/sessions/$userId',
+    options: Options(
+      headers: {'Authorization': 'Bearer $token'},
+    ),
+  );
   if (res.data['success'] == true) {
     return List<Map<String, dynamic>>.from(res.data['sessions'] ?? []);
   }
@@ -656,8 +665,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   Spacer(),
                   TextButton(
                     onPressed: () async {
-                      await _dio.post('/api/sessions/kill-all',
-                          data: {'userId': userId});
+                      const storage = FlutterSecureStorage();
+                      final token = await storage.read(
+                          key: AppConstants.keySessionToken);
+                      await _dio.post(
+                        '/api/sessions/kill-all',
+                        data: {'userId': userId},
+                        options: Options(
+                          headers: {'Authorization': 'Bearer $token'},
+                        ),
+                      );
                       if (ctx.mounted) Navigator.pop(ctx);
                       _snack('All other devices logged out', success: true);
                     },
@@ -721,8 +738,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         )),
                         GestureDetector(
                           onTap: () async {
-                            await _dio.post('/api/sessions/kill',
-                                data: {'userId': userId, 'sessionId': s['id']});
+                            const storage = FlutterSecureStorage();
+                            final token = await storage.read(
+                                key: AppConstants.keySessionToken);
+                            await _dio.post(
+                              '/api/sessions/kill',
+                              data: {
+                                'userId': userId,
+                                'sessionId': s['id'],
+                              },
+                              options: Options(
+                                headers: {
+                                  'Authorization': 'Bearer $token',
+                                },
+                              ),
+                            );
                             ref.refresh(_sessionsProvider(userId));
                           },
                           child: Container(

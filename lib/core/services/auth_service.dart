@@ -98,8 +98,15 @@ class AuthService {
   Future<void> logout(String xameId) async {
     try {
       final token = await _storage.read(key: AppConstants.keySessionToken);
-      if (token != null)
-        await _dio.post('/api/sessions/kill', data: {'userId': xameId, 'sessionId': token});
+      if (token != null && token.isNotEmpty) {
+        await _dio.post(
+          '/api/logout',
+          data: {'userId': xameId},
+          options: Options(
+            headers: {'Authorization': 'Bearer $token'},
+          ),
+        );
+      }
     } catch (_) {}
     await _storage.delete(key: AppConstants.keySessionToken);
     await _storage.delete(key: AppConstants.keyUser);

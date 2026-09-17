@@ -39,6 +39,7 @@ class XamePageApp extends ConsumerStatefulWidget {
 
 class _XamePageAppState extends ConsumerState<XamePageApp> {
   StreamSubscription? _shareSub;
+  StreamSubscription<String>? _forceLogoutSub;
   DateTime? _hiddenAt;
   bool _showingLock = false;
   Timer? _inactivityTimer;
@@ -70,13 +71,27 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initWebCallRequestListener();
     // Auto-connect socket as soon as user is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final socketService = ref.read(socketServiceProvider);
+
+      _forceLogoutSub = socketService.forceLogout.listen((reason) async {
+        debugPrint('🔐 Remote force-logout received: $reason');
+
+        await ref.read(authServiceProvider).forceLogout();
+        socketService.disconnect();
+
+        if (mounted) {
+          ref.read(currentUserProvider.notifier).state = null;
+        }
+      });
+
       final user = ref.read(currentUserProvider);
       if (user != null) {
-        ref.read(socketServiceProvider).connect(user.xameId);
+        socketService.connect(user.xameId);
       }
+
       ref.listenManual(currentUserProvider, (prev, next) {
         if (next != null && prev?.xameId != next.xameId) {
-          ref.read(socketServiceProvider).connect(next.xameId);
+          socketService.connect(next.xameId);
         }
       });
     });
@@ -704,6 +719,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
   @override
   void dispose() {
+    _forceLogoutSub?.cancel();
     _shareSub?.cancel();
     _shareSubscription?.cancel();
     _contactRequestAcceptedSub?.cancel();

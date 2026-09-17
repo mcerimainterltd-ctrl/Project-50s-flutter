@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../config/constants.dart';
 import 'package:xamepage/core/services/audio_service.dart';
@@ -22,6 +23,7 @@ enum SocketState { disconnected, connecting, connected, reconnecting, failed }
 class SocketService {
   String? currentUserId;
   IO.Socket? _socket;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   int    _reconnectAttempts = 0;
   Timer? _heartbeatTimer;
   Timer? _watchdogTimer;
@@ -156,7 +158,8 @@ class SocketService {
   bool get isConnected => _socket?.connected ?? false;
   IO.Socket? get rawSocket => _socket;
 
-  void connect(String xameId, {bool stealth = false}) { currentUserId = xameId;
+  Future<void> connect(String xameId, {bool stealth = false}) async {
+    currentUserId = xameId;
     if (_socket?.connected == true) {
       debugPrint('✅ Socket already connected for: $xameId');
       return;
@@ -178,10 +181,20 @@ class SocketService {
     try {
       // Try polling first (more reliable on restricted networks)
       // then upgrade to websocket — mirrors JS: transports: ['polling','websocket']
+      final sessionToken =
+          await _secureStorage.read(key: AppConstants.keySessionToken);
+
+      if (sessionToken == null || sessionToken.isEmpty) {
+        debugPrint('❌ Socket authentication token missing');
+        _connectionStateCtrl.add(SocketState.failed);
+        return;
+      }
+
       _socket = IO.io(
         AppConstants.serverUrl,
         IO.OptionBuilder()
           .setQuery({'userId': xameId})
+          .setAuth({'token': sessionToken})
           .setTransports(['websocket'])
           .setPath('/socket.io/')
           .enableReconnection()
@@ -248,6 +261,32 @@ class SocketService {
 
     socket.onConnectError((err) {
       debugPrint('❌ Socket connect error: $err');
+
+      final errorText = err?.toString() ?? '';
+      final authFailure =
+          errorText.contains('Invalid session') ||
+          errorText.contains('Authentication required') ||
+          errorText.contains('Authentication failed');
+
+      if (authFailure) {
+        debugPrint('🔐 Socket session rejected — rebuilding socket with current session token');
+
+        if (identical(_socket, socket)) {
+          socket.clearListeners();
+          socket.disconnect();
+          _socket = null;
+        }
+
+        _connectionStateCtrl.add(SocketState.reconnecting);
+
+        Future.delayed(const Duration(seconds: 1), () {
+          if (_socket == null) {
+            connect(xameId, stealth: stealth);
+          }
+        });
+        return;
+      }
+
       _connectionStateCtrl.add(SocketState.reconnecting);
     });
 
