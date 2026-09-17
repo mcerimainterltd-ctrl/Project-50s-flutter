@@ -17,6 +17,7 @@ import 'package:xamepage/core/services/app_lock_service.dart';
 import 'package:xamepage/shared/widgets/pin_lock_screen.dart';
 import 'dart:async';
 import 'package:xamepage/core/services/socket_service.dart';
+import 'package:xamepage/core/services/presence_service.dart';
 import 'package:xamepage/core/services/lifecycle_service.dart';
 import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
@@ -87,11 +88,18 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       final user = ref.read(currentUserProvider);
       if (user != null) {
         socketService.connect(user.xameId);
+        PresenceService.start(user.xameId);
       }
 
       ref.listenManual(currentUserProvider, (prev, next) {
+        if (next == null && prev != null) {
+          PresenceService.stop();
+          return;
+        }
+
         if (next != null && prev?.xameId != next.xameId) {
           socketService.connect(next.xameId);
+          PresenceService.start(next.xameId);
         }
       });
     });
@@ -156,6 +164,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       final user = ref.read(currentUserProvider);
       if (user != null) {
         ref.read(socketServiceProvider).startHeartbeat(user.xameId);
+        PresenceService.start(user.xameId);
         // Reward: daily login streak
         try {
           await http.post(
