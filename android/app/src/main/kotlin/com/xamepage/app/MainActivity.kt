@@ -67,6 +67,31 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.xamepage.app/presence"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "start" -> {
+                    val userId = call.argument<String>("userId") ?: ""
+                    if (userId.isBlank()) {
+                        result.error("INVALID_USER", "userId is required", null)
+                    } else {
+                        PresenceService.start(this, userId)
+                        result.success(null)
+                    }
+                }
+
+                "stop" -> {
+                    PresenceService.stop(this)
+                    result.success(null)
+                }
+
+                else -> result.notImplemented()
+            }
+        }
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/android_bridge")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
