@@ -23,6 +23,11 @@ class NativePresenceService : Service() {
         private const val NOTIFICATION_ID = 2003
         private const val PREFS = "xamepage_native_presence"
         private const val TOKEN_KEY = "session_token"
+        private const val DIAG_STARTED = "diag_started"
+        private const val DIAG_TASK_REMOVED = "diag_task_removed"
+        private const val DIAG_DESTROYED = "diag_destroyed"
+        private const val DIAG_LAST_HEARTBEAT = "diag_last_heartbeat"
+        private const val DIAG_LAST_RESPONSE = "diag_last_response"
         private const val SERVER_URL = "https://project-50s.onrender.com"
         private const val REFRESH_MS = 3 * 60 * 1000L
 
@@ -68,6 +73,13 @@ class NativePresenceService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit()
+            .putLong(DIAG_STARTED, System.currentTimeMillis())
+            .putLong(DIAG_DESTROYED, 0L)
+            .apply()
+
         createNotificationChannel()
 
         ServiceCompat.startForeground(
@@ -131,6 +143,27 @@ class NativePresenceService : Service() {
 
                 val code = connection.responseCode
 
+                val heartbeatTime = System.currentTimeMillis()
+
+                getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .edit()
+                    .putLong(DIAG_LAST_HEARTBEAT, heartbeatTime)
+                    .putInt(DIAG_LAST_RESPONSE, code)
+                    .apply()
+
+                if (code == HttpURLConnection.HTTP_OK) {
+                    val time = java.text.SimpleDateFormat(
+                        "HH:mm:ss",
+                        java.util.Locale.getDefault()
+                    ).format(java.util.Date(heartbeatTime))
+
+                    handler.post {
+                        updatePresenceNotification(
+                            "Presence heartbeat: $time"
+                        )
+                    }
+                }
+
                 if (code == HttpURLConnection.HTTP_UNAUTHORIZED) {
                     handler.post { stopSelf() }
                 }
@@ -141,6 +174,21 @@ class NativePresenceService : Service() {
                 connection?.disconnect()
             }
         }.start()
+    }
+
+    private fun updatePresenceNotification(text: String) {
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(
+            NOTIFICATION_ID,
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("XamePage")
+                .setContentText(text)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .setShowWhen(false)
+                .build()
+        )
     }
 
     private fun createNotificationChannel() {
@@ -175,6 +223,15 @@ class NativePresenceService : Service() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        val taskRemovedTime = System.currentTimeMillis()
+
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit()
+            .putLong(DIAG_TASK_REMOVED, taskRemovedTime)
+            .apply()
+
+        updatePresenceNotification("Task removed — monitoring presence")
+
         // The XamePage task was swiped from Recents.
         // Keep the authenticated foreground presence service alive.
         val token = getSharedPreferences(PREFS, MODE_PRIVATE)
@@ -190,6 +247,11 @@ class NativePresenceService : Service() {
     }
 
     override fun onDestroy() {
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit()
+            .putLong(DIAG_DESTROYED, System.currentTimeMillis())
+            .apply()
+
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
