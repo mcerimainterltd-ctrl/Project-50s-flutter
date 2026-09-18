@@ -19,6 +19,33 @@ class AuthService {
     receiveTimeout: const Duration(seconds: 30),
   ));
 
+  static const MethodChannel _nativePresence =
+      MethodChannel('com.xamepage.app/android_bridge');
+
+  Future<void> startNativePresence() async {
+    if (!Platform.isAndroid) return;
+
+    final token =
+        await _storage.read(key: AppConstants.keySessionToken);
+
+    if (token == null || token.isEmpty) return;
+
+    try {
+      await _nativePresence.invokeMethod(
+        'startNativePresence',
+        {'token': token},
+      );
+    } catch (_) {}
+  }
+
+  Future<void> stopNativePresence() async {
+    if (!Platform.isAndroid) return;
+
+    try {
+      await _nativePresence.invokeMethod('stopNativePresence');
+    } catch (_) {}
+  }
+
   Future<XameUser?> init() async {
     try {
       final raw = await _storage.read(key: AppConstants.keyUser);
@@ -96,6 +123,8 @@ class AuthService {
   }
 
   Future<void> logout(String xameId) async {
+    await stopNativePresence();
+
     try {
       final token = await _storage.read(key: AppConstants.keySessionToken);
       if (token != null && token.isNotEmpty) {
@@ -113,6 +142,7 @@ class AuthService {
   }
 
   Future<void> forceLogout() async {
+    await stopNativePresence();
     await _storage.deleteAll();
   }
 

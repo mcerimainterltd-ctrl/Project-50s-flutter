@@ -156,6 +156,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       final user = ref.read(currentUserProvider);
       if (user != null) {
         ref.read(socketServiceProvider).startHeartbeat(user.xameId);
+        await ref.read(authServiceProvider).startNativePresence();
         // Reward: daily login streak
         try {
           await http.post(

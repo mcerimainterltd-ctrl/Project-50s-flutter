@@ -70,6 +70,19 @@ class MainActivity : FlutterFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/android_bridge")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "startNativePresence" -> {
+                        val token = call.argument<String>("token")
+                        if (token.isNullOrBlank()) {
+                            result.success(false)
+                        } else {
+                            NativePresenceService.start(this@MainActivity, token)
+                            result.success(true)
+                        }
+                    }
+                    "stopNativePresence" -> {
+                        NativePresenceService.stop(this@MainActivity)
+                        result.success(true)
+                    }
                     "openBatterySettings" -> {
                         var launched = false
                         // Try battery optimization settings first
