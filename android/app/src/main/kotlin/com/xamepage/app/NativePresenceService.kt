@@ -174,6 +174,21 @@ class NativePresenceService : Service() {
             .build()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // The XamePage task was swiped from Recents.
+        // Keep the authenticated foreground presence service alive.
+        val token = getSharedPreferences(PREFS, MODE_PRIVATE)
+            .getString(TOKEN_KEY, null)
+
+        if (!token.isNullOrBlank()) {
+            handler.removeCallbacks(refreshRunnable)
+            refreshPresence()
+            handler.postDelayed(refreshRunnable, REFRESH_MS)
+        }
+
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
