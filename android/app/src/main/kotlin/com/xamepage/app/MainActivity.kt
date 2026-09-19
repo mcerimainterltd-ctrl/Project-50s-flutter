@@ -90,7 +90,9 @@ class MainActivity : FlutterFragmentActivity() {
                             "taskRemoved" to diagPrefs.getLong("diag_task_removed", 0L),
                             "destroyed" to diagPrefs.getLong("diag_destroyed", 0L),
                             "lastHeartbeat" to diagPrefs.getLong("diag_last_heartbeat", 0L),
-                            "lastResponse" to diagPrefs.getInt("diag_last_response", 0)
+                            "lastResponse" to diagPrefs.getInt("diag_last_response", 0),
+                            "lastCallPushReceived" to diagPrefs.getLong("diag_last_call_push_received", 0L),
+                            "lastCallNotifyPosted" to diagPrefs.getLong("diag_last_call_notify_posted", 0L)
                         ))
                     }
                     "openBatterySettings" -> {

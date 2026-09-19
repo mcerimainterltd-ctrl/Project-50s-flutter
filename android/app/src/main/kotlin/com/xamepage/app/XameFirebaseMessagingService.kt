@@ -18,6 +18,12 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
         when (type) {
             "incoming_call" -> {
+                // DIAGNOSTIC: record that the push was received, before doing anything else
+                getSharedPreferences("xamepage_native_presence", MODE_PRIVATE)
+                    .edit()
+                    .putLong("diag_last_call_push_received", System.currentTimeMillis())
+                    .apply()
+
                 // Show full-screen heads-up notification on all Android versions
                 showHeadsUpNotification(callerName, callType)
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
@@ -164,5 +170,12 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
         val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         mgr.notify(CallService.NOTIF_ID + 1, notification)
+
+        // DIAGNOSTIC: record that notify() was actually called (posting the
+        // notification), so we know the code reached this point successfully.
+        getSharedPreferences("xamepage_native_presence", MODE_PRIVATE)
+            .edit()
+            .putLong("diag_last_call_notify_posted", System.currentTimeMillis())
+            .apply()
     }
 }
