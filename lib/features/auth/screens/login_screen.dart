@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/push_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -46,6 +47,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       switch (result.type) {
         case LoginResultType.success:
           ref.read(currentUserProvider.notifier).state = result.user;
+          // Register a fresh FCM token and start native presence right at
+          // login, rather than waiting for the next app-resume cycle —
+          // a login while the app stays foregrounded the whole time would
+          // otherwise never trigger either of these.
+          ref.read(pushServiceProvider).reRegisterToken(result.user!.xameId);
+          auth.startNativePresence();
           if (mounted) context.go('/contacts');
           break;
         case LoginResultType.needsOTP:
