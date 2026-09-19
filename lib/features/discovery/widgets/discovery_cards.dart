@@ -798,7 +798,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                                   widget.viewCount, widget.likeCount, widget.commentCount);
                               if (score == null) return const SizedBox.shrink();
                               return Tooltip(
-                                message: '\${score.label} Creator',
+                                message: '${score.label} Creator',
                                 child: Container(
                                   margin: const EdgeInsets.only(left: 5),
                                   padding: const EdgeInsets.symmetric(

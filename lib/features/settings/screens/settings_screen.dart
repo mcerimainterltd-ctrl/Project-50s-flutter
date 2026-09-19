@@ -194,11 +194,11 @@ class SettingsNotifier extends StateNotifier<SettingsData> {
     try {
       final dio = Dio();
       await dio.post(
-        '\${AppConstants.serverUrl}/api/settings',
+        '${AppConstants.serverUrl}/api/settings',
         data: {'userId': xameId, 'key': 'stealthMode', 'value': value},
       );
     } catch (e) {
-      debugPrint('syncStealthMode error: \$e');
+      debugPrint('syncStealthMode error: $e');
     }
   }
 

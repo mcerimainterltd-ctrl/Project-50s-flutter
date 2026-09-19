@@ -42,7 +42,7 @@ class AppLockNotifier extends StateNotifier<AppLockState> {
   }
 
   Future<void> setDelay(int ms) async {
-    await _storage.write(key: _kDelay, value: '\$ms');
+    await _storage.write(key: _kDelay, value: '$ms');
     state = state.copyWith(delayMs: ms);
   }
 

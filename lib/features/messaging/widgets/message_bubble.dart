@@ -68,7 +68,7 @@ String _resolveUrl(String url, {bool forDisplay = false}) {
   // Relative path → prepend server base
   final base = AppConstants.serverUrl.replaceAll(RegExp(r'/\$'), '');
   final path = url.startsWith('/') ? url : '/\$url';
-  return '\$base\$path';
+  return '$base$path';
 }
 // ─── In-memory thumbnail caches (process lifetime) ────────────────────────
 final _videoThumbCache = <String, Uint8List?>{};
@@ -2982,7 +2982,7 @@ class _ReactionBar extends StatelessWidget {
             Text(e.key, style: const TextStyle(fontSize: 13)),
             if (e.value > 1) ...[
               const SizedBox(width: 3),
-              Text('\${e.value}',
+              Text('${e.value}',
                 style: const TextStyle(fontSize: 11,
                     color: Colors.white70, fontWeight: FontWeight.w600)),
             ],

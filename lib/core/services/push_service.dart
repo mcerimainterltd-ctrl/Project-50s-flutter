@@ -303,7 +303,7 @@ class PushService {
   Future<void> _saveToken(String userId, String token) async {
     try {
       final res = await http.post(
-        Uri.parse('\${AppConstants.serverUrl}/api/save-fcm-token'),
+        Uri.parse('${AppConstants.serverUrl}/api/save-fcm-token'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': userId, 'fcmToken': token}),
       );

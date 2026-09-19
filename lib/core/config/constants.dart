@@ -3,7 +3,7 @@ class AppConstants {
   static const mediaWorkerUrl = 'https://media.xamepage.com';
   static const appVersion            = '2.1.1';
   static const appBuildNumber         = 478;
-  static const apiAppVersion          = '\$serverUrl/api/app/version';
+  static const apiAppVersion          = '$serverUrl/api/app/version';
   static const keyUser               = 'xame:user';
   static const keyContacts           = 'xame:contacts';
   static const keyDrafts             = 'xame:drafts';
