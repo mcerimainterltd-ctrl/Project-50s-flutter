@@ -302,11 +302,24 @@ class PushService {
 
   Future<void> _saveToken(String userId, String token) async {
     try {
-      await http.post(
+      final res = await http.post(
         Uri.parse('\${AppConstants.serverUrl}/api/save-fcm-token'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': userId, 'fcmToken': token}),
       );
-    } catch (_) {}
+      try {
+        await _diagBridge.invokeMethod('writeTokenDiagnostic', {
+          'status': 'save_http_\${res.statusCode}',
+          'detail': res.body.length > 100 ? res.body.substring(0, 100) : res.body,
+        });
+      } catch (_) {}
+    } catch (e) {
+      try {
+        await _diagBridge.invokeMethod('writeTokenDiagnostic', {
+          'status': 'save_exception',
+          'detail': e.toString(),
+        });
+      } catch (_) {}
+    }
   }
 }
