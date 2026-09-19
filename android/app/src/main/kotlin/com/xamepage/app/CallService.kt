@@ -18,11 +18,13 @@ class CallService : Service() {
         const val ACTION_DECLINE   = "ACTION_DECLINE"
         const val EXTRA_CALLER     = "caller_name"
         const val EXTRA_CALL_TYPE  = "call_type"
+        const val EXTRA_CALLER_ID  = "caller_id"
 
-        fun start(context: Context, callerName: String, callType: String) {
+        fun start(context: Context, callerName: String, callType: String, callerId: String = "") {
             val intent = Intent(context, CallService::class.java).apply {
                 putExtra(EXTRA_CALLER,    callerName)
                 putExtra(EXTRA_CALL_TYPE, callType)
+                putExtra(EXTRA_CALLER_ID, callerId)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 context.startForegroundService(intent)
@@ -46,12 +48,13 @@ class CallService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val caller   = intent?.getStringExtra(EXTRA_CALLER)    ?: "Unknown"
         val callType = intent?.getStringExtra(EXTRA_CALL_TYPE) ?: "voice"
+        val callerId = intent?.getStringExtra(EXTRA_CALLER_ID) ?: ""
 
-        startForeground(NOTIF_ID, buildNotification(caller, callType))
+        startForeground(NOTIF_ID, buildNotification(caller, callType, callerId))
         return START_NOT_STICKY
     }
 
-    private fun buildNotification(caller: String, callType: String): Notification {
+    private fun buildNotification(caller: String, callType: String, callerId: String): Notification {
         val isVideo = callType == "video"
 
         // Full screen intent — shows on lock screen
@@ -60,6 +63,7 @@ class CallService : Service() {
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("incoming_call", true)
+            putExtra("caller_id", callerId)
         }
         val fullScreenPi = PendingIntent.getActivity(
             this, 0, fullScreenIntent,
@@ -70,6 +74,9 @@ class CallService : Service() {
         val answerIntent = Intent(this, MainActivity::class.java).apply {
             action = ACTION_ANSWER
             flags  = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("caller_name", caller)
+            putExtra("call_type",   callType)
+            putExtra("caller_id",   callerId)
         }
         val answerPi = PendingIntent.getActivity(
             this, 1, answerIntent,

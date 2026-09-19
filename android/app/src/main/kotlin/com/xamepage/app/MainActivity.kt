@@ -63,6 +63,13 @@ class MainActivity : FlutterFragmentActivity() {
             )
         }
         prefs.edit().putInt("permissions_asked_version", versionCode).apply()
+
+        // Cold start (app was fully killed): the Answer/Decline intent
+        // arrives via getIntent() here, not onNewIntent, which is only
+        // called when the Activity already exists. Handling it in both
+        // places is what makes the notification's Answer button work on
+        // the first tap regardless of whether the app was already running.
+        handleCallIntent(intent)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -264,17 +271,22 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
-    override fun onNewIntent(intent: android.content.Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
+    private fun handleCallIntent(intent: android.content.Intent?) {
         val engine = flutterEngine ?: return
-        when (intent.action) {
+        when (intent?.action) {
             CallService.ACTION_ANSWER -> {
                 CallService.stop(this)
                 val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
                 mgr.cancel(CallService.NOTIF_ID + 1)
+                val callerId   = intent.getStringExtra("caller_id")   ?: ""
+                val callerName = intent.getStringExtra("caller_name") ?: ""
+                val callType   = intent.getStringExtra("call_type")   ?: "voice"
                 MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
-                    .invokeMethod("navigateToIncomingCall", null)
+                    .invokeMethod("navigateToIncomingCall", mapOf(
+                        "callerId"   to callerId,
+                        "callerName" to callerName,
+                        "callType"   to callType
+                    ))
             }
             CallService.ACTION_DECLINE -> {
                 CallService.stop(this)
@@ -284,6 +296,12 @@ class MainActivity : FlutterFragmentActivity() {
                     .invokeMethod("onCallDeclined", null)
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleCallIntent(intent)
     }
 
     override fun onDestroy() {

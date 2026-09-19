@@ -30,6 +30,9 @@ class WebRTCService {
     final contacts = CacheService.loadContacts();
     final match = contacts.where((c) => c['id'] == callerId || c['xameId'] == callerId).firstOrNull;
     callerDisplayName = (match?['name'] as String?)?.isNotEmpty == true ? match!['name'] as String : callerId;
+    final settings = SettingsNotifier.currentSettings;
+    _audio.stopAll();
+    if (settings.callSound) _audio.playRingtone();
     _incomingCallController.add(true);
   }
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
@@ -150,7 +153,14 @@ class WebRTCService {
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'navigateToIncomingCall':
-          _incomingCallController.add(true);
+          final args = call.arguments as Map?;
+          final callerId = (args?['callerId'] as String?) ?? '';
+          final callType = (args?['callType'] as String?) ?? 'voice';
+          if (callerId.isNotEmpty) {
+            setIncomingCall(callerId, {}, callType);
+          } else {
+            _incomingCallController.add(true);
+          }
           break;
         case 'onCallDeclined':
           rejectCall();

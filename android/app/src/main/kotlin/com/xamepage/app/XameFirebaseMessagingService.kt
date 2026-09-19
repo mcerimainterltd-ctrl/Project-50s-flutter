@@ -18,6 +18,8 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
         when (type) {
             "incoming_call" -> {
+                val callerId = data["callerId"] ?: ""
+
                 // DIAGNOSTIC: record that the push was received, before doing anything else
                 getSharedPreferences("xamepage_native_presence", MODE_PRIVATE)
                     .edit()
@@ -25,10 +27,10 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
                     .apply()
 
                 // Show full-screen heads-up notification on all Android versions
-                showHeadsUpNotification(callerName, callType)
+                showHeadsUpNotification(callerName, callType, callerId)
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
                     // Android 11 and below: start CallService for wake lock + lock screen
-                    CallService.start(this, callerName, callType)
+                    CallService.start(this, callerName, callType, callerId)
                 }
             }
             "scheduled_call_due" -> {
@@ -99,7 +101,7 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
         mgr.notify(System.currentTimeMillis().toInt(), notification)
     }
 
-    private fun showHeadsUpNotification(callerName: String, callType: String) {
+    private fun showHeadsUpNotification(callerName: String, callType: String, callerId: String) {
         val channelId = "xamepage_headsup_v3"
         val isVideo   = callType == "video"
 
@@ -127,6 +129,7 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
             putExtra("incoming_call", true)
             putExtra("caller_name",   callerName)
             putExtra("call_type",     callType)
+            putExtra("caller_id",     callerId)
         }
         val fullScreenPi = PendingIntent.getActivity(
             this, 0, fullScreenIntent,
@@ -140,6 +143,7 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
                 flags  = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 putExtra("caller_name", callerName)
                 putExtra("call_type",   callType)
+                putExtra("caller_id",   callerId)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
