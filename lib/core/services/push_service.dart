@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -268,11 +269,35 @@ class PushService {
     );
   }
 
+  static const MethodChannel _diagBridge = MethodChannel('com.xamepage.app/android_bridge');
+
   Future<void> reRegisterToken(String userId) async {
     try {
       final token = await _fcm.getToken();
-      if (token != null) await _saveToken(userId, token);
-    } catch (_) {}
+      if (token != null) {
+        await _saveToken(userId, token);
+        try {
+          await _diagBridge.invokeMethod('writeTokenDiagnostic', {
+            'status': 'ok',
+            'detail': token.length > 12 ? token.substring(0, 12) : token,
+          });
+        } catch (_) {}
+      } else {
+        try {
+          await _diagBridge.invokeMethod('writeTokenDiagnostic', {
+            'status': 'token_null',
+            'detail': '',
+          });
+        } catch (_) {}
+      }
+    } catch (e) {
+      try {
+        await _diagBridge.invokeMethod('writeTokenDiagnostic', {
+          'status': 'exception',
+          'detail': e.toString(),
+        });
+      } catch (_) {}
+    }
   }
 
   Future<void> _saveToken(String userId, String token) async {

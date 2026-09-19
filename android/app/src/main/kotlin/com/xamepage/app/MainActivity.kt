@@ -92,8 +92,22 @@ class MainActivity : FlutterFragmentActivity() {
                             "lastHeartbeat" to diagPrefs.getLong("diag_last_heartbeat", 0L),
                             "lastResponse" to diagPrefs.getInt("diag_last_response", 0),
                             "lastCallPushReceived" to diagPrefs.getLong("diag_last_call_push_received", 0L),
-                            "lastCallNotifyPosted" to diagPrefs.getLong("diag_last_call_notify_posted", 0L)
+                            "lastCallNotifyPosted" to diagPrefs.getLong("diag_last_call_notify_posted", 0L),
+                            "tokenStatus" to diagPrefs.getString("diag_token_status", "never"),
+                            "tokenDetail" to diagPrefs.getString("diag_token_detail", ""),
+                            "tokenTime" to diagPrefs.getLong("diag_token_time", 0L)
                         ))
+                    }
+                    "writeTokenDiagnostic" -> {
+                        val status = call.argument<String>("status") ?: "unknown"
+                        val detail = call.argument<String>("detail") ?: ""
+                        getSharedPreferences("xamepage_native_presence", MODE_PRIVATE)
+                            .edit()
+                            .putString("diag_token_status", status)
+                            .putString("diag_token_detail", detail)
+                            .putLong("diag_token_time", System.currentTimeMillis())
+                            .apply()
+                        result.success(true)
                     }
                     "openBatterySettings" -> {
                         var launched = false
