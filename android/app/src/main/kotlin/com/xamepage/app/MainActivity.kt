@@ -83,6 +83,16 @@ class MainActivity : FlutterFragmentActivity() {
                         NativePresenceService.stop(this@MainActivity)
                         result.success(true)
                     }
+                    "getPresenceDiagnostics" -> {
+                        val diagPrefs = getSharedPreferences("xamepage_native_presence", MODE_PRIVATE)
+                        result.success(mapOf(
+                            "started" to diagPrefs.getLong("diag_started", 0L),
+                            "taskRemoved" to diagPrefs.getLong("diag_task_removed", 0L),
+                            "destroyed" to diagPrefs.getLong("diag_destroyed", 0L),
+                            "lastHeartbeat" to diagPrefs.getLong("diag_last_heartbeat", 0L),
+                            "lastResponse" to diagPrefs.getInt("diag_last_response", 0)
+                        ))
+                    }
                     "openBatterySettings" -> {
                         var launched = false
                         // Try battery optimization settings first

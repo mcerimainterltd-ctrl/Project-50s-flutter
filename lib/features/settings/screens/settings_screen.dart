@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -573,6 +574,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             _NavTile(
               theme:    theme,
+              icon:     Icons.bug_report_outlined,
+              title:    'Presence Diagnostics',
+              subtitle: 'Check native presence service status',
+              onTap:    () => _showPresenceDiagnostics(context),
+            ),
+            _NavTile(
+              theme:    theme,
               icon:     Icons.support_agent_rounded,
               title:    'Support Centre',
               onTap:    () => launchUrl(Uri.parse('https://xamepage.com/support'),
@@ -613,6 +621,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
+
+
+  Future<void> _showPresenceDiagnostics(BuildContext context) async {
+    const channel = MethodChannel('com.xamepage.app/android_bridge');
+    Map<dynamic, dynamic> diag = {};
+    String? error;
+    try {
+      final result = await channel.invokeMethod('getPresenceDiagnostics');
+      if (result is Map) diag = result;
+    } catch (e) {
+      error = e.toString();
+    }
+
+    String fmt(dynamic ms) {
+      if (ms == null || ms == 0) return 'never';
+      final dt = DateTime.fromMillisecondsSinceEpoch(ms as int);
+      return dt.toLocal().toString();
+    }
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Presence Diagnostics'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: error != null
+                ? [Text('Error: ' + error)]
+                : [
+                    Text('Service started: ' + fmt(diag['started'])),
+                    const SizedBox(height: 8),
+                    Text('Last task removed (swipe): ' + fmt(diag['taskRemoved'])),
+                    const SizedBox(height: 8),
+                    Text('Last destroyed: ' + fmt(diag['destroyed'])),
+                    const SizedBox(height: 8),
+                    Text('Last heartbeat sent: ' + fmt(diag['lastHeartbeat'])),
+                    const SizedBox(height: 8),
+                    Text('Last heartbeat HTTP response: ' + (diag['lastResponse']?.toString() ?? 'none')),
+                  ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
 }
 
 // ── Shared tile widgets ───────────────────────────────────────────────────────
