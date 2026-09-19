@@ -69,7 +69,13 @@ class MainActivity : FlutterFragmentActivity() {
         // called when the Activity already exists. Handling it in both
         // places is what makes the notification's Answer button work on
         // the first tap regardless of whether the app was already running.
-        handleCallIntent(intent)
+        // Wrapped defensively: this must never be able to crash a normal,
+        // non-call app launch.
+        try {
+            handleCallIntent(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -301,7 +307,11 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        handleCallIntent(intent)
+        try {
+            handleCallIntent(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onDestroy() {

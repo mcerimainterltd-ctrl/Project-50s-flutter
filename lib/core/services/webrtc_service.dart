@@ -193,7 +193,14 @@ class WebRTCService {
     // Listening to YOUR existing SocketService streams
     _socket.incomingCall.listen((data) async {
       if (data.callerId == _socket.currentUserId) return; // Ignore self
-      if (_callState == CallState.incoming || _callState == CallState.active) return; // Already in a call
+      // A provisional incoming state may already be set from a native FCM
+      // wake (no real offer yet, just caller metadata) — let the real
+      // offer through in that case instead of dropping it as a duplicate.
+      final hasRealOffer = _pendingOffer != null &&
+          !(_pendingOffer is Map && (_pendingOffer as Map).isEmpty);
+      if ((_callState == CallState.incoming || _callState == CallState.active) && hasRealOffer) {
+        return; // Genuinely already in a call — ignore duplicate
+      }
       currentRemoteUserId = data.callerId;
       _currentCallId = data.callId;
       _pendingOffer = data.offer;
