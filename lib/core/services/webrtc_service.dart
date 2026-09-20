@@ -503,6 +503,7 @@ class WebRTCService {
           track.enabled = true;
         }
         
+        _remoteMediaStream = e.streams[0];
         _remoteStreamController.add(e.streams[0]);
         print("Remote stream attached and tracks enabled");
       }
@@ -530,6 +531,7 @@ class WebRTCService {
   }
 
   
+  MediaStream? _remoteMediaStream;
   bool _isOnHold = false;
   bool get isOnHold => _isOnHold;
 
@@ -539,6 +541,9 @@ class WebRTCService {
     // Disable all local tracks
     localStream?.getAudioTracks().forEach((t) => t.enabled = false);
     localStream?.getVideoTracks().forEach((t) => t.enabled = false);
+    // Also silence the remote party's audio locally — a real Hold means
+    // neither side hears the other, not just a one-way mute of yourself.
+    _remoteMediaStream?.getAudioTracks().forEach((t) => t.enabled = false);
     _socket.emitCallHold(currentRemoteUserId!);
     _callStateController.add(_callState);
   }
@@ -549,6 +554,7 @@ class WebRTCService {
     // Re-enable local tracks
     localStream?.getAudioTracks().forEach((t) => t.enabled = true);
     localStream?.getVideoTracks().forEach((t) => t.enabled = true);
+    _remoteMediaStream?.getAudioTracks().forEach((t) => t.enabled = true);
     _socket.emitCallResume(currentRemoteUserId!);
     _callStateController.add(_callState);
   }
