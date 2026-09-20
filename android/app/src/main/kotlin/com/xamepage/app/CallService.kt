@@ -16,6 +16,7 @@ class CallService : Service() {
         const val NOTIF_ID         = 1001
         const val ACTION_ANSWER    = "ACTION_ANSWER"
         const val ACTION_DECLINE   = "ACTION_DECLINE"
+        const val ACTION_VIEW_INCOMING_CALL = "ACTION_VIEW_INCOMING_CALL"
         const val EXTRA_CALLER     = "caller_name"
         const val EXTRA_CALL_TYPE  = "call_type"
         const val EXTRA_CALLER_ID  = "caller_id"
@@ -59,11 +60,14 @@ class CallService : Service() {
 
         // Full screen intent — shows on lock screen
         val fullScreenIntent = Intent(this, MainActivity::class.java).apply {
+            action = ACTION_VIEW_INCOMING_CALL
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("incoming_call", true)
-            putExtra("caller_id", callerId)
+            putExtra("caller_id",   callerId)
+            putExtra("caller_name", caller)
+            putExtra("call_type",   callType)
         }
         val fullScreenPi = PendingIntent.getActivity(
             this, 0, fullScreenIntent,

@@ -126,6 +126,7 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
+            action = CallService.ACTION_VIEW_INCOMING_CALL
             putExtra("incoming_call", true)
             putExtra("caller_name",   callerName)
             putExtra("call_type",     callType)

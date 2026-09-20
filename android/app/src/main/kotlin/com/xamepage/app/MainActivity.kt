@@ -301,6 +301,23 @@ class MainActivity : FlutterFragmentActivity() {
                 MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
                     .invokeMethod("onCallDeclined", null)
             }
+            CallService.ACTION_VIEW_INCOMING_CALL -> {
+                // Tapped the notification body (not the Answer button).
+                // Show the incoming call screen and start the ringtone
+                // immediately, but don't dismiss the notification or stop
+                // CallService yet — the call hasn't actually been answered,
+                // just viewed. Answering is still decided from within the
+                // incoming call screen itself.
+                val callerId   = intent.getStringExtra("caller_id")   ?: ""
+                val callerName = intent.getStringExtra("caller_name") ?: ""
+                val callType   = intent.getStringExtra("call_type")   ?: "voice"
+                MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
+                    .invokeMethod("navigateToIncomingCall", mapOf(
+                        "callerId"   to callerId,
+                        "callerName" to callerName,
+                        "callType"   to callType
+                    ))
+            }
         }
     }
 

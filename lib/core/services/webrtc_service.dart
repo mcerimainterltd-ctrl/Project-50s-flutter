@@ -411,6 +411,11 @@ class WebRTCService {
     _pendingIce.clear();
     await _audio.stopAll();
     await Helper.setSpeakerphoneOn(false);
+    // The recipient just answered — dismiss the lingering native heads-up
+    // notification and stop CallService, otherwise it stays on screen and
+    // re-tapping it restarts the whole incoming-call flow as a duplicate.
+    try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
+    try { _channel.invokeMethod('stopCallService'); } catch (_) {}
     _callState = CallState.active;
     _callStateController.add(CallState.active);
   }
