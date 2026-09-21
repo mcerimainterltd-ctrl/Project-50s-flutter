@@ -87,7 +87,7 @@ class NativePresenceService : Service() {
             NOTIFICATION_ID,
             buildNotification(),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
             } else {
                 0
             }

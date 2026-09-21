@@ -46,6 +46,11 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
             "call_ended" -> {
                 CallService.stop(this)
             }
+            "message" -> {
+                val senderName = data["senderName"] ?: "XamePage"
+                val messageBody = data["message"] ?: "New message"
+                showMessageNotification(senderName, messageBody)
+            }
             "contact_request" -> {
                 val fromName = data["fromName"] ?: "Someone"
                 showAlertNotification("👤 Contact Request", "$fromName wants to connect with you")
@@ -69,6 +74,47 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
+    }
+
+    private fun showMessageNotification(sender: String, body: String) {
+        val channelId = "xamepage_messages"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "XamePage Messages",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                setShowBadge(true)
+                enableVibration(true)
+            }
+            val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            mgr.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+
+        val pi = PendingIntent.getActivity(
+            this,
+            10,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(sender)
+            .setContentText(body)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setShowWhen(true)
+            .setContentIntent(pi)
+            .build()
+
+        val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        mgr.notify(System.currentTimeMillis().toInt(), notification)
     }
 
     private fun showAlertNotification(title: String, body: String) {

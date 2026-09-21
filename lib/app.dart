@@ -641,6 +641,11 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       final type = initial.data['type'];
       if (type == 'xamepage_news' || type == 'app_update') {
         router.go('/discovery');
+      } else if (type == 'message') {
+        final senderId = initial.data['senderId']?.toString().trim();
+        if (senderId != null && senderId.isNotEmpty) {
+          router.go('/chat/$senderId');
+        }
       }
     }
 
@@ -649,6 +654,11 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       final type = msg.data['type'];
       if (type == 'xamepage_news' || type == 'app_update') {
         router.go('/discovery');
+      } else if (type == 'message') {
+        final senderId = msg.data['senderId']?.toString().trim();
+        if (senderId != null && senderId.isNotEmpty) {
+          router.go('/chat/$senderId');
+        }
       }
     });
   }
