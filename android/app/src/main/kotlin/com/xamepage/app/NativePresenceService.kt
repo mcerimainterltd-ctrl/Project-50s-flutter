@@ -155,7 +155,9 @@ class NativePresenceService : Service() {
                     val time = java.text.SimpleDateFormat(
                         "HH:mm:ss",
                         java.util.Locale.getDefault()
-                    ).format(java.util.Date(heartbeatTime))
+                    ).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("Africa/Lagos")
+                    }.format(java.util.Date(heartbeatTime))
 
                     handler.post {
                         updatePresenceNotification(

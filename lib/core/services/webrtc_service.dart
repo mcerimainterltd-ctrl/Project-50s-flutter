@@ -23,7 +23,11 @@ final webRTCServiceProvider = Provider((ref) {
 class WebRTCService {
   void setIncomingCall(String callerId, Map offer, String callType) {
     currentRemoteUserId = callerId;
-    _pendingOffer = offer;
+    final hasRealOffer = _pendingOffer != null &&
+        !(_pendingOffer is Map && (_pendingOffer as Map).isEmpty);
+    if (offer.isNotEmpty || !hasRealOffer) {
+      _pendingOffer = offer;
+    }
     isIncomingVideo = callType == 'video';
     _callState = CallState.incoming;
     _callStateController.add(CallState.incoming);
@@ -139,6 +143,7 @@ class WebRTCService {
   bool _remoteDescriptionSet = false;
   final List<RTCIceCandidate> _pendingIce = [];
   dynamic _pendingOffer;
+  Completer<void>? _realIncomingOfferCompleter;
 
   final _callStateController = StreamController<CallState>.broadcast();
   final _remoteStreamController = StreamController<MediaStream>.broadcast();
@@ -204,6 +209,13 @@ class WebRTCService {
       currentRemoteUserId = data.callerId;
       _currentCallId = data.callId;
       _pendingOffer = data.offer;
+      final incomingOffer = data.offer;
+      if (incomingOffer is Map &&
+          incomingOffer['sdp']?.toString().isNotEmpty == true &&
+          incomingOffer['type']?.toString().isNotEmpty == true) {
+        _realIncomingOfferCompleter?.complete();
+        _realIncomingOfferCompleter = null;
+      }
       print('[WEBRTC] INCOMING CALL ID: $_currentCallId');
       isIncomingVideo = data.callType == 'video';
       // Resolve caller name.
@@ -346,7 +358,44 @@ class WebRTCService {
   }
 
   Future<void> joinCall(bool isVideo) async {
-    if (_pendingOffer == null) return;
+    var offer = _pendingOffer;
+    final hasRealOffer = offer is Map &&
+        offer['sdp']?.toString().isNotEmpty == true &&
+        offer['type']?.toString().isNotEmpty == true;
+
+    if (!hasRealOffer) {
+      final waiter = Completer<void>();
+      _realIncomingOfferCompleter = waiter;
+
+      // Re-check after installing the waiter to cover the socket/Accept race.
+      offer = _pendingOffer;
+      final offerArrived = offer is Map &&
+          offer['sdp']?.toString().isNotEmpty == true &&
+          offer['type']?.toString().isNotEmpty == true;
+
+      if (!offerArrived) {
+        try {
+          await waiter.future.timeout(const Duration(seconds: 10));
+        } on TimeoutException {
+          if (identical(_realIncomingOfferCompleter, waiter)) {
+            _realIncomingOfferCompleter = null;
+          }
+          throw StateError('Timed out waiting for incoming call SDP offer');
+        }
+        offer = _pendingOffer;
+      }
+
+      if (identical(_realIncomingOfferCompleter, waiter)) {
+        _realIncomingOfferCompleter = null;
+      }
+    }
+
+    if (offer is! Map ||
+        offer['sdp']?.toString().isNotEmpty != true ||
+        offer['type']?.toString().isNotEmpty != true) {
+      throw StateError('Incoming call SDP offer is missing or invalid');
+    }
+
     // 1. Setup hardware and WAIT for tracks to be added
     try {
       await _channel.invokeMethod('prepareCallAudio');
@@ -355,7 +404,7 @@ class WebRTCService {
     await _setup(isVideo); 
     
     // 2. Set remote info
-    await _pc!.setRemoteDescription(RTCSessionDescription(_pendingOffer['sdp'], _pendingOffer['type']));
+    await _pc!.setRemoteDescription(RTCSessionDescription(offer['sdp'], offer['type']));
     _remoteDescriptionSet = true;
     
     // 3. Create Answer (Now it will include the tracks we added in _setup)
