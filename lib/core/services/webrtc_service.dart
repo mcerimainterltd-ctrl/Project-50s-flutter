@@ -348,6 +348,10 @@ class WebRTCService {
   Future<void> joinCall(bool isVideo) async {
     if (_pendingOffer == null) return;
     // 1. Setup hardware and WAIT for tracks to be added
+    try {
+      await _channel.invokeMethod('prepareCallAudio');
+    } catch (_) {}
+
     await _setup(isVideo); 
     
     // 2. Set remote info

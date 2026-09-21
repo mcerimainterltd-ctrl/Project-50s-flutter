@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.os.StatFs
 import android.net.Uri
 import android.content.Intent
+import android.content.Context
+import android.media.AudioManager
 import androidx.core.content.FileProvider
 import java.io.File
 import android.provider.Settings
@@ -236,6 +238,16 @@ class MainActivity : FlutterFragmentActivity() {
                         val caller   = call.argument<String>("callerName") ?: "Unknown"
                         val callType = call.argument<String>("callType")   ?: "voice"
                         CallService.start(this, caller, callType)
+                        result.success(null)
+                    }
+                    "prepareCallAudio" -> {
+                        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+                        audioManager.isMicrophoneMute = false
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                            @Suppress("DEPRECATION")
+                            audioManager.isSpeakerphoneOn = false
+                        }
                         result.success(null)
                     }
                     "stopCallService" -> {
