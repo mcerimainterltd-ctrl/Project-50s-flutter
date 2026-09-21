@@ -347,6 +347,15 @@ class WebRTCService {
 
   Future<void> joinCall(bool isVideo) async {
     if (_pendingOffer == null) return;
+
+    // Re-establish Android communication audio after a lock-screen wake.
+    // Keep the existing incoming ringtone/wake path unchanged.
+    try {
+      await _channel.invokeMethod("prepareCallAudio");
+    } catch (e) {
+      print("[AUDIO] prepareCallAudio failed: $e");
+    }
+
     // 1. Setup hardware and WAIT for tracks to be added
     await _setup(isVideo); 
     

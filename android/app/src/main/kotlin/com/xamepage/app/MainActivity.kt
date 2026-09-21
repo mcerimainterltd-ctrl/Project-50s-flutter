@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.os.StatFs
 import android.net.Uri
 import android.content.Intent
+import android.content.Context
+import android.media.AudioManager
 import androidx.core.content.FileProvider
 import java.io.File
 import android.provider.Settings
@@ -240,6 +242,20 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                     "stopCallService" -> {
                         CallService.stop(this)
+                        result.success(null)
+                    }
+                    "prepareCallAudio" -> {
+                        val audioManager =
+                            getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+                        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+                        audioManager.isMicrophoneMute = false
+
+                        @Suppress("DEPRECATION")
+                        run {
+                            audioManager.isSpeakerphoneOn = false
+                        }
+
                         result.success(null)
                     }
                     "dismissIncomingCall" -> {
