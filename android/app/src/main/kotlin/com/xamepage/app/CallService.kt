@@ -51,7 +51,16 @@ class CallService : Service() {
         val callType = intent?.getStringExtra(EXTRA_CALL_TYPE) ?: "voice"
         val callerId = intent?.getStringExtra(EXTRA_CALLER_ID) ?: ""
 
-        startForeground(NOTIF_ID, buildNotification(caller, callType, callerId))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIF_ID,
+                buildNotification(caller, callType, callerId),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL or
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            )
+        } else {
+            startForeground(NOTIF_ID, buildNotification(caller, callType, callerId))
+        }
         return START_NOT_STICKY
     }
 
