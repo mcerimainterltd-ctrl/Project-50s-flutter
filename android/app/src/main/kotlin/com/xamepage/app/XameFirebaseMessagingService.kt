@@ -26,12 +26,12 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
                     .putLong("diag_last_call_push_received", System.currentTimeMillis())
                     .apply()
 
-                // Show full-screen heads-up notification on all Android versions
-                showHeadsUpNotification(callerName, callType, callerId)
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                    // Android 11 and below: start CallService for wake lock + lock screen
-                    CallService.start(this, callerName, callType, callerId)
-                }
+                // Single source of truth for the incoming-call notification:
+                // CallService builds it (wake lock, foreground service, Answer/
+                // Decline actions) on every Android version. showHeadsUpNotification()
+                // used to also fire here, producing a second duplicate banner on
+                // SDK < S. Left in place below but no longer called.
+                CallService.start(this, callerName, callType, callerId)
             }
             "scheduled_call_due" -> {
                 val wakeIntent = Intent(this, MainActivity::class.java).apply {

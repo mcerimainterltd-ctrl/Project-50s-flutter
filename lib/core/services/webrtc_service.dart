@@ -347,6 +347,29 @@ class WebRTCService {
 
   Future<void> joinCall(bool isVideo) async {
     if (_pendingOffer == null) return;
+    // Native cold-start wake sets a placeholder ({}) offer (see
+    // setIncomingCall call in the navigateToIncomingCall handler above)
+    // before the real SDP offer arrives over the socket. Proceeding with
+    // an empty/placeholder offer previously produced either a silent
+    // no-op (stuck call) or a connected-but-silent call (empty remote
+    // description). Wait here, bounded, for the real offer instead.
+    if (_pendingOffer is Map && (_pendingOffer as Map)['sdp'] == null) {
+      const pollInterval = Duration(milliseconds: 100);
+      final deadline = DateTime.now().add(const Duration(seconds: 8));
+      while (_pendingOffer is Map && (_pendingOffer as Map)['sdp'] == null) {
+        if (DateTime.now().isAfter(deadline)) {
+          print('[WEBRTC] joinCall: timed out waiting for real offer');
+          if (callEndReason.isEmpty) {
+            callEndReason = 'no-answer';
+            _callEndReasonCtrl.add(callEndReason);
+          }
+          _callState = CallState.ended;
+          _callStateController.add(CallState.ended);
+          return;
+        }
+        await Future.delayed(pollInterval);
+      }
+    }
     // 1. Setup hardware and WAIT for tracks to be added
     try {
       await _channel.invokeMethod('prepareCallAudio');
