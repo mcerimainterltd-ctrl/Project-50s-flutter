@@ -573,6 +573,11 @@ class WebRTCService {
         _remoteStreamController.add(e.streams[0]);
         print("Remote stream attached and tracks enabled");
         _diagLog('onTrack: remote stream attached, audioTracks=${e.streams[0].getAudioTracks().length}');
+        _channel.invokeMethod('getAudioDiagnostics').then((diag) {
+          _diagLog('audioDiagnostics: $diag');
+        }).catchError((err) {
+          _diagLog('audioDiagnostics FAILED: $err');
+        });
       }
     };
 
