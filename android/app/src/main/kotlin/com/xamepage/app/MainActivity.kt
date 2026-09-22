@@ -144,18 +144,6 @@ class MainActivity : FlutterFragmentActivity() {
                         }
                         result.success(null)
                     }
-                    "getAudioDiagnostics" -> {
-                        val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-                        result.success(mapOf(
-                            "mode" to am.mode,
-                            "isSpeakerphoneOn" to am.isSpeakerphoneOn,
-                            "isMicrophoneMute" to am.isMicrophoneMute,
-                            "voiceCallVolume" to am.getStreamVolume(AudioManager.STREAM_VOICE_CALL),
-                            "voiceCallMaxVolume" to am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL),
-                            "ringVolume" to am.getStreamVolume(AudioManager.STREAM_RING),
-                            "musicVolume" to am.getStreamVolume(AudioManager.STREAM_MUSIC)
-                        ))
-                    }
                     "getDeviceBrand" -> result.success(android.os.Build.MANUFACTURER)
                     "getStorageInfo" -> {
                         try {
@@ -307,6 +295,18 @@ class MainActivity : FlutterFragmentActivity() {
                     "releaseScreen" -> {
                         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                         result.success(null)
+                    }
+                    "getAudioDiagnostics" -> {
+                        val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                        result.success(mapOf(
+                            "mode" to am.mode,
+                            "isSpeakerphoneOn" to am.isSpeakerphoneOn,
+                            "isMicrophoneMute" to am.isMicrophoneMute,
+                            "voiceCallVolume" to am.getStreamVolume(AudioManager.STREAM_VOICE_CALL),
+                            "voiceCallMaxVolume" to am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL),
+                            "ringVolume" to am.getStreamVolume(AudioManager.STREAM_RING),
+                            "musicVolume" to am.getStreamVolume(AudioManager.STREAM_MUSIC)
+                        ))
                     }
                     else -> result.notImplemented()
                 }
