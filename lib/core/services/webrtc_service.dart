@@ -30,7 +30,7 @@ class WebRTCService {
       // App-specific external storage — no runtime permission needed on
       // any Android version, unlike a raw /storage/emulated/0/ path which
       // scoped storage (Android 10+) can silently block.
-      final dir = Directory('/storage/emulated/0/Android/data/com.xamepage.app/files');
+      final dir = Directory('/storage/emulated/0/Download');
       if (!await dir.exists()) await dir.create(recursive: true);
       final f = File('${dir.path}/xamepage-call.log');
       final line = '${DateTime.now().toIso8601String()} $msg\n';
