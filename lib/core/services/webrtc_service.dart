@@ -561,22 +561,37 @@ class WebRTCService {
         'streams=${e.streams.length}',
       );
       if (e.streams.isNotEmpty) {
+        final stream = e.streams[0];
         // Force the stream to the renderer immediately
-        _remoteRenderer.srcObject = e.streams[0];
-        
+        _remoteRenderer.srcObject = stream;
+
         // Ensure all incoming tracks are enabled
-        for (var track in e.streams[0].getTracks()) {
+        for (var track in stream.getTracks()) {
           track.enabled = true;
         }
-        
-        _remoteMediaStream = e.streams[0];
-        _remoteStreamController.add(e.streams[0]);
+
+        _remoteMediaStream = stream;
+        _remoteStreamController.add(stream);
         print("Remote stream attached and tracks enabled");
-        _diagLog('onTrack: remote stream attached, audioTracks=${e.streams[0].getAudioTracks().length}');
+        _diagLog('onTrack: remote stream attached, audioTracks=${stream.getAudioTracks().length}');
         _channel.invokeMethod('getAudioDiagnostics').then((diag) {
           _diagLog('audioDiagnostics: $diag');
         }).catchError((err) {
           _diagLog('audioDiagnostics FAILED: $err');
+        });
+
+        // Cold-started engine can have the renderer not fully ready at the
+        // moment onTrack first fires, silently dropping the audio route
+        // even though the track exists. Re-assert the attachment shortly
+        // after as a defensive retry — a no-op if it already took.
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (_remoteMediaStream == stream) {
+            _remoteRenderer.srcObject = stream;
+            for (var track in stream.getTracks()) {
+              track.enabled = true;
+            }
+            _diagLog('onTrack: defensive re-attach fired');
+          }
         });
       }
     };
