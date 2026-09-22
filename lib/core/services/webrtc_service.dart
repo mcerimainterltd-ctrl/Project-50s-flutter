@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
@@ -21,6 +22,26 @@ final webRTCServiceProvider = Provider((ref) {
 });
 
 class WebRTCService {
+  // Temporary diagnostic file logger — writes to shared storage since
+  // logcat is not reachable from Termux without adb/root. Remove once
+  // the wake-up-call audio issue is resolved.
+  static Future<void> _diagLog(String msg) async {
+    try {
+      // App-specific external storage — no runtime permission needed on
+      // any Android version, unlike a raw /storage/emulated/0/ path which
+      // scoped storage (Android 10+) can silently block.
+      final dir = Directory('/storage/emulated/0/Android/data/com.xamepage.app/files');
+      if (!await dir.exists()) await dir.create(recursive: true);
+      final f = File('${dir.path}/xamepage-call.log');
+      final line = '${DateTime.now().toIso8601String()} $msg\n';
+      await f.writeAsString(line, mode: FileMode.append, flush: true);
+    } catch (e) {
+      try {
+        final f = File('/data/data/com.xamepage.app/files/xamepage-call.log');
+        await f.writeAsString('${DateTime.now().toIso8601String()} DIAGLOG ERROR: $e\n', mode: FileMode.append, flush: true);
+      } catch (_) {}
+    }
+  }
   void setIncomingCall(String callerId, Map offer, String callType) {
     currentRemoteUserId = callerId;
     // Native cold-start wake calls this with an empty placeholder offer
@@ -383,11 +404,14 @@ class WebRTCService {
       }
     }
     // 1. Setup hardware and WAIT for tracks to be added
+    await _diagLog('joinCall: entering, isVideo=$isVideo pendingOfferHasSdp=${_pendingOffer is Map && (_pendingOffer as Map)['sdp'] != null}');
     try {
       await _channel.invokeMethod('prepareCallAudio');
       print('[WEBRTC] prepareCallAudio SUCCEEDED');
+      await _diagLog('prepareCallAudio: SUCCEEDED');
     } catch (e) {
       print('[WEBRTC] prepareCallAudio FAILED: \$e');
+      await _diagLog('prepareCallAudio: FAILED $e');
     }
 
     await _setup(isVideo); 
@@ -548,6 +572,7 @@ class WebRTCService {
         _remoteMediaStream = e.streams[0];
         _remoteStreamController.add(e.streams[0]);
         print("Remote stream attached and tracks enabled");
+        _diagLog('onTrack: remote stream attached, audioTracks=${e.streams[0].getAudioTracks().length}');
       }
     };
 
@@ -562,6 +587,7 @@ class WebRTCService {
       'audio=${localStream?.getAudioTracks().length ?? 0} '
       'video=${localStream?.getVideoTracks().length ?? 0}',
     );
+    await _diagLog('getUserMedia DONE audioTracks=${localStream?.getAudioTracks().length ?? 0}');
     
     _localRenderer.srcObject = localStream;
     // Notify listeners that the stream is ready to be rendered
