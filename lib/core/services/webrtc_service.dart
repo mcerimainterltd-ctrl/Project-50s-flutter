@@ -23,7 +23,15 @@ final webRTCServiceProvider = Provider((ref) {
 class WebRTCService {
   void setIncomingCall(String callerId, Map offer, String callType) {
     currentRemoteUserId = callerId;
-    _pendingOffer = offer;
+    // Native cold-start wake calls this with an empty placeholder offer
+    // ({}) just to show the ringing screen early — the real SDP offer
+    // arrives shortly after via the normal _socket.incomingCall listener,
+    // same as any regular call. Only overwrite _pendingOffer when there's
+    // an actual offer, so we don't clobber a real offer that already
+    // arrived, and so joinCall can tell a placeholder apart from real data.
+    if (offer.isNotEmpty) {
+      _pendingOffer = offer;
+    }
     isIncomingVideo = callType == 'video';
     _callState = CallState.incoming;
     _callStateController.add(CallState.incoming);
@@ -346,17 +354,21 @@ class WebRTCService {
   }
 
   Future<void> joinCall(bool isVideo) async {
-    if (_pendingOffer == null) return;
-    // Native cold-start wake sets a placeholder ({}) offer (see
-    // setIncomingCall call in the navigateToIncomingCall handler above)
-    // before the real SDP offer arrives over the socket. Proceeding with
-    // an empty/placeholder offer previously produced either a silent
-    // no-op (stuck call) or a connected-but-silent call (empty remote
+    // Native cold-start wake shows the ringing screen before the real SDP
+    // offer arrives over the socket (setIncomingCall is called with an
+    // empty placeholder and no longer stores it in _pendingOffer — see
+    // that function). So _pendingOffer can legitimately still be null, or
+    // a Map missing 'sdp', at the moment Accept is tapped. Proceeding
+    // without a real offer previously produced either a silent no-op
+    // (stuck call) or a connected-but-silent call (empty remote
     // description). Wait here, bounded, for the real offer instead.
-    if (_pendingOffer is Map && (_pendingOffer as Map)['sdp'] == null) {
+    bool missingRealOffer() =>
+        _pendingOffer == null ||
+        (_pendingOffer is Map && (_pendingOffer as Map)['sdp'] == null);
+    if (missingRealOffer()) {
       const pollInterval = Duration(milliseconds: 100);
       final deadline = DateTime.now().add(const Duration(seconds: 8));
-      while (_pendingOffer is Map && (_pendingOffer as Map)['sdp'] == null) {
+      while (missingRealOffer()) {
         if (DateTime.now().isAfter(deadline)) {
           print('[WEBRTC] joinCall: timed out waiting for real offer');
           if (callEndReason.isEmpty) {
