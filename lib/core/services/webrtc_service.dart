@@ -36,7 +36,19 @@ class WebRTCService {
     callerDisplayName = (match?['name'] as String?)?.isNotEmpty == true ? match!['name'] as String : callerId;
     final settings = SettingsNotifier.currentSettings;
     _audio.stopAll();
+    Helper.setSpeakerphoneOn(true);
     if (settings.callSound) _audio.playRingtone();
+    // Mirror the online-path setup (foreground service + keep screen on)
+    // so a call answered after waking from swipe/killed state gets the
+    // same audio routing and native call handling as a normal call —
+    // previously missing here, which left audio silent on this path.
+    try {
+      _channel.invokeMethod('startCallService', {
+        'callerName': callerDisplayName,
+        'callType': isIncomingVideo ? 'video' : 'voice',
+      });
+      _channel.invokeMethod('keepScreenOn');
+    } catch (_) {}
     _incomingCallController.add(true);
   }
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
