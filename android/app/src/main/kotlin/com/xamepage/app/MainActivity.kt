@@ -242,6 +242,34 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                     "prepareCallAudio" -> {
                         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                        // Setting mode alone does not grant the app the audio
+                        // hardware. Without requesting audio focus, a call can
+                        // fully connect (ICE/tracks flowing) while staying
+                        // silent both ways, especially on a cold-started
+                        // Activity (wake-up call) where nothing else has
+                        // granted this app focus yet. flutter_webrtc 0.12.5
+                        // does not request focus itself, so it must happen
+                        // here, before mode is set.
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            val attrs = android.media.AudioAttributes.Builder()
+                                .setUsage(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                                .build()
+                            val focusRequest = android.media.AudioFocusRequest.Builder(
+                                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+                            )
+                                .setAudioAttributes(attrs)
+                                .setAcceptsDelayedFocusGain(false)
+                                .build()
+                            audioManager.requestAudioFocus(focusRequest)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            audioManager.requestAudioFocus(
+                                null,
+                                AudioManager.STREAM_VOICE_CALL,
+                                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+                            )
+                        }
                         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
                         audioManager.isMicrophoneMute = false
                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {

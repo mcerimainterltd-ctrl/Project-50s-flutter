@@ -385,7 +385,10 @@ class WebRTCService {
     // 1. Setup hardware and WAIT for tracks to be added
     try {
       await _channel.invokeMethod('prepareCallAudio');
-    } catch (_) {}
+      print('[WEBRTC] prepareCallAudio SUCCEEDED');
+    } catch (e) {
+      print('[WEBRTC] prepareCallAudio FAILED: \$e');
+    }
 
     await _setup(isVideo); 
     
