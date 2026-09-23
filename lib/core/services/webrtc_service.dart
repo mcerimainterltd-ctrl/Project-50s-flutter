@@ -543,11 +543,14 @@ class WebRTCService {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final servers = (data['iceServers'] as List).map((s) => Map<String, dynamic>.from(s)).toList();
-        print('[ICE] Fetched \${servers.length} servers from Twilio NTS');
+        print('[ICE] Fetched ${servers.length} servers from Twilio NTS');
+        await _diagLog('iceServers RAW: ${res.body}');
         return servers;
       }
+      await _diagLog('iceServers: server returned status ${res.statusCode}');
     } catch (e) {
-      print('[ICE] Failed to fetch, using fallback: \$e');
+      print('[ICE] Failed to fetch, using fallback: $e');
+      await _diagLog('iceServers FETCH FAILED: $e');
     }
     // Fallback — multiple STUN + open TURN for NAT traversal on older Android
     return [
