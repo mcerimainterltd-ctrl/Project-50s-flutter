@@ -29,7 +29,14 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
   void _safePop() {
     if (_isPopping || !mounted) return;
     _isPopping = true;
-    ref.read(webRTCServiceProvider).clearIncomingCall();
+    // Caller cancelling before we answered only updated internal state via
+    // clearIncomingCall() — it never stopped the ringtone or tore down the
+    // native CallService (wake lock, foreground notification, vibration),
+    // so the device kept ringing with no way to stop it short of manually
+    // answering or declining. Do the same teardown Decline does.
+    final webrtc = ref.read(webRTCServiceProvider);
+    webrtc.clearIncomingCall();
+    webrtc.stopRingtoneAndTeardownNative();
     context.go('/contacts');
   }
 

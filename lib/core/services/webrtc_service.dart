@@ -351,6 +351,14 @@ class WebRTCService {
       if (id.isNotEmpty) {
         _currentCallId = id;
         print('[WEBRTC] CALL ID RECEIVED: $_currentCallId');
+        // If the caller already cancelled before this ID arrived (a fast
+        // cancel can happen before the server round-trip completes — see
+        // the multi-second window above), the earlier cancel signal was
+        // sent with no callId and may have been silently ignored by the
+        // recipient. Send the cancel again now that we have a real ID.
+        if (_callCancelled && _callState == CallState.ended && currentRemoteUserId != null) {
+          _socket.emitCallRejected(currentRemoteUserId!, "cancelled", callId: _currentCallId);
+        }
       }
     });
 
@@ -679,6 +687,17 @@ class WebRTCService {
     _pc?.close();
     _pc = null;
     _remoteDescriptionSet = false;
+  }
+
+  // Stops the ringtone and tears down the native call notification/wake
+  // lock/foreground service, without touching signaling — for when the
+  // OTHER party has already ended the call and we just need to silence
+  // this device's own ringing UI/audio.
+  Future<void> stopRingtoneAndTeardownNative() async {
+    _audio.stopAll();
+    try { await _channel.invokeMethod('stopCallService'); } catch (_) {}
+    try { await _channel.invokeMethod('releaseScreen'); } catch (_) {}
+    try { await _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
   }
 
   void clearIncomingCall() {
