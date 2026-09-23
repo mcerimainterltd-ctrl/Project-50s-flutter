@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -21,7 +22,45 @@ final webRTCServiceProvider = Provider((ref) {
   return WebRTCService(socket);
 });
 
+// ── Agbor Relay ──────────────────────────────────────────────
+// A cold-started wake-up call can reach joinCall() before the Flutter
+// engine/Activity has genuinely finished resuming, even though the
+// ringing screen is already visible — unlike a regular call, which only
+// ever gets answered while the app has been fully running and resumed
+// for a while. Agbor Relay makes every incoming call — wake-up or
+// regular — wait until AppLifecycleState.resumed is confirmed before any
+// WebRTC setup begins, so a wake-up call always joins in the same known
+// environment a regular call already has. Bounded, so it can never hang
+// a call indefinitely.
+class _AgborRelayObserver extends WidgetsBindingObserver {
+  final void Function() onChange;
+  _AgborRelayObserver(this.onChange);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) => onChange();
+}
+
 class WebRTCService {
+  Future<void> _agborRelayWaitForResumed() async {
+    final binding = WidgetsBinding.instance;
+    if (binding.lifecycleState == AppLifecycleState.resumed) {
+      await _diagLog('AgborRelay: already resumed, no wait needed');
+      return;
+    }
+    await _diagLog('AgborRelay: not resumed (state=${binding.lifecycleState}), waiting');
+    final completer = Completer<void>();
+    late final _AgborRelayObserver observer;
+    observer = _AgborRelayObserver(() {
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        binding.removeObserver(observer);
+        if (!completer.isCompleted) completer.complete();
+      }
+    });
+    binding.addObserver(observer);
+    await completer.future.timeout(const Duration(seconds: 5), onTimeout: () {
+      binding.removeObserver(observer);
+    });
+    await _diagLog('AgborRelay: proceeding, final state=${binding.lifecycleState}');
+  }
   // Temporary diagnostic file logger — writes to shared storage since
   // logcat is not reachable from Termux without adb/root. Remove once
   // the wake-up-call audio issue is resolved.
@@ -383,6 +422,7 @@ class WebRTCService {
   }
 
   Future<void> joinCall(bool isVideo) async {
+    await _agborRelayWaitForResumed();
     // Native cold-start wake shows the ringing screen before the real SDP
     // offer arrives over the socket (setIncomingCall is called with an
     // empty placeholder and no longer stores it in _pendingOffer — see
