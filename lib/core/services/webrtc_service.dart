@@ -571,7 +571,14 @@ class WebRTCService {
   Future<void> _setup(bool v) async {
     _pc = await createPeerConnection({
       'iceServers': await _fetchIceServers(),
-      'sdpSemantics': 'unified-plan'
+      'sdpSemantics': 'unified-plan',
+      // Host/srflx candidate negotiation was confirmed failing outright
+      // (RTCPeerConnectionStateFailed after the full ~15s ICE connectivity
+      // check timeout) despite Twilio TURN servers being correctly
+      // configured and reachable. Forcing relay-only skips straight to
+      // TURN instead of spending the whole timeout window on paths that
+      // don't work on this network/device combination.
+      'iceTransportPolicy': 'relay',
     });
     
     _pc!.onIceConnectionState = (s) {
