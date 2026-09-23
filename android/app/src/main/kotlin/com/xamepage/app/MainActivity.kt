@@ -288,6 +288,15 @@ class MainActivity : FlutterFragmentActivity() {
                         CallService.stop(this)
                         result.success(null)
                     }
+                    "callConnected" -> {
+                        // Called from Dart once onConnectionState reports the
+                        // call is genuinely connected. Safe to release the
+                        // foreground service/wake lock now — WebRTC setup is
+                        // done, so we no longer need to guard against the OS
+                        // throttling background network mid-negotiation.
+                        CallService.stop(this)
+                        result.success(null)
+                    }
                     "keepScreenOn" -> {
                         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                         result.success(null)
@@ -317,7 +326,16 @@ class MainActivity : FlutterFragmentActivity() {
         val engine = flutterEngine ?: return
         when (intent?.action) {
             CallService.ACTION_ANSWER -> {
-                CallService.stop(this)
+                // Do NOT stop CallService here. Stopping it immediately drops
+                // the foreground-service status and releases the wake lock
+                // before joinCall()'s WebRTC setup (getUserMedia, SDP
+                // negotiation, ICE) has even started — a window that can
+                // take several seconds. On newer Android versions, losing
+                // foreground status mid-negotiation can get the process's
+                // background network throttled, causing ICE to never
+                // connect or to connect briefly then die. CallService is now
+                // stopped from Dart via the "callConnected" bridge call,
+                // once the call has actually connected — see onConnectionState.
                 val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
                 mgr.cancel(CallService.NOTIF_ID + 1)
                 val callerId   = intent.getStringExtra("caller_id")   ?: ""

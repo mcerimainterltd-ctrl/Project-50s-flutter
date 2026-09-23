@@ -586,6 +586,13 @@ class WebRTCService {
           _callState = CallState.active;
           _callStateController.add(CallState.active);
         }
+        // Now that we're genuinely connected, it's safe to release the
+        // native foreground service/wake lock that was deliberately kept
+        // alive through the whole WebRTC setup window (see MainActivity's
+        // ACTION_ANSWER handler and the callConnected bridge method).
+        _channel.invokeMethod('callConnected').catchError((e) {
+          _diagLog('callConnected bridge call FAILED: $e');
+        });
         _pc?.getStats().then((reports) {
           for (var r in reports) {
             if (r.type == 'candidate-pair' && r.values['state'] == 'succeeded') {
