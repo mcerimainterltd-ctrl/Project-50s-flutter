@@ -526,14 +526,25 @@ class WebRTCService {
       'sdpSemantics': 'unified-plan'
     });
     
-    _pc!.onIceConnectionState = (s) => print('[ICE] state: \$s');
+    _pc!.onIceConnectionState = (s) {
+      print('[ICE] state: $s');
+      _diagLog('iceConnectionState: $s');
+    };
     _pc!.onConnectionState = (s) {
-      print('[CONN] state: \$s');
+      print('[CONN] state: $s');
+      _diagLog('peerConnectionState: $s');
       if (s == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
         if (_callState != CallState.active) {
           _callState = CallState.active;
           _callStateController.add(CallState.active);
         }
+        _pc?.getStats().then((reports) {
+          for (var r in reports) {
+            if (r.type == 'candidate-pair' && r.values['state'] == 'succeeded') {
+              _diagLog('selectedCandidatePair: localType=${r.values['localCandidateId']} remoteType=${r.values['remoteCandidateId']} bytesSent=${r.values['bytesSent']} bytesReceived=${r.values['bytesReceived']}');
+            }
+          }
+        }).catchError((e) => _diagLog('getStats FAILED: $e'));
       }
     };
     _iceBufferEnabled = true;
