@@ -488,6 +488,17 @@ class WebRTCService {
     if (audioSection.isNotEmpty) {
       print('[WEBRTC] ANSWER AUDIO SECTION:');
       print(audioSection.first.split('m=').first);
+      final dir = audioSection.first.contains('a=sendrecv') ? 'sendrecv'
+          : audioSection.first.contains('a=recvonly') ? 'recvonly'
+          : audioSection.first.contains('a=sendonly') ? 'sendonly'
+          : audioSection.first.contains('a=inactive') ? 'inactive'
+          : 'unknown';
+      _diagLog('ANSWER audio direction: $dir');
+      final codecLine = audioSection.first.split('\n').firstWhere(
+        (l) => l.startsWith('a=rtpmap:') && l.toLowerCase().contains('opus'),
+        orElse: () => 'no opus line found',
+      );
+      _diagLog('ANSWER audio codec: $codecLine');
     }
 
     print('[WEBRTC] ANSWER SDP VIDEO: ${videoSection.isNotEmpty}');
