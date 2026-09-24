@@ -625,7 +625,13 @@ class WebRTCService {
     };
     _iceBufferEnabled = true;
     _iceBuffer.clear();
+    _pc!.onIceGatheringState = (state) {
+      _diagLog('iceGatheringState: $state');
+    };
+    int candidateCount = 0;
     _pc!.onIceCandidate = (c) {
+      candidateCount++;
+      _diagLog('onIceCandidate #$candidateCount: ${c.candidate}');
       print('[WEBRTC] LOCAL ICE GENERATED candidate=${c.candidate} buffering=$_iceBufferEnabled');
       if (_iceBufferEnabled) {
         _iceBuffer.add(c);
