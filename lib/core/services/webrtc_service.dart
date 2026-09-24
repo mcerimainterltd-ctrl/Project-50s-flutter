@@ -542,9 +542,20 @@ class WebRTCService {
       ).timeout(const Duration(seconds: 5));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        final servers = (data['iceServers'] as List).map((s) => Map<String, dynamic>.from(s)).toList();
-        print('[ICE] Fetched ${servers.length} servers from Twilio NTS');
-        await _diagLog('iceServers RAW: ${res.body}');
+        var servers = (data['iceServers'] as List).map((s) => Map<String, dynamic>.from(s)).toList();
+        // Experiment: drop UDP TURN entries, keep only TCP-based TURN (and
+        // STUN). If TCP-only relay succeeds where the full list (including
+        // UDP) failed to connect at all, that confirms UDP is being
+        // blocked/silently failing on this network and not falling back to
+        // TCP correctly within flutter_webrtc.
+        final beforeCount = servers.length;
+        servers = servers.where((s) {
+          final url = (s['urls'] ?? s['url'] ?? '').toString();
+          return !(url.startsWith('turn:') && url.contains('transport=udp'));
+        }).toList();
+        await _diagLog('iceServers: filtered UDP TURN, $beforeCount -> ${servers.length} servers');
+        print('[ICE] Fetched ${servers.length} servers from Twilio NTS (UDP TURN filtered)');
+        await _diagLog('iceServers RAW (post-filter): ${jsonEncode(servers)}');
         return servers;
       }
       await _diagLog('iceServers: server returned status ${res.statusCode}');
