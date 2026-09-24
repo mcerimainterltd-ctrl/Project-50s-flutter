@@ -43,10 +43,8 @@ class WebRTCService {
   Future<void> _agborRelayWaitForResumed() async {
     final binding = WidgetsBinding.instance;
     if (binding.lifecycleState == AppLifecycleState.resumed) {
-      await _diagLog('AgborRelay: already resumed, no wait needed');
       return;
     }
-    await _diagLog('AgborRelay: not resumed (state=${binding.lifecycleState}), waiting');
     final completer = Completer<void>();
     late final _AgborRelayObserver observer;
     observer = _AgborRelayObserver(() {
@@ -59,29 +57,7 @@ class WebRTCService {
     await completer.future.timeout(const Duration(seconds: 5), onTimeout: () {
       binding.removeObserver(observer);
     });
-    await _diagLog('AgborRelay: proceeding, final state=${binding.lifecycleState}');
-  }
-  // Temporary diagnostic file logger — writes to shared storage since
-  // logcat is not reachable from Termux without adb/root. Remove once
-  // the wake-up-call audio issue is resolved.
-  static Future<void> _diagLog(String msg) async {
-    try {
-      // App-specific external storage — no runtime permission needed on
-      // any Android version, unlike a raw /storage/emulated/0/ path which
-      // scoped storage (Android 10+) can silently block.
-      final dir = Directory('/storage/emulated/0/Download');
-      if (!await dir.exists()) await dir.create(recursive: true);
-      final f = File('${dir.path}/xamepage-call.log');
-      final line = '${DateTime.now().toIso8601String()} $msg\n';
-      await f.writeAsString(line, mode: FileMode.append, flush: true);
-    } catch (e) {
-      try {
-        final f = File('/data/data/com.xamepage.app/files/xamepage-call.log');
-        await f.writeAsString('${DateTime.now().toIso8601String()} DIAGLOG ERROR: $e\n', mode: FileMode.append, flush: true);
-      } catch (_) {}
-    }
-  }
-  void setIncomingCall(String callerId, Map offer, String callType) {
+  }  void setIncomingCall(String callerId, Map offer, String callType) {
     currentRemoteUserId = callerId;
     // Native cold-start wake calls this with an empty placeholder offer
     // ({}) just to show the ringing screen early — the real SDP offer
@@ -272,7 +248,6 @@ class WebRTCService {
       currentRemoteUserId = data.callerId;
       _currentCallId = data.callId;
       _pendingOffer = data.offer;
-      print('[WEBRTC] INCOMING CALL ID: $_currentCallId');
       isIncomingVideo = data.callType == 'video';
       // Resolve caller name.
       // Web callers provide their real name in data.caller, while
@@ -325,7 +300,6 @@ class WebRTCService {
     });
 
     _socket.callAnswer.listen((data) async {
-      print('[WEBRTC] ANSWER RECEIVED sender=${data.senderId} type=${data.answer['type']} sdpLength=${data.answer['sdp']?.length ?? 0}');
       // Recipient answered — stop outgoing ringtone and timeout
       _callTimeoutTimer?.cancel();
       _callCancelled = true;
@@ -344,22 +318,15 @@ class WebRTCService {
           _pendingIce.clear();
           await Helper.setSpeakerphoneOn(false);
         } catch (e) {
-          print('[WebRTC] setRemoteDescription error: \$e');
         }
       }
     });
 
     _socket.iceCandidate.listen((data) {
-      print('[WEBRTC] REMOTE ICE RECEIVED sender=${data.senderId} candidate=${data.candidate['candidate']}');
-      _diagLog('REMOTE ICE RECEIVED sender=${data.senderId} candidate=${data.candidate['candidate']}');
       final c = RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']);
       if (_pc != null && _remoteDescriptionSet) {
-        print('[WEBRTC] ADDING REMOTE ICE IMMEDIATELY');
-        _diagLog('ADDING REMOTE ICE IMMEDIATELY');
         _pc!.addCandidate(c);
       } else {
-        print('[WEBRTC] QUEUING REMOTE ICE');
-        _diagLog('QUEUING REMOTE ICE (pc null=${_pc == null}, remoteDescSet=$_remoteDescriptionSet)');
         _pendingIce.add(c);
       }
     });
@@ -373,7 +340,6 @@ class WebRTCService {
     
     // 2. Create Offer (This now contains the media info)
     var offer = await _pc!.createOffer();
-    print('[WEBRTC] OFFER CREATED type=${offer.type} sdpLength=${offer.sdp?.length ?? 0}');
     await _pc!.setLocalDescription(offer);
     // Flush ICE buffer immediately for outgoing calls
     _iceBufferEnabled = false;
@@ -392,7 +358,6 @@ class WebRTCService {
     _socket.onCallInitiated((id) {
       if (id.isNotEmpty) {
         _currentCallId = id;
-        print('[WEBRTC] CALL ID RECEIVED: $_currentCallId');
         // If the caller already cancelled before this ID arrived (a fast
         // cancel can happen before the server round-trip completes — see
         // the multi-second window above), the earlier cancel signal was
@@ -442,7 +407,6 @@ class WebRTCService {
       final deadline = DateTime.now().add(const Duration(seconds: 8));
       while (missingRealOffer()) {
         if (DateTime.now().isAfter(deadline)) {
-          print('[WEBRTC] joinCall: timed out waiting for real offer');
           if (callEndReason.isEmpty) {
             callEndReason = 'no-answer';
             _callEndReasonCtrl.add(callEndReason);
@@ -455,14 +419,9 @@ class WebRTCService {
       }
     }
     // 1. Setup hardware and WAIT for tracks to be added
-    await _diagLog('joinCall: entering, isVideo=$isVideo pendingOfferHasSdp=${_pendingOffer is Map && (_pendingOffer as Map)['sdp'] != null}');
     try {
       await _channel.invokeMethod('prepareCallAudio');
-      print('[WEBRTC] prepareCallAudio SUCCEEDED');
-      await _diagLog('prepareCallAudio: SUCCEEDED');
     } catch (e) {
-      print('[WEBRTC] prepareCallAudio FAILED: \$e');
-      await _diagLog('prepareCallAudio: FAILED $e');
     }
 
     await _setup(isVideo); 
@@ -474,38 +433,6 @@ class WebRTCService {
     // 3. Create Answer (Now it will include the tracks we added in _setup)
     var answer = await _pc!.createAnswer();
 
-    final answerSdp = answer.sdp ?? '';
-    final audioSection = answerSdp
-        .split('m=')
-        .where((section) => section.startsWith('audio '))
-        .toList();
-    final videoSection = answerSdp
-        .split('m=')
-        .where((section) => section.startsWith('video '))
-        .toList();
-
-    print('[WEBRTC] ANSWER SDP AUDIO: ${audioSection.isNotEmpty}');
-    if (audioSection.isNotEmpty) {
-      print('[WEBRTC] ANSWER AUDIO SECTION:');
-      print(audioSection.first.split('m=').first);
-      final dir = audioSection.first.contains('a=sendrecv') ? 'sendrecv'
-          : audioSection.first.contains('a=recvonly') ? 'recvonly'
-          : audioSection.first.contains('a=sendonly') ? 'sendonly'
-          : audioSection.first.contains('a=inactive') ? 'inactive'
-          : 'unknown';
-      _diagLog('ANSWER audio direction: $dir');
-      final codecLine = audioSection.first.split('\n').firstWhere(
-        (l) => l.startsWith('a=rtpmap:') && l.toLowerCase().contains('opus'),
-        orElse: () => 'no opus line found',
-      );
-      _diagLog('ANSWER audio codec: $codecLine');
-    }
-
-    print('[WEBRTC] ANSWER SDP VIDEO: ${videoSection.isNotEmpty}');
-    if (videoSection.isNotEmpty) {
-      print('[WEBRTC] ANSWER VIDEO SECTION:');
-      print(videoSection.first.split('m=').first);
-    }
 
     await _pc!.setLocalDescription(answer);
     // Disable buffering — from now on candidates are sent immediately as they arrive
@@ -522,17 +449,12 @@ class WebRTCService {
     }
     _iceBuffer.clear();
 
-    print('[WEBRTC] ABOUT TO EMIT MAKE-ANSWER '
-        'recipient=$currentRemoteUserId '
-        'type=${answer.type} '
-        'sdpLength=${answer.sdp?.length ?? 0}');
 
     _socket.emitMakeAnswer(currentRemoteUserId!, {
       'sdp': answer.sdp,
       'type': answer.type,
     });
 
-    print('[WEBRTC] MAKE-ANSWER EMIT COMPLETE');
     // Notify server call was accepted so CallHistory status updates
     _socket.emitCallAccepted(currentRemoteUserId!, callId: _currentCallId);
     for (var c in _pendingIce) { await _pc!.addCandidate(c); }
@@ -567,15 +489,11 @@ class WebRTCService {
           final url = (s['urls'] ?? s['url'] ?? '').toString();
           return !(url.startsWith('turn:') && url.contains('transport=udp'));
         }).toList();
-        await _diagLog('iceServers: filtered UDP TURN, $beforeCount -> ${servers.length} servers');
         print('[ICE] Fetched ${servers.length} servers from Twilio NTS (UDP TURN filtered)');
-        await _diagLog('iceServers RAW (post-filter): ${jsonEncode(servers)}');
         return servers;
       }
-      await _diagLog('iceServers: server returned status ${res.statusCode}');
     } catch (e) {
       print('[ICE] Failed to fetch, using fallback: $e');
-      await _diagLog('iceServers FETCH FAILED: $e');
     }
     // Fallback — multiple STUN + open TURN for NAT traversal on older Android
     return [
@@ -611,11 +529,9 @@ class WebRTCService {
     
     _pc!.onIceConnectionState = (s) {
       print('[ICE] state: $s');
-      _diagLog('iceConnectionState: $s');
     };
     _pc!.onConnectionState = (s) {
       print('[CONN] state: $s');
-      _diagLog('peerConnectionState: $s');
       if (s == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
         if (_callState != CallState.active) {
           _callState = CallState.active;
@@ -625,28 +541,13 @@ class WebRTCService {
         // native foreground service/wake lock that was deliberately kept
         // alive through the whole WebRTC setup window (see MainActivity's
         // ACTION_ANSWER handler and the callConnected bridge method).
-        _channel.invokeMethod('callConnected').catchError((e) {
-          _diagLog('callConnected bridge call FAILED: $e');
-        });
-        _pc?.getStats().then((reports) {
-          for (var r in reports) {
-            if (r.type == 'candidate-pair' && r.values['state'] == 'succeeded') {
-              _diagLog('selectedCandidatePair: localType=${r.values['localCandidateId']} remoteType=${r.values['remoteCandidateId']} bytesSent=${r.values['bytesSent']} bytesReceived=${r.values['bytesReceived']}');
-            }
-          }
-        }).catchError((e) => _diagLog('getStats FAILED: $e'));
+        
+        _channel.invokeMethod('callConnected').catchError((e) => null);
       }
     };
     _iceBufferEnabled = true;
     _iceBuffer.clear();
-    _pc!.onIceGatheringState = (state) {
-      _diagLog('iceGatheringState: $state');
-    };
-    int candidateCount = 0;
     _pc!.onIceCandidate = (c) {
-      candidateCount++;
-      _diagLog('onIceCandidate #$candidateCount: ${c.candidate}');
-      print('[WEBRTC] LOCAL ICE GENERATED candidate=${c.candidate} buffering=$_iceBufferEnabled');
       if (_iceBufferEnabled) {
         _iceBuffer.add(c);
         return;
@@ -679,17 +580,10 @@ class WebRTCService {
         _remoteMediaStream = e.streams[0];
         _remoteStreamController.add(e.streams[0]);
         print("Remote stream attached and tracks enabled");
-        _diagLog('onTrack: remote stream attached, audioTracks=${e.streams[0].getAudioTracks().length}');
-        _channel.invokeMethod('getAudioDiagnostics').then((diag) {
-          _diagLog('audioDiagnostics: $diag');
-        }).catchError((err) {
-          _diagLog('audioDiagnostics FAILED: $err');
-        });
       }
     };
 
     // We MUST await the hardware before moving to the next step in joinCall/startCall
-    print('[MEDIA] REQUESTING getUserMedia video=$v');
     localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true, 
       'video': v ? {'facingMode': 'user'} : false
@@ -699,7 +593,6 @@ class WebRTCService {
       'audio=${localStream?.getAudioTracks().length ?? 0} '
       'video=${localStream?.getVideoTracks().length ?? 0}',
     );
-    await _diagLog('getUserMedia DONE audioTracks=${localStream?.getAudioTracks().length ?? 0}');
     
     _localRenderer.srcObject = localStream;
     // Notify listeners that the stream is ready to be rendered
