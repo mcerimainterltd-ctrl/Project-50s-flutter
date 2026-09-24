@@ -351,12 +351,15 @@ class WebRTCService {
 
     _socket.iceCandidate.listen((data) {
       print('[WEBRTC] REMOTE ICE RECEIVED sender=${data.senderId} candidate=${data.candidate['candidate']}');
+      _diagLog('REMOTE ICE RECEIVED sender=${data.senderId} candidate=${data.candidate['candidate']}');
       final c = RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']);
       if (_pc != null && _remoteDescriptionSet) {
         print('[WEBRTC] ADDING REMOTE ICE IMMEDIATELY');
+        _diagLog('ADDING REMOTE ICE IMMEDIATELY');
         _pc!.addCandidate(c);
       } else {
         print('[WEBRTC] QUEUING REMOTE ICE');
+        _diagLog('QUEUING REMOTE ICE (pc null=${_pc == null}, remoteDescSet=$_remoteDescriptionSet)');
         _pendingIce.add(c);
       }
     });
