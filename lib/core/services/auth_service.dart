@@ -98,8 +98,22 @@ class AuthService {
         ua = 'XamePage/${info.version} iPhone iOS/${Platform.operatingSystemVersion}';
       }
     } catch (_) {}
-    final res  = await _dio.post('/api/login', data: body,
-        options: Options(headers: {'User-Agent': ua}));
+    Response res;
+    try {
+      res = await _dio.post('/api/login', data: body,
+          options: Options(headers: {'User-Agent': ua}));
+    } on DioException catch (e) {
+      final serverData = e.response?.data;
+      if (serverData is Map && serverData['message'] is String) {
+        throw Exception(serverData['message'] as String);
+      }
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw Exception('Could not connect. Please check your internet connection and try again.');
+      }
+      throw Exception('Something went wrong. Please try again.');
+    }
     final data = res.data as Map<String, dynamic>;
     if (data['requiresPasswordSetup'] == true)
       return LoginResult.needsPasswordSetup(XameUser.fromMap(data['user'] as Map<String, dynamic>));
