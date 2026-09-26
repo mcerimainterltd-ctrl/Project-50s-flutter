@@ -53,7 +53,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 5, vsync: this);
+    _tabCtrl = TabController(length: AppConstants.xamePayEnabled ? 5 : 4, vsync: this);
     _tabCtrl.addListener(() {
       if (_tabCtrl.index == 1 && _tabCtrl.indexIsChanging) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -247,7 +247,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
                 horizontal: 12, vertical: 10),
             ),
           )
-        : Text(['Chats','TV','Discover','Tel','Pay'][_tab],
+        : Text((AppConstants.xamePayEnabled ? ['Chats','TV','Discover','Tel','Pay'] : ['Chats','TV','Discover','Tel'])[_tab],
             style: TextStyle(color: context.xText, fontSize: 20,
               fontWeight: FontWeight.bold)),
       ),
@@ -290,7 +290,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           text: 'TV'),
         Tab(icon: Icon(Icons.explore_outlined,            size: 22), text: 'Discover'),
         Tab(icon: Icon(Icons.phone_outlined,              size: 22), text: 'Tel'),
-        Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 22), text: "Pay"),
+        if (AppConstants.xamePayEnabled)
+          Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 22), text: "Pay"),
       ],
     ),
   );

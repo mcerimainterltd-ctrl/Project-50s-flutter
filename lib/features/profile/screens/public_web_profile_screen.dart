@@ -1,3 +1,4 @@
+import '../../../core/config/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
@@ -246,7 +247,7 @@ class PublicWebProfileScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Visitors can use your public profile to message you, call you, or send money through XamePay.',
+                        AppConstants.xamePayEnabled ? 'Visitors can use your public profile to message you, call you, or send money through XamePay.' : 'Visitors can use your public profile to message you or call you.',
                         style: TextStyle(
                           color: context.xMuted,
                           fontSize: 13,

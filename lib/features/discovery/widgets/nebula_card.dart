@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../models/discovery_item.dart';
+import '../../../core/config/constants.dart';
 
 class NebulaCard extends StatelessWidget {
   final int index;
@@ -30,7 +31,7 @@ class NebulaCard extends StatelessWidget {
         context.push('/bills');
         break;
       case DiscoveryType.wallet:
-        context.push('/wallet');
+        if (AppConstants.xamePayEnabled) context.push('/wallet');
         break;
       case DiscoveryType.creator:
         context.push('/call-history');
