@@ -75,7 +75,7 @@ class _XameTvScreenState extends State<XameTvScreen>
       // Tab just became active — start fetching if not already loaded
       if (_all.isEmpty) {
         _fetch();
-      } else if (_ctrl == null || _ctrl!.videoPlayerController?.value.isInitialized != true) {
+      } else if (_ctrl == null || _ctrl!.videoPlayerController?.value.initialized != true) {
         if (_filtered.isNotEmpty) _initPlayer(_filtered.first.streamUrl);
       } else {
         _ctrl?.play();
