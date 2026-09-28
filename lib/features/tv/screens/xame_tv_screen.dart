@@ -5,7 +5,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:video_player/video_player.dart';
+import 'package:better_player_enhanced/better_player.dart';
 import 'package:http/http.dart' as http;
 import '../data/tv_channels.dart';
 
@@ -31,9 +31,12 @@ class _XameTvScreenState extends State<XameTvScreen>
   final   _searchCtrl=TextEditingController();
   final   _listCtrl=ScrollController();
 
-  VideoPlayerController? _ctrl;
-  final Map<String, VideoPlayerController> _videoCache = {};
-  final Map<String, Future<VideoPlayerController>> _videoLoading = {};
+  BetterPlayerController? _ctrl;
+  BetterPlayerController? _prefetchController;
+  final Set<String> _prefetching = {};
+  final Set<String> _prefetched = {};
+  final List<String> _prefetchedOrder = <String>[];
+  static const int _maxTrackedPrefetches = 12;
   int _playerGeneration = 0;
   bool _ready=false, _error=false, _buffering=true;
   int  _retries=0;
@@ -72,7 +75,7 @@ class _XameTvScreenState extends State<XameTvScreen>
       // Tab just became active — start fetching if not already loaded
       if (_all.isEmpty) {
         _fetch();
-      } else if (_ctrl == null || !_ctrl!.value.isInitialized) {
+      } else if (_ctrl == null || _ctrl!.videoPlayerController?.value.isInitialized != true) {
         if (_filtered.isNotEmpty) _initPlayer(_filtered.first.streamUrl);
       } else {
         _ctrl?.play();
@@ -90,11 +93,13 @@ class _XameTvScreenState extends State<XameTvScreen>
     _overlayTimer?.cancel();
     _retryTimer?.cancel();
     _oAnim.dispose(); _sAnim.dispose();
-    for (final c in _videoCache.values) {
-      c.dispose();
-    }
-    _videoCache.clear();
-    _videoLoading.clear();
+    _ctrl?.dispose();
+    _ctrl = null;
+    _prefetchController?.dispose();
+    _prefetchController = null;
+    _prefetching.clear();
+    _prefetched.clear();
+    _prefetchedOrder.clear();
     _searchCtrl.dispose(); _listCtrl.dispose();
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -125,70 +130,96 @@ class _XameTvScreenState extends State<XameTvScreen>
   }
 
   // ── Player/cache ──────────────────────────────────────────────────────
-  Future<VideoPlayerController> _ensureCached(String url) {
-    final cached = _videoCache[url];
-    if (cached != null && cached.value.isInitialized) {
-      return Future.value(cached);
-    }
-
-    final loading = _videoLoading[url];
-    if (loading != null) return loading;
-
-    final future = () async {
-      final c = VideoPlayerController.networkUrl(
-        Uri.parse(url),
-        httpHeaders: const {'Connection': 'keep-alive'},
+  BetterPlayerCacheConfiguration get _cacheConfig =>
+      const BetterPlayerCacheConfiguration(
+        useCache: true,
+        maxCacheSize: 64 * 1024 * 1024,
+        maxCacheFileSize: 20 * 1024 * 1024,
+        preCacheSize: 3 * 1024 * 1024,
       );
-      try {
-        await c.initialize().timeout(const Duration(seconds: 8),
-            onTimeout: () => throw Exception('Stream timeout'));
-        if (!mounted) {
-          await c.dispose();
-          throw Exception('Player disposed');
-        }
-        _videoCache[url] = c;
-        return c;
-      } catch (_) {
-        await c.dispose();
-        rethrow;
-      } finally {
-        _videoLoading.remove(url);
-      }
-    }();
 
-    _videoLoading[url] = future;
-    return future;
+  BetterPlayerDataSource _source(String url) {
+    return BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      url,
+      cacheConfiguration: _cacheConfig,
+      bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+        minBufferMs: 1500,
+        maxBufferMs: 10000,
+        bufferForPlaybackMs: 300,
+        bufferForPlaybackAfterRebufferMs: 700,
+      ),
+    );
   }
 
-  void _warmAround(int index) {
-    if (_filtered.isEmpty) return;
+  Future<void> _prefetch(String url) async {
+    if (!mounted ||
+        !widget.isActive ||
+        url.isEmpty ||
+        _deadUrls.contains(url) ||
+        _prefetched.contains(url) ||
+        _prefetching.contains(url)) {
+      return;
+    }
 
-    final keepUrls = <String>{};
+    _prefetching.add(url);
+    try {
+      _prefetchController ??= BetterPlayerController(
+        const BetterPlayerConfiguration(autoPlay: false),
+      );
+
+      await _prefetchController!.preCache(_source(url));
+
+      if (mounted && widget.isActive) {
+        _prefetched.add(url);
+        _prefetchedOrder.add(url);
+
+        while (_prefetchedOrder.length > _maxTrackedPrefetches) {
+          final old = _prefetchedOrder.removeAt(0);
+          _prefetched.remove(old);
+        }
+      }
+    } catch (_) {
+      // Prefetch is opportunistic and must never interrupt playback.
+    } finally {
+      _prefetching.remove(url);
+    }
+  }
+
+  void _schedulePrefetch(int index, int generation) {
+    if (_filtered.isEmpty || !mounted || !widget.isActive) return;
+
+    final urls = <String>[];
     final len = _filtered.length;
 
-    for (int offset = -2; offset <= 3; offset++) {
-      final i = (index + offset + len) % len;
+    // Forward channels have priority.
+    for (int offset = 1; offset <= 3; offset++) {
+      final i = (index + offset) % len;
       final url = _filtered[i].streamUrl;
-      if (url.isNotEmpty && !_deadUrls.contains(url)) {
-        keepUrls.add(url);
-        if (offset != 0) {
-          _ensureCached(url).then((_) {}, onError: (_) {});
-        }
+      if (url.isNotEmpty && !urls.contains(url)) {
+        urls.add(url);
       }
     }
 
-    final currentUrl = _cur?.streamUrl ?? '';
-    final remove = _videoCache.keys
-        .where((url) => !keepUrls.contains(url) && url != currentUrl)
-        .toList();
-
-    for (final url in remove) {
-      _videoCache.remove(url)?.dispose();
+    // Then a smaller backward window.
+    for (int offset = 1; offset <= 2; offset++) {
+      final i = (index - offset + len) % len;
+      final url = _filtered[i].streamUrl;
+      if (url.isNotEmpty && !urls.contains(url)) {
+        urls.add(url);
+      }
     }
-  }
 
-  void _dropCached(String url) {
-    _videoCache.remove(url)?.dispose();
+    Future<void>(() async {
+      for (final url in urls) {
+        if (!mounted ||
+            !widget.isActive ||
+            generation != _playerGeneration) {
+          return;
+        }
+        await _prefetch(url);
+      }
+    });
   }
 
   Future<void> _initPlayer(String url) async {
@@ -203,17 +234,23 @@ class _XameTvScreenState extends State<XameTvScreen>
     }
 
     try {
-      final c = await _ensureCached(url);
+      _ctrl ??= BetterPlayerController(
+        const BetterPlayerConfiguration(
+          autoPlay: false,
+          looping: true,
+          fit: BoxFit.contain,
+          controlsConfiguration:
+              BetterPlayerControlsConfiguration(showControls: false),
+        ),
+      );
+
+      _ctrl!.pause();
+      await _ctrl!.setupDataSource(_source(url));
+
       if (!mounted || generation != _playerGeneration) return;
 
-      if (_ctrl != c) {
-        _ctrl?.pause();
-        _ctrl = c;
-      }
-
-      c.setLooping(true);
-      c.setVolume(_isMuted ? 0 : 1);
-      await c.play();
+      _ctrl!.setVolume(_isMuted ? 0 : 1);
+      await _ctrl!.play();
 
       if (!mounted || generation != _playerGeneration) return;
 
@@ -224,7 +261,11 @@ class _XameTvScreenState extends State<XameTvScreen>
         _retries=0;
       });
 
-      _warmAround(_index);
+      Future<void>.delayed(const Duration(milliseconds:200), () {
+        if (mounted && generation == _playerGeneration) {
+          _schedulePrefetch(_index, generation);
+        }
+      });
     } catch(_) {
       if (!mounted || generation != _playerGeneration) return;
 
@@ -232,7 +273,8 @@ class _XameTvScreenState extends State<XameTvScreen>
       if (_liveOnly && _filtered.isNotEmpty) {
         final startIndex = _index;
         int next = (_index+1) % _filtered.length;
-        while (_deadUrls.contains(_filtered[next].streamUrl) && next != startIndex) {
+        while (_deadUrls.contains(_filtered[next].streamUrl) &&
+            next != startIndex) {
           next = (next+1) % _filtered.length;
         }
         if (next != startIndex) {
@@ -266,7 +308,6 @@ class _XameTvScreenState extends State<XameTvScreen>
     if (_retries>=3){_next();return;}
     _retries++;
     if(_cur!=null) {
-      _dropCached(_cur!.streamUrl);
       _initPlayer(_cur!.streamUrl);
     }
   }
@@ -389,11 +430,11 @@ class _XameTvScreenState extends State<XameTvScreen>
               errorWidget:(_,__,___)=>const ColoredBox(color:Color(0xFF050505)))
           : const ColoredBox(color:Color(0xFF050505));
     }
-    return SlideTransition(position:_sSlide,
-      child:Center(child:AspectRatio(
-        aspectRatio: _ctrl!.value.aspectRatio>0 ? _ctrl!.value.aspectRatio : 16/9,
-        child:VideoPlayer(_ctrl!),
-      )),
+    return SlideTransition(
+      position:_sSlide,
+      child:Center(
+        child:BetterPlayer(controller:_ctrl!),
+      ),
     );
   }
 

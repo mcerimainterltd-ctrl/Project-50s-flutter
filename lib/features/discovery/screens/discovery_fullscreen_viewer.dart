@@ -61,6 +61,36 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
 
 class _DiscoveryVideoPool {
   final Map<String, BetterPlayerController> _controllers = {};
+  BetterPlayerController? _prefetchController;
+  final Set<String> _prefetching = {};
+  final Set<String> _prefetched = {};
+  final List<String> _prefetchedOrder = <String>[];
+  int _prefetchGeneration = 0;
+  bool _active = true;
+
+  static const int _maxTrackedPrefetches = 12;
+
+  BetterPlayerCacheConfiguration get _cacheConfig =>
+      const BetterPlayerCacheConfiguration(
+        useCache: true,
+        maxCacheSize: 64 * 1024 * 1024,
+        maxCacheFileSize: 20 * 1024 * 1024,
+        preCacheSize: 6 * 1024 * 1024,
+      );
+
+  BetterPlayerDataSource _source(String url) {
+    return BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      url,
+      cacheConfiguration: _cacheConfig,
+      bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+        minBufferMs: 1500,
+        maxBufferMs: 12000,
+        bufferForPlaybackMs: 300,
+        bufferForPlaybackAfterRebufferMs: 700,
+      ),
+    );
+  }
 
   BetterPlayerController _create(String url) {
     final c = BetterPlayerController(
@@ -74,16 +104,7 @@ class _DiscoveryVideoPool {
           showControls: false,
         ),
       ),
-      betterPlayerDataSource: BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network,
-        url,
-        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-          minBufferMs: 2000,
-          maxBufferMs: 15000,
-          bufferForPlaybackMs: 300,
-          bufferForPlaybackAfterRebufferMs: 700,
-        ),
-      ),
+      betterPlayerDataSource: _source(url),
     );
     c.setVolume(0);
     _controllers[url] = c;
@@ -95,36 +116,94 @@ class _DiscoveryVideoPool {
     return _controllers[url] ?? _create(url);
   }
 
-  void warm(List<Map<String, dynamic>> posts, int index) {
-    if (posts.isEmpty) return;
+  Future<void> _prefetch(String url) async {
+    if (!_active ||
+        url.isEmpty ||
+        _prefetched.contains(url) ||
+        _prefetching.contains(url)) {
+      return;
+    }
 
-    final keep = <String>{};
-    final len = posts.length;
+    _prefetching.add(url);
 
-    for (int offset = -2; offset <= 3; offset++) {
-      final i = (index + offset + len) % len;
-      final post = posts[i];
-      if ((post['mediaType'] as String? ?? '') == 'video') {
-        final url = post['mediaUrl'] as String? ?? '';
-        if (url.isNotEmpty) keep.add(url);
+    try {
+      _prefetchController ??= BetterPlayerController(
+        const BetterPlayerConfiguration(autoPlay: false),
+      );
+
+      await _prefetchController!.preCache(_source(url));
+
+      if (_active) {
+        _prefetched.add(url);
+        _prefetchedOrder.add(url);
+
+        while (_prefetchedOrder.length > _maxTrackedPrefetches) {
+          final old = _prefetchedOrder.removeAt(0);
+          _prefetched.remove(old);
+        }
       }
-    }
-
-    for (final url in keep) {
-      controllerFor(url);
-    }
-
-    final remove = _controllers.keys
-        .where((url) => !keep.contains(url))
-        .toList();
-
-    for (final url in remove) {
-      _controllers.remove(url)?.dispose();
+    } catch (_) {
+      // Prefetch is opportunistic and must never interrupt playback.
+    } finally {
+      _prefetching.remove(url);
     }
   }
 
-  void activate(List<Map<String, dynamic>> posts, int index, bool active) {
-    warm(posts, index);
+  void _schedulePrefetch(List<Map<String, dynamic>> posts, int index) {
+    if (!_active || posts.isEmpty || index < 0 || index >= posts.length) {
+      return;
+    }
+
+    final generation = ++_prefetchGeneration;
+    final urls = <String>[];
+    final len = posts.length;
+
+    // Forward videos have priority.
+    for (int offset = 1; offset <= 3; offset++) {
+      final i = (index + offset) % len;
+      final post = posts[i];
+
+      if ((post['mediaType'] as String? ?? '') != 'video') continue;
+
+      final url = post['mediaUrl'] as String? ?? '';
+
+      if (url.isNotEmpty && !urls.contains(url)) {
+        urls.add(url);
+      }
+    }
+
+    // Then prefetch a smaller backward window for instant reuse.
+    for (int offset = 1; offset <= 2; offset++) {
+      final i = (index - offset + len) % len;
+      final post = posts[i];
+
+      if ((post['mediaType'] as String? ?? '') != 'video') continue;
+
+      final url = post['mediaUrl'] as String? ?? '';
+
+      if (url.isNotEmpty && !urls.contains(url)) {
+        urls.add(url);
+      }
+    }
+
+    Future<void>(() async {
+      for (final url in urls) {
+        if (!_active || generation != _prefetchGeneration) {
+          return;
+        }
+
+        await _prefetch(url);
+      }
+    });
+  }
+
+  void activate(
+    List<Map<String, dynamic>> posts,
+    int index,
+    bool active,
+  ) {
+    _active = active;
+    ++_prefetchGeneration;
 
     final current = index >= 0 && index < posts.length
         ? posts[index]['mediaUrl'] as String? ?? ''
@@ -137,13 +216,38 @@ class _DiscoveryVideoPool {
         entry.value.pause();
       }
     }
+
+    if (active && current.isNotEmpty) {
+      controllerFor(current)?.play();
+
+      final generation = _prefetchGeneration;
+      Future<void>.delayed(const Duration(milliseconds: 200), () {
+        if (_active &&
+            generation == _prefetchGeneration &&
+            index >= 0 &&
+            index < posts.length) {
+          _schedulePrefetch(posts, index);
+        }
+      });
+    }
   }
 
   void disposeAll() {
+    ++_prefetchGeneration;
+    _active = false;
+
     for (final c in _controllers.values) {
       c.dispose();
     }
+
     _controllers.clear();
+
+    _prefetchController?.dispose();
+    _prefetchController = null;
+
+    _prefetching.clear();
+    _prefetched.clear();
+    _prefetchedOrder.clear();
   }
 }
 
@@ -165,7 +269,6 @@ class _DiscoveryFullscreenViewerState
     _currentIndex = widget.initialIndex.clamp(0, widget.posts.isEmpty ? 0 : widget.posts.length - 1);
     _verticalCtrl = PageController(initialPage: _currentIndex);
     _videoPool = _DiscoveryVideoPool();
-    _videoPool.warm(widget.posts, _currentIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _videoPool.activate(widget.posts, _currentIndex, widget.isActive);
     });
