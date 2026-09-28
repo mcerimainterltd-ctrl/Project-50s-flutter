@@ -32,7 +32,9 @@ class _XameTvScreenState extends State<XameTvScreen>
   final   _listCtrl=ScrollController();
 
   VideoPlayerController? _ctrl;
-  VideoPlayerController? _preloadCtrl;
+  final Map<String, VideoPlayerController> _videoCache = {};
+  final Map<String, Future<VideoPlayerController>> _videoLoading = {};
+  int _playerGeneration = 0;
   bool _ready=false, _error=false, _buffering=true;
   int  _retries=0;
   final Set<String> _deadUrls={};
@@ -88,8 +90,11 @@ class _XameTvScreenState extends State<XameTvScreen>
     _overlayTimer?.cancel();
     _retryTimer?.cancel();
     _oAnim.dispose(); _sAnim.dispose();
-    _ctrl?.dispose();
-    _preloadCtrl?.dispose();
+    for (final c in _videoCache.values) {
+      c.dispose();
+    }
+    _videoCache.clear();
+    _videoLoading.clear();
     _searchCtrl.dispose(); _listCtrl.dispose();
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -119,79 +124,134 @@ class _XameTvScreenState extends State<XameTvScreen>
     setState(() { _filtered=list; _index=0; });
   }
 
-  // ── Player ────────────────────────────────────────────────────────────
+  // ── Player/cache ──────────────────────────────────────────────────────
+  Future<VideoPlayerController> _ensureCached(String url) {
+    final cached = _videoCache[url];
+    if (cached != null && cached.value.isInitialized) {
+      return Future.value(cached);
+    }
+
+    final loading = _videoLoading[url];
+    if (loading != null) return loading;
+
+    final future = () async {
+      final c = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        httpHeaders: const {'Connection': 'keep-alive'},
+      );
+      try {
+        await c.initialize().timeout(const Duration(seconds: 8),
+            onTimeout: () => throw Exception('Stream timeout'));
+        if (!mounted) {
+          await c.dispose();
+          throw Exception('Player disposed');
+        }
+        _videoCache[url] = c;
+        return c;
+      } catch (_) {
+        await c.dispose();
+        rethrow;
+      } finally {
+        _videoLoading.remove(url);
+      }
+    }();
+
+    _videoLoading[url] = future;
+    return future;
+  }
+
+  void _warmAround(int index) {
+    if (_filtered.isEmpty) return;
+
+    final keepUrls = <String>{};
+    final len = _filtered.length;
+
+    for (int offset = -2; offset <= 3; offset++) {
+      final i = (index + offset + len) % len;
+      final url = _filtered[i].streamUrl;
+      if (url.isNotEmpty && !_deadUrls.contains(url)) {
+        keepUrls.add(url);
+        if (offset != 0) {
+          _ensureCached(url).then((_) {}, onError: (_) {});
+        }
+      }
+    }
+
+    final currentUrl = _cur?.streamUrl ?? '';
+    final remove = _videoCache.keys
+        .where((url) => !keepUrls.contains(url) && url != currentUrl)
+        .toList();
+
+    for (final url in remove) {
+      _videoCache.remove(url)?.dispose();
+    }
+  }
+
+  void _dropCached(String url) {
+    _videoCache.remove(url)?.dispose();
+  }
+
   Future<void> _initPlayer(String url) async {
-    await _ctrl?.dispose();
+    final generation = ++_playerGeneration;
+
     if (!mounted) return;
     setState(() { _ready=false; _error=false; _buffering=true; });
-    if (url.isEmpty) { setState(() { _error=true; _buffering=false; }); return; }
-    final c = VideoPlayerController.networkUrl(
-      Uri.parse(url),
-      httpHeaders: const {'Connection': 'keep-alive'},
-    );
-    _ctrl = c;
+
+    if (url.isEmpty) {
+      setState(() { _error=true; _buffering=false; });
+      return;
+    }
+
     try {
-      await c.initialize().timeout(const Duration(seconds: 8),
-          onTimeout: () => throw Exception('Stream timeout'));
-      if (!mounted || _ctrl!=c) return;
+      final c = await _ensureCached(url);
+      if (!mounted || generation != _playerGeneration) return;
+
+      if (_ctrl != c) {
+        _ctrl?.pause();
+        _ctrl = c;
+      }
+
       c.setLooping(true);
       c.setVolume(_isMuted ? 0 : 1);
-      c.play();
+      await c.play();
+
+      if (!mounted || generation != _playerGeneration) return;
+
       _sAnim.forward(from:0);
-      setState(() { _ready=true; _buffering=false; _retries=0; });
-      // Preload next channel in background
-      _preloadNext();
+      setState(() {
+        _ready=true;
+        _buffering=false;
+        _retries=0;
+      });
+
+      _warmAround(_index);
     } catch(_) {
-      if (!mounted || _ctrl!=c) return;
-      // Mark dead and auto-skip if liveOnly is on
-      final failedUrl = url;
-      _deadUrls.add(failedUrl);
-      if (_liveOnly) {
-        // find next non-dead channel
-        final start = _index;
+      if (!mounted || generation != _playerGeneration) return;
+
+      _deadUrls.add(url);
+      if (_liveOnly && _filtered.isNotEmpty) {
+        final startIndex = _index;
         int next = (_index+1) % _filtered.length;
-        while (_deadUrls.contains(_filtered[next].streamUrl) && next != start) {
+        while (_deadUrls.contains(_filtered[next].streamUrl) && next != startIndex) {
           next = (next+1) % _filtered.length;
         }
-        if (next != start) { setState(() { _index=next; }); _initPlayer(_filtered[next].streamUrl); return; }
+        if (next != startIndex) {
+          setState(() { _index=next; });
+          _initPlayer(_filtered[next].streamUrl);
+          return;
+        }
       }
+
       setState(() { _error=true; _buffering=false; });
     }
   }
 
-  Future<void> _preloadNext() async {
-    if (_filtered.isEmpty) return;
-    final nextIdx = (_index + 1) % _filtered.length;
-    final nextUrl = _filtered[nextIdx].streamUrl;
-    if (nextUrl.isEmpty || _deadUrls.contains(nextUrl)) return;
-    try {
-      final pre = VideoPlayerController.networkUrl(Uri.parse(nextUrl));
-      _preloadCtrl?.dispose();
-      _preloadCtrl = pre;
-      await pre.initialize();
-      // Just buffer, don't play
-    } catch (_) {}
-  }
-
   void _switchTo(int i) {
     if (i==_index || i>=_filtered.length) return;
-    final nextIdx = (_index + 1) % _filtered.length;
+
     setState(() => _index=i);
-    // Use preloaded controller if switching to the next channel
-    if (i == nextIdx && _preloadCtrl != null && _preloadCtrl!.value.isInitialized) {
-      final pre = _preloadCtrl!;
-      _preloadCtrl = null;
-      _ctrl?.dispose();
-      _ctrl = pre;
-      pre.setLooping(true);
-      pre.setVolume(_isMuted ? 0 : 1);
-      pre.play();
-      _sAnim.forward(from: 0);
-      setState(() { _ready = true; _buffering = false; _retries = 0; });
-      _preloadNext();
-    } else {
-      _initPlayer(_filtered[i].streamUrl);
-    }
+    _initPlayer(_filtered[i].streamUrl);
+
     _showBriefly();
     Future.delayed(const Duration(milliseconds:100), () {
       if (_listCtrl.hasClients)
@@ -202,7 +262,14 @@ class _XameTvScreenState extends State<XameTvScreen>
 
   void _next() { if (_filtered.isEmpty) return; _switchTo((_index+1)%_filtered.length); }
   void _prev() { if (_filtered.isEmpty) return; _switchTo((_index-1+_filtered.length)%_filtered.length); }
-  void _retry() { if (_retries>=3){_next();return;} _retries++; if(_cur!=null) _initPlayer(_cur!.streamUrl); }
+  void _retry() {
+    if (_retries>=3){_next();return;}
+    _retries++;
+    if(_cur!=null) {
+      _dropCached(_cur!.streamUrl);
+      _initPlayer(_cur!.streamUrl);
+    }
+  }
 
   // ── Retry dead channels in background ───────────────────────────────
   Future<void> _retryDead() async {

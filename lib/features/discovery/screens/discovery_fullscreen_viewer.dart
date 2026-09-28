@@ -59,9 +59,98 @@ class DiscoveryFullscreenViewer extends StatefulWidget {
       _DiscoveryFullscreenViewerState();
 }
 
+class _DiscoveryVideoPool {
+  final Map<String, BetterPlayerController> _controllers = {};
+
+  BetterPlayerController _create(String url) {
+    final c = BetterPlayerController(
+      BetterPlayerConfiguration(
+        autoPlay: false,
+        looping: true,
+        fit: BoxFit.cover,
+        aspectRatio: 9 / 16,
+        fullScreenByDefault: false,
+        controlsConfiguration: const BetterPlayerControlsConfiguration(
+          showControls: false,
+        ),
+      ),
+      betterPlayerDataSource: BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
+        url,
+        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+          minBufferMs: 2000,
+          maxBufferMs: 15000,
+          bufferForPlaybackMs: 300,
+          bufferForPlaybackAfterRebufferMs: 700,
+        ),
+      ),
+    );
+    c.setVolume(0);
+    _controllers[url] = c;
+    return c;
+  }
+
+  BetterPlayerController? controllerFor(String url) {
+    if (url.isEmpty) return null;
+    return _controllers[url] ?? _create(url);
+  }
+
+  void warm(List<Map<String, dynamic>> posts, int index) {
+    if (posts.isEmpty) return;
+
+    final keep = <String>{};
+    final len = posts.length;
+
+    for (int offset = -2; offset <= 3; offset++) {
+      final i = (index + offset + len) % len;
+      final post = posts[i];
+      if ((post['mediaType'] as String? ?? '') == 'video') {
+        final url = post['mediaUrl'] as String? ?? '';
+        if (url.isNotEmpty) keep.add(url);
+      }
+    }
+
+    for (final url in keep) {
+      controllerFor(url);
+    }
+
+    final remove = _controllers.keys
+        .where((url) => !keep.contains(url))
+        .toList();
+
+    for (final url in remove) {
+      _controllers.remove(url)?.dispose();
+    }
+  }
+
+  void activate(List<Map<String, dynamic>> posts, int index, bool active) {
+    warm(posts, index);
+
+    final current = index >= 0 && index < posts.length
+        ? posts[index]['mediaUrl'] as String? ?? ''
+        : '';
+
+    for (final entry in _controllers.entries) {
+      if (active && entry.key == current) {
+        entry.value.play();
+      } else {
+        entry.value.pause();
+      }
+    }
+  }
+
+  void disposeAll() {
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
+    _controllers.clear();
+  }
+}
+
 class _DiscoveryFullscreenViewerState
     extends State<DiscoveryFullscreenViewer> {
   late PageController _verticalCtrl;
+  late _DiscoveryVideoPool _videoPool;
   int _currentIndex = 0;
   int _activePointers = 0;
   bool _locked = false;
@@ -75,6 +164,11 @@ class _DiscoveryFullscreenViewerState
     super.initState();
     _currentIndex = widget.initialIndex.clamp(0, widget.posts.isEmpty ? 0 : widget.posts.length - 1);
     _verticalCtrl = PageController(initialPage: _currentIndex);
+    _videoPool = _DiscoveryVideoPool();
+    _videoPool.warm(widget.posts, _currentIndex);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _videoPool.activate(widget.posts, _currentIndex, widget.isActive);
+    });
     // Track view for initial post
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.posts.isNotEmpty) {
@@ -93,6 +187,7 @@ class _DiscoveryFullscreenViewerState
   @override
   void dispose() {
     _verticalCtrl.dispose();
+    _videoPool.disposeAll();
     if (!widget.embedded) SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
@@ -110,10 +205,12 @@ class _DiscoveryFullscreenViewerState
         child: PageView.builder(
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
+        allowImplicitScrolling: true,
         physics: (_locked || _activePointers >= 2) ? const NeverScrollableScrollPhysics() : const ClampingScrollPhysics(),
         itemCount: widget.posts.length,
         onPageChanged: (i) async {
           setState(() => _currentIndex = i);
+          _videoPool.activate(widget.posts, i, widget.isActive);
           if (i < widget.posts.length) {
             final postId = widget.posts[i]['id'] as String? ?? widget.posts[i]['postId'] as String? ?? '';
             if (postId.isNotEmpty) {
@@ -129,6 +226,9 @@ class _DiscoveryFullscreenViewerState
           return _FullscreenPostPage(
             post: post,
             isActive: i == _currentIndex && widget.isActive,
+            videoController: ((post['mediaType'] as String? ?? '') == 'video')
+                ? _videoPool.controllerFor(post['mediaUrl'] as String? ?? '')
+                : null,
             currentUserId: widget.currentUserId,
             currentUserAvatar: widget.currentUserAvatar,
             onClose: () => Navigator.of(context, rootNavigator: true).pop(),
@@ -146,14 +246,21 @@ class _DiscoveryFullscreenViewerState
         child: PageView.builder(
         controller: _verticalCtrl,
         scrollDirection: Axis.vertical,
+        allowImplicitScrolling: true,
         physics: _activePointers >= 2 ? const NeverScrollableScrollPhysics() : null,
         itemCount: widget.posts.length,
-        onPageChanged: (i) => setState(() => _currentIndex = i),
+        onPageChanged: (i) {
+          setState(() => _currentIndex = i);
+          _videoPool.activate(widget.posts, i, widget.isActive);
+        },
         itemBuilder: (_, i) {
           final post = widget.posts[i];
           return _FullscreenPostPage(
             post: post,
             isActive: i == _currentIndex && widget.isActive,
+            videoController: ((post['mediaType'] as String? ?? '') == 'video')
+                ? _videoPool.controllerFor(post['mediaUrl'] as String? ?? '')
+                : null,
             currentUserId: widget.currentUserId,
             currentUserAvatar: widget.currentUserAvatar,
             onClose: () => Navigator.of(context, rootNavigator: true).pop(),
@@ -167,6 +274,7 @@ class _DiscoveryFullscreenViewerState
 class _FullscreenPostPage extends StatefulWidget {
   final Map<String, dynamic> post;
   final bool isActive;
+  final BetterPlayerController? videoController;
   final String currentUserId;
   final String currentUserAvatar;
   final String currentUserName;
@@ -177,6 +285,7 @@ class _FullscreenPostPage extends StatefulWidget {
     Key? key,
     required this.post,
     required this.isActive,
+    this.videoController,
     required this.currentUserId,
     required this.currentUserAvatar,
     required this.onClose,
@@ -554,7 +663,11 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
               onDoubleTap: () {},
               behavior: HitTestBehavior.translucent,
               child: isVid
-                  ? _VideoPage(url: widget.post['mediaUrl'] as String? ?? '', isActive: widget.isActive)
+                  ? _VideoPage(
+                      url: widget.post['mediaUrl'] as String? ?? '',
+                      isActive: widget.isActive,
+                      controller: widget.videoController,
+                    )
                   : _ImagePage(url: widget.post['mediaUrl'] as String? ?? ''),
             );
           }
@@ -858,8 +971,14 @@ class _BurstParticle {
 class _VideoPage extends StatefulWidget {
   final String url;
   final bool isActive;
-  const _VideoPage({Key? key, required this.url, required this.isActive})
-      : super(key: key);
+  final BetterPlayerController? controller;
+
+  const _VideoPage({
+    Key? key,
+    required this.url,
+    required this.isActive,
+    this.controller,
+  }) : super(key: key);
 
   @override
   State<_VideoPage> createState() => _VideoPageState();
@@ -867,6 +986,7 @@ class _VideoPage extends StatefulWidget {
 
 class _VideoPageState extends State<_VideoPage> {
   BetterPlayerController? _ctrl;
+  bool _ownsController = false;
   bool _muted  = true;
   bool _paused = false;
   bool _controlsVisible = true;
@@ -907,29 +1027,35 @@ class _VideoPageState extends State<_VideoPage> {
   void initState() {
     super.initState();
     _scheduleHide();
-    _ctrl = BetterPlayerController(
-      BetterPlayerConfiguration(
-        autoPlay:    widget.isActive,
-        looping:     true,
-        fit:         BoxFit.cover,
-        aspectRatio: 9 / 16,
-        fullScreenByDefault: false,
-        controlsConfiguration: const BetterPlayerControlsConfiguration(
-            showControls: false),
-      ),
-      betterPlayerDataSource: BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network,
-        widget.url,
-        bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-          minBufferMs: 2000,
-          maxBufferMs: 10000,
-          bufferForPlaybackMs: 500,
-          bufferForPlaybackAfterRebufferMs: 1000,
+    if (widget.controller != null) {
+      _ctrl = widget.controller;
+    } else {
+      _ownsController = true;
+      _ctrl = BetterPlayerController(
+        BetterPlayerConfiguration(
+          autoPlay: widget.isActive,
+          looping: true,
+          fit: BoxFit.cover,
+          aspectRatio: 9 / 16,
+          fullScreenByDefault: false,
+          controlsConfiguration: const BetterPlayerControlsConfiguration(
+              showControls: false),
         ),
-      ),
-    );
+        betterPlayerDataSource: BetterPlayerDataSource(
+          BetterPlayerDataSourceType.network,
+          widget.url,
+          bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+            minBufferMs: 2000,
+            maxBufferMs: 10000,
+            bufferForPlaybackMs: 500,
+            bufferForPlaybackAfterRebufferMs: 1000,
+          ),
+        ),
+      );
+    }
     _ctrl!.addEventsListener(_onEvent);
     _ctrl!.setVolume(0);
+    if (widget.isActive) _ctrl!.play();
   }
 
   void _onEvent(BetterPlayerEvent e) {
@@ -961,7 +1087,7 @@ class _VideoPageState extends State<_VideoPage> {
   void dispose() {
     _hideTimer?.cancel();
     _ctrl?.removeEventsListener(_onEvent);
-    _ctrl?.dispose();
+    if (_ownsController) _ctrl?.dispose();
     super.dispose();
   }
 
