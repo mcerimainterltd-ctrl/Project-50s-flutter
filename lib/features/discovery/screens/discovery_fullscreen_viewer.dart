@@ -73,16 +73,22 @@ class _DiscoveryVideoPool {
   BetterPlayerCacheConfiguration get _cacheConfig =>
       const BetterPlayerCacheConfiguration(
         useCache: true,
-        maxCacheSize: 64 * 1024 * 1024,
-        maxCacheFileSize: 20 * 1024 * 1024,
-        preCacheSize: 6 * 1024 * 1024,
+        maxCacheSize: 256 * 1024 * 1024,
+        maxCacheFileSize: 64 * 1024 * 1024,
+        preCacheSize: 8 * 1024 * 1024,
       );
 
   BetterPlayerDataSource _source(String url) {
     return BetterPlayerDataSource(
       BetterPlayerDataSourceType.network,
       url,
-      cacheConfiguration: _cacheConfig,
+      cacheConfiguration: BetterPlayerCacheConfiguration(
+        useCache: true,
+        maxCacheSize: 256 * 1024 * 1024,
+        maxCacheFileSize: 64 * 1024 * 1024,
+        preCacheSize: _cacheConfig.preCacheSize,
+        key: url,
+      ),
       bufferingConfiguration: const BetterPlayerBufferingConfiguration(
         minBufferMs: 1500,
         maxBufferMs: 12000,
@@ -159,7 +165,7 @@ class _DiscoveryVideoPool {
     final len = posts.length;
 
     // Forward videos have priority.
-    for (int offset = 1; offset <= 3; offset++) {
+    for (int offset = 1; offset <= 2; offset++) {
       final i = (index + offset) % len;
       final post = posts[i];
 
@@ -221,7 +227,7 @@ class _DiscoveryVideoPool {
       controllerFor(current)?.play();
 
       final generation = _prefetchGeneration;
-      Future<void>.delayed(const Duration(milliseconds: 200), () {
+      Future<void>.delayed(const Duration(milliseconds: 600), () {
         if (_active &&
             generation == _prefetchGeneration &&
             index >= 0 &&

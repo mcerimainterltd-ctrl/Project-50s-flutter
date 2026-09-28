@@ -32,11 +32,6 @@ class _XameTvScreenState extends State<XameTvScreen>
   final   _listCtrl=ScrollController();
 
   BetterPlayerController? _ctrl;
-  BetterPlayerController? _prefetchController;
-  final Set<String> _prefetching = {};
-  final Set<String> _prefetched = {};
-  final List<String> _prefetchedOrder = <String>[];
-  static const int _maxTrackedPrefetches = 12;
   int _playerGeneration = 0;
   bool _ready=false, _error=false, _buffering=true;
   int  _retries=0;
@@ -95,11 +90,6 @@ class _XameTvScreenState extends State<XameTvScreen>
     _oAnim.dispose(); _sAnim.dispose();
     _ctrl?.dispose();
     _ctrl = null;
-    _prefetchController?.dispose();
-    _prefetchController = null;
-    _prefetching.clear();
-    _prefetched.clear();
-    _prefetchedOrder.clear();
     _searchCtrl.dispose(); _listCtrl.dispose();
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -133,16 +123,22 @@ class _XameTvScreenState extends State<XameTvScreen>
   BetterPlayerCacheConfiguration get _cacheConfig =>
       const BetterPlayerCacheConfiguration(
         useCache: true,
-        maxCacheSize: 64 * 1024 * 1024,
-        maxCacheFileSize: 20 * 1024 * 1024,
-        preCacheSize: 3 * 1024 * 1024,
+        maxCacheSize: 256 * 1024 * 1024,
+        maxCacheFileSize: 64 * 1024 * 1024,
+        preCacheSize: 6 * 1024 * 1024,
       );
 
   BetterPlayerDataSource _source(String url) {
     return BetterPlayerDataSource(
       BetterPlayerDataSourceType.network,
       url,
-      cacheConfiguration: _cacheConfig,
+      cacheConfiguration: BetterPlayerCacheConfiguration(
+        useCache: true,
+        maxCacheSize: 256 * 1024 * 1024,
+        maxCacheFileSize: 64 * 1024 * 1024,
+        preCacheSize: _cacheConfig.preCacheSize,
+        key: url,
+      ),
       bufferingConfiguration: const BetterPlayerBufferingConfiguration(
         minBufferMs: 1500,
         maxBufferMs: 10000,
@@ -150,76 +146,6 @@ class _XameTvScreenState extends State<XameTvScreen>
         bufferForPlaybackAfterRebufferMs: 700,
       ),
     );
-  }
-
-  Future<void> _prefetch(String url) async {
-    if (!mounted ||
-        !widget.isActive ||
-        url.isEmpty ||
-        _deadUrls.contains(url) ||
-        _prefetched.contains(url) ||
-        _prefetching.contains(url)) {
-      return;
-    }
-
-    _prefetching.add(url);
-    try {
-      _prefetchController ??= BetterPlayerController(
-        const BetterPlayerConfiguration(autoPlay: false),
-      );
-
-      await _prefetchController!.preCache(_source(url));
-
-      if (mounted && widget.isActive) {
-        _prefetched.add(url);
-        _prefetchedOrder.add(url);
-
-        while (_prefetchedOrder.length > _maxTrackedPrefetches) {
-          final old = _prefetchedOrder.removeAt(0);
-          _prefetched.remove(old);
-        }
-      }
-    } catch (_) {
-      // Prefetch is opportunistic and must never interrupt playback.
-    } finally {
-      _prefetching.remove(url);
-    }
-  }
-
-  void _schedulePrefetch(int index, int generation) {
-    if (_filtered.isEmpty || !mounted || !widget.isActive) return;
-
-    final urls = <String>[];
-    final len = _filtered.length;
-
-    // Forward channels have priority.
-    for (int offset = 1; offset <= 3; offset++) {
-      final i = (index + offset) % len;
-      final url = _filtered[i].streamUrl;
-      if (url.isNotEmpty && !urls.contains(url)) {
-        urls.add(url);
-      }
-    }
-
-    // Then a smaller backward window.
-    for (int offset = 1; offset <= 2; offset++) {
-      final i = (index - offset + len) % len;
-      final url = _filtered[i].streamUrl;
-      if (url.isNotEmpty && !urls.contains(url)) {
-        urls.add(url);
-      }
-    }
-
-    Future<void>(() async {
-      for (final url in urls) {
-        if (!mounted ||
-            !widget.isActive ||
-            generation != _playerGeneration) {
-          return;
-        }
-        await _prefetch(url);
-      }
-    });
   }
 
   Future<void> _initPlayer(String url) async {
@@ -261,11 +187,6 @@ class _XameTvScreenState extends State<XameTvScreen>
         _retries=0;
       });
 
-      Future<void>.delayed(const Duration(milliseconds:200), () {
-        if (mounted && generation == _playerGeneration) {
-          _schedulePrefetch(_index, generation);
-        }
-      });
     } catch(_) {
       if (!mounted || generation != _playerGeneration) return;
 
