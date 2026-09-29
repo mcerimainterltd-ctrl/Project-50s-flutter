@@ -32,6 +32,8 @@ class _XameTvScreenState extends State<XameTvScreen>
   final   _listCtrl=ScrollController();
 
   BetterPlayerController? _ctrl;
+  final Map<String, BetterPlayerController> _playerPool={};
+  final Map<String, Future<BetterPlayerController>> _playerLoading={};
   int _playerGeneration = 0;
   bool _ready=false, _error=false, _buffering=true;
   int  _retries=0;
@@ -88,7 +90,13 @@ class _XameTvScreenState extends State<XameTvScreen>
     _overlayTimer?.cancel();
     _retryTimer?.cancel();
     _oAnim.dispose(); _sAnim.dispose();
-    _ctrl?.dispose();
+    final disposed = <BetterPlayerController>{};
+    for (final player in _playerPool.values) {
+      if (disposed.add(player)) player.dispose();
+    }
+    if (_ctrl != null && disposed.add(_ctrl!)) _ctrl!.dispose();
+    _playerPool.clear();
+    _playerLoading.clear();
     _ctrl = null;
     _searchCtrl.dispose(); _listCtrl.dispose();
     if (_isFullscreen) {
@@ -114,9 +122,29 @@ class _XameTvScreenState extends State<XameTvScreen>
   }
 
   void _applyFilter() {
+    final currentUrl = (_filtered.isNotEmpty &&
+            _index >= 0 &&
+            _index < _filtered.length)
+        ? _filtered[_index].streamUrl
+        : null;
+
     var list = TvChannelService.filterByCategory(_all, _category);
-    if (_searchQuery.isNotEmpty) list = TvChannelService.search(list, _searchQuery);
-    setState(() { _filtered=list; _index=0; });
+    if (_searchQuery.isNotEmpty) {
+      list = TvChannelService.search(list, _searchQuery);
+    }
+
+    var nextIndex = 0;
+    if (currentUrl != null && currentUrl.isNotEmpty) {
+      final preserved = list.indexWhere(
+        (channel) => channel.streamUrl == currentUrl,
+      );
+      if (preserved >= 0) nextIndex = preserved;
+    }
+
+    setState(() {
+      _filtered = list;
+      _index = nextIndex;
+    });
   }
 
   // ── Player/cache ──────────────────────────────────────────────────────
@@ -148,89 +176,237 @@ class _XameTvScreenState extends State<XameTvScreen>
     );
   }
 
-  Future<void> _initPlayer(String url) async {
-    final generation = ++_playerGeneration;
+  BetterPlayerController _newPlayer() {
+    return BetterPlayerController(
+      const BetterPlayerConfiguration(
+        autoPlay: false,
+        looping: true,
+        fit: BoxFit.contain,
+        controlsConfiguration:
+            BetterPlayerControlsConfiguration(showControls: false),
+      ),
+    );
+  }
 
-    if (!mounted) return;
-    setState(() { _ready=false; _error=false; _buffering=true; });
+  Future<BetterPlayerController> _ensurePlayer(String url) {
+    final existing = _playerPool[url];
+    if (existing != null &&
+        existing.videoPlayerController?.value.initialized == true) {
+      return Future.value(existing);
+    }
+
+    final loading = _playerLoading[url];
+    if (loading != null) return loading;
+
+    final future = () async {
+      final player = _newPlayer();
+      try {
+        await player.setupDataSource(_source(url));
+
+        if (player.videoPlayerController?.value.initialized != true) {
+          throw StateError('PLAYER NOT INITIALIZED');
+        }
+
+        _playerPool[url] = player;
+        return player;
+      } catch (_) {
+        player.dispose();
+        rethrow;
+      } finally {
+        _playerLoading.remove(url);
+      }
+    }();
+
+    _playerLoading[url] = future;
+    return future;
+  }
+
+  Future<void> _warmAround(int center) async {
+    if (_filtered.isEmpty ||
+        center < 0 ||
+        center >= _filtered.length) return;
+
+    final targets = <int>[
+      if (center + 1 < _filtered.length) center + 1,
+      if (center - 1 >= 0) center - 1,
+    ];
+
+    for (final i in targets) {
+      if (!mounted) return;
+
+      final url = _filtered[i].streamUrl;
+      if (url.isEmpty || _deadUrls.contains(url)) continue;
+
+      try {
+        final player = await _ensurePlayer(url);
+        await player.pause();
+      } catch (_) {
+        _deadUrls.add(url);
+      }
+    }
+
+    final keepUrls = <String>{
+      _filtered[center].streamUrl,
+      ...targets.map((i) => _filtered[i].streamUrl),
+    };
+
+    final stale = _playerPool.keys
+        .where((url) => !keepUrls.contains(url))
+        .toList();
+
+    for (final url in stale) {
+      final player = _playerPool.remove(url);
+      player?.dispose();
+    }
+  }
+
+  Future<void> _activatePlayer(int index, {bool initial=false}) async {
+    if (!mounted || index < 0 || index >= _filtered.length) return;
+
+    final url = _filtered[index].streamUrl;
+    final generation = ++_playerGeneration;
+    final oldPlayer = _ctrl;
 
     if (url.isEmpty) {
-      setState(() { _error=true; _buffering=false; });
+      if (oldPlayer == null) {
+        setState(() {
+          _ready=false;
+          _error=true;
+          _buffering=false;
+        });
+      }
       return;
     }
 
+    if (oldPlayer == null || initial) {
+      setState(() {
+        _ready=false;
+        _error=false;
+        _buffering=true;
+      });
+    } else {
+      // Keep the current channel visible while the replacement prepares.
+      setState(() {
+        _error=false;
+        _buffering=true;
+      });
+    }
+
     try {
-      _ctrl ??= BetterPlayerController(
-        const BetterPlayerConfiguration(
-          autoPlay: false,
-          looping: true,
-          fit: BoxFit.contain,
-          controlsConfiguration:
-              BetterPlayerControlsConfiguration(showControls: false),
-        ),
-      );
-
-      _ctrl!.pause();
-      await _ctrl!.setupDataSource(_source(url));
+      final player = await _ensurePlayer(url);
 
       if (!mounted || generation != _playerGeneration) return;
 
-      _ctrl!.setVolume(_isMuted ? 0 : 1);
-      await _ctrl!.play();
+      player.setVolume(_isMuted ? 0 : 1);
+      await player.play();
 
       if (!mounted || generation != _playerGeneration) return;
 
-      _sAnim.forward(from:0);
+      if (oldPlayer != null && oldPlayer != player) {
+        await oldPlayer.pause();
+      }
+
+      _ctrl = player;
+
       setState(() {
         _ready=true;
+        _error=false;
         _buffering=false;
         _retries=0;
       });
 
-    } catch(_) {
+      _sAnim.forward(from:0);
+
+      Future<void>.microtask(() => _warmAround(index));
+    } catch (_) {
       if (!mounted || generation != _playerGeneration) return;
 
       _deadUrls.add(url);
-      if (_liveOnly && _filtered.isNotEmpty) {
-        final startIndex = _index;
-        int next = (_index+1) % _filtered.length;
-        while (_deadUrls.contains(_filtered[next].streamUrl) &&
-            next != startIndex) {
-          next = (next+1) % _filtered.length;
+
+      if (oldPlayer != null && _ready) {
+        setState(() => _buffering=false);
+
+        if (_liveOnly && _filtered.length > 1) {
+          final startIndex=index;
+          var next=(index+1)%_filtered.length;
+
+          while (_deadUrls.contains(_filtered[next].streamUrl) &&
+              next != startIndex) {
+            next=(next+1)%_filtered.length;
+          }
+
+          if (next != startIndex) {
+            setState(() => _index=next);
+            await _activatePlayer(next);
+          }
         }
-        if (next != startIndex) {
-          setState(() { _index=next; });
-          _initPlayer(_filtered[next].streamUrl);
-          return;
-        }
+        return;
       }
 
-      setState(() { _error=true; _buffering=false; });
+      setState(() {
+        _ready=false;
+        _error=true;
+        _buffering=false;
+      });
     }
   }
 
+  Future<void> _initPlayer(String url) async {
+    final index =
+        _filtered.indexWhere((channel) => channel.streamUrl == url);
+
+    if (index < 0) return;
+
+    setState(() => _index=index);
+    await _activatePlayer(index, initial:_ctrl == null);
+  }
+
   void _switchTo(int i) {
-    if (i==_index || i>=_filtered.length) return;
+    if (i < 0 || i >= _filtered.length || i == _index) return;
 
     setState(() => _index=i);
-    _initPlayer(_filtered[i].streamUrl);
+    _activatePlayer(i);
 
     _showBriefly();
     Future.delayed(const Duration(milliseconds:100), () {
-      if (_listCtrl.hasClients)
-        _listCtrl.animateTo((i*68.0).clamp(0,_listCtrl.position.maxScrollExtent),
-            duration:const Duration(milliseconds:300), curve:Curves.easeOut);
+      if (_listCtrl.hasClients) {
+        _listCtrl.animateTo(
+          (i*68.0).clamp(0,_listCtrl.position.maxScrollExtent),
+          duration:const Duration(milliseconds:300),
+          curve:Curves.easeOut,
+        );
+      }
     });
   }
 
   void _next() { if (_filtered.isEmpty) return; _switchTo((_index+1)%_filtered.length); }
   void _prev() { if (_filtered.isEmpty) return; _switchTo((_index-1+_filtered.length)%_filtered.length); }
   void _retry() {
-    if (_retries>=3){_next();return;}
-    _retries++;
-    if(_cur!=null) {
-      _initPlayer(_cur!.streamUrl);
+    if (_retries >= 3) {
+      _next();
+      return;
     }
+
+    final current = _cur;
+    if (current == null) return;
+
+    _retries++;
+
+    final url = current.streamUrl;
+    final player = _playerPool.remove(url);
+
+    if (player != null) {
+      if (identical(player, _ctrl)) {
+        _ctrl = null;
+      }
+      player.dispose();
+    }
+
+    _ready = false;
+    _buffering = true;
+    _error = false;
+
+    _initPlayer(url);
   }
 
   // ── Retry dead channels in background ───────────────────────────────
@@ -303,7 +479,7 @@ class _XameTvScreenState extends State<XameTvScreen>
         onLongPress: () { setState(() => _showList=true); _showBriefly(); },
         child: Stack(fit:StackFit.expand, children: [
           _videoLayer(),
-          if (_buffering && !_error) _bufferingOverlay(),
+          if (_buffering && !_error && !_ready) _bufferingOverlay(),
           _gradientLayer(),
           FadeTransition(opacity:_oFade, child:Column(children:[
             _topBar(), _catStrip(), const Spacer(), _bottomBar(),
@@ -512,8 +688,14 @@ class _XameTvScreenState extends State<XameTvScreen>
         final count = TvChannelService.filterByCategory(_all,cat).length;
         return GestureDetector(
           onTap:(){
-            setState((){_category=cat;_index=0;}); _applyFilter();
-            if(_filtered.isNotEmpty) _initPlayer(_filtered.first.streamUrl);
+            setState(() => _category=cat);
+            _applyFilter();
+
+            if (_filtered.isNotEmpty) {
+              setState(() => _index=0);
+              _activatePlayer(0);
+            }
+
             _showBriefly();
           },
           child:AnimatedContainer(
