@@ -1234,6 +1234,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       'authorAvatar':  e.authorAvatar,
       'mediaUrl':      e.mediaUrl,
       'mediaType':     e.mediaType == DiscoveryMediaType.video ? 'video' : 'image',
+      'thumbnailUrl':  e.thumbnailUrl ?? '',
       'title':         e.title,
       'category':      e.category,
       'likeCount':     e.likeCount,

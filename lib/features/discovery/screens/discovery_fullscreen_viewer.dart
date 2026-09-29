@@ -807,6 +807,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                       url: widget.post['mediaUrl'] as String? ?? '',
                       isActive: widget.isActive,
                       controller: widget.videoController,
+                      thumbnailUrl: widget.post['thumbnailUrl'] as String? ?? '',
                     )
                   : _ImagePage(url: widget.post['mediaUrl'] as String? ?? ''),
             );
@@ -1112,12 +1113,14 @@ class _VideoPage extends StatefulWidget {
   final String url;
   final bool isActive;
   final BetterPlayerController? controller;
+  final String thumbnailUrl;
 
   const _VideoPage({
     Key? key,
     required this.url,
     required this.isActive,
     this.controller,
+    this.thumbnailUrl = '',
   }) : super(key: key);
 
   @override
@@ -1127,6 +1130,7 @@ class _VideoPage extends StatefulWidget {
 class _VideoPageState extends State<_VideoPage> {
   BetterPlayerController? _ctrl;
   bool _ownsController = false;
+  bool _videoReady = false;
   bool _muted  = true;
   bool _paused = false;
   bool _controlsVisible = true;
@@ -1193,6 +1197,8 @@ class _VideoPageState extends State<_VideoPage> {
         ),
       );
     }
+
+    _videoReady = _ctrl?.videoPlayerController?.value.isInitialized ?? false;
     _ctrl!.addEventsListener(_onEvent);
     _ctrl!.setVolume(0);
     if (widget.isActive) _ctrl!.play();
@@ -1200,6 +1206,13 @@ class _VideoPageState extends State<_VideoPage> {
 
   void _onEvent(BetterPlayerEvent e) {
     if (!mounted) return;
+
+    if (e.betterPlayerEventType == BetterPlayerEventType.initialized) {
+      if (!_videoReady) {
+        setState(() => _videoReady = true);
+      }
+    }
+
     if (e.betterPlayerEventType == BetterPlayerEventType.progress) {
       final pos   = _ctrl?.videoPlayerController?.value.position ?? Duration.zero;
       final total = _ctrl?.videoPlayerController?.value.duration ?? Duration.zero;
@@ -1266,8 +1279,20 @@ class _VideoPageState extends State<_VideoPage> {
       onPointerCancel: _onPointerUpOrCancel,
       behavior: HitTestBehavior.translucent,
       child: Stack(children: [
-        // The actual video — always painted, never intercepts touches itself.
+        // The actual video stays underneath while its first frame becomes ready.
         IgnorePointer(child: BetterPlayer(controller: _ctrl!)),
+
+        // Keep the Discovery thumbnail visible during the video/player handoff
+        // so cached or preloaded videos never expose a dark frame.
+        if (!_videoReady && widget.thumbnailUrl.isNotEmpty)
+          Positioned.fill(
+            child: Image.network(
+              widget.thumbnailUrl,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+            ),
+          ),
+
         // Tap-to-toggle layer — always active but pointer events are
         // passed through to children (slider, buttons) via Stack hit testing.
         // Excludes bottom 80px so slider drag is never intercepted.
