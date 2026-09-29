@@ -193,13 +193,24 @@ class _DiscoveryVideoPool {
     }
 
     Future<void>(() async {
-      for (final url in urls) {
-        if (!_active || generation != _prefetchGeneration) {
-          return;
-        }
+      if (!_active || generation != _prefetchGeneration) return;
 
-        await _prefetch(url);
-      }
+      final forward = urls.take(2).toList();
+      final backward = urls.skip(2).toList();
+
+      await Future.wait(
+        forward.map((url) => _prefetch(url)),
+      );
+
+      if (!_active || generation != _prefetchGeneration) return;
+
+      Future<void>.delayed(const Duration(milliseconds: 1200), () async {
+        if (!_active || generation != _prefetchGeneration) return;
+
+        await Future.wait(
+          backward.map((url) => _prefetch(url)),
+        );
+      });
     });
   }
 
@@ -227,7 +238,7 @@ class _DiscoveryVideoPool {
       controllerFor(current)?.play();
 
       final generation = _prefetchGeneration;
-      Future<void>.delayed(const Duration(milliseconds: 600), () {
+      Future<void>(() {
         if (_active &&
             generation == _prefetchGeneration &&
             index >= 0 &&
