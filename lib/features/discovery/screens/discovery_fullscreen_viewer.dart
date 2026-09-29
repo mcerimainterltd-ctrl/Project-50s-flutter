@@ -1198,7 +1198,6 @@ class _VideoPageState extends State<_VideoPage> {
       );
     }
 
-    _videoReady = _ctrl?.videoPlayerController?.value.isInitialized ?? false;
     _ctrl!.addEventsListener(_onEvent);
     _ctrl!.setVolume(0);
     if (widget.isActive) _ctrl!.play();
