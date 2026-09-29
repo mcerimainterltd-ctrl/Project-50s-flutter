@@ -237,6 +237,26 @@ class _DiscoveryVideoPool {
     if (active && current.isNotEmpty) {
       controllerFor(current)?.play();
 
+      // Warm the next video controller immediately so its player is already
+      // initialized before the user swipes to it.
+      if (posts.length > 1) {
+        for (int offset = 1; offset <= 2; offset++) {
+          final nextIndex = (index + offset) % posts.length;
+          final nextPost = posts[nextIndex];
+
+          if ((nextPost['mediaType'] as String? ?? '') != 'video') {
+            continue;
+          }
+
+          final nextUrl = nextPost['mediaUrl'] as String? ?? '';
+          if (nextUrl.isNotEmpty) {
+            controllerFor(nextUrl);
+          }
+
+          if (offset == 1) break;
+        }
+      }
+
       final generation = _prefetchGeneration;
       Future<void>(() {
         if (_active &&
