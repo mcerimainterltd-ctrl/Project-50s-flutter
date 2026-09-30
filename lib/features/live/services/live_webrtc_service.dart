@@ -49,8 +49,10 @@ class LiveWebRTCService {
 
       for (final track in stream.getTracks()) {
         await pc.addTransceiver(
-          track,
-          RTCRtpTransceiverInit(direction: TransceiverDirection.SendOnly),
+          track: track,
+          init: RTCRtpTransceiverInit(
+            direction: TransceiverDirection.SendOnly,
+          ),
         );
       }
 
@@ -136,13 +138,17 @@ class LiveWebRTCService {
       };
 
       await pc.addTransceiver(
-        'video',
-        RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
+        kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
+        init: RTCRtpTransceiverInit(
+          direction: TransceiverDirection.RecvOnly,
+        ),
       );
 
       await pc.addTransceiver(
-        'audio',
-        RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
+        kind: RTCRtpMediaType.RTCRtpMediaTypeAudio,
+        init: RTCRtpTransceiverInit(
+          direction: TransceiverDirection.RecvOnly,
+        ),
       );
 
       final offer = await pc.createOffer();

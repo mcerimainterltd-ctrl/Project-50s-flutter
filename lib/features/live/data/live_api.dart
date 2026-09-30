@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../core/constants/app_constants.dart';
+import '../../../core/config/constants.dart';
 import '../models/live_session.dart';
 
 class LiveApi {
