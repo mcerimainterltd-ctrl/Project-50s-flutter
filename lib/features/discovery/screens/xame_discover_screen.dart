@@ -1021,6 +1021,10 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             ]),
             const SizedBox(height: 12),
             // Menu items
+            _menuItem(context, '🔴', 'Go Live', () {
+              Navigator.pop(context);
+              context.push('/live/setup');
+            }),
             _menuItem(context, '✍️', 'Create Post', () { Navigator.pop(context); _showPostDialog(context, user?.xameId??''); }),
             _menuItem(context, '📖', _stories.isNotEmpty ? 'Stories' : 'Add a Story', () {
               Navigator.pop(context);
@@ -1209,6 +1213,40 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
               },
             ),
           ),
+
+        // ── Go Live button ─────────────────────────────────────────
+        Positioned(
+          top: 0,
+          right: 94,
+          child: SafeArea(
+            child: GestureDetector(
+              onTap: () => context.push('/live/setup'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.videocam_rounded, color: Colors.white, size: 18),
+                    SizedBox(width: 4),
+                    Text(
+                      'Go Live',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
 
         // ── Floating ⋮ menu button ────────────────────────────────────
         Positioned(
