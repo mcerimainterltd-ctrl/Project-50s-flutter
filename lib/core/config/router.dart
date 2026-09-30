@@ -32,6 +32,11 @@ import '../../features/contacts/providers/contacts_provider.dart';
 import '../../screens/phone_screen.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 import '../../features/calls/screens/conference_screen.dart';
+import '../../features/live/screens/live_setup_screen.dart';
+import '../../features/live/screens/live_broadcast_screen.dart';
+import '../../features/live/data/live_api.dart';
+import '../../features/live/screens/live_viewer_screen.dart';
+import '../../features/live/models/live_session.dart';
 
 class _Placeholder extends StatelessWidget {
   final String name;
@@ -59,6 +64,41 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/live/setup',
+        name: 'live-setup',
+        builder: (c, s) => const LiveSetupScreen(),
+      ),
+      GoRoute(
+        path: '/live/broadcast',
+        name: 'live-broadcast',
+        builder: (c, s) {
+          final result = s.extra as LiveStartResult?;
+          if (result == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text('Live broadcast unavailable.'),
+              ),
+            );
+          }
+          return LiveBroadcastScreen(result: result);
+        },
+      ),
+      GoRoute(
+        path: '/live/view/:sessionId',
+        name: 'live-view',
+        builder: (c, s) {
+          final session = s.extra as LiveSession?;
+          if (session == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text('Live session unavailable.'),
+              ),
+            );
+          }
+          return LiveViewerScreen(session: session);
+        },
+      ),
       GoRoute(path: "/discovery", name: "discovery", builder: (context, state) {
           final authorId = state.uri.queryParameters['authorId'];
           return DiscoveryReelsScreen(authorId: authorId);

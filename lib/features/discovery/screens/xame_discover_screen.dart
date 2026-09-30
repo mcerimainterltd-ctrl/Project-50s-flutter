@@ -31,6 +31,8 @@ import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
 import '../../../features/contacts/providers/contacts_provider.dart';
+import '../../../features/live/providers/live_provider.dart';
+import '../../../features/live/models/live_session.dart';
 import '../../../core/services/cache_service.dart';
 import '../../../core/services/cache_service.dart';
 import '../widgets/discovery_cards.dart';
@@ -682,6 +684,13 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
     _loadCached();
     // Then refresh from network
     _loadData();
+
+    // Load currently active XameLive sessions independently of the
+    // Discovery video feed.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(liveProvider.notifier).loadActiveLives();
+    });
   }
 
   @override
@@ -1096,6 +1105,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
+    final liveState = ref.watch(liveProvider);
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(children: [
@@ -1180,6 +1191,24 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
             ),
           ),
         ),
+
+        // ── XameLive: Live Now rail ───────────────────────────────────
+        if (liveState.activeLives.isNotEmpty)
+          Positioned(
+            top: 78,
+            left: 0,
+            right: 0,
+            height: 142,
+            child: _DiscoveryLiveNowRail(
+              sessions: liveState.activeLives,
+              onTap: (session) {
+                context.push(
+                  '/live/view/${session.sessionId}',
+                  extra: session,
+                );
+              },
+            ),
+          ),
 
         // ── Floating ⋮ menu button ────────────────────────────────────
         Positioned(
@@ -2694,6 +2723,203 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
 }
 
 // ── Live count badge ──────────────────────────────────────────────────────────
+class _DiscoveryLiveNowRail extends StatelessWidget {
+  const _DiscoveryLiveNowRail({
+    required this.sessions,
+    required this.onTap,
+  });
+
+  final List<LiveSession> sessions;
+  final ValueChanged<LiveSession> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.circle,
+                color: Color(0xFFFF3B30),
+                size: 8,
+              ),
+              SizedBox(width: 6),
+              Text(
+                'LIVE NOW',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 112,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: sessions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (_, index) {
+              final session = sessions[index];
+
+              return GestureDetector(
+                onTap: () => onTap(session),
+                child: Container(
+                  width: 178,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF171717),
+                        Color(0xFF292929),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: Colors.white24,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF063C35),
+                                Color(0xFF101820),
+                                Color(0xFF241329),
+                              ],
+                            ),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.live_tv_rounded,
+                              color: Colors.white38,
+                              size: 38,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE53935),
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                          child: const Text(
+                            'LIVE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.visibility_rounded,
+                                color: Colors.white,
+                                size: 11,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${session.viewerCount}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      Positioned(
+                        left: 9,
+                        right: 9,
+                        bottom: 8,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (session.title?.trim().isNotEmpty ?? false)
+                                  ? session.title!.trim()
+                                  : 'Live on XamePage',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              [
+                                session.broadcasterXameId,
+                                if (session.category?.trim().isNotEmpty ?? false)
+                                  session.category!.trim(),
+                              ].join(' • '),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _LiveCountBadge extends StatelessWidget {
   final int count;
   _LiveCountBadge({this.count = 0});
