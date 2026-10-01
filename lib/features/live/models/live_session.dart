@@ -8,6 +8,8 @@ class LiveSession {
   final DateTime? endedAt;
   final int viewerCount;
   final String? playbackUrl;
+  final int allowedMinutes;
+  final DateTime? usageCutoffAt;
 
   const LiveSession({
     required this.sessionId,
@@ -19,6 +21,8 @@ class LiveSession {
     this.endedAt,
     required this.viewerCount,
     this.playbackUrl,
+    required this.allowedMinutes,
+    this.usageCutoffAt,
   });
 
   factory LiveSession.fromJson(Map<String, dynamic> json) {
@@ -33,6 +37,8 @@ class LiveSession {
       endedAt: _parseDate(json['endedAt']),
       viewerCount: _parseInt(json['viewerCount']),
       playbackUrl: json['playbackUrl']?.toString(),
+      allowedMinutes: _parseInt(json['allowedMinutes']),
+      usageCutoffAt: _parseDate(json['usageCutoffAt']),
     );
   }
 
@@ -57,6 +63,8 @@ class LiveSession {
       'endedAt': endedAt?.toIso8601String(),
       'viewerCount': viewerCount,
       'playbackUrl': playbackUrl,
+      'allowedMinutes': allowedMinutes,
+      'usageCutoffAt': usageCutoffAt?.toIso8601String(),
     };
   }
 

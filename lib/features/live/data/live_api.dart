@@ -5,6 +5,18 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/config/constants.dart';
 import '../models/live_session.dart';
+import '../models/live_entitlement.dart';
+
+class LiveApiException extends StateError {
+  final String? code;
+  final int statusCode;
+
+  LiveApiException({
+    required this.code,
+    required this.statusCode,
+    required String message,
+  }) : super(message);
+}
 
 class LiveApi {
   LiveApi({
@@ -32,6 +44,68 @@ class LiveApi {
     return Uri.parse('${AppConstants.serverUrl}$path');
   }
 
+
+  Future<GoLiveEntitlement?> getGoLiveEntitlement() async {
+    final response = await http.get(
+      _uri('/api/live/entitlement'),
+      headers: await _headers(),
+    );
+
+    final data = _decode(response);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError(
+        data['message']?.toString() ??
+            'Unable to load Go Live entitlement (${response.statusCode}).',
+      );
+    }
+
+    if (data['hasAccess'] != true) {
+      return null;
+    }
+
+    final entitlementJson = data['entitlement'];
+
+    if (entitlementJson is! Map) {
+      return null;
+    }
+
+    return GoLiveEntitlement.fromJson(
+      Map<String, dynamic>.from(entitlementJson),
+    );
+  }
+
+  Future<List<GoLivePlan>> getGoLivePlans() async {
+    final response = await http.get(
+      _uri('/api/live/plans'),
+      headers: await _headers(),
+    );
+
+    final data = _decode(response);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError(
+        data['message']?.toString() ??
+            'Unable to load Go Live plans (${response.statusCode}).',
+      );
+    }
+
+    final plans = data['plans'];
+
+    if (plans is! List) {
+      return const [];
+    }
+
+    return plans
+        .whereType<Map>()
+        .map(
+          (item) => GoLivePlan.fromJson(
+            Map<String, dynamic>.from(item),
+          ),
+        )
+        .toList();
+  }
+
   Future<LiveStartResult> startLive({
     required String title,
     required String category,
@@ -48,8 +122,10 @@ class LiveApi {
     final data = _decode(response);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw StateError(
-        data['message']?.toString() ??
+      throw LiveApiException(
+        code: data['code']?.toString(),
+        statusCode: response.statusCode,
+        message: data['message']?.toString() ??
             'Unable to start XameLive (${response.statusCode}).',
       );
     }

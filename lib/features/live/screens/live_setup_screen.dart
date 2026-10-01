@@ -21,6 +21,15 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
   bool _starting = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(liveProvider.notifier).loadGoLiveAccess();
+    });
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _categoryController.dispose();
@@ -93,6 +102,8 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            _goLiveAccessCard(context),
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -165,6 +176,134 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _goLiveAccessCard(BuildContext context) {
+    final liveState = ref.watch(liveProvider);
+    final entitlement = liveState.entitlement;
+
+    if (liveState.entitlementLoading) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.xSurface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Row(
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12),
+            Text('Checking Go Live access...'),
+          ],
+        ),
+      );
+    }
+
+    if (entitlement == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.xSurface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.card_giftcard_rounded,
+              color: context.xPrimary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Go Live Access Not Active',
+                    style: TextStyle(
+                      color: context.xText,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Your Go Live eligibility will be checked when you start.',
+                    style: TextStyle(
+                      color: context.xMuted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final expiry = entitlement.expiresAt;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.xSurface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            entitlement.trial
+                ? Icons.card_giftcard_rounded
+                : Icons.verified_rounded,
+            color: context.xPrimary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entitlement.trial
+                      ? 'Go Live Trial Active'
+                      : 'Go Live Access Active',
+                  style: TextStyle(
+                    color: context.xText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (expiry != null)
+                  Text(
+                    'Expires ${expiry.toLocal()}',
+                    style: TextStyle(
+                      color: context.xMuted,
+                      fontSize: 13,
+                    ),
+                  ),
+                if (!entitlement.trial &&
+                    entitlement.remainingMinutes > 0) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '${entitlement.remainingMinutes} minutes remaining',
+                    style: TextStyle(
+                      color: context.xMuted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

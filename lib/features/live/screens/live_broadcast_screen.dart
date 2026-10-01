@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../data/live_api.dart';
+import '../models/live_session.dart';
 import '../providers/live_provider.dart';
 import '../services/live_webrtc_service.dart';
 
@@ -29,11 +32,62 @@ class _LiveBroadcastScreenState
 
   bool _initializing = true;
   bool _ending = false;
+  bool _backendEnded = false;
+  Timer? _cutoffTimer;
+  Duration _remainingUntilCutoff = Duration.zero;
   String _connectionStatus = 'Connecting…';
 
   @override
   void initState() {
     super.initState();
+
+    ref.listenManual<LiveSession?>(
+      liveProvider.select((state) => state.broadcasterSession),
+      (previous, next) {
+        if (previous != null && next == null && !_ending) {
+          _handleBackendEnded();
+        }
+      },
+    );
+
+    ref.listenManual<List<LiveSession>>(
+      liveProvider.select((state) => state.activeLives),
+      (previous, next) {
+        final sessionId = widget.result.session.sessionId;
+
+        LiveSession? findSession(List<LiveSession> sessions) {
+          for (final session in sessions) {
+            if (session.sessionId == sessionId) {
+              return session;
+            }
+          }
+          return null;
+        }
+
+        final previousSession = findSession(previous);
+        final nextSession = findSession(next);
+
+        if (nextSession != null &&
+            nextSession.usageCutoffAt !=
+                previousSession?.usageCutoffAt) {
+          _syncCutoffCountdown(nextSession);
+        }
+      },
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final sessionId = widget.result.session.sessionId;
+
+      for (final session in ref.read(liveProvider).activeLives) {
+        if (session.sessionId == sessionId) {
+          _syncCutoffCountdown(session);
+          break;
+        }
+      }
+    });
+
     _initializeBroadcast();
   }
 
@@ -66,6 +120,7 @@ class _LiveBroadcastScreenState
         _initializing = false;
         _connectionStatus = 'Live';
       });
+
     } catch (e) {
       if (!mounted) return;
 
@@ -81,6 +136,111 @@ class _LiveBroadcastScreenState
           ),
         ),
       );
+    }
+  }
+
+  void _syncCutoffCountdown(LiveSession session) {
+    final cutoff = session.usageCutoffAt;
+
+    if (cutoff == null) {
+      _cutoffTimer?.cancel();
+      _cutoffTimer = null;
+
+      if (mounted && _remainingUntilCutoff != Duration.zero) {
+        setState(() {
+          _remainingUntilCutoff = Duration.zero;
+        });
+      }
+      return;
+    }
+
+    _cutoffTimer?.cancel();
+
+    void update() {
+      if (!mounted || _backendEnded) return;
+
+      final remaining = cutoff.difference(DateTime.now());
+      final normalized =
+          remaining.isNegative ? Duration.zero : remaining;
+
+      if (_remainingUntilCutoff != normalized) {
+        setState(() {
+          _remainingUntilCutoff = normalized;
+        });
+      }
+
+      if (normalized == Duration.zero) {
+        _cutoffTimer?.cancel();
+        _cutoffTimer = null;
+      }
+    }
+
+    update();
+
+    if (_remainingUntilCutoff > Duration.zero) {
+      _cutoffTimer = Timer.periodic(
+        const Duration(seconds: 1),
+        (_) => update(),
+      );
+    }
+  }
+
+  String _formatRemaining(Duration value) {
+    final totalSeconds = value.inSeconds.clamp(0, 863999).toInt();
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:'
+          '${minutes.toString().padLeft(2, '0')}:'
+          '${seconds.toString().padLeft(2, '0')}';
+    }
+
+    return '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _handleBackendEnded() async {
+    if (_backendEnded || _ending || !mounted) return;
+
+    _backendEnded = true;
+    _cutoffTimer?.cancel();
+    _cutoffTimer = null;
+
+    await _webrtc.dispose();
+
+    if (!mounted) return;
+
+    setState(() {
+      _connectionStatus = 'Ended';
+      _remainingUntilCutoff = Duration.zero;
+    });
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: context.xSurface,
+        title: Text(
+          'XameLive ended',
+          style: TextStyle(color: context.xText),
+        ),
+        content: Text(
+          'Your XameLive broadcast has ended.',
+          style: TextStyle(color: context.xMuted),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (mounted) {
+      context.pop();
     }
   }
 
@@ -111,6 +271,8 @@ class _LiveBroadcastScreenState
 
   @override
   void dispose() {
+    _cutoffTimer?.cancel();
+    _cutoffTimer = null;
     _webrtc.dispose();
     _localRenderer.dispose();
     super.dispose();
@@ -186,6 +348,14 @@ class _LiveBroadcastScreenState
                       ),
                       const SizedBox(width: 10),
                       _ViewerBadge(count: viewerCount),
+                      if (_remainingUntilCutoff > Duration.zero) ...[
+                        const SizedBox(width: 10),
+                        _LiveTimeBadge(
+                          remaining: _formatRemaining(
+                            _remainingUntilCutoff,
+                          ),
+                        ),
+                      ],
                       const Spacer(),
                       IconButton(
                         onPressed:
@@ -305,6 +475,52 @@ class _LiveBroadcastScreenState
     if (shouldEnd == true && mounted) {
       await _endLive();
     }
+  }
+}
+
+class _LiveTimeBadge extends StatelessWidget {
+  const _LiveTimeBadge({
+    required this.remaining,
+  });
+
+  final String remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.white24,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 6,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.timer_outlined,
+              color: Colors.white,
+              size: 16,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              remaining,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

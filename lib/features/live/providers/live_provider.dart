@@ -6,6 +6,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../../../core/services/socket_service.dart';
 import '../data/live_api.dart';
 import '../models/live_session.dart';
+import '../models/live_entitlement.dart';
 
 final liveProvider =
     StateNotifierProvider<LiveNotifier, LiveState>((ref) {
@@ -23,6 +24,9 @@ class LiveState {
   final LiveSession? broadcasterSession;
   final LiveSession? viewerSession;
   final bool loading;
+  final bool entitlementLoading;
+  final GoLiveEntitlement? entitlement;
+  final List<GoLivePlan> plans;
   final String? error;
 
   const LiveState({
@@ -30,6 +34,9 @@ class LiveState {
     this.broadcasterSession,
     this.viewerSession,
     this.loading = false,
+    this.entitlementLoading = false,
+    this.entitlement,
+    this.plans = const [],
     this.error,
   });
 
@@ -40,6 +47,10 @@ class LiveState {
     LiveSession? viewerSession,
     bool clearViewerSession = false,
     bool? loading,
+    bool? entitlementLoading,
+    GoLiveEntitlement? entitlement,
+    bool clearEntitlement = false,
+    List<GoLivePlan>? plans,
     String? error,
     bool clearError = false,
   }) {
@@ -52,6 +63,12 @@ class LiveState {
           ? null
           : viewerSession ?? this.viewerSession,
       loading: loading ?? this.loading,
+      entitlementLoading:
+          entitlementLoading ?? this.entitlementLoading,
+      entitlement: clearEntitlement
+          ? null
+          : entitlement ?? this.entitlement,
+      plans: plans ?? this.plans,
       error: clearError ? null : error ?? this.error,
     );
   }
@@ -102,15 +119,21 @@ class LiveNotifier extends StateNotifier<LiveState> {
       final sessionId = map['sessionId']?.toString();
       if (sessionId == null || sessionId.isEmpty) return;
 
+      final endedBroadcaster =
+          state.broadcasterSession?.sessionId == sessionId;
+
       state = state.copyWith(
         activeLives: state.activeLives
             .where((session) => session.sessionId != sessionId)
             .toList(),
-        clearBroadcasterSession:
-            state.broadcasterSession?.sessionId == sessionId,
+        clearBroadcasterSession: endedBroadcaster,
         clearViewerSession:
             state.viewerSession?.sessionId == sessionId,
       );
+
+      if (endedBroadcaster) {
+        loadGoLiveEntitlement();
+      }
     });
 
     socket.on('live:viewer-count', (data) {
@@ -124,6 +147,71 @@ class LiveNotifier extends StateNotifier<LiveState> {
 
       _updateViewerCount(sessionId, viewerCount);
     });
+  }
+
+  Future<void> loadGoLiveEntitlement() async {
+    state = state.copyWith(
+      entitlementLoading: true,
+      clearError: true,
+    );
+
+    try {
+      final entitlement = await _api.getGoLiveEntitlement();
+
+      state = state.copyWith(
+        clearEntitlement: entitlement == null,
+        entitlement: entitlement,
+        entitlementLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        entitlementLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  Future<void> loadGoLivePlans() async {
+    try {
+      final plans = await _api.getGoLivePlans();
+
+      state = state.copyWith(
+        plans: plans,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString(),
+      );
+    }
+  }
+
+  Future<void> loadGoLiveAccess() async {
+    state = state.copyWith(
+      entitlementLoading: true,
+      clearError: true,
+    );
+
+    try {
+      final results = await Future.wait([
+        _api.getGoLiveEntitlement(),
+        _api.getGoLivePlans(),
+      ]);
+
+      final entitlement = results[0] as GoLiveEntitlement?;
+      final plans = results[1] as List<GoLivePlan>;
+
+      state = state.copyWith(
+        clearEntitlement: entitlement == null,
+        entitlement: entitlement,
+        plans: plans,
+        entitlementLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        entitlementLoading: false,
+        error: e.toString(),
+      );
+    }
   }
 
   Future<void> loadActiveLives() async {
@@ -320,6 +408,8 @@ class LiveNotifier extends StateNotifier<LiveState> {
         endedAt: session.endedAt,
         viewerCount: viewerCount,
         playbackUrl: session.playbackUrl,
+        allowedMinutes: session.allowedMinutes,
+        usageCutoffAt: session.usageCutoffAt,
       );
     }).toList();
 
@@ -338,6 +428,8 @@ class LiveNotifier extends StateNotifier<LiveState> {
         endedAt: session.endedAt,
         viewerCount: viewerCount,
         playbackUrl: session.playbackUrl,
+        allowedMinutes: session.allowedMinutes,
+        usageCutoffAt: session.usageCutoffAt,
       );
     }
 
