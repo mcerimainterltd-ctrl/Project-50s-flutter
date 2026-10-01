@@ -55,7 +55,9 @@ class _LiveBroadcastScreenState
       (previous, next) {
         final sessionId = widget.result.session.sessionId;
 
-        LiveSession? findSession(List<LiveSession> sessions) {
+        LiveSession? findSession(List<LiveSession>? sessions) {
+          if (sessions == null) return null;
+
           for (final session in sessions) {
             if (session.sessionId == sessionId) {
               return session;
