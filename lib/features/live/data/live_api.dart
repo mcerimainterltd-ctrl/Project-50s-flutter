@@ -75,6 +75,38 @@ class LiveApi {
     );
   }
 
+  Future<GoLiveEntitlement> claimGoLiveTrial() async {
+    final response = await http.post(
+      _uri('/api/live/trial/claim'),
+      headers: await _headers(),
+    );
+
+    final data = _decode(response);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LiveApiException(
+        code: data['code']?.toString(),
+        statusCode: response.statusCode,
+        message: data['message']?.toString() ??
+            'Unable to claim the Go Live trial.',
+      );
+    }
+
+    final entitlementJson = data['entitlement'];
+
+    if (entitlementJson is! Map) {
+      throw LiveApiException(
+        code: null,
+        statusCode: response.statusCode,
+        message: 'Go Live trial entitlement was not returned.',
+      );
+    }
+
+    return GoLiveEntitlement.fromJson(
+      Map<String, dynamic>.from(entitlementJson),
+    );
+  }
+
   Future<List<GoLivePlan>> getGoLivePlans() async {
     final response = await http.get(
       _uri('/api/live/plans'),

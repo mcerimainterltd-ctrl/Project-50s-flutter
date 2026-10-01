@@ -185,6 +185,24 @@ class LiveNotifier extends StateNotifier<LiveState> {
     }
   }
 
+  Future<GoLiveEntitlement?> claimGoLiveTrial() async {
+    try {
+      final entitlement = await _api.claimGoLiveTrial();
+
+      state = state.copyWith(
+        entitlement: entitlement,
+        clearError: true,
+      );
+
+      return entitlement;
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString(),
+      );
+      return null;
+    }
+  }
+
   Future<void> loadGoLiveAccess() async {
     state = state.copyWith(
       entitlementLoading: true,

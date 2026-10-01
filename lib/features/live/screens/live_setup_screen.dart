@@ -19,6 +19,7 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
   final _categoryController = TextEditingController();
 
   bool _starting = false;
+  bool _claimingTrial = false;
 
   @override
   void initState() {
@@ -34,6 +35,30 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
     _titleController.dispose();
     _categoryController.dispose();
     super.dispose();
+  }
+
+  Future<void> _claimGoLiveTrial() async {
+    if (_claimingTrial || _starting) return;
+
+    setState(() => _claimingTrial = true);
+
+    final entitlement =
+        await ref.read(liveProvider.notifier).claimGoLiveTrial();
+
+    if (!mounted) return;
+
+    setState(() => _claimingTrial = false);
+
+    if (entitlement == null) {
+      final error = ref.read(liveProvider).error;
+      _showMessage(
+        error?.replaceFirst('StateError: ', '') ??
+            'Unable to start the Go Live trial.',
+      );
+      return;
+    }
+
+    _showMessage('Go Live trial activated.');
   }
 
   Future<void> _startLive() async {
@@ -206,43 +231,145 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
     }
 
     if (entitlement == null) {
+      final trialPlans = liveState.plans
+          .where((plan) => plan.trial)
+          .take(1)
+          .toList();
+      final paidPlans =
+          liveState.plans.where((plan) => !plan.trial).toList();
+
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: context.xSurface,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.card_giftcard_rounded,
-              color: context.xPrimary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Go Live Access Not Active',
-                    style: TextStyle(
-                      color: context.xText,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.card_giftcard_rounded,
+                  color: context.xPrimary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Go Live Access',
+                        style: TextStyle(
+                          color: context.xText,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Choose a Go Live plan to activate access.',
+                        style: TextStyle(
+                          color: context.xMuted,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Your Go Live eligibility will be checked when you start.',
+                ),
+              ],
+            ),
+            if (trialPlans.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ...trialPlans.map(
+                (plan) => Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: context.xBg,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        plan.name.isEmpty
+                            ? 'Free Trial'
+                            : plan.name,
+                        style: TextStyle(
+                          color: context.xText,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${plan.durationDays} days • '
+                        '${plan.includedMinutes} minutes',
+                        style: TextStyle(
+                          color: context.xMuted,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _claimingTrial
+                              ? null
+                              : _claimGoLiveTrial,
+                          child: _claimingTrial
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Start Free Trial'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            if (paidPlans.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Go Live Plans',
+                style: TextStyle(
+                  color: context.xText,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...paidPlans.map(
+                (plan) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    '${plan.name} • ${plan.durationDays} days • '
+                    '${plan.includedMinutes} minutes',
                     style: TextStyle(
                       color: context.xMuted,
                       fontSize: 13,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
+            if (trialPlans.isEmpty && paidPlans.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Text(
+                  'No Go Live plans are currently available.',
+                  style: TextStyle(
+                    color: context.xMuted,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
           ],
         ),
       );
@@ -289,8 +416,7 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
                       fontSize: 13,
                     ),
                   ),
-                if (!entitlement.trial &&
-                    entitlement.remainingMinutes > 0) ...[
+                if (entitlement.remainingMinutes > 0) ...[
                   const SizedBox(height: 2),
                   Text(
                     '${entitlement.remainingMinutes} minutes remaining',
