@@ -4,6 +4,9 @@ class GoLivePlan {
   final int durationDays;
   final int includedMinutes;
   final bool trial;
+  final String description;
+  final String googlePlayProductId;
+  final int displayOrder;
 
   const GoLivePlan({
     required this.planId,
@@ -11,6 +14,9 @@ class GoLivePlan {
     required this.durationDays,
     required this.includedMinutes,
     required this.trial,
+    required this.description,
+    required this.googlePlayProductId,
+    required this.displayOrder,
   });
 
   factory GoLivePlan.fromJson(Map<String, dynamic> json) {
@@ -20,6 +26,9 @@ class GoLivePlan {
       durationDays: _asInt(json['durationDays']),
       includedMinutes: _asInt(json['includedMinutes']),
       trial: json['trial'] == true,
+      description: json['description']?.toString() ?? '',
+      googlePlayProductId: json['googlePlayProductId']?.toString() ?? '',
+      displayOrder: _asInt(json['displayOrder']),
     );
   }
 

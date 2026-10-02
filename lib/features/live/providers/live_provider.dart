@@ -7,6 +7,7 @@ import '../../../core/services/socket_service.dart';
 import '../data/live_api.dart';
 import '../models/live_session.dart';
 import '../models/live_entitlement.dart';
+import '../services/go_live_billing_service.dart';
 
 final liveProvider =
     StateNotifierProvider<LiveNotifier, LiveState>((ref) {
@@ -27,6 +28,10 @@ class LiveState {
   final bool entitlementLoading;
   final GoLiveEntitlement? entitlement;
   final List<GoLivePlan> plans;
+  final bool billingLoading;
+  final bool billingAvailable;
+  final bool billingProcessing;
+  final String? billingError;
   final String? error;
 
   const LiveState({
@@ -37,6 +42,10 @@ class LiveState {
     this.entitlementLoading = false,
     this.entitlement,
     this.plans = const [],
+    this.billingLoading = false,
+    this.billingAvailable = false,
+    this.billingProcessing = false,
+    this.billingError,
     this.error,
   });
 
@@ -51,6 +60,11 @@ class LiveState {
     GoLiveEntitlement? entitlement,
     bool clearEntitlement = false,
     List<GoLivePlan>? plans,
+    bool? billingLoading,
+    bool? billingAvailable,
+    bool? billingProcessing,
+    String? billingError,
+    bool clearBillingError = false,
     String? error,
     bool clearError = false,
   }) {
@@ -69,6 +83,12 @@ class LiveState {
           ? null
           : entitlement ?? this.entitlement,
       plans: plans ?? this.plans,
+      billingLoading: billingLoading ?? this.billingLoading,
+      billingAvailable: billingAvailable ?? this.billingAvailable,
+      billingProcessing: billingProcessing ?? this.billingProcessing,
+      billingError: clearBillingError
+          ? null
+          : billingError ?? this.billingError,
       error: clearError ? null : error ?? this.error,
     );
   }
@@ -79,6 +99,9 @@ class LiveNotifier extends StateNotifier<LiveState> {
     this._socketService,
     this._api,
   ) : super(const LiveState()) {
+    _billing = GoLiveBillingService(api: _api);
+    _billingEventSubscription =
+        _billing.events.listen(_handleBillingEvent);
     _listenSocket();
     _socketStateSubscription = _socketService.connectionState.listen((socketState) {
       if (socketState == SocketState.connected) {
@@ -89,6 +112,8 @@ class LiveNotifier extends StateNotifier<LiveState> {
 
   final SocketService _socketService;
   final LiveApi _api;
+  late final GoLiveBillingService _billing;
+  StreamSubscription<GoLiveBillingEvent>? _billingEventSubscription;
 
   StreamSubscription<SocketState>? _socketStateSubscription;
   io.Socket? _listeningSocket;
@@ -147,6 +172,79 @@ class LiveNotifier extends StateNotifier<LiveState> {
 
       _updateViewerCount(sessionId, viewerCount);
     });
+  }
+
+  String? goLivePriceFor(String productId) {
+    return _billing.productFor(productId)?.price;
+  }
+
+  Future<void> initializeGoLiveBilling() async {
+    if (state.billingLoading || state.billingAvailable) {
+      return;
+    }
+
+    state = state.copyWith(
+      billingLoading: true,
+      clearBillingError: true,
+    );
+
+    try {
+      await _billing.initialize();
+
+      state = state.copyWith(
+        billingLoading: false,
+        billingAvailable: _billing.isAvailable,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        billingLoading: false,
+        billingAvailable: false,
+        billingError: e.toString(),
+      );
+    }
+  }
+
+  Future<void> purchaseGoLivePlan(String productId) async {
+    state = state.copyWith(
+      clearBillingError: true,
+      clearError: true,
+    );
+
+    try {
+      await _billing.purchasePlan(productId);
+    } catch (e) {
+      state = state.copyWith(
+        billingError: e.toString(),
+      );
+    }
+  }
+
+  void _handleBillingEvent(GoLiveBillingEvent event) {
+    switch (event.type) {
+      case GoLiveBillingEventType.pending:
+        state = state.copyWith(
+          billingProcessing: true,
+          clearBillingError: true,
+        );
+        break;
+
+      case GoLiveBillingEventType.verified:
+        state = state.copyWith(
+          billingProcessing: false,
+          billingAvailable: true,
+          clearBillingError: true,
+          entitlement: event.entitlement,
+        );
+        loadGoLiveEntitlement();
+        break;
+
+      case GoLiveBillingEventType.error:
+        state = state.copyWith(
+          billingProcessing: false,
+          billingError: event.message ?? 'Go Live purchase failed.',
+        );
+        break;
+    }
   }
 
   Future<void> loadGoLiveEntitlement() async {
@@ -489,6 +587,10 @@ class LiveNotifier extends StateNotifier<LiveState> {
     }
 
     _listeningSocket = null;
+
+  _billingEventSubscription?.cancel();
+  _billingEventSubscription = null;
+  _billing.dispose();
 
     super.dispose();
   }

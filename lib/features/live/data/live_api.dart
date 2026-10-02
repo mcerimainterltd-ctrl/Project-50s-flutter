@@ -107,6 +107,43 @@ class LiveApi {
     );
   }
 
+  Future<GoLiveEntitlement> verifyGoLivePurchase({
+    required String purchaseToken,
+  }) async {
+    final response = await http.post(
+      _uri('/api/live/purchase/verify'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'purchaseToken': purchaseToken,
+      }),
+    );
+
+    final data = _decode(response);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LiveApiException(
+        code: data['code']?.toString(),
+        statusCode: response.statusCode,
+        message: data['message']?.toString() ??
+            'Unable to verify the Go Live purchase (${response.statusCode}).',
+      );
+    }
+
+    final entitlementJson = data['entitlement'];
+
+    if (entitlementJson is! Map) {
+      throw LiveApiException(
+        code: data['code']?.toString(),
+        statusCode: response.statusCode,
+        message: 'Go Live purchase verification returned no entitlement.',
+      );
+    }
+
+    return GoLiveEntitlement.fromJson(
+      Map<String, dynamic>.from(entitlementJson),
+    );
+  }
+
   Future<List<GoLivePlan>> getGoLivePlans() async {
     final response = await http.get(
       _uri('/api/live/plans'),

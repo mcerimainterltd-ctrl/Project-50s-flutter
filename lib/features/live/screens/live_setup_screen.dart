@@ -26,7 +26,9 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(liveProvider.notifier).loadGoLiveAccess();
+      final notifier = ref.read(liveProvider.notifier);
+      notifier.loadGoLiveAccess();
+      notifier.initializeGoLiveBilling();
     });
   }
 
@@ -59,6 +61,25 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
     }
 
     _showMessage('Go Live trial activated.');
+  }
+
+  Future<void> _purchaseGoLivePlan(String productId) async {
+    final notifier = ref.read(liveProvider.notifier);
+
+    if (ref.read(liveProvider).billingProcessing) {
+      return;
+    }
+
+    await notifier.purchaseGoLivePlan(productId);
+
+    if (!mounted) return;
+
+    final billingError = ref.read(liveProvider).billingError;
+    if (billingError != null && billingError.isNotEmpty) {
+      _showMessage(
+        billingError.replaceFirst('StateError: ', ''),
+      );
+    }
   }
 
   Future<void> _startLive() async {
@@ -345,18 +366,92 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              ...paidPlans.map(
-                (plan) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
+              if (liveState.billingError != null &&
+                  liveState.billingError!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    '${plan.name} • ${plan.durationDays} days • '
-                    '${plan.includedMinutes} minutes',
+                    liveState.billingError!.replaceFirst(
+                      'StateError: ',
+                      '',
+                    ),
                     style: TextStyle(
                       color: context.xMuted,
-                      fontSize: 13,
+                      fontSize: 12,
                     ),
                   ),
                 ),
+              ...paidPlans.map(
+                (plan) {
+                  final price = plan.googlePlayProductId.isEmpty
+                      ? null
+                      : ref
+                          .read(liveProvider.notifier)
+                          .goLivePriceFor(plan.googlePlayProductId);
+
+                  final billingReady =
+                      liveState.billingAvailable &&
+                      price != null &&
+                      plan.googlePlayProductId.isNotEmpty;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: context.xSurface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  plan.name,
+                                  style: TextStyle(
+                                    color: context.xText,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  '${plan.durationDays} days • '
+                                  '${plan.includedMinutes} minutes'
+                                  '${price != null ? ' • $price' : ''}',
+                                  style: TextStyle(
+                                    color: context.xMuted,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          FilledButton(
+                            onPressed: billingReady &&
+                                    !liveState.billingProcessing
+                                ? () => _purchaseGoLivePlan(
+                                      plan.googlePlayProductId,
+                                    )
+                                : null,
+                            child: liveState.billingProcessing
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(price ?? 'Buy'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
             if (trialPlans.isEmpty && paidPlans.isEmpty)
