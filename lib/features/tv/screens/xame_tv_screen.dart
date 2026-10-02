@@ -148,25 +148,10 @@ class _XameTvScreenState extends State<XameTvScreen>
   }
 
   // ── Player/cache ──────────────────────────────────────────────────────
-  BetterPlayerCacheConfiguration get _cacheConfig =>
-      const BetterPlayerCacheConfiguration(
-        useCache: true,
-        maxCacheSize: 256 * 1024 * 1024,
-        maxCacheFileSize: 64 * 1024 * 1024,
-        preCacheSize: 6 * 1024 * 1024,
-      );
-
   BetterPlayerDataSource _source(String url) {
     return BetterPlayerDataSource(
       BetterPlayerDataSourceType.network,
       url,
-      cacheConfiguration: BetterPlayerCacheConfiguration(
-        useCache: true,
-        maxCacheSize: 256 * 1024 * 1024,
-        maxCacheFileSize: 64 * 1024 * 1024,
-        preCacheSize: _cacheConfig.preCacheSize,
-        key: url,
-      ),
       bufferingConfiguration: const BetterPlayerBufferingConfiguration(
         minBufferMs: 1500,
         maxBufferMs: 10000,
