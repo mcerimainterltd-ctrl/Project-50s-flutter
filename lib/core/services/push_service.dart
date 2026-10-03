@@ -309,7 +309,7 @@ class PushService {
       );
       try {
         await _diagBridge.invokeMethod('writeTokenDiagnostic', {
-          'status': 'save_http_\${res.statusCode}',
+          'status': 'save_http_${res.statusCode}',
           'detail': res.body.length > 100 ? res.body.substring(0, 100) : res.body,
         });
       } catch (_) {}
