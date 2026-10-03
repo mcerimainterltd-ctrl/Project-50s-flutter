@@ -178,15 +178,23 @@ class GoLiveBillingService {
       productDetails: product,
     );
 
-    final launched = await _store.buyConsumable(
-      purchaseParam: purchaseParam,
-      autoConsume: false,
-    );
+    _processingPurchase = true;
 
-    if (!launched) {
-      throw const GoLiveBillingException(
-        'Google Play could not start the purchase.',
+    try {
+      final launched = await _store.buyConsumable(
+        purchaseParam: purchaseParam,
+        autoConsume: false,
       );
+
+      if (!launched) {
+        _processingPurchase = false;
+        throw const GoLiveBillingException(
+          'Google Play could not start the purchase.',
+        );
+      }
+    } catch (_) {
+      _processingPurchase = false;
+      rethrow;
     }
   }
 
@@ -216,6 +224,8 @@ class GoLiveBillingService {
     if (purchase.status == PurchaseStatus.error) {
       final error = purchase.error;
 
+      _processingPurchase = false;
+
       _emit(
         GoLiveBillingEvent(
           type: GoLiveBillingEventType.error,
@@ -229,6 +239,7 @@ class GoLiveBillingService {
 
     if (purchase.status != PurchaseStatus.purchased &&
         purchase.status != PurchaseStatus.restored) {
+      _processingPurchase = false;
       return;
     }
 
@@ -236,6 +247,8 @@ class GoLiveBillingService {
         purchase.verificationData.serverVerificationData.trim();
 
     if (purchaseToken.isEmpty) {
+      _processingPurchase = false;
+
       _emit(
         GoLiveBillingEvent(
           type: GoLiveBillingEventType.error,
