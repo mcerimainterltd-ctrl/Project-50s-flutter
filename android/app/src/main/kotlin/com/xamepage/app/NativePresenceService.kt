@@ -64,6 +64,80 @@ class NativePresenceService : Service() {
 
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
 
+    private var lastNetRefresh = 0L
+    private var netCallback: android.net.ConnectivityManager.NetworkCallback? = null
+
+    private fun heartbeatAlarmIntent(): android.app.PendingIntent {
+        val i = Intent(this, NativePresenceService::class.java).setAction(ACTION_START)
+        val flags = android.app.PendingIntent.FLAG_UPDATE_CURRENT or
+            android.app.PendingIntent.FLAG_IMMUTABLE
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.PendingIntent.getForegroundService(this, 7101, i, flags)
+        } else {
+            android.app.PendingIntent.getService(this, 7101, i, flags)
+        }
+    }
+
+    private fun scheduleHeartbeatAlarm() {
+        try {
+            val am = getSystemService(android.content.Context.ALARM_SERVICE)
+                as android.app.AlarmManager
+            val at = android.os.SystemClock.elapsedRealtime() + REFRESH_MS
+            val pi = heartbeatAlarmIntent()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    am.setExactAndAllowWhileIdle(
+                        android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi)
+                } catch (e: SecurityException) {
+                    am.setAndAllowWhileIdle(
+                        android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi)
+                }
+            } else {
+                am.set(android.app.AlarmManager.ELAPSED_REALTIME_WAKEUP, at, pi)
+            }
+        } catch (e: Exception) {
+        }
+    }
+
+    private fun cancelHeartbeatAlarm() {
+        try {
+            val am = getSystemService(android.content.Context.ALARM_SERVICE)
+                as android.app.AlarmManager
+            am.cancel(heartbeatAlarmIntent())
+        } catch (e: Exception) {
+        }
+    }
+
+    private fun registerNetCallback() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || netCallback != null) return
+        try {
+            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                as android.net.ConnectivityManager
+            val cb = object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {
+                    val now = System.currentTimeMillis()
+                    if (now - lastNetRefresh < 10000L) return
+                    lastNetRefresh = now
+                    handler.post { refreshPresence() }
+                }
+            }
+            cm.registerDefaultNetworkCallback(cb)
+            netCallback = cb
+        } catch (e: Exception) {
+        }
+    }
+
+    private fun unregisterNetCallback() {
+        val cb = netCallback ?: return
+        try {
+            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                as android.net.ConnectivityManager
+            cm.unregisterNetworkCallback(cb)
+        } catch (e: Exception) {
+        }
+        netCallback = null
+    }
+
     private val refreshRunnable = object : Runnable {
         override fun run() {
             refreshPresence()
@@ -100,6 +174,8 @@ class NativePresenceService : Service() {
         startId: Int
     ): Int {
         if (intent?.action == ACTION_STOP) {
+            cancelHeartbeatAlarm()
+            unregisterNetCallback()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -107,6 +183,8 @@ class NativePresenceService : Service() {
         handler.removeCallbacks(refreshRunnable)
         refreshPresence()
         handler.postDelayed(refreshRunnable, REFRESH_MS)
+        scheduleHeartbeatAlarm()
+        registerNetCallback()
 
         return START_STICKY
     }
@@ -252,6 +330,9 @@ class NativePresenceService : Service() {
             .putLong(DIAG_DESTROYED, System.currentTimeMillis())
             .apply()
 
+        val tk = getSharedPreferences(PREFS, MODE_PRIVATE).getString(TOKEN_KEY, null)
+        if (tk.isNullOrBlank()) cancelHeartbeatAlarm()
+        unregisterNetCallback()
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
