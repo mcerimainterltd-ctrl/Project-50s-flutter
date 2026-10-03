@@ -170,6 +170,15 @@
             android:foregroundServiceType="phoneCall|microphone"
             android:stopWithTask="false"/>
 
+        <receiver
+            android:name=".PresenceBootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+
         <!-- Authenticated native presence service -->
         <service
             android:name=".NativePresenceService"
