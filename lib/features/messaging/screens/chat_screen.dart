@@ -118,6 +118,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           }
         }
 
+        // Shared images/videos can arrive with a generic MIME type; resolve it.
+        if (mime.isEmpty ||
+            mime == 'application/octet-stream' ||
+            mime.endsWith('/*')) {
+          final lp = filePath.toLowerCase();
+          String kind = '';
+          try {
+            kind = shared.type.toString().toLowerCase();
+          } catch (_) {}
+          if (lp.endsWith('.png')) {
+            mime = 'image/png';
+          } else if (lp.endsWith('.gif')) {
+            mime = 'image/gif';
+          } else if (lp.endsWith('.webp')) {
+            mime = 'image/webp';
+          } else if (lp.endsWith('.jpg') || lp.endsWith('.jpeg')) {
+            mime = 'image/jpeg';
+          } else if (lp.endsWith('.mp4')) {
+            mime = 'video/mp4';
+          } else if (lp.endsWith('.mov')) {
+            mime = 'video/quicktime';
+          } else if (kind.contains('image')) {
+            mime = 'image/jpeg';
+          } else if (kind.contains('video')) {
+            mime = 'video/mp4';
+          }
+        }
+
         await ref.read(chatProvider(widget.userId).notifier)
             .sendFile(file, mime);
       } catch (e, st) {
