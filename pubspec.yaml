@@ -1,7 +1,7 @@
 name: xamepage
 description: "A new Flutter project."
 publish_to: 'none'
-version: 2.1.1+1875
+version: 2.1.1+1876
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -42,7 +42,7 @@ dependencies:
   uuid: ^4.5.1
   intl: ^0.19.0
   share_plus: ^10.0.2
-  receive_sharing_intent: ^1.8.0
+  receive_sharing_intent: ">=1.8.0 <1.9.0"
 
   # Geolocation & Mapping
   geolocator: ^13.0.1
