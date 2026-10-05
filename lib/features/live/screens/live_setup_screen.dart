@@ -545,6 +545,37 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
         ],
       ),
         ),
+        const SizedBox(height: 16),
+        _field(
+          context,
+          controller: _titleController,
+          label: 'Live title',
+          hint: 'What are you going live about?',
+          icon: Icons.title_rounded,
+        ),
+        const SizedBox(height: 12),
+        _field(
+          context,
+          controller: _categoryController,
+          label: 'Category',
+          hint: 'e.g. Music, News, Gaming',
+          icon: Icons.category_rounded,
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _starting ? null : _startLive,
+            icon: _starting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.videocam_rounded),
+            label: Text(_starting ? 'Starting...' : 'Go Live'),
+          ),
+        ),
         _goLivePaidPlans(context),
       ],
     );
