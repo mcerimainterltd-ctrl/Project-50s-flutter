@@ -1,6 +1,13 @@
 -keep class org.webrtc.** { *; }
 -dontwarn org.webrtc.**
 
+# Keep Twilio Programmable Voice
+-keep class com.twilio.** { *; }
+-keep class com.twilio.voice.** { *; }
+-keep class tvo.webrtc.** { *; }
+-dontwarn tvo.webrtc.**
+-keepattributes InnerClasses
+
 # Keep XamePage native classes
 -keep class com.xamepage.app.** { *; }
 

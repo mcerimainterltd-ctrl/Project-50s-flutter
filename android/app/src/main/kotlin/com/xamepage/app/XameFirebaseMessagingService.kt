@@ -11,7 +11,17 @@ class XameFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        val data       = message.data
+        val data = message.data
+
+        // Twilio Voice uses the existing FCM channel for incoming
+        // XameTel calls. Process Twilio messages first and leave
+        // ordinary XamePage notifications unchanged.
+        if (data.containsKey("twi_message_type")) {
+            if (XameTelVoiceManager.handleIncomingMessage(this, data)) {
+                return
+            }
+        }
+
         val type       = data["type"]       ?: return
         val callerName = data["callerName"] ?: "Unknown"
         val callType   = data["callType"]   ?: "voice"
