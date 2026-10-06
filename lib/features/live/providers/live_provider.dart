@@ -427,9 +427,31 @@ class LiveNotifier extends StateNotifier<LiveState> {
     try {
       final session = await _api.joinLive(sessionId);
 
-      _socketService.emit('live:join', {
-        'sessionId': sessionId,
-      });
+      final socket = _socketService.rawSocket;
+
+      if (socket == null || !socket.connected) {
+        throw StateError(
+          'XameLive connection is unavailable. Please try again.',
+        );
+      }
+
+      final joinResult = await _emitLiveJoinWithAck(
+        socket,
+        sessionId,
+      );
+
+      final result = _asMap(joinResult);
+
+      if (result == null || result['success'] != true) {
+        throw LiveApiException(
+          code: result?['code']?.toString(),
+          statusCode: 409,
+          message: result?['message']?.toString() ??
+              'Unable to join this live session.',
+        );
+      }
+
+      final confirmedViewerCount = _asInt(result['viewerCount']);
 
       state = state.copyWith(
         viewerSession: session,
@@ -438,7 +460,9 @@ class LiveNotifier extends StateNotifier<LiveState> {
 
       _updateViewerCount(
         session.sessionId,
-        session.viewerCount,
+        confirmedViewerCount > 0
+            ? confirmedViewerCount
+            : session.viewerCount,
       );
 
       return session;
@@ -448,7 +472,59 @@ class LiveNotifier extends StateNotifier<LiveState> {
         error: e.toString(),
       );
 
-      return null;
+      rethrow;
+    }
+  }
+
+  Future<dynamic> _emitLiveJoinWithAck(
+    io.Socket socket,
+    String sessionId,
+  ) {
+    final completer = Completer<dynamic>();
+
+    socket.emitWithAck(
+      'live:join',
+      {
+        'sessionId': sessionId,
+      },
+      ack: (data) {
+        if (!completer.isCompleted) {
+          completer.complete(data);
+        }
+      },
+    );
+
+    return completer.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => <String, dynamic>{
+        'success': false,
+        'code': 'LIVE_JOIN_TIMEOUT',
+        'message': 'XameLive did not confirm the join. Please try again.',
+      },
+    );
+  }
+
+  Future<LiveSession?> watchLive(String sessionId) async {
+    state = state.copyWith(
+      loading: true,
+      clearError: true,
+    );
+
+    try {
+      final session = await _api.watchLive(sessionId);
+
+      state = state.copyWith(
+        loading: false,
+      );
+
+      return session;
+    } catch (e) {
+      state = state.copyWith(
+        loading: false,
+        error: e.toString(),
+      );
+
+      rethrow;
     }
   }
 

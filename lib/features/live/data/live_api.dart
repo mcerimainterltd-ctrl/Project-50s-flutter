@@ -313,8 +313,10 @@ class LiveApi {
     final data = _decode(response);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw StateError(
-        data['message']?.toString() ??
+      throw LiveApiException(
+        code: data['code']?.toString(),
+        statusCode: response.statusCode,
+        message: data['message']?.toString() ??
             'Unable to join XameLive (${response.statusCode}).',
       );
     }
@@ -323,6 +325,34 @@ class LiveApi {
 
     if (sessionJson is! Map) {
       throw StateError('XameLive join response is missing session data.');
+    }
+
+    return LiveSession.fromJson(
+      Map<String, dynamic>.from(sessionJson),
+    );
+  }
+
+  Future<LiveSession> watchLive(String sessionId) async {
+    final response = await http.get(
+      _uri('/api/live/$sessionId/watch'),
+      headers: await _headers(),
+    );
+
+    final data = _decode(response);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LiveApiException(
+        code: data['code']?.toString(),
+        statusCode: response.statusCode,
+        message: data['message']?.toString() ??
+            'Unable to watch XameLive (${response.statusCode}).',
+      );
+    }
+
+    final sessionJson = data['session'];
+
+    if (sessionJson is! Map) {
+      throw StateError('XameLive watch response is missing session data.');
     }
 
     return LiveSession.fromJson(

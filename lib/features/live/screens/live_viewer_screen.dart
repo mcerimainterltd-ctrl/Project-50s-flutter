@@ -4,6 +4,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../data/live_api.dart';
 import '../models/live_session.dart';
 import '../providers/live_provider.dart';
 import '../services/live_webrtc_service.dart';
@@ -28,6 +29,8 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
   bool _joining = true;
   bool _leaving = false;
   bool _left = false;
+  bool _watchOnly = false;
+  bool _participating = false;
   String _connectionStatus = 'Connecting…';
 
   @override
@@ -40,16 +43,39 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
     try {
       await _renderer.initialize();
 
-      final session =
-          await ref.read(liveProvider.notifier).joinLive(
-                widget.session.sessionId,
-              );
+      LiveSession? session;
 
-      if (session == null) {
-        throw StateError(
-          ref.read(liveProvider).error ??
-              'Unable to join this live broadcast.',
-        );
+      try {
+        session = await ref.read(liveProvider.notifier).joinLive(
+              widget.session.sessionId,
+            );
+
+        if (session == null) {
+          throw StateError(
+            ref.read(liveProvider).error ??
+                'Unable to join this live broadcast.',
+          );
+        }
+
+        _participating = true;
+      } on LiveApiException catch (e) {
+        if (e.code != 'GO_LIVE_SUBSCRIPTION_REQUIRED') {
+          rethrow;
+        }
+
+        session = await ref.read(liveProvider.notifier).watchLive(
+              widget.session.sessionId,
+            );
+
+        if (session == null) {
+          throw StateError(
+            ref.read(liveProvider).error ??
+                'Unable to watch this live broadcast.',
+          );
+        }
+
+        _watchOnly = true;
+        _participating = false;
       }
 
       final playbackUrl = session.playbackUrl;
@@ -107,7 +133,10 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
     }
 
     await _webrtc.dispose();
-    await ref.read(liveProvider.notifier).leaveLive();
+
+    if (_participating) {
+      await ref.read(liveProvider.notifier).leaveLive();
+    }
 
     _left = true;
 
@@ -367,12 +396,64 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                                 ),
                               ),
                             ],
+                            if (_watchOnly) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  10,
+                                  8,
+                                  10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(
+                                    alpha: 0.58,
+                                  ),
+                                  borderRadius:
+                                      BorderRadius.circular(14),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Want to join this live? You can watch for free. To join the live session, you need an active XameLive subscription.',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    TextButton(
+                                      onPressed: _leaving
+                                          ? null
+                                          : () => context.push(
+                                                '/live/setup',
+                                              ),
+                                      child: const Text(
+                                        'View Plans',
+                                        style: TextStyle(
+                                          fontWeight:
+                                              FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
                       const SizedBox(width: 12),
                       _InteractionRail(
-                        enabled: !_joining && !_leaving,
+                        enabled:
+                            _participating &&
+                            !_joining &&
+                            !_leaving,
                       ),
                     ],
                   ),
