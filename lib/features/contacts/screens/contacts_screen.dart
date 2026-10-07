@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 import '../../../core/services/cache_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../calls/screens/call_history_screen.dart';
-import '../../tv/screens/xame_tv_screen.dart';
+import '../../tv/screens/xame_tv_page.dart';
 
 import '../../calls/screens/calls_hub_screen.dart';
 import '../../profile/screens/profile_screen.dart';
@@ -62,7 +62,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
           Navigator.of(context, rootNavigator: true).push(
             MaterialPageRoute(
               fullscreenDialog: true,
-              builder: (_) => const XameTvScreen(isActive: true),
+              builder: (_) => const XameTVPage(),
             ),
           );
         });
