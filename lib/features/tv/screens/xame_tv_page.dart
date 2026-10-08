@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'xame_tv_screen.dart';
+import 'premium_tv_screen.dart';
 
 class XameTVPage extends StatefulWidget {
   const XameTVPage({Key? key}) : super(key: key);
@@ -116,10 +117,10 @@ class _XameTVPageState extends State<XameTVPage>
                                   'Elevated entertainment and premium viewing, coming to XamePage.',
                               accent: const Color(0xFFD2B36C),
                               onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Premium TV — Coming Soon'),
-                                    duration: Duration(seconds: 2),
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PremiumTvScreen(),
                                   ),
                                 );
                               },
