@@ -296,13 +296,13 @@ class _PremiumCrownPainter extends CustomPainter {
     );
 
     final crown = Path()
-      ..moveTo(3, 7)
-      ..lineTo(8.5, 19)
-      ..lineTo(16, 11)
-      ..lineTo(23.5, 19)
-      ..lineTo(29, 7)
-      ..lineTo(26.5, 24)
-      ..quadraticBezierTo(16, 27, 5.5, 24)
+      ..moveTo(3.5, 6)
+      ..lineTo(8.5, 18)
+      ..lineTo(16, 10)
+      ..lineTo(23.5, 18)
+      ..lineTo(28.5, 6)
+      ..lineTo(26, 23)
+      ..quadraticBezierTo(16, 26, 6, 23)
       ..close();
 
     final goldPaint = Paint()
@@ -320,7 +320,7 @@ class _PremiumCrownPainter extends CustomPainter {
     canvas.drawPath(crown, goldPaint);
 
     final band = RRect.fromRectAndRadius(
-      const Rect.fromLTWH(5, 21, 22, 5),
+      const Rect.fromLTWH(5.5, 20, 21, 5),
       const Radius.circular(2),
     );
 
@@ -345,11 +345,11 @@ class _PremiumCrownPainter extends CustomPainter {
 
     canvas.drawPath(
       Path()
-        ..moveTo(4.5, 8)
-        ..lineTo(9, 19)
-        ..lineTo(16, 12)
-        ..lineTo(23, 19)
-        ..lineTo(27.5, 8),
+        ..moveTo(5, 7)
+        ..lineTo(9, 18)
+        ..lineTo(16, 11)
+        ..lineTo(23, 18)
+        ..lineTo(27, 7),
       highlight,
     );
   }
@@ -439,8 +439,10 @@ class _TVDestinationCard extends StatelessWidget {
                       const SizedBox(height: 5),
                       Text(
                         title,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: title == 'PREMIUM TV'
+                              ? const Color(0xFFE6C978)
+                              : Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.2,
