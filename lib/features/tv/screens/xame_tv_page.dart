@@ -109,13 +109,20 @@ class _XameTVPageState extends State<XameTVPage>
                             ),
                             const SizedBox(height: 42),
                             _TVDestinationCard(
-                              icon: Icons.auto_awesome_rounded,
+                              leading: const _PremiumCrownIcon(),
                               eyebrow: 'EXCLUSIVE',
                               title: 'PREMIUM TV',
                               description:
                                   'Elevated entertainment and premium viewing, coming to XamePage.',
-                              accent: const Color(0xFF7B2FFF),
-                              onTap: null,
+                              accent: const Color(0xFFD2B36C),
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Premium TV — Coming Soon'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(height: 16),
                             _TVDestinationCard(
@@ -255,8 +262,105 @@ class _BackButton extends StatelessWidget {
   }
 }
 
+
+class _PremiumCrownIcon extends StatelessWidget {
+  const _PremiumCrownIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 32,
+      height: 32,
+      child: CustomPaint(
+        painter: _PremiumCrownPainter(),
+      ),
+    );
+  }
+}
+
+class _PremiumCrownPainter extends CustomPainter {
+  const _PremiumCrownPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+
+    final glow = Paint()
+      ..color = const Color(0xFFD2B36C).withOpacity(0.16)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      9,
+      glow,
+    );
+
+    final crown = Path()
+      ..moveTo(3, 7)
+      ..lineTo(8.5, 19)
+      ..lineTo(16, 11)
+      ..lineTo(23.5, 19)
+      ..lineTo(29, 7)
+      ..lineTo(26.5, 24)
+      ..quadraticBezierTo(16, 27, 5.5, 24)
+      ..close();
+
+    final goldPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFFFFE8A3),
+          Color(0xFFD2B36C),
+          Color(0xFF9A722C),
+        ],
+      ).createShader(rect)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(crown, goldPaint);
+
+    final band = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(5, 21, 22, 5),
+      const Radius.circular(2),
+    );
+
+    canvas.drawRRect(
+      band,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFE8CB7D),
+            Color(0xFFB48A3F),
+          ],
+        ).createShader(rect),
+    );
+
+    final highlight = Paint()
+      ..color = Colors.white.withOpacity(0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(4.5, 8)
+        ..lineTo(9, 19)
+        ..lineTo(16, 12)
+        ..lineTo(23, 19)
+        ..lineTo(27.5, 8),
+      highlight,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _TVDestinationCard extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final Widget? leading;
   final String eyebrow;
   final String title;
   final String description;
@@ -265,7 +369,8 @@ class _TVDestinationCard extends StatelessWidget {
   final bool featured;
 
   const _TVDestinationCard({
-    required this.icon,
+    this.icon,
+    this.leading,
     required this.eyebrow,
     required this.title,
     required this.description,
@@ -310,11 +415,12 @@ class _TVDestinationCard extends StatelessWidget {
                       color: accent.withOpacity(0.22),
                     ),
                   ),
-                  child: Icon(
-                    icon,
-                    color: accent,
-                    size: 26,
-                  ),
+                  child: leading ??
+                      Icon(
+                        icon,
+                        color: accent,
+                        size: 26,
+                      ),
                 ),
                 const SizedBox(width: 17),
                 Expanded(
