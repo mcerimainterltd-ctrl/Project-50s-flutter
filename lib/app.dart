@@ -22,6 +22,7 @@ import 'package:xamepage/core/services/webrtc_service.dart';
 import 'package:xamepage/core/services/auth_service.dart';
 import 'package:xamepage/core/services/update_service.dart';
 import 'package:xamepage/core/services/push_service.dart';
+import 'package:xamepage/core/services/xametel_voice_service.dart';
 import 'package:xamepage/shared/models/xame_user.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 import 'package:xamepage/features/contacts/providers/contacts_provider.dart';
@@ -40,6 +41,7 @@ class XamePageApp extends ConsumerStatefulWidget {
 class _XamePageAppState extends ConsumerState<XamePageApp> {
   StreamSubscription? _shareSub;
   StreamSubscription<String>? _forceLogoutSub;
+  StreamSubscription<XameTelEvent>? _xameTelEventSub;
   DateTime? _hiddenAt;
   bool _showingLock = false;
   Timer? _inactivityTimer;
@@ -69,6 +71,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
     _initContactRequestListener();
     _initWalletRequestListener();
     _initWebCallRequestListener();
+    _initXameTelListener();
     // Auto-connect socket as soon as user is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final socketService = ref.read(socketServiceProvider);
@@ -146,6 +149,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
 
     // Initialize lifecycle service — handles reconnect on network/resume
     ref.read(lifecycleServiceProvider);
+    ref.read(xameTelVoiceServiceProvider);
 
     // Listen for calls in a dedicated listener, not the build method
     // Eager load all data immediately
@@ -197,6 +201,22 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   StreamSubscription? _collabAuthorizedSub;
   StreamSubscription? _collabCancelledSub;
   StreamSubscription? _collabSubmittedSub;
+
+  void _initXameTelListener() {
+    _xameTelEventSub =
+        ref.read(xameTelVoiceServiceProvider).events.listen((event) {
+      if (!mounted || event.event != 'incoming_call') return;
+
+      final router = ref.read(routerProvider);
+      final location =
+          router.routerDelegate.currentConfiguration.uri.toString();
+
+      // Guard against duplicate XameTel incoming-call screens.
+      if (location == '/xametel/incoming') return;
+
+      router.push('/xametel/incoming', extra: event);
+    });
+  }
 
   void _initWalletRequestListener() {
     _walletRequestSub = ref.read(socketServiceProvider)
@@ -731,6 +751,7 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
   @override
   void dispose() {
     _forceLogoutSub?.cancel();
+    _xameTelEventSub?.cancel();
     _shareSub?.cancel();
     _shareSubscription?.cancel();
     _contactRequestAcceptedSub?.cancel();

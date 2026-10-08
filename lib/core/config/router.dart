@@ -19,6 +19,8 @@ import '../../features/contacts/screens/contacts_screen.dart';
 import '../../features/messaging/screens/chat_screen.dart';
 import '../../features/calling/screens/call_screen.dart';
 import '../../features/calling/screens/incoming_call_screen.dart';
+import '../../features/xametel/screens/xametel_incoming_call_screen.dart';
+import '../services/xametel_voice_service.dart';
 import '../../features/calls/screens/call_history_screen.dart';
 import '../../features/calls/screens/calls_hub_screen.dart';
 import '../../features/contacts/screens/contact_requests_screen.dart';
@@ -125,6 +127,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         )),
       GoRoute(path: '/incoming-call',
         builder: (context, state) => const IncomingCallScreen()),
+      GoRoute(
+        path: '/xametel/incoming',
+        builder: (context, state) {
+          final event = state.extra as XameTelEvent?;
+          if (event == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text('XameTel call unavailable.'),
+              ),
+            );
+          }
+          return XameTelIncomingCallScreen(event: event);
+        },
+      ),
       GoRoute(path: '/conference',    builder: (c, s) => const ConferenceScreen()),
       GoRoute(path: '/call-history',  builder: (c, s) => CallsHubScreen()),
       GoRoute(path: '/contact-requests', builder: (c, s) => const ContactRequestsScreen()),

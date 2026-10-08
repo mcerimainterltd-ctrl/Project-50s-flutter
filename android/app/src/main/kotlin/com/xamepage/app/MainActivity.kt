@@ -231,6 +231,12 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
 
+        val xameTelChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.xamepage.app/xametel"
+        )
+        XameTelVoiceManager.attachFlutterChannel(xameTelChannel)
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
