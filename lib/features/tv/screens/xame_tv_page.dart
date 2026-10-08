@@ -415,12 +415,13 @@ class _TVDestinationCard extends StatelessWidget {
                       color: accent.withOpacity(0.22),
                     ),
                   ),
-                  child: leading ??
-                      Icon(
-                        icon,
-                        color: accent,
-                        size: 26,
-                      ),
+                  child: leading != null
+                      ? Center(child: leading!)
+                      : Icon(
+                          icon,
+                          color: accent,
+                          size: 26,
+                        ),
                 ),
                 const SizedBox(width: 17),
                 Expanded(
