@@ -3,6 +3,8 @@
 // No backend, payment, or Free TV dependencies.
 
 import 'package:flutter/material.dart';
+import 'package:better_player_enhanced/better_player.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum _PremiumLayout { grid, list, large }
 
@@ -124,6 +126,14 @@ class _PremiumTvScreenState extends State<PremiumTvScreen> {
     );
   }
 
+  Future<void> _openLibrary(bool favorites) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => _PremiumLibraryScreen(favorites: favorites),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = _filteredCategories;
@@ -161,6 +171,36 @@ class _PremiumTvScreenState extends State<PremiumTvScreen> {
               child: _PremiumLayoutSwitcher(
                 value: _layout,
                 onChanged: (value) => setState(() => _layout = value),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openLibrary(true),
+                      icon: const Icon(Icons.favorite_rounded),
+                      label: const Text('Favourites'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _gold,
+                        side: const BorderSide(color: _goldDeep),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openLibrary(false),
+                      icon: const Icon(Icons.history_rounded),
+                      label: const Text('Recently Watched'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _gold,
+                        side: const BorderSide(color: _goldDeep),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -432,6 +472,88 @@ class _PremiumCatalogue {
   ];
 }
 
+class _PremiumLibrary {
+  static const _favoritesKey = 'xametv_premium_favorites_v1';
+  static const _recentKey = 'xametv_premium_recent_v1';
+  static const _recentLimit = 30;
+
+  static Future<List<String>> _read(String key) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getStringList(key) ?? <String>[];
+    } catch (_) {
+      return <String>[];
+    }
+  }
+
+  static Future<bool?> toggleFavorite(_PremiumChannel channel) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList(_favoritesKey) ?? <String>[];
+      final id = channel.libraryId;
+      final nowFavorite = !ids.contains(id);
+      if (nowFavorite) {
+        ids.insert(0, id);
+      } else {
+        ids.removeWhere((item) => item == id);
+      }
+      final saved = await prefs.setStringList(_favoritesKey, ids);
+      return saved ? nowFavorite : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<bool> removeFavorite(_PremiumChannel channel) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList(_favoritesKey) ?? <String>[];
+      ids.removeWhere((item) => item == channel.libraryId);
+      return await prefs.setStringList(_favoritesKey, ids);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> recordWatched(_PremiumChannel channel) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList(_recentKey) ?? <String>[];
+      ids.removeWhere((item) => item == channel.libraryId);
+      ids.insert(0, channel.libraryId);
+      if (ids.length > _recentLimit) {
+        ids.removeRange(_recentLimit, ids.length);
+      }
+      await prefs.setStringList(_recentKey, ids);
+    } catch (_) {
+      // History storage must never interrupt playback.
+    }
+  }
+
+  static Future<List<String>> favorites() => _read(_favoritesKey);
+  static Future<List<String>> recent() => _read(_recentKey);
+
+  static List<_PremiumChannel> resolve(List<String> ids) {
+    final wanted = ids.toSet();
+    final byId = <String, _PremiumChannel>{};
+    for (final category in _PremiumTvScreenState._categories) {
+      for (final channel in _PremiumCatalogue.channelsFor(category.name)) {
+        byId[channel.libraryId] = channel;
+      }
+    }
+    return ids
+        .where(wanted.contains)
+        .map((id) => byId[id])
+        .whereType<_PremiumChannel>()
+        .toList();
+  }
+}
+
+enum _PremiumAccessTier {
+  bonusFree,
+  subscriptionRequired,
+}
+
 class _PremiumChannel {
   final int number;
   final String name;
@@ -439,6 +561,10 @@ class _PremiumChannel {
   final String country;
   final String? streamUrl;
   final String? artworkUrl;
+  final _PremiumAccessTier accessTier;
+
+  String get libraryId =>
+      '${category.toLowerCase()}|$number|${name.toLowerCase()}';
 
   const _PremiumChannel(
     this.number,
@@ -447,6 +573,7 @@ class _PremiumChannel {
     this.country, {
     this.streamUrl,
     this.artworkUrl,
+    this.accessTier = _PremiumAccessTier.subscriptionRequired,
   });
 }
 
@@ -871,6 +998,55 @@ class _PremiumCategoryArtwork extends StatelessWidget {
   }
 }
 
+class _PremiumAccessBadge extends StatelessWidget {
+  final _PremiumAccessTier tier;
+  final bool compact;
+
+  const _PremiumAccessBadge({
+    required this.tier,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isBonus = tier == _PremiumAccessTier.bonusFree;
+    final label = isBonus
+        ? (compact ? 'BONUS • FREE' : 'BONUS • WATCH FREE')
+        : (compact ? 'PREMIUM' : 'PREMIUM • SUBSCRIPTION REQUIRED');
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 10,
+        vertical: compact ? 4 : 6,
+      ),
+      decoration: BoxDecoration(
+        color: isBonus
+            ? const Color(0xFF183D2A)
+            : const Color(0xFF342A16),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(
+          color: isBonus
+              ? const Color(0xFF64C98A)
+              : const Color(0xFFE6C978),
+        ),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: isBonus
+              ? const Color(0xFF9CF0B8)
+              : const Color(0xFFE6C978),
+          fontSize: compact ? 9 : 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+}
+
 class _GridChannelCard extends StatelessWidget {
   final _PremiumChannel channel;
   final VoidCallback onTap;
@@ -941,6 +1117,14 @@ class _ListChannelCard extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white54,
                         fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _PremiumAccessBadge(
+                        tier: channel.accessTier,
+                        compact: true,
                       ),
                     ),
                   ],
@@ -1048,6 +1232,14 @@ class _ChannelCardShell extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: child,
+              ),
+            ),
+            Positioned(
+              top: 10,
+              left: 10,
+              child: _PremiumAccessBadge(
+                tier: channel.accessTier,
+                compact: true,
               ),
             ),
             const Positioned(
@@ -1271,7 +1463,145 @@ class _EmptySearchState extends StatelessWidget {
   }
 }
 
-class _PremiumChannelViewer extends StatelessWidget {
+class _PremiumLibraryScreen extends StatefulWidget {
+  final bool favorites;
+
+  const _PremiumLibraryScreen({required this.favorites});
+
+  @override
+  State<_PremiumLibraryScreen> createState() =>
+      _PremiumLibraryScreenState();
+}
+
+class _PremiumLibraryScreenState extends State<_PremiumLibraryScreen> {
+  bool _loading = true;
+  List<_PremiumChannel> _channels = <_PremiumChannel>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final ids = widget.favorites
+        ? await _PremiumLibrary.favorites()
+        : await _PremiumLibrary.recent();
+    if (!mounted) return;
+    setState(() {
+      _channels = _PremiumLibrary.resolve(ids);
+      _loading = false;
+    });
+  }
+
+  Future<void> _removeFavorite(_PremiumChannel channel) async {
+    final saved = await _PremiumLibrary.removeFavorite(channel);
+    if (!mounted || !saved) return;
+    setState(() => _channels.removeWhere(
+          (item) => item.libraryId == channel.libraryId,
+        ));
+  }
+
+  Future<void> _openChannel(_PremiumChannel channel) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => _PremiumChannelViewer(channel: channel),
+      ),
+    );
+    if (mounted) await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const background = Color(0xFF08080D);
+    const gold = Color(0xFFE6C978);
+    return Scaffold(
+      backgroundColor: background,
+      appBar: AppBar(
+        backgroundColor: background,
+        title: Text(
+          widget.favorites ? 'FAVOURITES' : 'RECENTLY WATCHED',
+          style: const TextStyle(
+            color: gold,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(color: gold),
+            )
+          : _channels.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(28),
+                    child: Text(
+                      widget.favorites
+                          ? 'Your favourite channels will appear here.'
+                          : 'Channels appear here after playback starts successfully.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _channels.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(color: Color(0x22FFFFFF)),
+                  itemBuilder: (context, index) {
+                    final channel = _channels[index];
+                    return ListTile(
+                      onTap: () => _openChannel(channel),
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF342A16),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          channel.number.toString().padLeft(2, '0'),
+                          style: const TextStyle(
+                            color: gold,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        channel.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${channel.category} • ${channel.country}',
+                        style: const TextStyle(color: Colors.white60),
+                      ),
+                      trailing: widget.favorites
+                          ? IconButton(
+                              tooltip: 'Remove favourite',
+                              onPressed: () => _removeFavorite(channel),
+                              icon: const Icon(
+                                Icons.favorite_rounded,
+                                color: gold,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.play_circle_outline_rounded,
+                              color: gold,
+                            ),
+                    );
+                  },
+                ),
+    );
+  }
+}
+
+class _PremiumChannelViewer extends StatefulWidget {
   final _PremiumChannel channel;
 
   const _PremiumChannelViewer({
@@ -1279,16 +1609,158 @@ class _PremiumChannelViewer extends StatelessWidget {
   });
 
   @override
+  State<_PremiumChannelViewer> createState() =>
+      _PremiumChannelViewerState();
+}
+
+class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
+  BetterPlayerController? _controller;
+  bool _loading = false;
+  String? _error;
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorite();
+    final url = widget.channel.streamUrl?.trim();
+    if (url == null || url.isEmpty) {
+      _error = 'No stream is configured for this channel yet.';
+    } else {
+      _initializePlayer(url);
+    }
+  }
+
+  Future<void> _loadFavorite() async {
+    final ids = await _PremiumLibrary.favorites();
+    if (!mounted) return;
+    setState(() => _isFavorite = ids.contains(widget.channel.libraryId));
+  }
+
+  Future<void> _toggleFavorite() async {
+    final result = await _PremiumLibrary.toggleFavorite(widget.channel);
+    if (!mounted || result == null) return;
+    setState(() => _isFavorite = result);
+  }
+
+  Future<void> _initializePlayer(String url) async {
+    if (mounted) setState(() => _loading = true);
+
+    final player = BetterPlayerController(
+      const BetterPlayerConfiguration(
+        autoPlay: true,
+        looping: false,
+        fit: BoxFit.contain,
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          showControls: true,
+        ),
+      ),
+    );
+
+    try {
+      await player.setupDataSource(
+        BetterPlayerDataSource(
+          BetterPlayerDataSourceType.network,
+          url,
+          bufferingConfiguration: const BetterPlayerBufferingConfiguration(
+            minBufferMs: 1500,
+            maxBufferMs: 10000,
+            bufferForPlaybackMs: 300,
+            bufferForPlaybackAfterRebufferMs: 700,
+          ),
+        ),
+      );
+
+      if (player.videoPlayerController?.value.initialized != true) {
+        throw StateError('Premium TV player failed to initialize.');
+      }
+
+      if (!mounted) {
+        player.dispose();
+        return;
+      }
+
+      await _PremiumLibrary.recordWatched(widget.channel);
+      if (!mounted) {
+        player.dispose();
+        return;
+      }
+
+      setState(() {
+        _controller = player;
+        _loading = false;
+        _error = null;
+      });
+    } catch (_) {
+      player.dispose();
+      if (!mounted) return;
+      setState(() {
+        _controller = null;
+        _loading = false;
+        _error = 'Unable to play this stream. Please try again later.';
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final channel = widget.channel;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          _PremiumChannelArtwork(
-            channel: channel,
-            viewer: true,
-          ),
+          if (_controller != null)
+            Center(child: BetterPlayer(controller: _controller!))
+          else
+            _PremiumChannelArtwork(channel: channel, viewer: true),
+
+          if (_loading)
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFFE6C978)),
+            ),
+
+          if (_error != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xE6141420),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0x55E6C978)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.live_tv_rounded,
+                        color: Color(0xFFE6C978),
+                        size: 38,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
           SafeArea(
             child: Align(
               alignment: Alignment.topLeft,
@@ -1334,6 +1806,25 @@ class _PremiumChannelViewer extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white60,
                         fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _PremiumAccessBadge(tier: channel.accessTier),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _toggleFavorite,
+                      icon: Icon(
+                        _isFavorite
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: const Color(0xFFE6C978),
+                      ),
+                      label: Text(
+                        _isFavorite ? 'Remove Favourite' : 'Add to Favourites',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0x55E6C978)),
                       ),
                     ),
                   ],
