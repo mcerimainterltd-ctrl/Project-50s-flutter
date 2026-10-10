@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/premium_tv_catalogue_service.dart';
 
 enum _PremiumLayout { grid, list, large }
 
@@ -25,6 +26,20 @@ class _PremiumTvScreenState extends State<PremiumTvScreen> {
 
   _PremiumLayout _layout = _PremiumLayout.grid;
   String _query = '';
+  bool _catalogueRefreshStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPremiumCatalogue();
+  }
+
+  Future<void> _refreshPremiumCatalogue() async {
+    if (_catalogueRefreshStarted) return;
+    _catalogueRefreshStarted = true;
+    await _PremiumCatalogue.refresh();
+    if (mounted) setState(() {});
+  }
 
   static const List<_PremiumCategory> _categories = [
     _PremiumCategory(
@@ -108,10 +123,13 @@ class _PremiumTvScreenState extends State<PremiumTvScreen> {
   }
 
   List<_PremiumCategory> get _filteredCategories {
+    final available = _PremiumCatalogue.categories.isNotEmpty
+        ? _PremiumCatalogue.categories
+        : _categories;
     final query = _query.trim().toLowerCase();
-    if (query.isEmpty) return _categories;
+    if (query.isEmpty) return available;
 
-    return _categories.where((category) {
+    return available.where((category) {
       return category.number.toString().padLeft(3, '0').contains(query) ||
           category.name.toLowerCase().contains(query) ||
           category.description.toLowerCase().contains(query);
@@ -227,13 +245,15 @@ class _PremiumCategory {
   final String name;
   final String description;
   final IconData icon;
+  final String? categoryId;
 
   const _PremiumCategory(
     this.number,
     this.name,
     this.description,
-    this.icon,
-  );
+    this.icon, {
+    this.categoryId,
+  });
 }
 
 class _PremiumCategoryScreen extends StatefulWidget {
@@ -260,7 +280,10 @@ class _PremiumCategoryScreenState extends State<_PremiumCategoryScreen> {
   String _query = '';
 
   List<_PremiumChannel> get _channels =>
-      _PremiumCatalogue.channelsFor(widget.category.name);
+      _PremiumCatalogue.channelsFor(
+        widget.category.name,
+        categoryId: widget.category.categoryId,
+      );
 
   List<_PremiumChannel> get _filteredChannels {
     final query = _query.trim().toLowerCase();
@@ -345,7 +368,172 @@ class _PremiumCategoryScreenState extends State<_PremiumCategoryScreen> {
 }
 
 class _PremiumCatalogue {
-  static List<_PremiumChannel> channelsFor(String category) {
+  static final PremiumTvCatalogueService _service =
+      PremiumTvCatalogueService();
+
+  static List<_PremiumCategory> _remoteCategories = const [];
+  static List<_PremiumChannel> _remoteChannels = const [];
+  static Map<String, String> _remoteCategoryIds = const {};
+  static Future<void>? _refreshInFlight;
+
+  static List<_PremiumCategory> get categories => _remoteCategories;
+
+  static Future<void> refresh() async {
+    final pending = _refreshInFlight;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+
+    final future = _loadRemoteCatalogue();
+    _refreshInFlight = future;
+    try {
+      await future;
+    } finally {
+      _refreshInFlight = null;
+    }
+  }
+
+  static Future<void> _loadRemoteCatalogue() async {
+    try {
+      final data = await _service.fetchCatalogue();
+      if (data.categories.isEmpty || data.channels.isEmpty) return;
+
+      final categories = <_PremiumCategory>[];
+      final idsByName = <String, String>{};
+
+      for (var i = 0; i < data.categories.length; i++) {
+        final item = data.categories[i];
+        final id = item['categoryId'] as String;
+        final name = (item['name'] as String).trim();
+
+        final description = item['description'] is String
+            ? (item['description'] as String).trim()
+            : '';
+        final iconKey = item['iconKey'] is String
+            ? (item['iconKey'] as String).trim().toLowerCase()
+            : 'tv';
+
+        categories.add(
+          _PremiumCategory(
+            categories.length + 1,
+            name,
+            description,
+            _iconFor(iconKey),
+            categoryId: id,
+          ),
+        );
+        idsByName.putIfAbsent(name, () => id);
+      }
+
+      final categoryNameById = <String, String>{
+        for (final category in categories)
+          if (category.categoryId != null)
+            category.categoryId!: category.name,
+      };
+      final channels = <_PremiumChannel>[];
+
+      String? safeHttpUrl(dynamic value) {
+        if (value is! String) return null;
+        final uri = Uri.tryParse(value.trim());
+        if (uri == null ||
+            (uri.scheme != 'https' && uri.scheme != 'http') ||
+            uri.host.isEmpty) {
+          return null;
+        }
+        return uri.toString();
+      }
+
+      for (final item in data.channels) {
+        final categoryId = item['categoryId'] as String;
+        final categoryName = categoryNameById[categoryId];
+        if (categoryName == null) continue;
+
+        final rawNumber = item['number'] as num;
+        final rawCountry = item['country'];
+        final rawLegacyIds = item['legacyIds'];
+        final tier = item['accessTier'];
+
+        channels.add(
+          _PremiumChannel(
+            rawNumber.toInt(),
+            (item['name'] as String).trim(),
+            categoryName,
+            rawCountry is String ? rawCountry : 'INT',
+            streamUrl: safeHttpUrl(item['streamUrl']),
+            artworkUrl: safeHttpUrl(item['artworkUrl']),
+            accessTier: tier == 'bonusFree'
+                ? _PremiumAccessTier.bonusFree
+                : _PremiumAccessTier.subscriptionRequired,
+            categoryId: categoryId,
+            remoteId: item['channelId'] as String,
+            legacyIds: rawLegacyIds is List
+                ? rawLegacyIds.whereType<String>().toList(growable: false)
+                : const [],
+          ),
+        );
+      }
+
+      // Keep the current/static catalogue unless the remote snapshot is usable.
+      if (categories.isEmpty || channels.isEmpty) return;
+
+      _remoteCategoryIds = Map.unmodifiable(idsByName);
+      _remoteChannels = List.unmodifiable(channels);
+      _remoteCategories = List.unmodifiable(categories);
+    } catch (_) {
+      // Remote failure leaves the static catalogue available.
+    }
+  }
+
+  static IconData _iconFor(String key) {
+    switch (key) {
+      case 'news':
+      case 'newspaper':
+        return Icons.newspaper_rounded;
+      case 'sports':
+      case 'sport':
+        return Icons.sports_soccer_rounded;
+      case 'kids':
+      case 'child':
+        return Icons.child_care_rounded;
+      case 'cinema':
+      case 'movies':
+        return Icons.local_movies_rounded;
+      case 'music':
+        return Icons.music_note_rounded;
+      case 'nature':
+        return Icons.park_rounded;
+      case 'history':
+        return Icons.account_balance_rounded;
+      case 'science':
+        return Icons.science_rounded;
+      case 'travel':
+        return Icons.flight_takeoff_rounded;
+      case 'food':
+        return Icons.restaurant_rounded;
+      case 'world':
+      case 'international':
+        return Icons.public_rounded;
+      case 'lifestyle':
+        return Icons.auto_awesome_rounded;
+      default:
+        return Icons.live_tv_rounded;
+    }
+  }
+
+  static List<_PremiumChannel> channelsFor(
+    String category, {
+    String? categoryId,
+  }) {
+    final resolvedCategoryId =
+        categoryId ?? _remoteCategoryIds[category];
+
+    if (resolvedCategoryId != null) {
+      return _remoteChannels
+          .where((channel) => channel.categoryId == resolvedCategoryId)
+          .toList(growable: false);
+    }
+
     switch (category) {
       case 'Xame News':
         return _news;
@@ -490,13 +678,15 @@ class _PremiumLibrary {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ids = prefs.getStringList(_favoritesKey) ?? <String>[];
-      final id = channel.libraryId;
-      final nowFavorite = !ids.contains(id);
-      if (nowFavorite) {
-        ids.insert(0, id);
-      } else {
-        ids.removeWhere((item) => item == id);
-      }
+      final aliases = <String>{
+        channel.libraryId,
+        if (channel.remoteId != null && channel.remoteId!.isNotEmpty)
+          channel.remoteId!,
+        ...channel.legacyIds.where((id) => id.isNotEmpty),
+      };
+      final nowFavorite = !ids.any(aliases.contains);
+      ids.removeWhere(aliases.contains);
+      if (nowFavorite) ids.insert(0, channel.libraryId);
       final saved = await prefs.setStringList(_favoritesKey, ids);
       return saved ? nowFavorite : null;
     } catch (_) {
@@ -508,7 +698,13 @@ class _PremiumLibrary {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ids = prefs.getStringList(_favoritesKey) ?? <String>[];
-      ids.removeWhere((item) => item == channel.libraryId);
+      final aliases = <String>{
+        channel.libraryId,
+        if (channel.remoteId != null && channel.remoteId!.isNotEmpty)
+          channel.remoteId!,
+        ...channel.legacyIds.where((id) => id.isNotEmpty),
+      };
+      ids.removeWhere(aliases.contains);
       return await prefs.setStringList(_favoritesKey, ids);
     } catch (_) {
       return false;
@@ -519,7 +715,13 @@ class _PremiumLibrary {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ids = prefs.getStringList(_recentKey) ?? <String>[];
-      ids.removeWhere((item) => item == channel.libraryId);
+      final aliases = <String>{
+        channel.libraryId,
+        if (channel.remoteId != null && channel.remoteId!.isNotEmpty)
+          channel.remoteId!,
+        ...channel.legacyIds.where((id) => id.isNotEmpty),
+      };
+      ids.removeWhere(aliases.contains);
       ids.insert(0, channel.libraryId);
       if (ids.length > _recentLimit) {
         ids.removeRange(_recentLimit, ids.length);
@@ -536,9 +738,23 @@ class _PremiumLibrary {
   static List<_PremiumChannel> resolve(List<String> ids) {
     final wanted = ids.toSet();
     final byId = <String, _PremiumChannel>{};
-    for (final category in _PremiumTvScreenState._categories) {
-      for (final channel in _PremiumCatalogue.channelsFor(category.name)) {
+    final categories = <_PremiumCategory>{
+      ..._PremiumTvScreenState._categories,
+      ..._PremiumCatalogue.categories,
+    };
+    for (final category in categories) {
+      for (final channel in _PremiumCatalogue.channelsFor(
+        category.name,
+        categoryId: category.categoryId,
+      )) {
         byId[channel.libraryId] = channel;
+        final remoteId = channel.remoteId;
+        if (remoteId != null && remoteId.isNotEmpty) {
+          byId[remoteId] = channel;
+        }
+        for (final legacyId in channel.legacyIds) {
+          byId[legacyId] = channel;
+        }
       }
     }
     return ids
@@ -559,9 +775,12 @@ class _PremiumChannel {
   final String name;
   final String category;
   final String country;
+  final String? categoryId;
   final String? streamUrl;
   final String? artworkUrl;
   final _PremiumAccessTier accessTier;
+  final String? remoteId;
+  final List<String> legacyIds;
 
   String get libraryId =>
       '${category.toLowerCase()}|$number|${name.toLowerCase()}';
@@ -573,7 +792,10 @@ class _PremiumChannel {
     this.country, {
     this.streamUrl,
     this.artworkUrl,
+    this.categoryId,
     this.accessTier = _PremiumAccessTier.subscriptionRequired,
+    this.remoteId,
+    this.legacyIds = const [],
   });
 }
 
