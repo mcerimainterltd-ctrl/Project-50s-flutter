@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/premium_tv_catalogue_service.dart';
 
@@ -397,7 +398,7 @@ class _PremiumCatalogue {
   static Future<void> _loadRemoteCatalogue() async {
     try {
       final data = await _service.fetchCatalogue();
-      if (data.categories.isEmpty || data.channels.isEmpty) return;
+      if (data.categories.isEmpty) return;
 
       final categories = <_PremiumCategory>[];
       final idsByName = <String, String>{};
@@ -475,7 +476,7 @@ class _PremiumCatalogue {
       }
 
       // Keep the current/static catalogue unless the remote snapshot is usable.
-      if (categories.isEmpty || channels.isEmpty) return;
+      if (categories.isEmpty) return;
 
       _remoteCategoryIds = Map.unmodifiable(idsByName);
       _remoteChannels = List.unmodifiable(channels);
@@ -1837,6 +1838,7 @@ class _PremiumChannelViewer extends StatefulWidget {
 
 class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
   BetterPlayerController? _controller;
+  YoutubePlayerController? _youtubeController;
   bool _loading = false;
   String? _error;
   bool _isFavorite = false;
@@ -1849,7 +1851,12 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
     if (url == null || url.isEmpty) {
       _error = 'No stream is configured for this channel yet.';
     } else {
-      _initializePlayer(url);
+      final videoId = _youtubeVideoIdFromUrl(url);
+      if (videoId != null) {
+        _initializeYoutubePlayer(videoId);
+      } else {
+        _initializePlayer(url);
+      }
     }
   }
 
@@ -1863,6 +1870,47 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
     final result = await _PremiumLibrary.toggleFavorite(widget.channel);
     if (!mounted || result == null) return;
     setState(() => _isFavorite = result);
+  }
+
+  String? _youtubeVideoIdFromUrl(String value) {
+    final uri = Uri.tryParse(value);
+    if (uri == null) return null;
+
+    final host = uri.host.toLowerCase();
+    const allowedHosts = {
+      'youtube.com',
+      'www.youtube.com',
+      'm.youtube.com',
+      'youtube-nocookie.com',
+      'www.youtube-nocookie.com',
+      'youtu.be',
+      'www.youtu.be',
+    };
+    if (!allowedHosts.contains(host)) return null;
+
+    final id = YoutubePlayer.convertUrlToId(value.trim());
+    if (id == null || !RegExp(r'^[A-Za-z0-9_-]{11}$').hasMatch(id)) {
+      return null;
+    }
+    return id;
+  }
+
+  Future<void> _initializeYoutubePlayer(String videoId) async {
+    final player = YoutubePlayerController(
+      initialVideoId: videoId,
+      flags: const YoutubePlayerFlags(
+        autoPlay: true,
+        mute: false,
+        enableCaption: true,
+      ),
+    );
+    _youtubeController = player;
+
+    try {
+      await _PremiumLibrary.recordWatched(widget.channel);
+    } catch (_) {
+      // Viewing-history failure must not prevent playback.
+    }
   }
 
   Future<void> _initializePlayer(String url) async {
@@ -1927,6 +1975,7 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
   @override
   void dispose() {
     _controller?.dispose();
+    _youtubeController?.dispose();
     super.dispose();
   }
 
@@ -1939,7 +1988,15 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          if (_controller != null)
+          if (_youtubeController != null)
+            Center(
+              child: YoutubePlayer(
+                controller: _youtubeController!,
+                showVideoProgressIndicator: true,
+                progressIndicatorColor: const Color(0xFFE6C978),
+              ),
+            )
+          else if (_controller != null)
             Center(child: BetterPlayer(controller: _controller!))
           else
             _PremiumChannelArtwork(channel: channel, viewer: true),
