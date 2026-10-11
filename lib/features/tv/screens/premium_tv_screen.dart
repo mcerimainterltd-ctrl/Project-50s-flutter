@@ -2012,6 +2012,8 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
       if (player.videoPlayerController?.value.initialized != true) {
         throw StateError('Premium TV player failed to initialize.');
       }
+        await player.play();
+
 
       if (!mounted) {
         player.dispose();
