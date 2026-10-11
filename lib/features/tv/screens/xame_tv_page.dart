@@ -92,9 +92,9 @@ class _XameTVPageState extends State<XameTVPage>
                               'XameTV',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 36,
+                                fontSize: 52,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: -1.2,
+                                letterSpacing: -1.8,
                               ),
                             ),
                             const SizedBox(height: 7),
@@ -103,9 +103,9 @@ class _XameTVPageState extends State<XameTVPage>
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Color(0xFF9CA3AF),
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w400,
-                                letterSpacing: 0.25,
+                                letterSpacing: 1.6,
                               ),
                             ),
                             const SizedBox(height: 42),
@@ -114,7 +114,7 @@ class _XameTVPageState extends State<XameTVPage>
                               eyebrow: 'EXCLUSIVE',
                               title: 'PREMIUM TV',
                               description:
-                                  'Elevated entertainment and premium viewing, coming to XamePage.',
+                                  'Elevated entertainment and premium viewing on XamePage.',
                               accent: const Color(0xFFD2B36C),
                               onTap: () {
                                 Navigator.of(context).push(
@@ -445,9 +445,9 @@ class _TVDestinationCard extends StatelessWidget {
                           color: title == 'PREMIUM TV'
                               ? const Color(0xFFE6C978)
                               : Colors.white,
-                          fontSize: 20,
+                          fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 0.2,
+                          letterSpacing: 1.2,
                         ),
                       ),
                       const SizedBox(height: 5),
