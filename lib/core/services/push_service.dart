@@ -55,6 +55,7 @@ class PushService {
       await Permission.systemAlertWindow.request();
     }
     // Request permission
+    await _fcm.requestPermission(
       alert: true, badge: true, sound: true,
       criticalAlert: true, provisional: false,
     );
