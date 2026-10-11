@@ -50,10 +50,6 @@ class PushService {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
     }
-    // Request USE_FULL_SCREEN_INTENT for Android 14+ (API 34+) — needed for call ringtones
-    if (await Permission.systemAlertWindow.isDenied) {
-      await Permission.systemAlertWindow.request();
-    }
     // Request permission
     await _fcm.requestPermission(
       alert: true, badge: true, sound: true,
