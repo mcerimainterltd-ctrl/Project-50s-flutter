@@ -389,18 +389,25 @@ class _TVDestinationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: Ink(
           decoration: BoxDecoration(
-            color: const Color(0xFF141420).withOpacity(0.88),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: accent.withOpacity(featured ? 0.32 : 0.20),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: accent.withOpacity(featured ? 0.09 : 0.045),
-                blurRadius: 30,
-                spreadRadius: -8,
-              ),
-            ],
+            gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      accent.withOpacity(title == 'PREMIUM TV' ? 0.16 : 0.10),
+                      const Color(0xFF141420).withOpacity(0.92),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: accent.withOpacity(title == 'PREMIUM TV' ? 0.55 : 0.28),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accent.withOpacity(title == 'PREMIUM TV' ? 0.22 : 0.08),
+                      blurRadius: 36,
+                      spreadRadius: -6,
+                    ),
+                  ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(21),
