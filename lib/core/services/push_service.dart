@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -45,8 +46,11 @@ class PushService {
   static const _alertChannelName   = 'XamePage Alerts';
 
   Future<void> init(String userId) async {
+    // Request POST_NOTIFICATIONS for Android 13+ (API 33+)
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
     // Request permission
-    await _fcm.requestPermission(
       alert: true, badge: true, sound: true,
       criticalAlert: true, provisional: false,
     );
