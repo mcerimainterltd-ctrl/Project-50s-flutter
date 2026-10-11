@@ -1945,7 +1945,14 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
       ),
     );
     _youtubeController = player;
-    player.addListener(_handleYoutubeControllerChange);
+    player.addListener(() {
+      if (!mounted) return;
+      // Stop spinner as soon as player is ready to play
+      if (player.value.isReady && _loading) {
+        setState(() => _loading = false);
+      }
+      _handleYoutubeControllerChange();
+    });
 
     _youtubeReadyTimeout?.cancel();
     _youtubeReadyTimeout = Timer(const Duration(seconds: 20), () {
