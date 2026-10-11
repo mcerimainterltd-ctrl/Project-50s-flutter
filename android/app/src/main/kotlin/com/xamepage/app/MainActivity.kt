@@ -64,6 +64,19 @@ class MainActivity : FlutterFragmentActivity() {
                 1001
             )
         }
+
+            // Android 14+ (API 34+): request USE_FULL_SCREEN_INTENT for call ringtones over lock screen
+            if (Build.VERSION.SDK_INT >= 34) {
+                val nm = getSystemService(android.app.NotificationManager::class.java)
+                if (!nm.canUseFullScreenIntent()) {
+                    try {
+                        startActivity(android.content.Intent(
+                            "android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT",
+                            Uri.parse("package:$packageName")
+                        ))
+                    } catch (_: Exception) {}
+                }
+            }
         prefs.edit().putInt("permissions_asked_version", versionCode).apply()
 
         // Cold start (app was fully killed): the Answer/Decline intent
