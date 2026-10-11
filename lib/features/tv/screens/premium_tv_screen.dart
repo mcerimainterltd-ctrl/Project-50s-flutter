@@ -2,9 +2,12 @@
 // Category -> channels -> full-screen viewer.
 // No backend, payment, or Free TV dependencies.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/premium_tv_catalogue_service.dart';
 
@@ -1837,7 +1840,9 @@ class _PremiumChannelViewer extends StatefulWidget {
 }
 
 class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
+  static const _officialTvcLiveUrl = 'https://www.tvcnews.tv/live-streaming/';
   BetterPlayerController? _controller;
+  Timer? _youtubeReadyTimeout;
   YoutubePlayerController? _youtubeController;
   bool _loading = false;
   String? _error;
@@ -1895,7 +1900,42 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
     return id;
   }
 
+  void _handleYoutubeControllerChange() {
+    final player = _youtubeController;
+    if (!mounted || player == null) return;
+
+    final errorCode = player.value.errorCode;
+    if (errorCode != 0 && _error == null) {
+      _youtubeReadyTimeout?.cancel();
+      setState(() {
+        _loading = false;
+        _error = 'YouTube could not play this stream (error $errorCode).';
+      });
+    }
+  }
+
+  Future<void> _openOfficialTvcStream() async {
+    try {
+      final opened = await launchUrl(
+        Uri.parse(_officialTvcLiveUrl),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && mounted) {
+        setState(() {
+          _error = 'Could not open the TVC News website. Please try again.';
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Could not open the TVC News website. Please try again.';
+      });
+    }
+  }
+
   Future<void> _initializeYoutubePlayer(String videoId) async {
+    _loading = true;
+
     final player = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
@@ -1905,6 +1945,17 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
       ),
     );
     _youtubeController = player;
+    player.addListener(_handleYoutubeControllerChange);
+
+    _youtubeReadyTimeout?.cancel();
+    _youtubeReadyTimeout = Timer(const Duration(seconds: 20), () {
+      if (!mounted || _youtubeController != player || !_loading) return;
+      setState(() {
+        _loading = false;
+        _error ??=
+            'The embedded stream is taking too long to load. Open TVC News in your browser.';
+      });
+    });
 
     try {
       await _PremiumLibrary.recordWatched(widget.channel);
@@ -1974,7 +2025,9 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
 
   @override
   void dispose() {
+    _youtubeReadyTimeout?.cancel();
     _controller?.dispose();
+    _youtubeController?.removeListener(_handleYoutubeControllerChange);
     _youtubeController?.dispose();
     super.dispose();
   }
@@ -1994,6 +2047,22 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
                 controller: _youtubeController!,
                 showVideoProgressIndicator: true,
                 progressIndicatorColor: const Color(0xFFE6C978),
+                onReady: () {
+                  if (!mounted) return;
+                  final errorCode = _youtubeController?.value.errorCode ?? 0;
+                  if (errorCode == 0) {
+                    _youtubeReadyTimeout?.cancel();
+                  }
+                  setState(() {
+                    _loading = false;
+                    if (errorCode == 0) {
+                      _error = null;
+                    } else {
+                      _error ??=
+                          'YouTube could not play this stream (error $errorCode).';
+                    }
+                  });
+                },
               ),
             )
           else if (_controller != null)
@@ -2034,6 +2103,18 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
                           fontSize: 14,
                         ),
                       ),
+                      if (_youtubeController != null &&
+                          widget.channel.remoteId == 'tvc-news') ...[
+                        const SizedBox(height: 14),
+                        OutlinedButton.icon(
+                          onPressed: _openOfficialTvcStream,
+                          icon: const Icon(Icons.open_in_browser_rounded),
+                          label: const Text('Open official TVC stream'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFE6C978),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
