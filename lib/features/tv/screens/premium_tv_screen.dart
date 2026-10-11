@@ -1841,6 +1841,8 @@ class _PremiumChannelViewer extends StatefulWidget {
 
 class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
   static const _officialTvcLiveUrl = 'https://www.tvcnews.tv/live-streaming/';
+  // Verified official TVC News livestream; backend source resolution follows separately.
+  static const _tvcNewsFallbackVideoId = 'b-Yzp0l8cAM';
   BetterPlayerController? _controller;
   Timer? _youtubeReadyTimeout;
   YoutubePlayerController? _youtubeController;
@@ -1853,7 +1855,15 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
     super.initState();
     _loadFavorite();
     final url = widget.channel.streamUrl?.trim();
-    if (url == null || url.isEmpty) {
+    if (widget.channel.remoteId == 'tvc-news') {
+      // Prefer a backend-configured YouTube URL; otherwise use the verified
+      // official livestream while the backend source is being corrected.
+      final configuredVideoId =
+          url == null ? null : _youtubeVideoIdFromUrl(url);
+      _initializeYoutubePlayer(
+        configuredVideoId ?? _tvcNewsFallbackVideoId,
+      );
+    } else if (url == null || url.isEmpty) {
       _error = 'No stream is configured for this channel yet.';
     } else {
       final videoId = _youtubeVideoIdFromUrl(url);

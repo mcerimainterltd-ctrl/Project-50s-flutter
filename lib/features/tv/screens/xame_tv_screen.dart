@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:better_player_enhanced/better_player.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../data/tv_channels.dart';
 
@@ -32,6 +33,9 @@ class _XameTvScreenState extends State<XameTvScreen>
   final   _listCtrl=ScrollController();
 
   BetterPlayerController? _ctrl;
+  YoutubePlayerController? _youtubeController;
+  Timer? _youtubeReadyTimeout;
+  VoidCallback? _youtubeListener;
   final Map<String, BetterPlayerController> _playerPool={};
   final Map<String, Future<BetterPlayerController>> _playerLoading={};
   int _playerGeneration = 0;
@@ -48,6 +52,132 @@ class _XameTvScreenState extends State<XameTvScreen>
   TvChannel? get _cur =>
       _filtered.isNotEmpty && _index < _filtered.length
           ? _filtered[_index] : null;
+
+  // NASA-ONLY YOUTUBE FALLBACK: this ID is a current-source fallback,
+  // not a permanent NASA stream identifier. Update it if NASA changes streams.
+  static const String _nasaFallbackVideoId = 'M3HKLzjvKPc';
+
+  String? _youtubeVideoIdForChannel(TvChannel channel) {
+    // Keep the new playback route strictly limited to the retired NASA entry.
+    if (!channel.name.toLowerCase().contains('nasa tv public')) return null;
+
+    final value = channel.streamUrl.trim();
+    final uri = Uri.tryParse(value);
+    if (uri == null) return null;
+
+    final host = uri.host.toLowerCase();
+    const allowedHosts = {
+      'youtube.com', 'www.youtube.com', 'm.youtube.com',
+      'youtube-nocookie.com', 'www.youtube-nocookie.com',
+      'youtu.be', 'www.youtu.be',
+    };
+
+    if (allowedHosts.contains(host)) {
+      final id = YoutubePlayer.convertUrlToId(value);
+      if (id != null && RegExp(r'^[A-Za-z0-9_-]{11}$').hasMatch(id)) {
+        return id;
+      }
+    }
+
+    // Redirect only the known retired NASA TV Public Akamai source.
+    if (host == 'ntv1.akamaized.net') return _nasaFallbackVideoId;
+
+    return null;
+  }
+
+  void _disposeYoutubePlayer() {
+    _youtubeReadyTimeout?.cancel();
+    _youtubeReadyTimeout = null;
+
+    final player = _youtubeController;
+    final listener = _youtubeListener;
+    if (player != null) {
+      if (listener != null) player.removeListener(listener);
+      player.dispose();
+    }
+
+    _youtubeController = null;
+    _youtubeListener = null;
+  }
+
+  Future<void> _activateYoutubePlayer(
+    int index,
+    String videoId,
+    int generation,
+  ) async {
+    _disposeYoutubePlayer();
+
+    final oldPlayer = _ctrl;
+    if (oldPlayer != null) {
+      try {
+        await oldPlayer.pause();
+      } catch (_) {}
+    }
+
+    if (!mounted || generation != _playerGeneration) return;
+
+    setState(() {
+      // Keep the old BetterPlayer in its pool, but detach it from the
+      // active slot while NASA is rendered by the YouTube player.
+      if (identical(_ctrl, oldPlayer)) _ctrl = null;
+      _ready = false;
+      _error = false;
+      _buffering = true;
+    });
+
+    final player = YoutubePlayerController(
+      initialVideoId: videoId,
+      flags: YoutubePlayerFlags(
+        autoPlay: true,
+        mute: _isMuted,
+        enableCaption: true,
+      ),
+    );
+
+    _youtubeController = player;
+
+    final listener = () {
+      if (!mounted || _youtubeController != player) return;
+
+      final errorCode = player.value.errorCode;
+      if (errorCode != 0) {
+        _youtubeReadyTimeout?.cancel();
+        if (!_error || _buffering || _ready) {
+          setState(() {
+            _ready = false;
+            _error = true;
+            _buffering = false;
+          });
+        }
+      } else if (player.value.isReady && (!_ready || _buffering || _error)) {
+        _youtubeReadyTimeout?.cancel();
+        setState(() {
+          _ready = true;
+          _error = false;
+          _buffering = false;
+          _retries = 0;
+        });
+        _sAnim.forward(from: 0);
+      }
+    };
+
+    _youtubeListener = listener;
+    player.addListener(listener);
+
+    _youtubeReadyTimeout = Timer(const Duration(seconds: 25), () {
+      if (!mounted ||
+          generation != _playerGeneration ||
+          _youtubeController != player ||
+          _ready) {
+        return;
+      }
+      setState(() {
+        _ready = false;
+        _error = true;
+        _buffering = false;
+      });
+    });
+  }
 
   @override
   void initState() {
@@ -72,6 +202,8 @@ class _XameTvScreenState extends State<XameTvScreen>
       // Tab just became active — start fetching if not already loaded
       if (_all.isEmpty) {
         _fetch();
+      } else if (_youtubeController != null) {
+        _youtubeController!.play();
       } else if (_ctrl == null || _ctrl!.videoPlayerController?.value.initialized != true) {
         if (_filtered.isNotEmpty) _initPlayer(_filtered.first.streamUrl);
       } else {
@@ -79,14 +211,16 @@ class _XameTvScreenState extends State<XameTvScreen>
       }
       _startTimer();
     } else if (!widget.isActive && oldWidget.isActive) {
-      // Tab became inactive — pause and stop overlay timer
+      // Tab became inactive — pause either playback engine.
       _ctrl?.pause();
+      _youtubeController?.pause();
       _overlayTimer?.cancel();
     }
   }
 
   @override
   void dispose() {
+    _disposeYoutubePlayer();
     _overlayTimer?.cancel();
     _retryTimer?.cancel();
     _oAnim.dispose(); _sAnim.dispose();
@@ -221,6 +355,7 @@ class _XameTvScreenState extends State<XameTvScreen>
 
       final url = _filtered[i].streamUrl;
       if (url.isEmpty || _deadUrls.contains(url)) continue;
+      if (_youtubeVideoIdForChannel(_filtered[i]) != null) continue;
 
       try {
         final player = await _ensurePlayer(url);
@@ -251,6 +386,12 @@ class _XameTvScreenState extends State<XameTvScreen>
     final url = _filtered[index].streamUrl;
     final generation = ++_playerGeneration;
     final oldPlayer = _ctrl;
+    final youtubeVideoId = _youtubeVideoIdForChannel(_filtered[index]);
+    if (youtubeVideoId != null) {
+      await _activateYoutubePlayer(index, youtubeVideoId, generation);
+      return;
+    }
+    _disposeYoutubePlayer();
 
     if (url.isEmpty) {
       if (oldPlayer == null) {
@@ -374,6 +515,7 @@ class _XameTvScreenState extends State<XameTvScreen>
 
     final current = _cur;
     if (current == null) return;
+    _disposeYoutubePlayer();
 
     _retries++;
 
@@ -505,18 +647,43 @@ class _XameTvScreenState extends State<XameTvScreen>
 
   // ── Video layer ───────────────────────────────────────────────────────
   Widget _videoLayer() {
-    if (!_ready || _ctrl==null) {
-      return _cur?.logo.isNotEmpty==true
-          ? CachedNetworkImage(imageUrl:_cur!.logo, fit:BoxFit.contain,
-              color:Colors.black54, colorBlendMode:BlendMode.darken,
-              errorWidget:(_,__,___)=>const ColoredBox(color:Color(0xFF050505)))
-          : const ColoredBox(color:Color(0xFF050505));
+    final youtube = _youtubeController;
+    if (youtube != null) {
+      return Center(
+        child: YoutubePlayer(
+          controller: youtube,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: const Color(0xFFE6C978),
+          onReady: () {
+            if (!mounted || _youtubeController != youtube) return;
+            _youtubeReadyTimeout?.cancel();
+            final errorCode = youtube.value.errorCode;
+            setState(() {
+              _ready = errorCode == 0;
+              _error = errorCode != 0;
+              _buffering = false;
+            });
+          },
+        ),
+      );
     }
+
+    if (!_ready || _ctrl == null) {
+      return _cur?.logo.isNotEmpty == true
+          ? CachedNetworkImage(
+              imageUrl: _cur!.logo,
+              fit: BoxFit.contain,
+              color: Colors.black54,
+              colorBlendMode: BlendMode.darken,
+              errorWidget: (_, __, ___) =>
+                  const ColoredBox(color: Color(0xFF050505)),
+            )
+          : const ColoredBox(color: Color(0xFF050505));
+    }
+
     return SlideTransition(
-      position:_sSlide,
-      child:Center(
-        child:BetterPlayer(controller:_ctrl!),
-      ),
+      position: _sSlide,
+      child: Center(child: BetterPlayer(controller: _ctrl!)),
     );
   }
 
@@ -621,7 +788,17 @@ class _XameTvScreenState extends State<XameTvScreen>
       _ib(Icons.search_rounded, (){setState((){_showSearch=true;_showList=false;});_showBriefly();}),
       const SizedBox(width:5),
       _ib(_isMuted?Icons.volume_off_rounded:Icons.volume_up_rounded, (){
-        setState(()=>_isMuted=!_isMuted); _ctrl?.setVolume(_isMuted?0:1); _showBriefly();
+        setState(()=>_isMuted=!_isMuted);
+        _ctrl?.setVolume(_isMuted?0:1);
+        final youtube = _youtubeController;
+        if (youtube != null) {
+          if (_isMuted) {
+            youtube.mute();
+          } else {
+            youtube.unMute();
+          }
+        }
+        _showBriefly();
       }),
       const SizedBox(width:5),
       _ib(_isFullscreen?Icons.fullscreen_exit_rounded:Icons.fullscreen_rounded,
