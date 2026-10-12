@@ -309,7 +309,14 @@ class _PremiumCategoryScreenState extends State<_PremiumCategoryScreen> {
   void _openChannel(_PremiumChannel channel) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _PremiumChannelViewer(channel: channel),
+        builder: (_) {
+          final list = _filteredChannels;
+          return _PremiumChannelViewer(
+            channel: channel,
+            channels: list,
+            index: list.indexOf(channel),
+          );
+        },
       ),
     );
   }
@@ -1829,9 +1836,15 @@ class _PremiumLibraryScreenState extends State<_PremiumLibraryScreen> {
 
 class _PremiumChannelViewer extends StatefulWidget {
   final _PremiumChannel channel;
+  final List<_PremiumChannel>? channels;
+  final int index;
+  final bool startFullScreen;
 
   const _PremiumChannelViewer({
     required this.channel,
+    this.channels,
+    this.index = 0,
+    this.startFullScreen = false,
   });
 
   @override
@@ -1985,13 +1998,29 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
     if (mounted) setState(() => _loading = true);
 
     final player = BetterPlayerController(
-      const BetterPlayerConfiguration(
+      BetterPlayerConfiguration(
         autoPlay: true,
         looping: false,
         fit: BoxFit.contain,
-        controlsConfiguration: BetterPlayerControlsConfiguration(
+        controlsConfiguration: const BetterPlayerControlsConfiguration(
           showControls: true,
         ),
+        routePageBuilder:
+            (context, animation, secondaryAnimation, controllerProvider) {
+          return GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onVerticalDragEnd: _onFullScreenSwipe,
+            child: Scaffold(
+              backgroundColor: Colors.black,
+              resizeToAvoidBottomInset: false,
+              body: Container(
+                alignment: Alignment.center,
+                color: Colors.black,
+                child: controllerProvider,
+              ),
+            ),
+          );
+        },
       ),
     );
 
@@ -2031,6 +2060,11 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
         _loading = false;
         _error = null;
       });
+      if (widget.startFullScreen) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _controller?.enterFullScreen();
+        });
+      }
     } catch (_) {
       player.dispose();
       if (!mounted) return;
@@ -2040,6 +2074,32 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
         _error = 'Unable to play this stream. Please try again later.';
       });
     }
+  }
+
+  bool _swiping = false;
+
+  Future<void> _onFullScreenSwipe(DragEndDetails d) async {
+    final list = widget.channels;
+    if (list == null || list.length < 2 || widget.index < 0 || _swiping) return;
+    final v = d.primaryVelocity ?? 0;
+    if (v.abs() < 400) return;
+    _swiping = true;
+    final n = v < 0
+        ? (widget.index + 1) % list.length
+        : (widget.index - 1 + list.length) % list.length;
+    _controller?.exitFullScreen();
+    await Future.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => _PremiumChannelViewer(
+          channel: list[n],
+          channels: list,
+          index: n,
+          startFullScreen: true,
+        ),
+      ),
+    );
   }
 
   @override
