@@ -215,7 +215,10 @@ class _PremiumTvScreenState extends State<PremiumTvScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _openLibrary(false),
                       icon: const Icon(Icons.history_rounded),
-                      label: const Text('Recently Watched'),
+                      label: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Recently Watched', maxLines: 1, softWrap: false),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: _gold,
                         side: const BorderSide(color: _goldDeep),
@@ -831,7 +834,7 @@ class _PremiumCategoryCatalogue extends StatelessWidget {
             crossAxisCount: 3,
             crossAxisSpacing: 9,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.92,
+            childAspectRatio: 0.72,
           ),
           itemCount: categories.length,
           itemBuilder: (_, index) {
@@ -991,9 +994,28 @@ class _ListCategoryCard extends StatelessWidget {
               SizedBox(
                 width: 72,
                 height: 52,
-                child: _PremiumCategoryArtwork(
-                  category: category,
-                  compact: true,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment.center,
+                        radius: 1.15,
+                        colors: [
+                          Color(0xFF292217),
+                          Color(0xFF141420),
+                          Color(0xFF08080D),
+                        ],
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        category.icon,
+                        size: 28,
+                        color: _PremiumTvScreenState._gold,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1054,29 +1076,6 @@ class _LargeCategoryCard extends StatelessWidget {
         children: [
           Expanded(
             child: _PremiumCategoryArtwork(category: category),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            category.name,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            category.description,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 11,
-            ),
           ),
         ],
       ),
@@ -1214,14 +1213,6 @@ class _PremiumCategoryArtwork extends StatelessWidget {
                     fontSize: 10,
                   ),
                 ),
-              ),
-            ],
-            if (!compact) ...[
-              const SizedBox(height: 12),
-              Image.asset(
-                _logoAsset,
-                height: 20,
-                fit: BoxFit.contain,
               ),
             ],
           ],
