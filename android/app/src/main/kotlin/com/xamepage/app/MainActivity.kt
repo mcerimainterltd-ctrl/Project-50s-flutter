@@ -98,6 +98,16 @@ class MainActivity : FlutterFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/android_bridge")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                        "isTv" -> {
+                            val uiType = this@MainActivity.resources.configuration.uiMode and
+                                android.content.res.Configuration.UI_MODE_TYPE_MASK
+                            val pm = this@MainActivity.packageManager
+                            result.success(
+                                uiType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION ||
+                                pm.hasSystemFeature("android.software.leanback") ||
+                                pm.hasSystemFeature("amazon.hardware.fire_tv")
+                            )
+                        }
                     "startNativePresence" -> {
                         val token = call.argument<String>("token")
                         if (token.isNullOrBlank()) {

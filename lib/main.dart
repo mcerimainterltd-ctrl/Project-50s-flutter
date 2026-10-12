@@ -12,11 +12,26 @@ import 'core/config/constants.dart';
 import 'core/services/auth_service.dart';
 import 'shared/models/xame_user.dart';
 import 'app.dart';
+import 'tv/tv_app.dart';
 import 'package:app_links/app_links.dart';
 import 'core/services/cache_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Android TV / Fire TV: open straight into XameTV (phone path unchanged)
+  if (Platform.isAndroid) {
+    var isTv = false;
+    try {
+      isTv = await const MethodChannel('com.xamepage.app/android_bridge')
+              .invokeMethod<bool>('isTv') ??
+          false;
+    } catch (_) {}
+    if (isTv) {
+      await runTvApp();
+      return;
+    }
+  }
 
   // Parallel initialization for faster startup
   await Future.wait([
