@@ -13,6 +13,19 @@ final currentUserProvider = StateProvider<XameUser?>((ref) => null);
 
 class AuthService {
   final _storage = const FlutterSecureStorage();
+
+  /// Builds JSON headers for requests requiring the current XamePage session.
+  Future<Map<String, String>> authenticatedHeaders() async {
+    final token = await _storage.read(key: AppConstants.keySessionToken);
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   final _dio     = Dio(BaseOptions(
     baseUrl:        AppConstants.serverUrl,
     connectTimeout: const Duration(seconds: 30),

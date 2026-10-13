@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 import 'package:xamepage/core/services/cache_service.dart';
+import 'package:xamepage/core/services/auth_service.dart';
 
 // ── Colours ───────────────────────────────────────────────────────────────────
 
@@ -146,6 +147,9 @@ class _PhoneScreenState extends State<PhoneScreen>
   List<_DevContact> _contacts      = [];
   bool _contactsLoaded   = false;
   bool _contactsLoading  = false;
+  bool _contactsConsentGranted = false;
+  bool _contactsConsentLoaded = false;
+  bool _contactsLoadInProgress = false;
   String _q = '';
 
   // Keypad
@@ -160,21 +164,17 @@ class _PhoneScreenState extends State<PhoneScreen>
     _tab = TabController(length: 3, vsync: this, initialIndex: 1)
       ..addListener(() {
         if (_tab.index == 0 && _recents.isEmpty) _loadRecents();
-        if (_tab.index == 1 && !_contactsLoaded) _loadContacts();
+        if (_tab.index == 1 &&
+            _contactsConsentLoaded &&
+            _contactsConsentGranted &&
+            !_contactsLoaded) {
+          _loadContacts();
+        }
       });
     // Load cached recents instantly
     final cachedRecents = CacheService.loadPhoneRecents();
     if (cachedRecents.isNotEmpty) {
       _recents = cachedRecents.map((r) => _CallRecord.fromJson(r)).toList();
-    }
-    // Load cached device contacts instantly before permission request
-    final cachedContacts = CacheService.loadDevContacts();
-    if (cachedContacts.isNotEmpty) {
-      _contacts = cachedContacts.map((m) => _DevContact(
-        name:   m['name']   as String? ?? '',
-        phones: List<String>.from(m['phones'] as List? ?? []),
-      )).toList();
-      _contactsLoaded = true;
     }
     _loadCredits();
     _loadRates();
@@ -182,7 +182,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     _loadFxRates();
     _loadCreditsVisibility();
     _loadRecents();
-    _loadContacts(); // Refresh from device in background
+    _loadContactConsent();
   }
 
   @override
@@ -323,62 +323,140 @@ class _PhoneScreenState extends State<PhoneScreen>
     if (mounted) setState(() => _recentsLoading = false);
   }
 
-  Future<void> _loadContacts() async {
-    if (_contactsLoading) return;
-    // Check current status first — only request if not yet determined
-    PermissionStatus status = await Permission.contacts.status;
-    if (status.isDenied) {
-      status = await Permission.contacts.request();
-    }
-    if (status.isDenied || status.isPermanentlyDenied) {
-      if (mounted) {
-        _snack('Contacts permission denied');
-        if (status.isPermanentlyDenied) openAppSettings();
-      }
+  Future<void> _loadContactConsent() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accepted =
+        prefs.getBool('phone:contactsDisclosureAccepted') ?? false;
+
+    if (!mounted) return;
+
+    // Preserve a consent decision made while the stored preference was
+    // loading, so an older read cannot overwrite the user's new choice.
+    final consentGranted = accepted || _contactsConsentGranted;
+
+    setState(() {
+      _contactsConsentGranted = consentGranted;
+      _contactsConsentLoaded = true;
+    });
+
+    // Previously accepted users still pass through the Android permission
+    // check before cached contacts or device contacts are accessed.
+    if (consentGranted) await _loadContacts();
+  }
+
+  Future<void> _acceptContactDisclosure() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved =
+        await prefs.setBool('phone:contactsDisclosureAccepted', true);
+
+    if (!saved) {
+      _snack('Could not save your choice. Please try again.');
       return;
     }
-    // Only show spinner if no cached contacts yet
-    if (_contacts.isEmpty) setState(() => _contactsLoading = true);
+
+    if (!mounted) return;
+
+    setState(() => _contactsConsentGranted = true);
+    await _loadContacts();
+  }
+
+  Future<void> _loadContacts() async {
+    if (_contactsLoadInProgress ||
+        _contactsLoading ||
+        !_contactsConsentLoaded ||
+        !_contactsConsentGranted) {
+      return;
+    }
+
+    _contactsLoadInProgress = true;
+
     try {
+      PermissionStatus status = await Permission.contacts.status;
+      if (status.isDenied) {
+        status = await Permission.contacts.request();
+      }
+
+      if (!status.isGranted) {
+        if (mounted) {
+          _snack('Contacts permission is required to load device contacts.');
+          if (status.isPermanentlyDenied) {
+            openAppSettings();
+          }
+        }
+        return;
+      }
+
+      // Access the existing cache only after disclosure consent and
+      // confirmed Android contact permission.
+      if (_contacts.isEmpty) {
+        final cachedContacts = CacheService.loadDevContacts();
+        if (cachedContacts.isNotEmpty && mounted) {
+          setState(() {
+            _contacts = cachedContacts.map((m) => _DevContact(
+              name: m['name'] as String? ?? '',
+              phones: List<String>.from(m['phones'] as List? ?? []),
+            )).toList();
+            _contactsLoaded = true;
+          });
+        }
+      }
+
+      if (_contacts.isEmpty && mounted) {
+        setState(() => _contactsLoading = true);
+      }
+
       final raw = await FlutterContacts.getContacts(withProperties: true);
       final Map<String, _DevContact> byName = {};
+
       for (final c in raw) {
         final name = c.displayName.trim();
         if (name.isEmpty) continue;
+
         final phones = c.phones
             .map((p) => p.number.replaceAll(RegExp(r'\s'), ''))
             .where((p) => p.isNotEmpty)
             .toList();
+
         if (phones.isEmpty) continue;
+
         if (!byName.containsKey(name)) {
           byName[name] = _DevContact(name: name, phones: []);
         }
         byName[name]!.phones.addAll(phones);
       }
+
       final sorted = byName.values.toList()
         ..sort((a, b) => a.name.compareTo(b.name));
-      // Persist to cache for instant load next time
+
       await CacheService.saveDevContacts(sorted.map((c) => {
-        'name':   c.name,
+        'name': c.name,
         'phones': c.phones,
       }).toList());
-      if (mounted) setState(() {
-        _contacts       = sorted;
-        _contactsLoaded = true;
-        _contactsLoading = false;
-      });
 
-      // Match contacts against XamePage users
+      if (mounted) {
+        setState(() {
+          _contacts = sorted;
+          _contactsLoaded = true;
+        });
+      }
+
       await _matchXameContacts(sorted);
-
     } catch (e) {
-      if (mounted) setState(() => _contactsLoading = false);
-      _snack('Failed to load contacts');
+      if (mounted) {
+        _snack('Failed to load contacts');
+      }
+    } finally {
+      _contactsLoadInProgress = false;
+      if (mounted && _contactsLoading) {
+        setState(() => _contactsLoading = false);
+      }
     }
   }
 
   Future<void> _matchXameContacts(List<_DevContact> contacts) async {
     try {
+      final headers = await AuthService().authenticatedHeaders();
+      if (!headers.containsKey('Authorization')) return;
       // Collect all phone numbers
       final allPhones = contacts
           .expand((c) => c.phones)
@@ -392,7 +470,7 @@ class _PhoneScreenState extends State<PhoneScreen>
         final chunk = allPhones.sublist(i, (i + 200).clamp(0, allPhones.length));
         final r = await http.post(
           Uri.parse('${widget.serverUrl}/api/contacts/match'),
-          headers: {'Content-Type': 'application/json'},
+          headers: headers,
           body: jsonEncode({'phones': chunk}),
         ).timeout(const Duration(seconds: 15));
         final d = jsonDecode(r.body);
@@ -831,6 +909,10 @@ class _PhoneScreenState extends State<PhoneScreen>
               contacts:     _contacts,
               loading:      _contactsLoading,
               loaded:       _contactsLoaded,
+              consentGranted: _contactsConsentGranted,
+              onConsent:    _acceptContactDisclosure,
+              onDecline:    () => _snack(
+                  'Contact access remains off. Recents and Keypad are available.'),
               q:            _q,
               onQChange:    (v) => setState(() => _q = v),
               onLoad:       _loadContacts,
@@ -1056,23 +1138,105 @@ class _RecentsTab extends StatelessWidget {
 class _ContactsTab extends StatelessWidget {
   final List<_DevContact>  contacts;
   final List<XameContact>  xameContacts;
-  final bool      loading, loaded;
-  final String    q;
-  final void Function(String)      onQChange;
-  final VoidCallback               onLoad;
+  final bool loading, loaded, consentGranted;
+  final String q;
+  final void Function(String) onQChange;
+  final VoidCallback onLoad, onConsent, onDecline;
   final void Function(_DevContact) onCall;
   final void Function(_DevContact) onSms;
 
   _ContactsTab({
     required this.contacts,  required this.loading,
-    required this.loaded,    required this.q,
+    required this.loaded, required this.q,
+    required this.consentGranted,
     required this.onQChange, required this.onLoad,
-    required this.onCall,    required this.onSms,
+    required this.onConsent, required this.onDecline,
+    required this.onCall, required this.onSms,
     this.xameContacts = const [],
   });
 
   @override
   Widget build(BuildContext context) {
+    if (!consentGranted) {
+      return Column(
+        children: [
+          if (xameContacts.isNotEmpty)
+            _XameContactsSection(xameContacts: xameContacts),
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.contacts_outlined,
+                      size: 48,
+                      color: context.xAccent,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Your Contacts, Your Privacy',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: context.xText,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'XamePage can read names and phone numbers from '
+                      'your device contacts to help you identify people '
+                      'who use XamePage and contact them through XameTel.\n\n'
+                      'Phone numbers are sent to XamePage servers for '
+                      'matching against registered XamePage accounts. '
+                      'Matching results are returned to your device.\n\nContact names and phone numbers are cached locally on your device to help contacts load faster.\n\n'
+                      'Your device contact list is not displayed to other '
+                      'XamePage users.\n\n'
+                      'By tapping Agree and Continue, you agree to this '
+                      'contact access and matching process. Android will '
+                      'then ask you to grant contact permission. You can '
+                      'choose Not Now and continue using other features.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: context.xMuted,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: onConsent,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: XameColors.accent,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Agree and Continue',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: onDecline,
+                      child: Text(
+                        'Not Now',
+                        style: TextStyle(color: context.xMuted),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     if (!loaded && !loading) return Center(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 72, height: 72,
