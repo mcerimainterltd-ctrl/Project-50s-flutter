@@ -36,6 +36,7 @@ class _LiveBroadcastScreenState
   Timer? _cutoffTimer;
   Duration _remainingUntilCutoff = Duration.zero;
   String _connectionStatus = 'Connecting…';
+  String? _connectionError;
 
   @override
   void initState() {
@@ -108,6 +109,7 @@ class _LiveBroadcastScreenState
       if (!mounted) return;
 
       setState(() {
+        _connectionError = null;
         _connectionStatus = 'Connecting…';
       });
 
@@ -126,8 +128,11 @@ class _LiveBroadcastScreenState
     } catch (e) {
       if (!mounted) return;
 
+      debugPrint('[XAMELIVE] Broadcast initialization failed: $e');
+      debugPrintStack();
       setState(() {
         _initializing = false;
+        _connectionError = e.toString();
         _connectionStatus = 'Connection failed';
       });
 
@@ -377,6 +382,28 @@ class _LiveBroadcastScreenState
               ),
             ),
 
+            if (_connectionError != null)
+              Positioned(
+                left: 16,
+                right: 16,
+                top: 76,
+                child: SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade900.withValues(alpha: 0.94),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Connection error: $_connectionError',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               left: 16,
               right: 16,
