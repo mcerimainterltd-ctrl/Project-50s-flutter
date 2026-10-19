@@ -386,24 +386,27 @@ class LiveNotifier extends StateNotifier<LiveState> {
 
   Future<bool> endLive() async {
     final session = state.broadcasterSession;
+    if (session == null) return true;
 
-    if (session == null) {
-      return true;
-    }
+    return endLiveSession(session.sessionId);
+  }
 
+  Future<bool> endLiveSession(String sessionId) async {
     state = state.copyWith(
       loading: true,
       clearError: true,
     );
 
     try {
-      await _api.endLive(session.sessionId);
+      await _api.endLive(sessionId);
 
+      final currentSession = state.broadcasterSession;
       state = state.copyWith(
         loading: false,
-        clearBroadcasterSession: true,
+        clearBroadcasterSession:
+            currentSession?.sessionId == sessionId,
         activeLives: state.activeLives
-            .where((item) => item.sessionId != session.sessionId)
+            .where((item) => item.sessionId != sessionId)
             .toList(),
       );
 

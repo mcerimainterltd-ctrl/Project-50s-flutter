@@ -33,6 +33,12 @@ class _LiveBroadcastScreenState
   bool _initializing = true;
   bool _ending = false;
   bool _backendEnded = false;
+  bool _shutdownRequested = false;
+  bool _screenDisposed = false;
+  bool _backendTerminationSucceeded = false;
+  Future<void>? _initializationFuture;
+  Future<bool>? _backendTermination;
+  Future<void>? _resourceCleanup;
   Timer? _cutoffTimer;
   Duration _remainingUntilCutoff = Duration.zero;
   String _connectionStatus = 'Connecting…';
@@ -91,12 +97,14 @@ class _LiveBroadcastScreenState
       }
     });
 
-    _initializeBroadcast();
+    _initializationFuture = _initializeBroadcast();
   }
 
   Future<void> _initializeBroadcast() async {
     try {
       await _localRenderer.initialize();
+
+      if (_shutdownRequested || _screenDisposed) return;
 
       final camera = await Permission.camera.request();
 
@@ -106,43 +114,220 @@ class _LiveBroadcastScreenState
         );
       }
 
-      if (!mounted) return;
+      if (_shutdownRequested || _screenDisposed) return;
 
-      setState(() {
-        _connectionError = null;
-        _connectionStatus = 'Connecting…';
-      });
+      if (mounted) {
+        setState(() {
+          _connectionError = null;
+          _connectionStatus = 'Connecting…';
+        });
+      }
 
       await _webrtc.startBroadcast(
         publishUrl: widget.result.publishUrl,
         localRenderer: _localRenderer,
       );
 
+      if (_shutdownRequested || _screenDisposed) return;
       if (!mounted) return;
 
       setState(() {
         _initializing = false;
         _connectionStatus = 'Live';
       });
+    } catch (e, stackTrace) {
+      // Preserve the original initialization failure for diagnosis.
+      debugPrint('[XAMELIVE] Broadcast initialization failed: $e');
+      debugPrintStack(stackTrace: stackTrace);
 
-    } catch (e) {
+      // Suppress provider-driven UI changes during failure cleanup.
+      _ending = true;
+
+      // Cleanup failure must not prevent backend termination.
+      try {
+        await _disposeWebRtcSafely();
+      } catch (cleanupError, cleanupStack) {
+        debugPrint(
+          '[XAMELIVE] WebRTC cleanup after initialization failure '
+          'threw: $cleanupError',
+        );
+        debugPrintStack(stackTrace: cleanupStack);
+      }
+
+      var backendTerminationConfirmed = false;
+
+      try {
+        backendTerminationConfirmed =
+            await _terminateBackendSession();
+      } catch (terminationError, terminationStack) {
+        debugPrint(
+          '[XAMELIVE] Backend termination after initialization failure '
+          'threw: $terminationError',
+        );
+        debugPrintStack(stackTrace: terminationStack);
+      }
+
+      // Never update UI or show notifications after disposal.
       if (!mounted) return;
 
-      debugPrint('[XAMELIVE] Broadcast initialization failed: $e');
-      debugPrintStack();
-      setState(() {
-        _initializing = false;
-        _connectionError = e.toString();
-        _connectionStatus = 'Connection failed';
-      });
+      // Preserve the original failure even if shutdown was requested.
+      // _endLive() uses this state if backend termination fails.
+      final message = backendTerminationConfirmed
+          ? e.toString()
+          : '${e.toString()} '
+              'Backend session termination could not be confirmed.';
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('StateError: ', ''),
+      if (_shutdownRequested) {
+        try {
+          setState(() {
+            _initializing = false;
+            _connectionError = message;
+            _connectionStatus = 'Connection failed';
+            // Keep _ending true while shutdown remains in progress.
+          });
+        } catch (stateError, stateStack) {
+          debugPrint(
+            '[XAMELIVE] Could not finalize initialization state '
+            'during shutdown: $stateError',
+          );
+          debugPrintStack(stackTrace: stateStack);
+        }
+        return;
+      }
+
+      try {
+        setState(() {
+          _initializing = false;
+          _ending = false;
+          _connectionError = message;
+          _connectionStatus = 'Connection failed';
+        });
+      } catch (stateError, stateStack) {
+        debugPrint(
+          '[XAMELIVE] Could not report broadcast initialization failure: '
+          '$stateError',
+        );
+        debugPrintStack(stackTrace: stateStack);
+        return;
+      }
+
+      try {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              message.replaceFirst('StateError: ', ''),
+            ),
           ),
-        ),
+        );
+      } catch (notificationError) {
+        // The failure state is already recorded.
+        debugPrint(
+          '[XAMELIVE] Could not show initialization failure notification: '
+          '$notificationError',
+        );
+      }
+    }
+  }
+
+  Future<bool> _terminateBackendSession() async {
+    if (_backendTerminationSucceeded) return true;
+
+    final existing = _backendTermination;
+    if (existing != null) return existing;
+
+    late final Future<bool> operation;
+
+    try {
+      operation = _screenDisposed
+          ? _terminateBackendDirectly()
+          : ref.read(liveProvider.notifier).endLiveSession(
+                widget.result.session.sessionId,
+              );
+    } catch (e) {
+      debugPrint('[XAMELIVE] Could not initiate backend termination: $e');
+      return false;
+    }
+
+    _backendTermination = operation;
+
+    try {
+      final ended = await operation;
+      if (ended) _backendTerminationSucceeded = true;
+      return ended;
+    } catch (e) {
+      debugPrint('[XAMELIVE] Backend termination failed: $e');
+      return false;
+    } finally {
+      if (identical(_backendTermination, operation)) {
+        _backendTermination = null;
+      }
+    }
+  }
+
+  Future<bool> _terminateBackendDirectly() async {
+    try {
+      await LiveApi().endLive(widget.result.session.sessionId);
+      return true;
+    } catch (e) {
+      debugPrint('[XAMELIVE] Backend cleanup failed: $e');
+      return false;
+    }
+  }
+
+  Future<void> _disposeWebRtcSafely() async {
+    try {
+      await _webrtc.dispose();
+    } catch (e) {
+      debugPrint('[XAMELIVE] WebRTC disposal failed: $e');
+    }
+  }
+
+  Future<void> _disposeBroadcastResources() {
+    return _resourceCleanup ??= () async {
+      try {
+        await _disposeWebRtcSafely();
+      } finally {
+        try {
+          _localRenderer.srcObject = null;
+        } finally {
+          await _localRenderer.dispose();
+        }
+      }
+    }();
+  }
+
+  Future<void> _cleanupAfterScreenDisposal() async {
+    final initialization = _initializationFuture;
+    if (initialization != null) {
+      try {
+        await initialization;
+      } catch (e) {
+        debugPrint('[XAMELIVE] Initialization cleanup wait failed: $e');
+      }
+    }
+
+    try {
+      if (!_backendEnded) {
+        final ended = await _terminateBackendSession();
+        if (!ended) {
+          debugPrint(
+            '[XAMELIVE] Backend termination was not confirmed '
+            'during screen disposal.',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint(
+        '[XAMELIVE] Backend termination cleanup failed: $e',
       );
+    } finally {
+      try {
+        await _disposeBroadcastResources();
+      } catch (e) {
+        debugPrint(
+          '[XAMELIVE] Broadcast resource cleanup failed: $e',
+        );
+      }
     }
   }
 
@@ -215,7 +400,7 @@ class _LiveBroadcastScreenState
     _cutoffTimer?.cancel();
     _cutoffTimer = null;
 
-    await _webrtc.dispose();
+    await _disposeWebRtcSafely();
 
     if (!mounted) return;
 
@@ -256,20 +441,34 @@ class _LiveBroadcastScreenState
 
     setState(() {
       _ending = true;
+      _shutdownRequested = true;
       _connectionStatus = 'Ending…';
     });
 
-    await _webrtc.dispose();
+    final initialization = _initializationFuture;
+    if (initialization != null) {
+      await initialization;
+    }
 
-    final ended = await ref.read(liveProvider.notifier).endLive();
+    await _disposeWebRtcSafely();
+    final ended = await _terminateBackendSession();
 
     if (!mounted) return;
 
     if (!ended) {
       setState(() {
+        _initializing = false;
         _ending = false;
-        _connectionStatus = 'Live';
+        _connectionStatus =
+            _connectionError == null ? 'Live' : 'Connection failed';
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'XameLive could not confirm that the broadcast ended. Please retry.',
+          ),
+        ),
+      );
       return;
     }
 
@@ -278,10 +477,10 @@ class _LiveBroadcastScreenState
 
   @override
   void dispose() {
+    _screenDisposed = true;
     _cutoffTimer?.cancel();
     _cutoffTimer = null;
-    _webrtc.dispose();
-    _localRenderer.dispose();
+    unawaited(_cleanupAfterScreenDisposal());
     super.dispose();
   }
 

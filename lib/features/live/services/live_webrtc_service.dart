@@ -5,6 +5,53 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 
+void _logXameLiveSdpDiagnostics(
+  String flow,
+  http.Response response,
+  String answerSdp,
+) {
+  final lines = answerSdp.split(RegExp(r'\r?\n'));
+  debugPrint(
+    '[XAMELIVE] $flow response: status=${response.statusCode}, '
+    'contentType=${response.headers['content-type'] ?? 'missing'}, '
+    'bytes=${answerSdp.length}, '
+    'v0=${lines.any((line) => line.trim() == 'v=0')}, '
+    'origin=${lines.any((line) => line.startsWith('o='))}, '
+    'media=${lines.where((line) => line.startsWith('m=')).length}, '
+    'attributes=${lines.where((line) => line.startsWith('a=')).length}',
+  );
+}
+
+void _validateXameLiveSdpAnswer(String flow, String answerSdp) {
+  if (answerSdp.isEmpty) {
+    throw StateError('$flow returned an empty SDP answer.');
+  }
+
+  final lines = answerSdp
+      .split(RegExp(r'\r?\n'))
+      .map((line) => line.trim())
+      .toList();
+
+  final hasVersion = lines.any((line) => line == 'v=0');
+  final hasOrigin = lines.any((line) => line.startsWith('o='));
+  final hasSessionName = lines.any((line) => line.startsWith('s='));
+  final hasTiming = lines.any((line) => line.startsWith('t='));
+  final mediaCount = lines.where((line) => line.startsWith('m=')).length;
+
+  if (!hasVersion ||
+      !hasOrigin ||
+      !hasSessionName ||
+      !hasTiming ||
+      mediaCount == 0) {
+    throw StateError(
+      '$flow returned an invalid SDP answer '
+      '(version=$hasVersion, origin=$hasOrigin, '
+      'sessionName=$hasSessionName, timing=$hasTiming, '
+      'mediaSections=$mediaCount).',
+    );
+  }
+}
+
 class LiveWebRTCService {
   RTCPeerConnection? _pc;
   MediaStream? _localStream;
@@ -82,9 +129,12 @@ class LiveWebRTCService {
       }
 
       final answerSdp = response.body.trim();
-      if (answerSdp.isEmpty) {
-        throw StateError('WHIP returned an empty SDP answer.');
-      }
+      _logXameLiveSdpDiagnostics(
+        'WHIP',
+        response,
+        answerSdp,
+      );
+      _validateXameLiveSdpAnswer('WHIP', answerSdp);
 
       await pc.setRemoteDescription(
         RTCSessionDescription(answerSdp, 'answer'),
@@ -177,9 +227,12 @@ class LiveWebRTCService {
       }
 
       final answerSdp = response.body.trim();
-      if (answerSdp.isEmpty) {
-        throw StateError('WHEP returned an empty SDP answer.');
-      }
+      _logXameLiveSdpDiagnostics(
+        'WHEP',
+        response,
+        answerSdp,
+      );
+      _validateXameLiveSdpAnswer('WHEP', answerSdp);
 
       await pc.setRemoteDescription(
         RTCSessionDescription(answerSdp, 'answer'),
@@ -281,6 +334,29 @@ class LiveWebRTCService {
     }
   }
 
+  Future<void> _disposeStreamSafely(
+    MediaStream stream,
+    String label,
+  ) async {
+    try {
+      for (final track in stream.getTracks()) {
+        try {
+          track.stop();
+        } catch (e) {
+          debugPrint('[XAMELIVE] $label track stop failed: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('[XAMELIVE] $label track enumeration failed: $e');
+    }
+
+    try {
+      await stream.dispose();
+    } catch (e) {
+      debugPrint('[XAMELIVE] $label stream disposal failed: $e');
+    }
+  }
+
   Future<void> dispose() async {
     _closed = true;
 
@@ -305,27 +381,25 @@ class LiveWebRTCService {
     _localStream = null;
 
     if (stream != null) {
-      for (final track in stream.getTracks()) {
-        track.stop();
-      }
-      await stream.dispose();
+      await _disposeStreamSafely(stream, 'Local');
     }
 
     final remoteStream = _remoteStream;
     _remoteStream = null;
 
     if (remoteStream != null) {
-      for (final track in remoteStream.getTracks()) {
-        track.stop();
-      }
-      await remoteStream.dispose();
+      await _disposeStreamSafely(remoteStream, 'Remote');
     }
 
     final remoteRenderer = _remoteRenderer;
     _remoteRenderer = null;
 
     if (remoteRenderer != null) {
-      remoteRenderer.srcObject = null;
+      try {
+        remoteRenderer.srcObject = null;
+      } catch (e) {
+        debugPrint('[XAMELIVE] Remote renderer cleanup failed: $e');
+      }
     }
 
     final pc = _pc;
@@ -334,7 +408,9 @@ class LiveWebRTCService {
     if (pc != null) {
       try {
         await pc.close();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[XAMELIVE] Peer connection close failed: $e');
+      }
     }
   }
 }
