@@ -215,7 +215,7 @@ class _LiveBroadcastScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              message.replaceFirst('StateError: ', ''),
+              message.replaceFirst('Bad state: ', ''),
             ),
           ),
         );

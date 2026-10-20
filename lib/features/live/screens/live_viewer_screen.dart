@@ -114,10 +114,14 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('StateError: ', ''),
+            e.toString().replaceFirst('Bad state: ', ''),
           ),
         ),
       );
+
+      if (e.toString().contains('not currently live')) {
+        Navigator.of(context).maybePop();
+      }
     }
   }
 

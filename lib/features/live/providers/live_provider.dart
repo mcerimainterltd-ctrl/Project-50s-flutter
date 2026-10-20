@@ -351,6 +351,9 @@ class LiveNotifier extends StateNotifier<LiveState> {
     }
   }
 
+  String? _startConflictSessionId;
+  String? get startConflictSessionId => _startConflictSessionId;
+
   Future<LiveStartResult?> startLive({
     required String title,
     required String category,
@@ -360,6 +363,7 @@ class LiveNotifier extends StateNotifier<LiveState> {
       clearError: true,
     );
 
+    _startConflictSessionId = null;
     try {
       final result = await _api.startLive(
         title: title,
@@ -379,6 +383,9 @@ class LiveNotifier extends StateNotifier<LiveState> {
         loading: false,
         error: e.toString(),
       );
+
+      _startConflictSessionId =
+          e is LiveApiException ? e.existingSessionId : null;
 
       return null;
     }

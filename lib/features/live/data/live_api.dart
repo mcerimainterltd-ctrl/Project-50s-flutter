@@ -10,12 +10,17 @@ import '../models/live_entitlement.dart';
 class LiveApiException extends StateError {
   final String? code;
   final int statusCode;
+  final String? existingSessionId;
 
   LiveApiException({
     required this.code,
     required this.statusCode,
     required String message,
+    this.existingSessionId,
   }) : super(message);
+
+  @override
+  String toString() => message;
 }
 
 class LiveApi {
@@ -196,6 +201,10 @@ class LiveApi {
         statusCode: response.statusCode,
         message: data['message']?.toString() ??
             'Unable to start XameLive (${response.statusCode}).',
+        existingSessionId:
+            response.statusCode == 409 && data['session'] is Map
+                ? (data['session'] as Map)['sessionId']?.toString()
+                : null,
       );
     }
 

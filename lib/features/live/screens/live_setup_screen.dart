@@ -54,7 +54,7 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
     if (entitlement == null) {
       final error = ref.read(liveProvider).error;
       _showMessage(
-        error?.replaceFirst('StateError: ', '') ??
+        error?.replaceFirst('Bad state: ', '') ??
             'Unable to start the Go Live trial.',
       );
       return;
@@ -77,7 +77,7 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
     final billingError = ref.read(liveProvider).billingError;
     if (billingError != null && billingError.isNotEmpty) {
       _showMessage(
-        billingError.replaceFirst('StateError: ', ''),
+        billingError.replaceFirst('Bad state: ', ''),
       );
     }
   }
@@ -112,9 +112,45 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
     setState(() => _starting = false);
 
     if (result == null) {
+      final conflictId =
+          ref.read(liveProvider.notifier).startConflictSessionId;
+
+      if (conflictId != null) {
+        final endIt = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Live already active'),
+            content: const Text(
+              'You already have a live session running. '
+              'End it and start a new one?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('End it'),
+              ),
+            ],
+          ),
+        );
+
+        if (!mounted) return;
+
+        if (endIt == true) {
+          await ref
+              .read(liveProvider.notifier)
+              .endLiveSession(conflictId);
+          if (mounted) await _startLive();
+        }
+        return;
+      }
+
       final error = ref.read(liveProvider).error;
       _showMessage(
-        error?.replaceFirst('StateError: ', '') ??
+        error?.replaceFirst('Bad state: ', '') ??
             'Unable to start XameLive.',
       );
       return;
@@ -254,7 +290,7 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               liveState.billingError!.replaceFirst(
-                'StateError: ',
+                'Bad state: ',
                 '',
               ),
               style: TextStyle(
