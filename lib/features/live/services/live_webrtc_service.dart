@@ -128,7 +128,7 @@ class LiveWebRTCService {
         );
       }
 
-      final answerSdp = response.body.trim();
+      final answerSdp = '${response.body.trim().split(RegExp(r'\r?\n')).join('\r\n')}\r\n';
       _logXameLiveSdpDiagnostics(
         'WHIP',
         response,
@@ -226,7 +226,7 @@ class LiveWebRTCService {
         );
       }
 
-      final answerSdp = response.body.trim();
+      final answerSdp = '${response.body.trim().split(RegExp(r'\r?\n')).join('\r\n')}\r\n';
       _logXameLiveSdpDiagnostics(
         'WHEP',
         response,
