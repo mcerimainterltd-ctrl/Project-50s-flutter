@@ -145,6 +145,12 @@ class GoLiveBillingService {
 
     _products = products;
     _initialized = true;
+
+    // Redeliver any owned-but-unfinished purchase so it is verified,
+    // consumed and completed instead of blocking repurchase.
+    try {
+      await _store.restorePurchases();
+    } catch (_) {}
   }
 
   Future<void> purchasePlan(String productId) async {
