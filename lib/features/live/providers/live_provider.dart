@@ -330,6 +330,13 @@ class LiveNotifier extends StateNotifier<LiveState> {
     }
   }
 
+  Future<void> refreshActiveLivesQuietly() async {
+    try {
+      final sessions = await _api.getActiveLives();
+      state = state.copyWith(activeLives: sessions);
+    } catch (_) {}
+  }
+
   Future<void> loadActiveLives() async {
     state = state.copyWith(
       loading: true,

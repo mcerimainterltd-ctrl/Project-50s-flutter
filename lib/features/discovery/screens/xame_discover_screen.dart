@@ -641,6 +641,8 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   late Animation<double>   _searchFade;
   StreamSubscription?      _discoverySub;
 
+  Timer? _liveRefreshTimer;
+
   @override
   void initState() {
     super.initState();
@@ -691,10 +693,16 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
       if (!mounted) return;
       ref.read(liveProvider.notifier).loadActiveLives();
     });
+
+    _liveRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (!mounted) return;
+      ref.read(liveProvider.notifier).refreshActiveLivesQuietly();
+    });
   }
 
   @override
   void dispose() {
+    _liveRefreshTimer?.cancel();
     _discoverySub?.cancel();
 
     _scrollCtrl.dispose();

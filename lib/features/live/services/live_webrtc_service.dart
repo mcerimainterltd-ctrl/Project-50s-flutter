@@ -182,6 +182,14 @@ class LiveWebRTCService {
 
         track.enabled = true;
 
+        // Re-attach so a late-arriving video track is actually rendered.
+        if (event.streams.isNotEmpty) {
+          renderer.srcObject = event.streams.first;
+        } else {
+          renderer.srcObject = null;
+          renderer.srcObject = remoteStream;
+        }
+
         debugPrint(
           '[XAMELIVE] viewer track received: ${track.kind}',
         );
