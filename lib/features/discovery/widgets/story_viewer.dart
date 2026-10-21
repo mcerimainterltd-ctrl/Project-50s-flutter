@@ -349,7 +349,7 @@ class _StoryMedia extends StatelessWidget {
         : CachedNetworkImage(
             key:       ValueKey(story.storyId),
             imageUrl:  story.mediaUrl,
-            fit:       BoxFit.cover,
+            fit:       BoxFit.contain,
             width:     double.infinity,
             height:    double.infinity,
             placeholder: (_, __) => Container(

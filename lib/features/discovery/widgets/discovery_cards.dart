@@ -521,6 +521,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                     Expanded(child: SizedBox.expand(
                       child: CachedNetworkImage(
                           imageUrl: widget.mediaUrl, fit: BoxFit.cover,
+                          memCacheWidth: ((MediaQuery.of(context).size.width / 2) * MediaQuery.of(context).devicePixelRatio).round(),
                           errorWidget: (_, __, ___) =>
                               Container(color: const Color(0xFF1A1A2E))),
                     )),
@@ -528,6 +529,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                     Expanded(child: SizedBox.expand(
                       child: CachedNetworkImage(
                           imageUrl: widget.collabMediaUrl, fit: BoxFit.cover,
+                          memCacheWidth: ((MediaQuery.of(context).size.width / 2) * MediaQuery.of(context).devicePixelRatio).round(),
                           errorWidget: (_, __, ___) =>
                               Container(color: const Color(0xFF1A2E1A))),
                     )),
@@ -542,6 +544,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                         CachedNetworkImage(
                           imageUrl: widget.thumbnailUrl!,
                           fit: BoxFit.cover,
+                          memCacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round(),
                           errorWidget: (_, __, ___) => Container(
                             color: context.xSurface,
                             child: Icon(Icons.movie_outlined,
@@ -559,6 +562,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                           imageUrl: widget.mediaUrl.replaceFirst(
                               '/upload/', '/upload/so_0/'),
                           fit: BoxFit.cover,
+                          memCacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round(),
                           errorWidget: (_, __, ___) => Container(
                             color: context.xSurface,
                             child: Icon(Icons.movie_outlined,
@@ -574,6 +578,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                   CachedNetworkImage(
                     imageUrl: widget.mediaUrl,
                     fit:      BoxFit.cover,
+                    memCacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round(),
                     placeholder: (_, __) => ShimmerBox(
                         width: double.infinity,
                         height: 420,
@@ -781,6 +786,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                                     child: CachedNetworkImage(
                                       imageUrl:    widget.authorAvatar!,
                                       fit:         BoxFit.cover,
+                                      memCacheWidth: (26 * MediaQuery.of(context).devicePixelRatio).round(),
                                       errorWidget: (_, __, ___) =>
                                         Container(color: context.xSurface),
                                     ),
@@ -845,6 +851,7 @@ class MediaDiscoverCardState extends State<MediaDiscoverCard>
                                   child: ClipOval(child: CachedNetworkImage(
                                       imageUrl: widget.collabPartnerAvatar,
                                       fit: BoxFit.cover,
+                                      memCacheWidth: (20 * MediaQuery.of(context).devicePixelRatio).round(),
                                       errorWidget: (_, __, ___) =>
                                           Container(color: const Color(0xFF1A2E2E)))),
                                 ),
