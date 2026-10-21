@@ -52,6 +52,52 @@ void _validateXameLiveSdpAnswer(String flow, String answerSdp) {
   }
 }
 
+String _preferH264InOffer(String sdp) {
+  final lines = sdp.split(RegExp(r'\r?\n'));
+  final h264 = <String>[];
+
+  for (final line in lines) {
+    final m = RegExp(r'^a=rtpmap:(\d+) H264/90000').firstMatch(line);
+    if (m != null) h264.add(m.group(1)!);
+  }
+
+  if (h264.isEmpty) return sdp;
+
+  final preferred = h264.where((pt) {
+    return lines.any(
+      (l) =>
+          l.startsWith('a=fmtp:$pt ') &&
+          l.contains('packetization-mode=1') &&
+          l.contains('profile-level-id=42'),
+    );
+  }).toList();
+
+  final front = <String>[
+    ...preferred,
+    ...h264.where((pt) => !preferred.contains(pt)),
+  ];
+
+  final out = <String>[];
+
+  for (final line in lines) {
+    if (line.startsWith('m=video')) {
+      final parts = line.split(' ');
+      if (parts.length > 3) {
+        final pts = parts.sublist(3);
+        final ordered = <String>[
+          ...front.where((pt) => pts.contains(pt)),
+          ...pts.where((pt) => !front.contains(pt)),
+        ];
+        out.add([...parts.sublist(0, 3), ...ordered].join(' '));
+        continue;
+      }
+    }
+    out.add(line);
+  }
+
+  return out.join('\r\n');
+}
+
 class LiveWebRTCService {
   RTCPeerConnection? _pc;
   MediaStream? _localStream;
@@ -103,7 +149,19 @@ class LiveWebRTCService {
         );
       }
 
-      final offer = await pc.createOffer();
+      final rawOffer = await pc.createOffer();
+      var offer = rawOffer;
+      try {
+        final raw = rawOffer.sdp;
+        if (raw != null && raw.isNotEmpty) {
+          offer = RTCSessionDescription(
+            _preferH264InOffer(raw),
+            rawOffer.type,
+          );
+        }
+      } catch (_) {
+        offer = rawOffer;
+      }
       await pc.setLocalDescription(offer);
       await _waitForIceGatheringComplete(pc);
 

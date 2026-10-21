@@ -29,6 +29,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
   bool _joining = true;
   bool _leaving = false;
   bool _left = false;
+  bool _sawSession = false;
   bool _watchOnly = false;
   bool _participating = false;
   String _connectionStatus = 'Connecting…';
@@ -229,9 +230,11 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
         currentSession?.viewerCount ??
             widget.session.viewerCount;
 
+    if (currentSession != null) _sawSession = true;
+
     final ended =
         currentSession == null &&
-        liveState.activeLives.isNotEmpty;
+        (liveState.activeLives.isNotEmpty || _sawSession);
 
     return PopScope(
       canPop: false,
