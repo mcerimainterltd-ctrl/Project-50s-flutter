@@ -211,13 +211,32 @@ class LiveWebRTCService {
         throw StateError('WebRTC viewer SDP offer is empty.');
       }
 
-      final response = await http.post(
+      http.Response response = await http.post(
         Uri.parse(playbackUrl),
         headers: const {
           'Content-Type': 'application/sdp',
         },
         body: sdp,
       );
+
+      // The stream may not be publishing yet; retry before failing.
+      for (var attempt = 1;
+          attempt <= 6 &&
+              response.statusCode >= 400 &&
+              response.statusCode != 401 &&
+              response.statusCode != 403;
+          attempt++) {
+        await Future<void>.delayed(const Duration(seconds: 2));
+        if (_closed) break;
+
+        response = await http.post(
+          Uri.parse(playbackUrl),
+          headers: const {
+            'Content-Type': 'application/sdp',
+          },
+          body: sdp,
+        );
+      }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(

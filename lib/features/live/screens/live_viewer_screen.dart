@@ -46,9 +46,32 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
       LiveSession? session;
 
       try {
-        session = await ref.read(liveProvider.notifier).joinLive(
-              widget.session.sessionId,
-            );
+        // The server reports LIVE only once Cloudflare sees the stream,
+        // so retry briefly when a viewer joins right after the start.
+        for (var attempt = 0;; attempt++) {
+          try {
+            session = await ref.read(liveProvider.notifier).joinLive(
+                  widget.session.sessionId,
+                );
+
+            if (session == null &&
+                attempt < 5 &&
+                (ref.read(liveProvider).error ?? '')
+                    .contains('not currently live')) {
+              await Future<void>.delayed(const Duration(seconds: 2));
+              if (!mounted) return;
+              continue;
+            }
+            break;
+          } on LiveApiException catch (e) {
+            if (attempt < 5 && e.message.contains('not currently live')) {
+              await Future<void>.delayed(const Duration(seconds: 2));
+              if (!mounted) return;
+              continue;
+            }
+            rethrow;
+          }
+        }
 
         if (session == null) {
           throw StateError(
@@ -113,6 +136,8 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          duration: const Duration(seconds: 30),
+          showCloseIcon: true,
           content: Text(
             e.toString().replaceFirst('Bad state: ', ''),
           ),
