@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,7 +21,14 @@ class _MyGalleryViewerState extends State<MyGalleryViewer> {
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
     _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    ScreenAwake.release(this);
+    super.dispose();
   }
 
   @override

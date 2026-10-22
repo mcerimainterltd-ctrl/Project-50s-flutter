@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -321,13 +322,17 @@ class _DiscoveryFullscreenViewerState
         }
       }
     });
-    if (!widget.embedded) SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    if (!widget.embedded) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      ScreenAwake.acquire(this);
+    }
   }
 
   @override
   void dispose() {
     _verticalCtrl.dispose();
     _videoPool.disposeAll();
+    ScreenAwake.release(this);
     if (!widget.embedded) SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
