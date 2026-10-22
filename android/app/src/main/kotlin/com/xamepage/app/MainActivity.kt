@@ -17,7 +17,7 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
     @Volatile private var pictureInPictureEligible = false
-    @Volatile private var pictureInPictureGeneration = -1
+    @Volatile private var pictureInPictureGeneration: Long = -1L
     companion object {
         var channel: MethodChannel? = null
     }
