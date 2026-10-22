@@ -16,6 +16,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
+    @Volatile private var pictureInPictureEligible = false
+    @Volatile private var pictureInPictureGeneration = -1
     companion object {
         var channel: MethodChannel? = null
     }
@@ -98,6 +100,15 @@ class MainActivity : FlutterFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.xamepage.app/android_bridge")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "setPictureInPictureEnabled" -> {
+                        val generation = call.argument<Number>("generation")?.toLong()
+                        if (generation != null && generation >= pictureInPictureGeneration) {
+                            pictureInPictureGeneration = generation
+                            pictureInPictureEligible =
+                                call.argument<Boolean>("enabled") == true
+                        }
+                        result.success(true)
+                    }
                         "isTv" -> {
                             val uiType = this@MainActivity.resources.configuration.uiMode and
                                 android.content.res.Configuration.UI_MODE_TYPE_MASK
@@ -388,6 +399,20 @@ class MainActivity : FlutterFragmentActivity() {
                         "callerName" to callerName,
                         "callType"   to callType
                     ))
+            }
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (pictureInPictureEligible && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val params = android.app.PictureInPictureParams.Builder()
+                    .setAspectRatio(android.util.Rational(9, 16))
+                    .build()
+                enterPictureInPictureMode(params)
+            } catch (_: Exception) {
+                pictureInPictureEligible = false
             }
         }
     }

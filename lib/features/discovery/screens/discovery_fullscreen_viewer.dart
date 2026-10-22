@@ -439,6 +439,42 @@ class _FullscreenPostPage extends StatefulWidget {
 
 class _FullscreenPostPageState extends State<_FullscreenPostPage>
     with TickerProviderStateMixin {
+  static int _nextPipGeneration = 0;
+  int? _pipGeneration;
+
+  static const MethodChannel _pipChannel =
+      MethodChannel('com.xamepage.app/android_bridge');
+  bool _pipPlaybackActive = false;
+
+  void _syncPictureInPictureEligibility() {
+    final isVideo = (widget.post['mediaType'] as String? ?? '') == 'video';
+    final eligible = widget.isActive &&
+        isVideo &&
+        !widget.embedded &&
+        _pipPlaybackActive;
+
+    if (eligible) {
+      _pipGeneration ??= ++_nextPipGeneration;
+    } else if (_pipGeneration == null) {
+      return;
+    }
+
+    final generation = _pipGeneration!;
+    _pipChannel.invokeMethod(
+      'setPictureInPictureEnabled',
+      {'enabled': eligible, 'generation': generation},
+    ).catchError((_) {});
+    if (!eligible) {
+      _pipGeneration = null;
+    }
+  }
+
+  void _onPipPlaybackChanged(bool playing) {
+    if (!mounted || _pipPlaybackActive == playing) return;
+    _pipPlaybackActive = playing;
+    _syncPictureInPictureEligibility();
+  }
+
 
   final List<_BurstParticle> _particles = [];
   late AnimationController _burstAnim;
@@ -482,11 +518,13 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
     if (widget.isActive) _triggerSpotlight();
     _initMusic();
+    _syncPictureInPictureEligibility();
   }
 
   @override
   void didUpdateWidget(_FullscreenPostPage old) {
     super.didUpdateWidget(old);
+    _syncPictureInPictureEligibility();
     if (widget.isActive && !old.isActive) {
       _triggerSpotlight();
       _musicPlayer?.play();
@@ -531,6 +569,10 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
 
   @override
   void dispose() {
+    _pipChannel.invokeMethod(
+      'setPictureInPictureEnabled',
+      {'enabled': false, 'generation': _pipGeneration},
+    ).catchError((_) {});
     _burstAnim.dispose();
     _spotlightAnim.dispose();
     _musicPlayer?.dispose();
@@ -808,6 +850,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
                       isActive: widget.isActive,
                       controller: widget.videoController,
                       thumbnailUrl: widget.post['thumbnailUrl'] as String? ?? '',
+                      onPipPlaybackChanged: _onPipPlaybackChanged,
                     )
                   : _ImagePage(url: widget.post['mediaUrl'] as String? ?? ''),
             );
@@ -1114,6 +1157,7 @@ class _VideoPage extends StatefulWidget {
   final bool isActive;
   final BetterPlayerController? controller;
   final String thumbnailUrl;
+  final ValueChanged<bool>? onPipPlaybackChanged;
 
   const _VideoPage({
     Key? key,
@@ -1121,6 +1165,7 @@ class _VideoPage extends StatefulWidget {
     required this.isActive,
     this.controller,
     this.thumbnailUrl = '',
+    this.onPipPlaybackChanged,
   }) : super(key: key);
 
   @override
@@ -1203,8 +1248,20 @@ class _VideoPageState extends State<_VideoPage> {
     if (widget.isActive) _ctrl!.play();
   }
 
+  void _reportPipPlaybackState() {
+    final value = _ctrl?.videoPlayerController?.value;
+    widget.onPipPlaybackChanged?.call(
+      widget.isActive &&
+          !_paused &&
+          value != null &&
+          value.isPlaying &&
+          !value.isBuffering,
+    );
+  }
+
   void _onEvent(BetterPlayerEvent e) {
     if (!mounted) return;
+    _reportPipPlaybackState();
 
     if (e.betterPlayerEventType == BetterPlayerEventType.initialized) {
       if (!_videoReady) {
@@ -1230,14 +1287,17 @@ class _VideoPageState extends State<_VideoPage> {
     super.didUpdateWidget(old);
     if (widget.isActive && !old.isActive) {
       _ctrl?.play();
+      _reportPipPlaybackState();
     } else if (!widget.isActive && old.isActive) {
       _ctrl?.pause();
+      widget.onPipPlaybackChanged?.call(false);
     }
   }
 
   @override
   void dispose() {
     _hideTimer?.cancel();
+    widget.onPipPlaybackChanged?.call(false);
     _ctrl?.removeEventsListener(_onEvent);
     if (_ownsController) _ctrl?.dispose();
     super.dispose();
@@ -1257,9 +1317,11 @@ class _VideoPageState extends State<_VideoPage> {
     });
     if (_paused) {
       _ctrl?.pause();
+      widget.onPipPlaybackChanged?.call(false);
       _hideTimer?.cancel();
     } else {
       _ctrl?.play();
+      _reportPipPlaybackState();
       _scheduleHide();
     }
   }

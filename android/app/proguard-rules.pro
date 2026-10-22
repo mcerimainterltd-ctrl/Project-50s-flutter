@@ -8,11 +8,9 @@
 -dontwarn tvo.webrtc.**
 -keepattributes InnerClasses
 
-# Keep XamePage native classes
--keep class com.xamepage.app.** { *; }
-
-# Keep Flutter engine
--keep class io.flutter.** { *; }
+# Android manifest components and directly referenced native classes
+# are retained by R8's program analysis.
+# Keep Flutter warnings suppressed without retaining the entire Flutter API.
 -dontwarn io.flutter.**
 
 # Keep Socket.IO

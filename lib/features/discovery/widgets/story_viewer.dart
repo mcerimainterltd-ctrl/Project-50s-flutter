@@ -352,6 +352,8 @@ class _StoryMedia extends StatelessWidget {
             fit:       BoxFit.contain,
             width:     double.infinity,
             height:    double.infinity,
+            memCacheWidth: (MediaQuery.of(context).size.longestSide *
+                MediaQuery.of(context).devicePixelRatio).round(),
             placeholder: (_, __) => Container(
               color: context.xBg,
               child: Center(child: CircularProgressIndicator(
