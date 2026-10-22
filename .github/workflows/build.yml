@@ -37,7 +37,14 @@ jobs:
           cache: true
 
       - name: Install NDK
-        run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
+        run: |
+          for n in 1 2 3; do
+            echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973" && break
+            echo "NDK 27 install attempt $n failed"
+            rm -rf $ANDROID_HOME/ndk/27.0.12077973
+            sleep 10
+          done
+          true
 
       - name: Cache pub
         uses: actions/cache@v4
