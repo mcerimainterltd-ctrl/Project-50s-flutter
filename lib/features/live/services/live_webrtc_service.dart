@@ -240,13 +240,10 @@ class LiveWebRTCService {
 
         track.enabled = true;
 
-        // Re-attach so a late-arriving video track is actually rendered.
-        if (event.streams.isNotEmpty) {
-          renderer.srcObject = event.streams.first;
-        } else {
-          renderer.srcObject = null;
-          renderer.srcObject = remoteStream;
-        }
+        // Always render the merged stream so audio and video tracks
+        // arriving in separate MediaStreams are not split.
+        renderer.srcObject = null;
+        renderer.srcObject = remoteStream;
 
         debugPrint(
           '[XAMELIVE] viewer track received: ${track.kind}',
