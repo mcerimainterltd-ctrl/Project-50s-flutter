@@ -439,8 +439,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                                 const SizedBox(width: 9),
                                 Expanded(
                                   child: Text(
-                                    widget.session
-                                        .broadcasterXameId,
+                                    widget.session.hostLabel,
                                     maxLines: 1,
                                     overflow:
                                         TextOverflow.ellipsis,

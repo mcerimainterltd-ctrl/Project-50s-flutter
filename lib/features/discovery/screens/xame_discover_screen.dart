@@ -4816,7 +4816,7 @@ void _showLiveNowSheet(BuildContext screenContext) {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              live.broadcasterXameId,
+                              live.hostLabel,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(

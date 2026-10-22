@@ -1,6 +1,7 @@
 class LiveSession {
   final String sessionId;
   final String broadcasterXameId;
+  final String? broadcasterDisplayName;
   final String? title;
   final String? category;
   final String status;
@@ -14,6 +15,7 @@ class LiveSession {
   const LiveSession({
     required this.sessionId,
     required this.broadcasterXameId,
+    this.broadcasterDisplayName,
     this.title,
     this.category,
     required this.status,
@@ -30,6 +32,7 @@ class LiveSession {
       sessionId: json['sessionId']?.toString() ?? '',
       broadcasterXameId:
           json['broadcasterXameId']?.toString() ?? '',
+      broadcasterDisplayName: json['broadcasterDisplayName']?.toString(),
       title: json['title']?.toString(),
       category: json['category']?.toString(),
       status: json['status']?.toString() ?? 'STARTING',
@@ -40,6 +43,11 @@ class LiveSession {
       allowedMinutes: _parseInt(json['allowedMinutes']),
       usageCutoffAt: _parseDate(json['usageCutoffAt']),
     );
+  }
+
+  String get hostLabel {
+    final name = (broadcasterDisplayName ?? '').trim();
+    return name.isNotEmpty ? name : 'XameLive host';
   }
 
   static DateTime? _parseDate(dynamic value) {
@@ -56,6 +64,7 @@ class LiveSession {
     return {
       'sessionId': sessionId,
       'broadcasterXameId': broadcasterXameId,
+      'broadcasterDisplayName': broadcasterDisplayName,
       'title': title,
       'category': category,
       'status': status,

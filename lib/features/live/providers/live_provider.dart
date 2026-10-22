@@ -610,6 +610,7 @@ class LiveNotifier extends StateNotifier<LiveState> {
       return LiveSession(
         sessionId: session.sessionId,
         broadcasterXameId: session.broadcasterXameId,
+        broadcasterDisplayName: session.broadcasterDisplayName,
         title: session.title,
         category: session.category,
         status: session.status,
@@ -630,6 +631,7 @@ class LiveNotifier extends StateNotifier<LiveState> {
       return LiveSession(
         sessionId: session.sessionId,
         broadcasterXameId: session.broadcasterXameId,
+        broadcasterDisplayName: session.broadcasterDisplayName,
         title: session.title,
         category: session.category,
         status: session.status,
