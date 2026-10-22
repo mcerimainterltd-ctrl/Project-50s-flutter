@@ -1851,6 +1851,7 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
   BetterPlayerController? _controller;
   Timer? _youtubeReadyTimeout;
   YoutubePlayerController? _youtubeController;
+  String? _youtubeVideoId;
   bool _loading = false;
   String? _error;
   bool _isFavorite = false;
@@ -1930,6 +1931,17 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
     }
   }
 
+  Future<void> _openOnYoutube() async {
+    final id = _youtubeVideoId;
+    if (id == null) return;
+    try {
+      await launchUrl(
+        Uri.parse('https://www.youtube.com/watch?v=$id'),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {}
+  }
+
   Future<void> _openOfficialTvcStream() async {
     try {
       final opened = await launchUrl(
@@ -1951,6 +1963,7 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
 
   Future<void> _initializeYoutubePlayer(String videoId) async {
     _loading = true;
+    _youtubeVideoId = videoId;
 
     final player = YoutubePlayerController(
       initialVideoId: videoId,
@@ -1976,7 +1989,7 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
       setState(() {
         _loading = false;
         _error ??=
-            'The embedded stream is taking too long to load. Open TVC News in your browser.';
+            'The embedded stream is taking too long to load. Use the button below to watch it directly.';
       });
     });
 
@@ -2176,6 +2189,19 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
                           fontSize: 14,
                         ),
                       ),
+                      if (_youtubeController != null &&
+                          _youtubeVideoId != null &&
+                          widget.channel.remoteId != 'tvc-news') ...[
+                        const SizedBox(height: 14),
+                        OutlinedButton.icon(
+                          onPressed: _openOnYoutube,
+                          icon: const Icon(Icons.open_in_new_rounded),
+                          label: const Text('Watch on YouTube'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFE6C978),
+                          ),
+                        ),
+                      ],
                       if (_youtubeController != null &&
                           widget.channel.remoteId == 'tvc-news') ...[
                         const SizedBox(height: 14),
