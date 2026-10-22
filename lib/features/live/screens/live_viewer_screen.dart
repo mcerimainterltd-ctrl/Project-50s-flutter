@@ -51,7 +51,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
         // so retry briefly when a viewer joins right after the start.
         for (var attempt = 0;; attempt++) {
           try {
-            session = await ref.read(liveProvider.notifier).joinLive(
+            session = await ref.read(liveProvider.notifier).watchLive(
                   widget.session.sessionId,
                 );
 
@@ -81,7 +81,8 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
           );
         }
 
-        _participating = true;
+        _watchOnly = true;
+        _participating = false;
       } on LiveApiException catch (e) {
         if (e.code != 'GO_LIVE_SUBSCRIPTION_REQUIRED') {
           rethrow;
@@ -148,6 +149,56 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
       if (e.toString().contains('not currently live')) {
         Navigator.of(context).maybePop();
       }
+    }
+  }
+
+  bool _joinRequestInFlight = false;
+
+  Future<void> _joinBroadcast() async {
+    if (_joinRequestInFlight || _participating || _leaving) return;
+
+    _joinRequestInFlight = true;
+    if (mounted) setState(() {});
+
+    try {
+      final session = await ref.read(liveProvider.notifier).joinLive(
+            widget.session.sessionId,
+          );
+
+      if (!mounted) return;
+
+      if (session == null) {
+        throw StateError(
+          ref.read(liveProvider).error ??
+              'Unable to join this live broadcast.',
+        );
+      }
+
+      setState(() {
+        _participating = true;
+        _watchOnly = false;
+      });
+    } on LiveApiException catch (e) {
+      if (!mounted) return;
+
+      if (e.code == 'GO_LIVE_SUBSCRIPTION_REQUIRED') {
+        context.push('/live/setup');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Bad state: ', '')),
+        ),
+      );
+    } finally {
+      _joinRequestInFlight = false;
+      if (mounted) setState(() {});
     }
   }
 
@@ -450,7 +501,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        'Want to join this live? You can watch for free. To join the live session, you need an active XameLive subscription.',
+                                        'You are watching this live. Join to take part in the session.',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 12,
@@ -460,13 +511,11 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                                     ),
                                     const SizedBox(width: 6),
                                     TextButton(
-                                      onPressed: _leaving
+                                      onPressed: (_leaving || _joinRequestInFlight)
                                           ? null
-                                          : () => context.push(
-                                                '/live/setup',
-                                              ),
+                                          : _joinBroadcast,
                                       child: const Text(
-                                        'View Plans',
+                                        'Join',
                                         style: TextStyle(
                                           fontWeight:
                                               FontWeight.w700,
