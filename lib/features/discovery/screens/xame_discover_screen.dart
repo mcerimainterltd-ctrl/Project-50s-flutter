@@ -1208,17 +1208,10 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
         if (liveState.activeLives.isNotEmpty)
           Positioned(
             top: 78,
-            left: 0,
-            right: 0,
-            height: 142,
-            child: _DiscoveryLiveNowRail(
-              sessions: liveState.activeLives,
-              onTap: (session) {
-                context.push(
-                  '/live/view/${session.sessionId}',
-                  extra: session,
-                );
-              },
+            left: 16,
+            child: _WatchLivePill(
+              count: liveState.activeLives.length,
+              onTap: () => _showLiveNowSheet(context),
             ),
           ),
 
@@ -4632,4 +4625,236 @@ class _FullscreenFeedPage extends StatelessWidget {
       isActive: isActive,
     );
   }
+}
+
+
+// ── Watch Live pill + Live Now sheet ─────────────────────────────────────────
+class _WatchLivePill extends StatelessWidget {
+  const _WatchLivePill({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.62),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFF3B30), width: 1.2),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.circle, color: Color(0xFFFF3B30), size: 8),
+            const SizedBox(width: 6),
+            const Text(
+              'Watch Live',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF3B30),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void _showLiveNowSheet(BuildContext screenContext) {
+  showModalBottomSheet<void>(
+    context: screenContext,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) => Consumer(
+      builder: (_, ref, __) {
+        final lives = [...ref.watch(liveProvider).activeLives]
+          ..sort((a, b) => b.viewerCount.compareTo(a.viewerCount));
+
+        if (lives.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (sheetContext.mounted && Navigator.of(sheetContext).canPop()) {
+              Navigator.of(sheetContext).pop();
+            }
+          });
+        }
+
+        return DraggableScrollableSheet(
+          initialChildSize: 0.35,
+          minChildSize: 0.2,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (_, controller) => Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF121212),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.circle, color: Color(0xFFFF3B30), size: 8),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'LIVE NOW',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${lives.length}',
+                        style: const TextStyle(color: Colors.white54, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    controller: controller,
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 0.78,
+                    ),
+                    itemCount: lives.length,
+                    itemBuilder: (_, i) {
+                      final live = lives[i];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          if (screenContext.mounted) {
+                            screenContext.push(
+                              '/live/view/${live.sessionId}',
+                              extra: live,
+                            );
+                          }
+                        },
+                        child: Column(
+                          children: [
+                            Stack(
+                              clipBehavior: Clip.none,
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 66,
+                                  height: 66,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFF1F1F1F),
+                                    border: Border.all(
+                                      color: const Color(0xFFFF3B30),
+                                      width: 2.5,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.person_rounded,
+                                    color: Colors.white54,
+                                    size: 34,
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: -6,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFF3B30),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'LIVE',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              live.broadcasterXameId,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.visibility_outlined,
+                                  color: Colors.white54,
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '${live.viewerCount}',
+                                  style: const TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  );
 }
