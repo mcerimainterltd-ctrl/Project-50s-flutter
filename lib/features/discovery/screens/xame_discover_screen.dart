@@ -1207,7 +1207,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
         // ── XameLive: Live Now rail ───────────────────────────────────
         if (liveState.activeLives.isNotEmpty)
           Positioned(
-            top: 78,
+            top: 52,
             left: 16,
             child: _WatchLivePill(
               count: liveState.activeLives.length,
@@ -4640,28 +4640,28 @@ class _WatchLivePill extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.62),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFF3B30), width: 1.2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFF3B30), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.circle, color: Color(0xFFFF3B30), size: 8),
+            const Icon(Icons.circle, color: Color(0xFFFF3B30), size: 6),
             const SizedBox(width: 6),
             const Text(
               'Watch Live',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: const Color(0xFFFF3B30),
                 borderRadius: BorderRadius.circular(10),
@@ -4670,7 +4670,7 @@ class _WatchLivePill extends StatelessWidget {
                 '$count',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: FontWeight.w900,
                 ),
               ),
