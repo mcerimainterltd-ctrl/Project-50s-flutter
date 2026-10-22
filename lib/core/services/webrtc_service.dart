@@ -1,3 +1,4 @@
+import 'screen_awake.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -291,7 +292,7 @@ class WebRTCService {
           'callerName': callerDisplayName,
           'callType': isIncomingVideo ? 'video' : 'voice',
         });
-        await _channel.invokeMethod('keepScreenOn');
+        await ScreenAwake.acquire('call');
       } catch (_) {}
       _callState = CallState.incoming;
       _callStateController.add(CallState.incoming);
@@ -651,7 +652,7 @@ class WebRTCService {
     if (!callerCancelled && !isTimeout && callEndReason.isEmpty) { callEndReason = 'ended'; _callEndReasonCtrl.add(callEndReason); }
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
-    try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
+    try { ScreenAwake.release('call'); } catch (_) {}
     try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
     if (callerCancelled && currentRemoteUserId != null) {
       _socket.emitCallRejected(
@@ -677,7 +678,7 @@ class WebRTCService {
   Future<void> stopRingtoneAndTeardownNative() async {
     _audio.stopAll();
     try { await _channel.invokeMethod('stopCallService'); } catch (_) {}
-    try { await _channel.invokeMethod('releaseScreen'); } catch (_) {}
+    try { await ScreenAwake.release('call'); } catch (_) {}
     try { await _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
   }
 
@@ -692,7 +693,7 @@ class WebRTCService {
     _callCancelled = true;
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
-    try { _channel.invokeMethod('releaseScreen'); } catch (_) {}
+    try { ScreenAwake.release('call'); } catch (_) {}
     try { _channel.invokeMethod('dismissIncomingCall'); } catch (_) {}
     // Only reset incoming state if we were actually in incoming state
     // (not active — emitting false on active call triggers ghost incoming screen)

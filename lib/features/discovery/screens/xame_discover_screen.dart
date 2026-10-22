@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import "../widgets/tv_entry_button.dart";
 import "discovery_map_screen.dart";
 import "package:go_router/go_router.dart";
@@ -646,6 +647,7 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   @override
   void initState() {
     super.initState();
+    if (widget.isTabActive) ScreenAwake.acquire(this);
     _searchAnim = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 250));
     _searchFade = CurvedAnimation(
@@ -701,7 +703,18 @@ class _XameDiscoverScreenState extends ConsumerState<XameDiscoverScreen>
   }
 
   @override
+  void didUpdateWidget(XameDiscoverScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isTabActive && !oldWidget.isTabActive) {
+      ScreenAwake.acquire(this);
+    } else if (!widget.isTabActive && oldWidget.isTabActive) {
+      ScreenAwake.release(this);
+    }
+  }
+
+  @override
   void dispose() {
+    ScreenAwake.release(this);
     _liveRefreshTimer?.cancel();
     _discoverySub?.cancel();
 

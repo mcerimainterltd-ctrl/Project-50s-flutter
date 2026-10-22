@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -47,6 +48,7 @@ class _LiveBroadcastScreenState
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
 
     ref.listenManual<LiveSession?>(
       liveProvider.select((state) => state.broadcasterSession),
@@ -481,6 +483,7 @@ class _LiveBroadcastScreenState
     _cutoffTimer?.cancel();
     _cutoffTimer = null;
     unawaited(_cleanupAfterScreenDisposal());
+    ScreenAwake.release(this);
     super.dispose();
   }
 

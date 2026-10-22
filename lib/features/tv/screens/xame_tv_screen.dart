@@ -1,6 +1,7 @@
 // lib/features/tv/screens/xame_tv_screen.dart
 // XameTV 2.1 — 11,000+ live channels, dynamic fetch, search, swipe
 
+import '../../../core/services/screen_awake.dart';
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -182,6 +183,7 @@ class _XameTvScreenState extends State<XameTvScreen>
   @override
   void initState() {
     super.initState();
+    if (widget.isActive) ScreenAwake.acquire(this);
     _oAnim = AnimationController(vsync:this, duration:const Duration(milliseconds:300));
     _oFade = CurvedAnimation(parent:_oAnim, curve:Curves.easeInOut);
     _sAnim = AnimationController(vsync:this, duration:const Duration(milliseconds:200));
@@ -198,6 +200,11 @@ class _XameTvScreenState extends State<XameTvScreen>
   @override
   void didUpdateWidget(XameTvScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      ScreenAwake.acquire(this);
+    } else if (!widget.isActive && oldWidget.isActive) {
+      ScreenAwake.release(this);
+    }
     if (widget.isActive && !oldWidget.isActive) {
       // Tab just became active — start fetching if not already loaded
       if (_all.isEmpty) {
@@ -237,6 +244,7 @@ class _XameTvScreenState extends State<XameTvScreen>
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
+    ScreenAwake.release(this);
     super.dispose();
   }
 

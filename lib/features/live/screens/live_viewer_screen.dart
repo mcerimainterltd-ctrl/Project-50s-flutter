@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -37,6 +38,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
     _joinAndPlay();
   }
 
@@ -261,6 +263,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
 
   @override
   void dispose() {
+    ScreenAwake.release(this);
     _webrtc.dispose();
     _renderer.dispose();
     super.dispose();
