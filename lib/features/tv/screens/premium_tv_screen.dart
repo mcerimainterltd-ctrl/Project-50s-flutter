@@ -2,6 +2,7 @@
 // Category -> channels -> full-screen viewer.
 // No backend, payment, or Free TV dependencies.
 
+import '../../../core/services/screen_awake.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -1857,6 +1858,7 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
     _loadFavorite();
     final url = widget.channel.streamUrl?.trim();
     if (widget.channel.remoteId == 'tvc-news') {
@@ -2095,6 +2097,7 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
 
   @override
   void dispose() {
+    ScreenAwake.release(this);
     _youtubeReadyTimeout?.cancel();
     _controller?.dispose();
     _youtubeController?.removeListener(_handleYoutubeControllerChange);
