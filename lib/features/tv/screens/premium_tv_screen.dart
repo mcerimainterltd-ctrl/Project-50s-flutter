@@ -531,6 +531,9 @@ class _PremiumCatalogue {
         return Icons.public_rounded;
       case 'lifestyle':
         return Icons.auto_awesome_rounded;
+      case 'faith':
+      case 'religion':
+        return Icons.auto_stories_rounded;
       default:
         return Icons.live_tv_rounded;
     }
@@ -2044,6 +2047,11 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
         ),
       );
 
+      final readyDeadline = DateTime.now().add(const Duration(seconds: 15));
+      while (player.videoPlayerController?.value.initialized != true) {
+        if (!mounted || DateTime.now().isAfter(readyDeadline)) break;
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
       if (player.videoPlayerController?.value.initialized != true) {
         throw StateError('Premium TV player failed to initialize.');
       }
@@ -2071,13 +2079,15 @@ class _PremiumChannelViewerState extends State<_PremiumChannelViewer> {
           if (mounted) _controller?.enterFullScreen();
         });
       }
-    } catch (_) {
+    } catch (e) {
       player.dispose();
       if (!mounted) return;
+      final detail = e.toString().replaceAll('\n', ' ');
+      final short = detail.length > 110 ? detail.substring(0, 110) : detail;
       setState(() {
         _controller = null;
         _loading = false;
-        _error = 'Unable to play this stream. Please try again later.';
+        _error = 'Unable to play this stream. Please try again later. ($short)';
       });
     }
   }
