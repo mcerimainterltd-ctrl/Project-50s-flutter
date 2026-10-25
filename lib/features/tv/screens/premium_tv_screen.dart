@@ -534,6 +534,9 @@ class _PremiumCatalogue {
       case 'faith':
       case 'religion':
         return Icons.auto_stories_rounded;
+      case 'realestate':
+      case 'property':
+        return Icons.home_work_rounded;
       default:
         return Icons.live_tv_rounded;
     }
