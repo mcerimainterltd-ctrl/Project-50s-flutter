@@ -11,6 +11,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/socket_service.dart';
+import '../../../core/services/screen_awake.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../contacts/providers/contacts_provider.dart';
 
@@ -535,6 +536,7 @@ class _ActiveConferenceViewState
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
     _peersSub = ref
         .read(conferenceProvider.notifier)
         .peersStream
@@ -574,6 +576,7 @@ class _ActiveConferenceViewState
 
   @override
   void dispose() {
+    ScreenAwake.release(this);
     _peersSub?.cancel();
     super.dispose();
   }

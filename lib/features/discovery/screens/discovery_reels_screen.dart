@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/screen_awake.dart';
 import '../models/discovery_item.dart';
 import 'discovery_fullscreen_viewer.dart';
 import 'author_gallery_screen.dart';
@@ -36,6 +37,7 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
   void initState() {
     super.initState();
     _pageCtrl = PageController();
+    ScreenAwake.acquire(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _loadData();
   }
@@ -43,6 +45,7 @@ class _DiscoveryReelsScreenState extends ConsumerState<DiscoveryReelsScreen> {
   @override
   void dispose() {
     _pageCtrl.dispose();
+    ScreenAwake.release(this);
     _hideTimer?.cancel();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();

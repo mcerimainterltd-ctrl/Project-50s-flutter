@@ -27,6 +27,7 @@ import 'package:pdfx/pdfx.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:better_player_enhanced/better_player.dart';
 import '../../../core/services/voice_service.dart';
+import '../../../core/services/screen_awake.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/message.dart';
 import '../../../core/config/constants.dart';
@@ -710,6 +711,7 @@ class _ReplyQuote extends StatelessWidget {
                 ? CachedNetworkImage(
                     imageUrl: fileUrl!,
                     width: 48, height: 48, fit: BoxFit.cover,
+                    memCacheWidth: 192,
                     errorWidget: (_, __, ___) => Container(
                       width: 48, height: 48, color: Colors.white12,
                       child: const Icon(Icons.image, color: Colors.white38, size: 20)))
@@ -1040,10 +1042,12 @@ class _FullScreenAlbumViewerState extends State<_FullScreenAlbumViewer> {
     super.initState();
     _current = widget.initialIndex;
     _ctrl = PageController(initialPage: _current);
+    ScreenAwake.acquire(this);
   }
 
   @override
   void dispose() {
+    ScreenAwake.release(this);
     _ctrl.dispose();
     super.dispose();
   }
@@ -1117,6 +1121,19 @@ class _FullScreenAlbumViewerState extends State<_FullScreenAlbumViewer> {
 class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
   bool   _downloading = false;
   double _progress    = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    ScreenAwake.acquire(this);
+  }
+
+  @override
+  void dispose() {
+    ScreenAwake.release(this);
+    super.dispose();
+  }
+
 
   Future<void> _download() async {
     setState(() { _downloading = true; _progress = 0; });
@@ -1652,6 +1669,7 @@ class _MagnifiedVideoPageState
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
 
     _controller = BetterPlayerController(
       BetterPlayerConfiguration(
@@ -1713,6 +1731,7 @@ class _MagnifiedVideoPageState
 
   @override
   void dispose() {
+    ScreenAwake.release(this);
     _controller?.dispose();
     _controller = null;
     super.dispose();
