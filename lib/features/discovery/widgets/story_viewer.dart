@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -45,6 +46,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
     _groupIndex = widget.initialGroupIndex;
     _storyIndex = 0;
     _progressCtrl = AnimationController(
@@ -61,6 +63,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     _timer?.cancel();
     _progressCtrl.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    ScreenAwake.release(this);
     super.dispose();
   }
 

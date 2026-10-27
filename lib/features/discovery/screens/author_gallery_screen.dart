@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -33,6 +34,7 @@ class _AuthorGalleryScreenState extends State<AuthorGalleryScreen> {
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
     _load();
   }
 
@@ -79,6 +81,12 @@ class _AuthorGalleryScreenState extends State<AuthorGalleryScreen> {
       ),
       transitionDuration: const Duration(milliseconds: 250),
     ));
+  }
+
+  @override
+  void dispose() {
+    ScreenAwake.release(this);
+    super.dispose();
   }
 
   @override

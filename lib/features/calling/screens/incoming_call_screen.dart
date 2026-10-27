@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -43,6 +44,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null && args.containsKey('offer')) {
       final webrtc = ref.read(webRTCServiceProvider);
@@ -86,6 +88,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
     _endedSub?.cancel();
     _stateSub?.cancel();
     _timeoutTimer?.cancel();
+    ScreenAwake.release(this);
     super.dispose();
   }
 

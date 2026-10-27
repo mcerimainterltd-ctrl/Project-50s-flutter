@@ -1,3 +1,4 @@
+import '../../../core/services/screen_awake.dart';
 import 'dart:convert';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
@@ -59,6 +60,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   @override
   void initState() {
     super.initState();
+    ScreenAwake.acquire(this);
     final socket = ref.read(socketServiceProvider);
     final user   = ref.read(currentUserProvider);
     _screenShare = ScreenShareService(socket);
@@ -170,6 +172,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     _callResumedSub?.cancel();
     _timer?.cancel();
     _secondsNotifier.dispose();
+    ScreenAwake.release(this);
     super.dispose();
   }
 
