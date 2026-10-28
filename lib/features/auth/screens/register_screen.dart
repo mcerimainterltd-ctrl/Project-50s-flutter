@@ -174,7 +174,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text('Enter verification code',
                   style: TextStyle(color: context.xText, fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text('We sent a 6-digit code to ${_phoneCtrl.text}',
+                Text('We tried to send a 6-digit code to ${_phoneCtrl.text}. It can take a minute, and may not arrive on every network.',
                   style: TextStyle(color: context.xMuted, fontSize: 14)),
                 const SizedBox(height: 32),
                 TextField(
@@ -216,6 +216,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: TextButton(
                     onPressed: _loading ? null : _sendOtp,
                     child: Text('Resend code', style: TextStyle(color: context.xAccent)),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: TextButton(
+                    onPressed: _loading ? null : () => _register(),
+                    child: Text('Code not arriving? Continue without phone',
+                      style: TextStyle(color: context.xMuted)),
                   ),
                 ),
               ],
