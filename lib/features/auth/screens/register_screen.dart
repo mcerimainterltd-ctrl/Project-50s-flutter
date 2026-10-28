@@ -25,6 +25,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _dobYearCtrl    = TextEditingController();
   final _referralCtrl   = TextEditingController();
   final _phoneCtrl     = TextEditingController();
+  bool _skippedPhone = false;
   final _otpCtrl       = TextEditingController();
   final _monthFocus    = FocusNode();
   final _yearFocus     = FocusNode();
@@ -106,7 +107,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _register({String? phone}) async {
-    setState(() { _error = null; _loading = true; _returnedXameId = null; });
+    setState(() { _error = null; _loading = true; _returnedXameId = null; _skippedPhone = phone == null; });
     try {
       final auth   = ref.read(authServiceProvider);
       final day    = int.tryParse(_dobDayCtrl.text)  ?? 0;
@@ -221,7 +222,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 4),
                 Center(
                   child: TextButton(
-                    onPressed: _loading ? null : () => _register(),
+                    onPressed: _loading ? null : () { setState(() => _skippedPhone = true); _register(); },
                     child: Text('Code not arriving? Continue without phone',
                       style: TextStyle(color: context.xMuted)),
                   ),
@@ -288,7 +289,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text('Tap to copy · Save this ID — you need it to log in.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: context.xMuted, fontSize: 13)),
-                if (_phoneCtrl.text.trim().isNotEmpty) ...[
+                if (_skippedPhone) ...[
+                  SizedBox(height: 20),
+                  Text(
+                    'No phone number was saved. Log in with your Xame-ID.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: context.xMuted, fontSize: 13),
+                  ),
+                ],
+                if (_phoneCtrl.text.trim().isNotEmpty && !_skippedPhone) ...[
                   SizedBox(height: 20),
                   Text(
                     'Phone Number',
