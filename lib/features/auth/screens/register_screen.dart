@@ -129,7 +129,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         dob:       dob,
         password:  _passwordCtrl.text,
         phone:     phone,
-        unverifiedPhone: unverifiedPhone,
+        unverifiedPhone: unverifiedPhone ??
+            ((phone == null && _phoneCtrl.text.trim().isNotEmpty)
+                ? _phoneCtrl.text.trim()
+                : null),
       );
       setState(() => _returnedXameId = user.xameId);
       // Credit referrer if referral code provided
