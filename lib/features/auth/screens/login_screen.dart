@@ -321,7 +321,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Row(children: [
                     Icon(Icons.error_outline, color: context.xDanger, size: 16),
                     SizedBox(width: 8),
-                    Expanded(child: Text(_error!,
+                    Expanded(child: Text(
+                      _error!.contains('No account found for this phone number')
+                          ? '$_error Skipped the phone at signup? Use your Xame-ID instead.'
+                          : _error!,
                       style: TextStyle(color: context.xDanger, fontSize: 13))),
                   ]),
                 ),

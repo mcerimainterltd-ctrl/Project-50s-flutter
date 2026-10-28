@@ -106,7 +106,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  Future<void> _register({String? phone}) async {
+  Future<void> _register({String? phone, String? unverifiedPhone}) async {
     setState(() { _error = null; _loading = true; _returnedXameId = null; _skippedPhone = phone == null; });
     try {
       final auth   = ref.read(authServiceProvider);
@@ -129,6 +129,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         dob:       dob,
         password:  _passwordCtrl.text,
         phone:     phone,
+        unverifiedPhone: unverifiedPhone,
       );
       setState(() => _returnedXameId = user.xameId);
       // Credit referrer if referral code provided
@@ -222,7 +223,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 4),
                 Center(
                   child: TextButton(
-                    onPressed: _loading ? null : () { setState(() => _skippedPhone = true); _register(); },
+                    onPressed: _loading ? null : () { setState(() => _skippedPhone = true); _register(unverifiedPhone: _phoneCtrl.text.trim()); },
                     child: Text('Code not arriving? Continue without phone',
                       style: TextStyle(color: context.xMuted)),
                   ),
@@ -292,12 +293,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 if (_skippedPhone) ...[
                   SizedBox(height: 20),
                   Text(
-                    'No phone number was saved. Log in with your Xame-ID.',
+                    _phoneCtrl.text.trim().isNotEmpty ? 'Your number is saved but not verified yet, so it cannot be used to log in. Log in with your Xame-ID.' : 'No phone number was added. Log in with your Xame-ID.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: context.xMuted, fontSize: 13),
                   ),
                 ],
-                if (_phoneCtrl.text.trim().isNotEmpty && !_skippedPhone) ...[
+                if (_phoneCtrl.text.trim().isNotEmpty) ...[
                   SizedBox(height: 20),
                   Text(
                     'Phone Number',

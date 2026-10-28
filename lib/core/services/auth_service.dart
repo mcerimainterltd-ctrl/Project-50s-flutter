@@ -64,6 +64,7 @@ class AuthService {
     required String dob,
     required String password,
     String? phone,
+    String? unverifiedPhone,
   }) async {
     if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(dob))
       throw Exception('Invalid date of birth format');
@@ -73,6 +74,7 @@ class AuthService {
       'dob':       dob,
       'password':  password,
       if (phone != null && phone.isNotEmpty) 'phone': phone.trim(),
+      if (unverifiedPhone != null && unverifiedPhone.isNotEmpty) 'unverifiedPhone': unverifiedPhone.trim(),
     });
     final data = res.data as Map<String, dynamic>;
     if (data['success'] != true)
