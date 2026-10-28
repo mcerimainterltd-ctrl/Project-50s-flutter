@@ -197,6 +197,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
       final res = await _dio.post('/api/update-profile', data: form);
       if (res.data['success'] == true) {
+        final serverPic = res.data['profilePicUrl'] as String?;
+        String? newPic;
+        if (_removeImage) {
+          newPic = null;
+        } else if (_newImage != null && serverPic != null && serverPic.isNotEmpty) {
+          newPic = serverPic.startsWith('data:')
+              ? serverPic
+              : '$serverPic${serverPic.contains('?') ? '&' : '?'}v=${DateTime.now().millisecondsSinceEpoch}';
+        } else {
+          newPic = serverPic ?? user.profilePic;
+        }
+        if (user.profilePic != null &&
+            newPic != user.profilePic &&
+            !user.profilePic!.startsWith('data:')) {
+          await CachedNetworkImage.evictFromCache(user.profilePic!);
+        }
         // Update local user state
         final updated = XameUser(
           xameId:             user.xameId,
@@ -205,14 +221,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           email:              user.email,
           phone:              user.phone,
           preferredName:      res.data['preferredName'] ?? name,
-          profilePic:         res.data['profilePicUrl'] ?? user.profilePic,
+          profilePic:         newPic,
           hidePreferredName:  res.data['hidePreferredName']  ?? _hideName,
           hideProfilePicture: res.data['hideProfilePicture'] ?? _hidePic,
           personalStatusEmoji:   _statusEmoji.isEmpty ? null : _statusEmoji,
           personalStatusMessage: _statusMessage.isEmpty ? null : _statusMessage,
           sessionToken:       user.sessionToken,
+          referralCode:       user.referralCode,
         );
         ref.read(currentUserProvider.notifier).state = updated;
+        const storage = FlutterSecureStorage();
+        await storage.write(key: AppConstants.keyUser, value: jsonEncode(updated.toMap()));
         setState(() { _newImage = null; _removeImage = false; });
         _snack('Profile saved successfully ✓', success: true);
         ref.read(socketServiceProvider).emitStatusUpdate(user.xameId, _statusEmoji, _statusMessage);
