@@ -17,6 +17,116 @@ import 'package:xamepage/core/services/cache_service.dart';
 // ── Colours ───────────────────────────────────────────────────────────────────
 
 // ── Models ────────────────────────────────────────────────────────────────────
+String? _xameInviteCode;
+
+class _InviteButton extends StatefulWidget {
+  final String number;
+  const _InviteButton({required this.number});
+  @override
+  State<_InviteButton> createState() => _InviteButtonState();
+}
+
+class _InviteButtonState extends State<_InviteButton> {
+  static const _prefsKey = 'xame_invites_v1';
+  static const _maxInvites = 3;
+  static const _cooldown = Duration(days: 3);
+  int _count = 0;
+  DateTime? _last;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<Map<String, dynamic>> _readAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefsKey);
+    if (raw == null) return {};
+    try {
+      return Map<String, dynamic>.from(jsonDecode(raw) as Map);
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> _load() async {
+    final all = await _readAll();
+    final e = all[widget.number];
+    if (e is Map && mounted) {
+      setState(() {
+        _count = (e['n'] as num?)?.toInt() ?? 0;
+        final t = (e['t'] as num?)?.toInt();
+        _last = t == null ? null : DateTime.fromMillisecondsSinceEpoch(t);
+      });
+    }
+  }
+
+  Future<void> _invite() async {
+    final code = _xameInviteCode ?? '';
+    final link = code.isEmpty
+        ? 'https://app.xamepage.com'
+        : 'https://app.xamepage.com/join/$code';
+    final text = _count == 0
+        ? 'Join me on XamePage and earn XameCoins together!\nDownload $link'
+        : 'Still waiting for you on XamePage! Join me here: $link';
+    final sep = Theme.of(context).platform == TargetPlatform.iOS ? '&' : '?';
+    final number = widget.number.replaceAll(RegExp(r'[^0-9+]'), '');
+    final uri = Uri.parse('sms:$number${sep}body=${Uri.encodeComponent(text)}');
+    var opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+    if (!mounted) return;
+    if (!opened) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the messaging app')));
+      return;
+    }
+    final all = await _readAll();
+    final now = DateTime.now();
+    all[widget.number] = {'n': _count + 1, 't': now.millisecondsSinceEpoch};
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, jsonEncode(all));
+    if (mounted) setState(() { _count += 1; _last = now; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_count >= _maxInvites) {
+      return const Padding(
+        padding: EdgeInsets.only(right: 8),
+        child: Text('Invited 3 times',
+            style: TextStyle(color: Colors.white38, fontSize: 11)));
+    }
+    if (_last != null) {
+      final left = _last!.add(_cooldown).difference(DateTime.now());
+      if (left > Duration.zero) {
+        final days = (left.inHours / 24).ceil();
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Text('Invite opened - again in ${days}d',
+              style: const TextStyle(color: Colors.white38, fontSize: 11)));
+      }
+    }
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: _invite,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: XameColors.accent.withOpacity(0.1),
+            border: Border.all(color: XameColors.accent.withOpacity(0.4))),
+          child: Text(_count == 0 ? 'Invite' : 'Remind',
+              style: TextStyle(
+                  color: XameColors.accent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)))));
+  }
+}
+
 class _DevContact {
   final String name;
   final List<String> phones;
@@ -183,6 +293,7 @@ class _PhoneScreenState extends State<PhoneScreen>
     _loadCreditsVisibility();
     _loadRecents();
     _loadContacts(); // Refresh from device in background
+    _fetchInviteCode();
   }
 
   @override
@@ -321,6 +432,18 @@ class _PhoneScreenState extends State<PhoneScreen>
       }
     } catch (_) {}
     if (mounted) setState(() => _recentsLoading = false);
+  }
+
+  Future<void> _fetchInviteCode() async {
+    _xameInviteCode = widget.userId;
+    try {
+      final r = await http
+          .get(Uri.parse('${widget.serverUrl}/api/rewards/${widget.userId}'))
+          .timeout(const Duration(seconds: 8));
+      final d = jsonDecode(r.body);
+      final c = d['account']?['referralCode'];
+      if (c is String && c.isNotEmpty) _xameInviteCode = c;
+    } catch (_) {}
   }
 
   bool _contactsDisclosureDeclined = false;
@@ -1292,6 +1415,7 @@ class _ContactTile extends StatelessWidget {
       ],
     ]),
     trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+      if (!contact.isOnXame) _InviteButton(number: contact.primary),
       // SMS
       GestureDetector(
         onTap: onSms,
@@ -2040,127 +2164,3 @@ class _TabBtn extends StatelessWidget {
     ),
   );
 }
-String? _xameInviteCode;
-
-class _InviteButton extends StatefulWidget {
-  final String number;
-  const _InviteButton({required this.number});
-  @override
-  State<_InviteButton> createState() => _InviteButtonState();
-}
-
-class _InviteButtonState extends State<_InviteButton> {
-  static const _prefsKey = 'xame_invites_v1';
-  static const _maxInvites = 3;
-  static const _cooldown = Duration(days: 3);
-  int _count = 0;
-  DateTime? _last;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<Map<String, dynamic>> _readAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKey);
-    if (raw == null) return {};
-    try {
-      return Map<String, dynamic>.from(jsonDecode(raw) as Map);
-    } catch (_) {
-      return {};
-    }
-  }
-
-  Future<void> _load() async {
-    final all = await _readAll();
-    final e = all[widget.number];
-    if (e is Map && mounted) {
-      setState(() {
-        _count = (e['n'] as num?)?.toInt() ?? 0;
-        final t = (e['t'] as num?)?.toInt();
-        _last = t == null ? null : DateTime.fromMillisecondsSinceEpoch(t);
-      });
-    }
-  }
-
-  Future<void> _invite() async {
-    final code = _xameInviteCode ?? '';
-    final link = code.isEmpty
-        ? 'https://app.xamepage.com'
-        : 'https://app.xamepage.com/join/$code';
-    final text = _count == 0
-        ? 'Join me on XamePage and earn XameCoins together!\nDownload $link'
-        : 'Still waiting for you on XamePage! Join me here: $link';
-    final sep = Theme.of(context).platform == TargetPlatform.iOS ? '&' : '?';
-    final number = widget.number.replaceAll(RegExp(r'[^0-9+]'), '');
-    final uri = Uri.parse('sms:$number${sep}body=${Uri.encodeComponent(text)}');
-    var opened = false;
-    try {
-      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {}
-    if (!mounted) return;
-    if (!opened) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the messaging app')));
-      return;
-    }
-    final all = await _readAll();
-    final now = DateTime.now();
-    all[widget.number] = {'n': _count + 1, 't': now.millisecondsSinceEpoch};
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsKey, jsonEncode(all));
-    if (mounted) setState(() { _count += 1; _last = now; });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_count >= _maxInvites) {
-      return const Padding(
-        padding: EdgeInsets.only(right: 8),
-        child: Text('Invited 3 times',
-            style: TextStyle(color: Colors.white38, fontSize: 11)));
-    }
-    if (_last != null) {
-      final left = _last!.add(_cooldown).difference(DateTime.now());
-      if (left > Duration.zero) {
-        final days = (left.inHours / 24).ceil();
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Text('Invite opened - again in ${days}d',
-              style: const TextStyle(color: Colors.white38, fontSize: 11)));
-      }
-    }
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: _invite,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: XameColors.accent.withOpacity(0.1),
-            border: Border.all(color: XameColors.accent.withOpacity(0.4))),
-          child: Text(_count == 0 ? 'Invite' : 'Remind',
-              style: TextStyle(
-                  color: XameColors.accent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)))));
-  }
-}
-
-    _fetchInviteCode();
-  Future<void> _fetchInviteCode() async {
-    _xameInviteCode = widget.userId;
-    try {
-      final r = await http
-          .get(Uri.parse('${widget.serverUrl}/api/rewards/${widget.userId}'))
-          .timeout(const Duration(seconds: 8));
-      final d = jsonDecode(r.body);
-      final c = d['account']?['referralCode'];
-      if (c is String && c.isNotEmpty) _xameInviteCode = c;
-    } catch (_) {}
-  }
-
-      if (!contact.isOnXame) _InviteButton(number: contact.primary),
