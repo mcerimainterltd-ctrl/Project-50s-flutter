@@ -323,8 +323,48 @@ class _PhoneScreenState extends State<PhoneScreen>
     if (mounted) setState(() => _recentsLoading = false);
   }
 
+  bool _contactsDisclosureDeclined = false;
+
+  Future<bool> _ensureContactsDisclosure() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('contacts_disclosure_accepted_v1') == true) return true;
+    if (_contactsDisclosureDeclined || !mounted) return false;
+    final accepted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Find friends on XamePage'),
+        content: const Text(
+          'XamePage collects the phone numbers saved in your contacts and '
+          'sends them to our server, where they are compared with registered '
+          'XamePage users to show which of your contacts are already on '
+          'XamePage. These numbers are used only for this purpose and are '
+          'not shared with other companies or used for advertising. Your '
+          'contact names stay on your device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No thanks'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Accept'),
+          ),
+        ],
+      ),
+    );
+    if (accepted == true) {
+      await prefs.setBool('contacts_disclosure_accepted_v1', true);
+      return true;
+    }
+    _contactsDisclosureDeclined = true;
+    return false;
+  }
+
   Future<void> _loadContacts() async {
     if (_contactsLoading) return;
+    if (!await _ensureContactsDisclosure()) return;
     // Check current status first — only request if not yet determined
     PermissionStatus status = await Permission.contacts.status;
     if (status.isDenied) {
