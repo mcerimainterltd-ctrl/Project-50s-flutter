@@ -76,10 +76,11 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
       _safePop();
     });
     _timeoutTimer = Timer(Duration(seconds: 60), () {
-      if (mounted) {
-        ref.read(webRTCServiceProvider).rejectCall();
-        _safePop();
-      }
+      if (!mounted || _isPopping) return;
+      final w = ref.read(webRTCServiceProvider);
+      if (w.callStateStreamValue != CallState.incoming) return;
+      w.rejectCall();
+      _safePop();
     });
   }
 
@@ -232,6 +233,7 @@ class _IncomingCallScreenState extends ConsumerState<IncomingCallScreen> {
                           print('[CALL-UI] ACCEPT TAPPED isVideo=$isVideo userId=$userId');
                           if (_isPopping) return;
                           _isPopping = true;
+                          _timeoutTimer?.cancel();
 
                           print('[CALL-UI] ABOUT TO CALL joinCall');
                           try {

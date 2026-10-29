@@ -51,6 +51,8 @@ class SocketService {
   final _chatHistoryCtrl      = StreamController<dynamic>.broadcast();
   final _incomingCallCtrl     = StreamController<IncomingCallData>.broadcast();
   final _callAnswerCtrl       = StreamController<CallAnswerData>.broadcast();
+  final _renegOfferCtrl  = StreamController<Map<String, dynamic>>.broadcast();
+  final _renegAnswerCtrl = StreamController<Map<String, dynamic>>.broadcast();
   final _iceCandidateCtrl     = StreamController<IceCandidateData>.broadcast();
   final _callAcceptedCtrl     = StreamController<String>.broadcast();
   final _callRejectedCtrl     = StreamController<CallRejectedData>.broadcast();
@@ -98,6 +100,8 @@ class SocketService {
   Stream<Map<String,dynamic>>       get reactionUpdate   => _reactionUpdateCtrl.stream;
   Stream<IncomingCallData>          get incomingCall     => _incomingCallCtrl.stream;
   Stream<CallAnswerData>            get callAnswer       => _callAnswerCtrl.stream;
+  Stream<Map<String, dynamic>> get renegotiateOffer  => _renegOfferCtrl.stream;
+  Stream<Map<String, dynamic>> get renegotiateAnswer => _renegAnswerCtrl.stream;
   Stream<IceCandidateData>          get iceCandidate     => _iceCandidateCtrl.stream;
   Stream<String>                    get callAccepted     => _callAcceptedCtrl.stream;
   Stream<CallRejectedData>          get callRejected     => _callRejectedCtrl.stream;
@@ -418,6 +422,12 @@ class SocketService {
       if (d != null) _callAnswerCtrl.add(
         CallAnswerData(answer: d['answer'], senderId: d['senderId']));
     });
+    socket.on('call-renegotiate-offer', (d) {
+      if (d != null) _renegOfferCtrl.add(Map<String, dynamic>.from(d));
+    });
+    socket.on('call-renegotiate-answer', (d) {
+      if (d != null) _renegAnswerCtrl.add(Map<String, dynamic>.from(d));
+    });
     socket.on('ice-candidate', (d) {
       if (d != null) _iceCandidateCtrl.add(
         IceCandidateData(candidate: d['candidate'], senderId: d['senderId']));
@@ -599,6 +609,10 @@ class SocketService {
     print('[SOCKET] emitMakeAnswer SENT');
   }
   void emitIceCandidate(String r, dynamic c)       => emit('ice-candidate',      {'recipientId': r, 'candidate': c});
+  void emitRenegotiateOffer(String r, dynamic o, String? callId) =>
+      emit('call-renegotiate-offer', {'recipientId': r, 'offer': o, if (callId != null) 'callId': callId});
+  void emitRenegotiateAnswer(String r, dynamic a, String? callId) =>
+      emit('call-renegotiate-answer', {'recipientId': r, 'answer': a, if (callId != null) 'callId': callId});
   void emitCallAccepted(String r, {String? callId})=> emit('call-accepted',      {'recipientId': r, if (callId != null) 'callId': callId});
   void emitCallRejected(String r, String reason, {String? callId}) =>
       emit('call-rejected', {

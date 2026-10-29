@@ -222,6 +222,7 @@ class WebRTCService {
     });
 
     _socket.callRejected.listen((data) {
+      _dbgLog('[END] call-rejected received reason=${data?.reason} state=$_callState');
       _callCancelled = true;
       if (callEndReason.isEmpty) { callEndReason = data?.reason ?? 'declined'; _callEndReasonCtrl.add(callEndReason); }
       _callTimeoutTimer?.cancel();
@@ -232,6 +233,7 @@ class WebRTCService {
       }
       _callState = CallState.ended;
       _callStateController.add(CallState.ended);
+      _dbgFlush();
       _cleanup();
     });
      initRenderers();
@@ -323,6 +325,9 @@ class WebRTCService {
       }
     });
 
+    _socket.renegotiateOffer.listen((d) { _xOnRenegOffer(d); });
+    _socket.renegotiateAnswer.listen((d) { _xOnRenegAnswer(d); });
+
     _socket.iceCandidate.listen((data) {
       final c = RTCIceCandidate(data.candidate['candidate'], data.candidate['sdpMid'], data.candidate['sdpMLineIndex']);
       if (_pc != null && _remoteDescriptionSet) {
@@ -334,6 +339,7 @@ class WebRTCService {
   }
 
   Future<void> startCall(String userId, bool isVideo) async {
+    _xIsCaller = true;
     currentRemoteUserId = userId;
     _callState = CallState.outgoing; _callStateController.add(CallState.outgoing);
     // 1. Setup hardware first
@@ -391,6 +397,7 @@ class WebRTCService {
   }
 
   Future<void> joinCall(bool isVideo) async {
+    _xIsCaller = false;
     await _agborRelayWaitForResumed();
     // Native cold-start wake shows the ringing screen before the real SDP
     // offer arrives over the socket (setIncomingCall is called with an
@@ -412,8 +419,10 @@ class WebRTCService {
             callEndReason = 'no-answer';
             _callEndReasonCtrl.add(callEndReason);
           }
+          _dbgLog('[END] incoming: no real offer within 8s, state=$_callState');
           _callState = CallState.ended;
           _callStateController.add(CallState.ended);
+          _dbgFlush();
           return;
         }
         await Future.delayed(pollInterval);
@@ -516,6 +525,8 @@ class WebRTCService {
   }
 
   Future<void> _setup(bool v) async {
+    _dbg.clear(); _dbgStart = null;
+    _xRestartTimer?.cancel(); _xRestartTries = 0;
     _pc = await createPeerConnection({
       'iceServers': await _fetchIceServers(),
       'sdpSemantics': 'unified-plan',
@@ -529,10 +540,27 @@ class WebRTCService {
     });
     
     _pc!.onIceConnectionState = (s) {
-      print('[ICE] state: $s');
+      _dbgLog('[ICE] state: $s');
     };
     _pc!.onConnectionState = (s) {
-      print('[CONN] state: $s');
+      _dbgLog('[CONN] state: $s');
+      if (s == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        _xConnTimer?.cancel();
+        _xRestartTimer?.cancel();
+        _xRestartTries = 0;
+      } else if (s == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
+          s == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+        _xConnTimer?.cancel();
+        _xScheduleRestart();
+        final wait = 20;
+        _xConnTimer = Timer(Duration(seconds: wait), () {
+          if (_callState == CallState.active && _pc != null &&
+              _pc!.connectionState != RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+            _dbgLog('[END] media link lost, ending call');
+            endCall();
+          }
+        });
+      }
       if (s == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
         if (_callState != CallState.active) {
           _callState = CallState.active;
@@ -634,6 +662,7 @@ class WebRTCService {
   }
 
   void rejectCall() {
+    _dbgLog('[END] rejectCall() ran, state=$_callState');
     _callCancelled = true;
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
@@ -644,9 +673,78 @@ class WebRTCService {
     );
     _callState = CallState.ended; _callStateController.add(CallState.ended);
     _incomingCallController.add(false);
+    _dbgFlush();
+  }
+
+  // ── ICE-restart recovery ──
+  void _xScheduleRestart() {
+    _xRestartTimer?.cancel();
+    _xRestartTimer = Timer(const Duration(seconds: 2), _xRestartTick);
+  }
+
+  Future<void> _xRestartTick() async {
+    if (_pc == null || _callState != CallState.active || currentRemoteUserId == null) return;
+    if (!_xIsCaller) return; // _xCallerOnly: only the caller sends restart offers
+    if (_pc!.connectionState == RTCPeerConnectionState.RTCPeerConnectionStateConnected) return;
+    if (_xRestartTries >= 4) return;
+    _xRestartTries++;
+    try {
+      final sig = _pc!.signalingState;
+      if (sig == RTCSignalingState.RTCSignalingStateHaveLocalOffer) {
+        final ld = await _pc!.getLocalDescription();
+        if (ld != null) {
+          _dbgLog('[RECONNECT] re-sending offer, try $_xRestartTries');
+          _socket.emitRenegotiateOffer(currentRemoteUserId!, {'sdp': ld.sdp, 'type': ld.type}, _currentCallId);
+        }
+      } else if (sig == RTCSignalingState.RTCSignalingStateStable) {
+        _dbgLog('[RECONNECT] sending ICE-restart offer, try $_xRestartTries');
+        await _pc!.restartIce();
+        final offer = await _pc!.createOffer();
+        await _pc!.setLocalDescription(offer);
+        _socket.emitRenegotiateOffer(currentRemoteUserId!, {'sdp': offer.sdp, 'type': offer.type}, _currentCallId);
+      }
+    } catch (e) {
+      _dbgLog('[RECONNECT] offer failed: $e');
+    }
+    _xRestartTimer = Timer(const Duration(seconds: 5), _xRestartTick);
+  }
+
+  Future<void> _xOnRenegOffer(Map<String, dynamic> d) async {
+    if (_pc == null || _callState != CallState.active) return;
+    if (d['senderId'] != currentRemoteUserId) return;
+    final offer = d['offer'];
+    if (offer == null) return;
+    try {
+      if (_pc!.signalingState == RTCSignalingState.RTCSignalingStateHaveLocalOffer && _xIsCaller) {
+        _dbgLog('[RECONNECT] both sent offers, caller wins - ignoring remote offer');
+        return;
+      }
+      _dbgLog('[RECONNECT] received ICE-restart offer');
+      await _pc!.setRemoteDescription(RTCSessionDescription(offer['sdp'], offer['type']));
+      _remoteDescriptionSet = true;
+      final answer = await _pc!.createAnswer();
+      await _pc!.setLocalDescription(answer);
+      _socket.emitRenegotiateAnswer(currentRemoteUserId!, {'sdp': answer.sdp, 'type': answer.type}, _currentCallId);
+    } catch (e) {
+      _dbgLog('[RECONNECT] answer failed: $e');
+    }
+  }
+
+  Future<void> _xOnRenegAnswer(Map<String, dynamic> d) async {
+    if (_pc == null || d['senderId'] != currentRemoteUserId) return;
+    final ans = d['answer'];
+    if (ans == null) return;
+    try {
+      if (_pc!.signalingState != RTCSignalingState.RTCSignalingStateHaveLocalOffer) return;
+      await _pc!.setRemoteDescription(RTCSessionDescription(ans['sdp'], ans['type']));
+      _dbgLog('[RECONNECT] answer applied');
+    } catch (e) {
+      _dbgLog('[RECONNECT] apply answer failed: $e');
+    }
   }
 
   void endCall({bool callerCancelled = false, bool isTimeout = false}) {
+    _dbgLog('[END] endCall callerCancelled=$callerCancelled timeout=$isTimeout state=$_callState');
     _callCancelled = true;
     if (callerCancelled && callEndReason.isEmpty) { callEndReason = 'cancelled'; _callEndReasonCtrl.add(callEndReason); }
     if (!callerCancelled && !isTimeout && callEndReason.isEmpty) { callEndReason = 'ended'; _callEndReasonCtrl.add(callEndReason); }
@@ -665,6 +763,7 @@ class WebRTCService {
     }
     _incomingCallController.add(false);
     _callState = CallState.ended; _callStateController.add(CallState.ended);
+    _dbgFlush();
     _cleanup();
     _pc?.close();
     _pc = null;
@@ -690,6 +789,7 @@ class WebRTCService {
   }
 
   void _handleRemoteHangup() {
+    _dbgLog('[END] remote hangup received, state=$_callState');
     _callCancelled = true;
     _audio.stopAll();
     try { _channel.invokeMethod('stopCallService'); } catch (_) {}
@@ -702,6 +802,7 @@ class WebRTCService {
     }
     _callState = CallState.ended;
     _callStateController.add(CallState.ended);
+    _dbgFlush();
     _cleanup();
   }
 
@@ -770,3 +871,28 @@ class WebRTCService {
   }
 
 }
+
+
+// ── XDBG diagnostic (remove after debugging) ──
+final List<String> _dbg = [];
+DateTime? _dbgStart;
+void _dbgLog(String m) {
+  _dbgStart ??= DateTime.now();
+  final t = DateTime.now().difference(_dbgStart!).inSeconds;
+  _dbg.add('[+${t}s] $m');
+  print(m);
+}
+void _dbgFlush() {
+  if (_dbg.isEmpty) return;
+  final text = _dbg.join('\n');
+  final worthShowing = text.contains('Checking');
+  _dbg.clear();
+  _dbgStart = null;
+  // diagnostic share sheet removed for release
+}
+
+Timer? _xConnTimer;
+
+Timer? _xRestartTimer;
+int _xRestartTries = 0;
+bool _xIsCaller = false;
