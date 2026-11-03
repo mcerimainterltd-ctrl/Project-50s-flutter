@@ -39,7 +39,7 @@ final _sessionsProvider = FutureProvider.autoDispose
 final _extraSecProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>, String>((ref, userId) async {
   final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
-  final res  = await dio.get('/api/extra-security/$userId');
+  final res  = await dio.get('/api/extra-security/$userId', options: await _extraSecOpts());
   return Map<String, dynamic>.from(res.data['extraSecurity'] ?? {});
 });
 
@@ -946,7 +946,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
   Future<void> _load() async {
     try {
       final res = await widget.dio.get(
-          '/api/extra-security/${widget.userId}');
+          '/api/extra-security/${widget.userId}', options: await _extraSecOpts());
       final es  = res.data['extraSecurity'] ?? {};
       setState(() {
         _enabled       = es['enabled']  ?? false;
@@ -966,7 +966,7 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
     }
     setState(() => _saving = true);
     try {
-      final res = await widget.dio.post('/api/extra-security/setup', data: {
+      final res = await widget.dio.post('/api/extra-security/setup', options: await _extraSecOpts(), data: {
         'userId':  widget.userId,
         'email':   _emailCtrl.text.trim(),
         'phone':   _phoneCtrl.text.trim(),
@@ -1014,7 +1014,8 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
             SizedBox(height: 8),
             Text(
               'When enabled, a one-time code will be sent to your '
-              'email or phone every time you log in from an unrecognised device.',
+              'email or phone every time you log in from an unrecognised device. '
+              'Your email or phone is also used to send a code if you forget your password, even when Extra Security is off.',
               style: TextStyle(color: context.xText.withValues(alpha: 0.54), fontSize: 13, height: 1.6)),
 
             SizedBox(height: 24),
@@ -1104,4 +1105,13 @@ class _ExtraSecuritySheetState extends ConsumerState<_ExtraSecuritySheet> {
       ),
     ),
   );
+}
+
+// Attaches the stored session token to Extra Security requests.
+Future<Options> _extraSecOpts() async {
+  const storage = FlutterSecureStorage();
+  final token = await storage.read(key: AppConstants.keySessionToken);
+  return Options(headers: {
+    if (token != null && token.trim().isNotEmpty) 'Authorization': 'Bearer ${token.trim()}',
+  });
 }
