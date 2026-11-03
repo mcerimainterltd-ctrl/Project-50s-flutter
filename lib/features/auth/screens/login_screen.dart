@@ -161,7 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               SizedBox(height: 8),
               _dialogField(pw2Ctrl, 'Confirm password', true),
             ],
-            if (_msg.isNotEmpty && _step == 'xameId')
+            if (_msg.isNotEmpty && _step != 'otp')
               Padding(padding: const EdgeInsets.only(top: 8),
                 child: Text(_msg, style: TextStyle(color: XameColors.danger, fontSize: 12))),
           ])),
