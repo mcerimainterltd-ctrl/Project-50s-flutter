@@ -123,6 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         hintText: hint, hintStyle: TextStyle(color: Colors.white38),
         filled: true, fillColor: XameColors.darkBg,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.white24, width: 1)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: XameColors.primary, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
