@@ -92,7 +92,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: XameColors.darkSurface))),
+            child: Text('Cancel', style: TextStyle(color: Colors.white70))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: XameColors.primary, foregroundColor: Colors.black),
@@ -120,7 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       controller: ctrl, obscureText: obscure,
       style: TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        hintText: hint, hintStyle: TextStyle(color: XameColors.darkSurface.withValues(alpha: 0.5)),
+        hintText: hint, hintStyle: TextStyle(color: Colors.white38),
         filled: true, fillColor: XameColors.darkBg,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
@@ -149,7 +149,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
             if (_step == 'xameId') ...[
               Text('Enter your Xame-ID to receive a reset code.',
-                style: TextStyle(color: XameColors.darkSurface, fontSize: 13)),
+                style: TextStyle(color: Colors.white70, fontSize: 13)),
               SizedBox(height: 12),
               _dialogField(xameIdCtrl, 'Your Xame-ID', false),
             ] else if (_step == 'otp') ...[
@@ -168,7 +168,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel', style: TextStyle(color: XameColors.darkSurface))),
+              child: Text('Cancel', style: TextStyle(color: Colors.white70))),
             TextButton(
               onPressed: _loading ? null : () async {
                 setS(() { _loading = true; _msg = ''; });
