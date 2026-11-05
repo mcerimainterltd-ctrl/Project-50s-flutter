@@ -37,6 +37,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   bool        _paused    = false;
   bool        _dragging  = false;
   double      _dragStart = 0;
+  bool        _descExpanded = false;
 
   static const _storyDuration = Duration(seconds: 5);
 
@@ -69,6 +70,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   }
 
   void _startStory() {
+    _descExpanded = false;
     _progressCtrl.duration = _storyDuration;
     if (_currentStory.mediaType == 'video') {
       _progressCtrl.stop();
@@ -146,8 +148,18 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     }
   }
 
+  void _expandDesc() {
+    setState(() => _descExpanded = true);
+    _pause();
+  }
+
+  void _collapseDesc() {
+    setState(() => _descExpanded = false);
+    _resume();
+  }
+
   void _resume() {
-    if (_paused) {
+    if (_paused && !_descExpanded) {
       _progressCtrl.forward();
       setState(() => _paused = false);
     }
@@ -161,6 +173,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       body: GestureDetector(
         onTapDown:    (_) => _pause(),
         onTapUp:      (d) {
+          if (_descExpanded) { _collapseDesc(); return; }
           _resume();
           // Left 35% → prev, Right 35% → next, Middle → pause/resume
           final x = d.globalPosition.dx;
@@ -332,10 +345,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                     if (_currentStory.description.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: Text(_currentStory.description,
-                          maxLines: 4, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white70,
-                              fontSize: 13))),
+                        child: _StoryDescription(
+                          text:       _currentStory.description,
+                          expanded:   _descExpanded,
+                          onExpand:   _expandDesc,
+                          onCollapse: _collapseDesc)),
                   ],
                 ),
               ),
@@ -548,4 +562,61 @@ class StoryData {
       ? DateTime.tryParse(m['ts'].toString()) ?? DateTime.now()
       : DateTime.now(),
   );
+}
+
+// ── Expandable story description ──────────────────────────────────────────────
+class _StoryDescription extends StatelessWidget {
+  final String       text;
+  final bool         expanded;
+  final VoidCallback onExpand;
+  final VoidCallback onCollapse;
+  const _StoryDescription({
+    required this.text,
+    required this.expanded,
+    required this.onExpand,
+    required this.onCollapse,
+  });
+
+  static const _style = TextStyle(color: Colors.white70, fontSize: 13);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final tp = TextPainter(
+        text: TextSpan(text: text, style: _style),
+        maxLines: 4,
+        textDirection: TextDirection.ltr,
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout(maxWidth: constraints.maxWidth);
+      final overflows = tp.didExceedMaxLines;
+      final maxH = MediaQuery.of(context).size.height * 0.35;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (expanded)
+            Container(
+              constraints: BoxConstraints(maxHeight: maxH),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(8)),
+              child: SingleChildScrollView(
+                child: Text(text, style: _style)))
+          else
+            Text(text, maxLines: 4,
+                overflow: TextOverflow.ellipsis, style: _style),
+          if (overflows)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: expanded ? onCollapse : onExpand,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(expanded ? 'less' : 'more',
+                  style: const TextStyle(color: Colors.white,
+                      fontSize: 13, fontWeight: FontWeight.w700)))),
+        ],
+      );
+    });
+  }
 }
