@@ -4928,3 +4928,19 @@ void _showLiveNowSheet(BuildContext screenContext) {
     ),
   );
 }
+
+// ── Public opener for the Create Story sheet ──────────────────────────────────
+void showCreateStorySheet(BuildContext context, String userId,
+    {VoidCallback? onPosted}) {
+  showModalBottomSheet(
+    context:            context,
+    backgroundColor:    context.xSurface,
+    isScrollControlled: true,
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (_) => _CreateStorySheet(
+      userId:   userId,
+      onPosted: onPosted ?? () {},
+    ),
+  );
+}

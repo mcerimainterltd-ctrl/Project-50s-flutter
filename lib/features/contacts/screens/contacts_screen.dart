@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';import 'package:dio/dio.dart';
 import '../../discovery/screens/discovery_aura_feed.dart';
-import '../../discovery/screens/xame_discover_screen.dart' show DiscoveryApiService;
+import '../../discovery/screens/xame_discover_screen.dart' show DiscoveryApiService, showCreateStorySheet;
 import '../../discovery/widgets/story_viewer.dart';
 import '../../../core/services/wallet_lock_service.dart';
 import '../../../core/services/chat_lock_service.dart';
@@ -747,6 +747,10 @@ class _ContactTile extends ConsumerWidget {
                   ref.read(socketServiceProvider).emitMarkDiscoverySeen(contact.id);
                 }
                 final currentUserId = ref.read(currentUserProvider)?.xameId ?? '';
+                if (contact.id == currentUserId) {
+                  showCreateStorySheet(context, currentUserId);
+                  return;
+                }
                 final allStories = await DiscoveryApiService.fetchStories(currentUserId);
                 final contactStories = allStories.where((s) =>
                     (s['authorId'] as String? ?? '') == contact.id).toList();
@@ -886,6 +890,7 @@ class XameAvatar extends StatelessWidget {
         child: profilePic != null && profilePic!.isNotEmpty
           ? CachedNetworkImage(
               imageUrl: profilePic!, fit: BoxFit.cover,
+              memCacheWidth: (size * 4).round(),
               placeholder: (_, __) => _Initials(_initials, size),
               errorWidget: (_, __, ___) => _Initials(_initials, size))
           : _Initials(_initials, size),
