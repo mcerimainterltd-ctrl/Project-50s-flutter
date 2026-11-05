@@ -755,7 +755,18 @@ class _ContactTile extends ConsumerWidget {
                 final contactStories = allStories.where((s) =>
                     (s['authorId'] as String? ?? '') == contact.id).toList();
                 if (contactStories.isNotEmpty) {
-                  final groups = contactStories.map((s) => StoryGroup.fromMap(s)).toList();
+                  final contactIds = (ref.read(contactsProvider).valueOrNull ?? [])
+                      .map((c) => c.id).toSet();
+                  final others = allStories.where((s) {
+                    final a = s['authorId'] as String? ?? '';
+                    return a != contact.id && a != currentUserId && contactIds.contains(a);
+                  }).toList();
+                  bool seenGroup(Map<String, dynamic> g) => g['hasSeen'] as bool? ?? false;
+                  final groups = [
+                    ...contactStories,
+                    ...others.where((g) => !seenGroup(g)),
+                    ...others.where(seenGroup),
+                  ].map((s) => StoryGroup.fromMap(s)).toList();
                   Navigator.of(context).push(PageRouteBuilder(
                     pageBuilder: (_, anim, __) => FadeTransition(
                       opacity: anim,
