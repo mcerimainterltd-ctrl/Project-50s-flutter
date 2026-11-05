@@ -1884,7 +1884,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
     try {
       final r = await http.get(
         Uri.parse('${widget.serverUrl}/api/wallet/me?userId=${widget.userId}'),
-        headers: await AuthService().authenticatedHeaders(),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${(await const FlutterSecureStorage().read(key: "xame:sessionToken")) ?? ""}'},
       )
           .timeout(const Duration(seconds: 6));
       final d = jsonDecode(r.body);
