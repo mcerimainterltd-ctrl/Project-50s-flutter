@@ -13,6 +13,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 import 'package:xamepage/core/services/cache_service.dart';
+import '../core/services/auth_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // ── Colours ───────────────────────────────────────────────────────────────────
 
@@ -548,6 +550,7 @@ class _PhoneScreenState extends State<PhoneScreen>
           .toSet()
           .toList();
       if (allPhones.isEmpty) return;
+      final xmToken = await const FlutterSecureStorage().read(key: 'xame:sessionToken');
 
       // Batch send to server in chunks of 200
       final Map<String, dynamic> matched = {};
@@ -555,7 +558,7 @@ class _PhoneScreenState extends State<PhoneScreen>
         final chunk = allPhones.sublist(i, (i + 200).clamp(0, allPhones.length));
         final r = await http.post(
           Uri.parse('${widget.serverUrl}/api/contacts/match'),
-          headers: {'Content-Type': 'application/json'},
+          headers: {'Content-Type': 'application/json', if (xmToken != null && xmToken.isNotEmpty) 'Authorization': 'Bearer $xmToken'},
           body: jsonEncode({'phones': chunk}),
         ).timeout(const Duration(seconds: 15));
         final d = jsonDecode(r.body);
@@ -1879,8 +1882,10 @@ class _TopUpSheetState extends State<_TopUpSheet> {
 
   Future<double> _fetchWalletBalance() async {
     try {
-      final r = await http.get(Uri.parse(
-          '${widget.serverUrl}/api/wallet/me?userId=${widget.userId}'))
+      final r = await http.get(
+        Uri.parse('${widget.serverUrl}/api/wallet/me?userId=${widget.userId}'),
+        headers: await AuthService().authenticatedHeaders(),
+      )
           .timeout(const Duration(seconds: 6));
       final d = jsonDecode(r.body);
       if (d['success'] == true) {
