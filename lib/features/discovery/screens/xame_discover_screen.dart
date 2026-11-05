@@ -588,11 +588,15 @@ class DiscoveryApiService {
     required String authorId,
     required File   mediaFile,
     required String mediaType,
+    String caption     = '',
+    String description = '',
   }) async {
     try {
       final formData = FormData.fromMap({
         'authorId':  authorId,
         'mediaType': mediaType,
+        'caption':     caption,
+        'description': description,
         'media': await MultipartFile.fromFile(mediaFile.path),
       });
       final res  = await _dio.post('/api/discover/story', data: formData);
@@ -2678,12 +2682,41 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
   bool   _uploading = false;
   String? _error;
   final _picker = ImagePicker();
+  final _captionCtrl = TextEditingController();
+  final _descCtrl    = TextEditingController();
+
+  @override
+  void dispose() {
+    _captionCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickMedia() async {
-    final picked = await _picker.pickImage(
-        source: ImageSource.gallery, imageQuality: 85);
-    if (picked != null)
-      setState(() { _mediaFile = File(picked.path); _mediaType = 'image'; });
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(child: Column(
+        mainAxisSize: MainAxisSize.min, children: [
+        ListTile(
+          leading: Icon(Icons.photo_outlined, color: ctx.xText),
+          title: Text('Photo', style: TextStyle(color: ctx.xText)),
+          onTap: () => Navigator.pop(ctx, 'image')),
+        ListTile(
+          leading: Icon(Icons.videocam_outlined, color: ctx.xText),
+          title: Text('Video', style: TextStyle(color: ctx.xText)),
+          onTap: () => Navigator.pop(ctx, 'video')),
+      ])),
+    );
+    if (choice == 'image') {
+      final picked = await _picker.pickImage(
+          source: ImageSource.gallery, imageQuality: 85);
+      if (picked != null)
+        setState(() { _mediaFile = File(picked.path); _mediaType = 'image'; });
+    } else if (choice == 'video') {
+      final picked = await _picker.pickVideo(source: ImageSource.gallery);
+      if (picked != null)
+        setState(() { _mediaFile = File(picked.path); _mediaType = 'video'; });
+    }
   }
 
   Future<void> _submit() async {
@@ -2695,6 +2728,8 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
       authorId:  widget.userId,
       mediaFile: _mediaFile!,
       mediaType: _mediaType,
+      caption:     _captionCtrl.text.trim(),
+      description: _descCtrl.text.trim(),
     );
     if (!mounted) return;
     setState(() => _uploading = false);
@@ -2734,20 +2769,42 @@ class _CreateStorySheetState extends State<_CreateStorySheet> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: context.xSurface)),
           child: _mediaFile != null
-            ? ClipRRect(borderRadius: BorderRadius.circular(16),
-                child: Image.file(_mediaFile!, fit: BoxFit.cover,
-                    width: double.infinity))
+            ? (_mediaType == 'video'
+                ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.videocam, color: context.xMuted, size: 48),
+                    SizedBox(height: 8),
+                    Padding(padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(_mediaFile!.path.split('/').last,
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: context.xMuted))),
+                  ])
+                : ClipRRect(borderRadius: BorderRadius.circular(16),
+                    child: Image.file(_mediaFile!, fit: BoxFit.cover,
+                        width: double.infinity)))
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                 Icon(Icons.camera_alt_outlined,
                     color: context.xMuted, size: 48),
                 SizedBox(height: 8),
-                Text('Tap to select photo',
+                Text('Tap to select photo or video',
                   style: TextStyle(color: context.xSurface)),
               ]),
         ),
       ),
+      SizedBox(height: 12),
+      TextField(
+        controller: _captionCtrl, maxLength: 200,
+        style: TextStyle(color: context.xText),
+        decoration: InputDecoration(
+          hintText: 'Add a caption', counterText: '',
+          hintStyle: TextStyle(color: context.xMuted))),
+      TextField(
+        controller: _descCtrl, maxLength: 1000, maxLines: 2,
+        style: TextStyle(color: context.xText),
+        decoration: InputDecoration(
+          hintText: 'Add a description (optional)', counterText: '',
+          hintStyle: TextStyle(color: context.xMuted))),
       SizedBox(height: 12),
       if (_error != null)
         Padding(padding: const EdgeInsets.only(bottom: 8),

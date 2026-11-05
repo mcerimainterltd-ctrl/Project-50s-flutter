@@ -1,5 +1,6 @@
 import '../../../core/services/screen_awake.dart';
 import 'dart:async';
+import 'package:video_player/video_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -68,8 +69,25 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   }
 
   void _startStory() {
-    _progressCtrl.forward(from: 0);
+    _progressCtrl.duration = _storyDuration;
+    if (_currentStory.mediaType == 'video') {
+      _progressCtrl.stop();
+      _progressCtrl.value = 0;
+    } else {
+      _progressCtrl.forward(from: 0);
+    }
     _markSeen();
+  }
+
+  void _onVideoReady(String storyId, Duration? d) {
+    if (!mounted || storyId != _currentStory.storyId) return;
+    _progressCtrl.duration =
+        (d != null && d > Duration.zero) ? d : _storyDuration;
+    if (_paused) {
+      _progressCtrl.value = 0;
+    } else {
+      _progressCtrl.forward(from: 0);
+    }
   }
 
   void _markSeen() {
@@ -170,7 +188,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           duration: const Duration(milliseconds: 100),
           child: Stack(fit: StackFit.expand, children: [
             // ── Story media ─────────────────────────────────────
-            _StoryMedia(story: _currentStory),
+            _StoryMedia(
+                story: _currentStory,
+                paused: _paused,
+                onVideoReady: _onVideoReady),
 
             // ── Gradient overlays ────────────────────────────────
             Container(
@@ -293,6 +314,32 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               ]),
             ),
 
+            // ── Caption + description ─────────────────────────────
+            if (_currentStory.caption.isNotEmpty ||
+                _currentStory.description.isNotEmpty)
+              Positioned(
+                left: 16, right: 16,
+                bottom: MediaQuery.of(context).padding.bottom +
+                    (widget.groups.length > 1 ? 48 : 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_currentStory.caption.isNotEmpty)
+                      Text(_currentStory.caption,
+                        style: const TextStyle(color: Colors.white,
+                            fontSize: 16, fontWeight: FontWeight.w700)),
+                    if (_currentStory.description.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(_currentStory.description,
+                          maxLines: 4, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white70,
+                              fontSize: 13))),
+                  ],
+                ),
+              ),
+
             // ── Story group navigation dots ───────────────────────
             if (widget.groups.length > 1)
               Positioned(
@@ -341,14 +388,20 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
 // ── Story media widget ────────────────────────────────────────────────────────
 class _StoryMedia extends StatelessWidget {
   final StoryData story;
-  _StoryMedia({required this.story});
+  final bool paused;
+  final void Function(String storyId, Duration? d)? onVideoReady;
+  _StoryMedia({required this.story, this.paused = false, this.onVideoReady});
 
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
       duration: Duration(milliseconds: 200),
       child: story.mediaType == 'video'
-        ? _VideoStory(key: ValueKey(story.storyId), url: story.mediaUrl)
+        ? _VideoStory(
+            key: ValueKey(story.storyId),
+            url: story.mediaUrl,
+            paused: paused,
+            onReady: (d) => onVideoReady?.call(story.storyId, d))
         : CachedNetworkImage(
             key:       ValueKey(story.storyId),
             imageUrl:  story.mediaUrl,
@@ -371,16 +424,72 @@ class _StoryMedia extends StatelessWidget {
 }
 
 // ── Video story placeholder ───────────────────────────────────────────────────
-class _VideoStory extends StatelessWidget {
+class _VideoStory extends StatefulWidget {
   final String url;
-  _VideoStory({Key? key, required this.url}) : super(key: key);
+  final bool paused;
+  final void Function(Duration? d)? onReady;
+  _VideoStory({Key? key, required this.url, this.paused = false, this.onReady})
+      : super(key: key);
+  @override
+  State<_VideoStory> createState() => _VideoStoryState();
+}
+
+class _VideoStoryState extends State<_VideoStory> {
+  VideoPlayerController? _c;
+  bool _failed = false;
 
   @override
-  Widget build(BuildContext context) => Container(
-    color: Colors.black,
-    child: Center(child: Icon(Icons.play_circle_outline,
-        color: XameColors.darkSurface, size: 64)),
-  );
+  void initState() {
+    super.initState();
+    final c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _c = c;
+    c.initialize().then((_) {
+      if (!mounted) return;
+      c.setLooping(true);
+      if (!widget.paused) c.play();
+      setState(() {});
+      widget.onReady?.call(c.value.duration);
+    }).catchError((_) {
+      if (mounted) {
+        setState(() => _failed = true);
+        widget.onReady?.call(null);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _VideoStory old) {
+    super.didUpdateWidget(old);
+    final c = _c;
+    if (c == null || !c.value.isInitialized) return;
+    if (widget.paused != old.paused) {
+      widget.paused ? c.pause() : c.play();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _c;
+    if (_failed) {
+      return Container(color: Colors.black,
+        child: Center(child: Icon(Icons.error_outline,
+            color: Colors.white54, size: 48)));
+    }
+    if (c == null || !c.value.isInitialized) {
+      return Container(color: Colors.black,
+        child: Center(child: CircularProgressIndicator(
+            color: Colors.white54, strokeWidth: 1.5)));
+    }
+    return Container(color: Colors.black,
+      child: Center(child: AspectRatio(
+          aspectRatio: c.value.aspectRatio, child: VideoPlayer(c))));
+  }
 }
 
 // ── Data models ───────────────────────────────────────────────────────────────
@@ -415,6 +524,8 @@ class StoryData {
   final String   mediaType;
   final bool     seen;
   final DateTime ts;
+  final String   caption;
+  final String   description;
 
   const StoryData({
     required this.storyId,
@@ -422,6 +533,8 @@ class StoryData {
     required this.mediaType,
     required this.seen,
     required this.ts,
+    this.caption     = '',
+    this.description = '',
   });
 
   factory StoryData.fromMap(Map<String, dynamic> m) => StoryData(
@@ -429,6 +542,8 @@ class StoryData {
     mediaUrl:  m['mediaUrl']  as String? ?? '',
     mediaType: m['mediaType'] as String? ?? 'image',
     seen:      m['seen']      as bool?   ?? false,
+    caption:     m['caption']     as String? ?? '',
+    description: m['description'] as String? ?? '',
     ts: m['ts'] != null
       ? DateTime.tryParse(m['ts'].toString()) ?? DateTime.now()
       : DateTime.now(),
