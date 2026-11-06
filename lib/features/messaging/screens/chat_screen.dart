@@ -1222,7 +1222,8 @@ class _DaySeparator extends StatelessWidget {
   String get _label {
     final dt  = DateTime.fromMillisecondsSinceEpoch(ts);
     final now = DateTime.now();
-    final diff = now.difference(dt).inDays;
+    final diff = DateTime.utc(now.year, now.month, now.day)
+        .difference(DateTime.utc(dt.year, dt.month, dt.day)).inDays;
     if (diff == 0) return 'Today';
     if (diff == 1) return 'Yesterday';
     return '${dt.day}/${dt.month}/${dt.year}';
