@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:xamepage/core/config/constants.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Model ─────────────────────────────────────────────────────────────────────
@@ -25,15 +28,30 @@ class BlockedEntry {
 class CallBlockingService {
   static const _key = 'xame:blockedNumbers';
 
+  // BLOCK_SERVER_LIST_V1: the block list now lives on the server
+  Future<Map<String, String>> _headers() async {
+    final token = await const FlutterSecureStorage().read(key: AppConstants.keySessionToken);
+    return {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
+
   Future<List<BlockedEntry>> getBlockedList() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw   = prefs.getString(_key);
-    if (raw == null) return [];
     try {
-      return (jsonDecode(raw) as List)
-          .map((e) => BlockedEntry.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-    } catch (_) { return []; }
+      final r = await http.get(
+        Uri.parse('${AppConstants.serverUrl}/api/blocked-contacts'),
+        headers: await _headers(),
+      ).timeout(const Duration(seconds: 15));
+      final d = jsonDecode(r.body);
+      if (d['success'] == true) {
+        return (d['blocked'] as List).map((e) => BlockedEntry(
+          xameId: (e['xameId'] ?? '').toString(),
+          name: (e['name'] ?? '').toString(),
+          reason: '', blockedAt: 0)).toList();
+      }
+    } catch (_) {}
+    return [];
   }
 
   Future<void> _save(List<BlockedEntry> list) async {
@@ -47,18 +65,24 @@ class CallBlockingService {
   }
 
   Future<bool> block(String xameId, {String name = '', String reason = ''}) async {
-    final list = await getBlockedList();
-    if (list.any((e) => e.xameId == xameId)) return false;
-    list.add(BlockedEntry(xameId: xameId, name: name, reason: reason,
-        blockedAt: DateTime.now().millisecondsSinceEpoch));
-    await _save(list);
-    return true;
+    try {
+      final r = await http.post(
+        Uri.parse('${AppConstants.serverUrl}/api/block-contact'),
+        headers: await _headers(),
+        body: jsonEncode({'contactId': xameId}),
+      ).timeout(const Duration(seconds: 15));
+      return jsonDecode(r.body)['success'] == true;
+    } catch (_) { return false; }
   }
 
   Future<void> unblock(String xameId) async {
-    final list = await getBlockedList();
-    list.removeWhere((e) => e.xameId == xameId);
-    await _save(list);
+    try {
+      await http.post(
+        Uri.parse('${AppConstants.serverUrl}/api/unblock-contact'),
+        headers: await _headers(),
+        body: jsonEncode({'contactId': xameId}),
+      ).timeout(const Duration(seconds: 15));
+    } catch (_) {}
   }
 }
 
@@ -133,7 +157,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                   Text('Blocked Numbers',
                       style: TextStyle(color: context.xText, fontSize: 16,
                           fontWeight: FontWeight.w700)),
-                  Text('Calls from these IDs will be rejected',
+                  Text('These people cannot message or call you',
                       style: TextStyle(color: context.xMuted, fontSize: 12)),
                 ]),
               ]),
@@ -174,7 +198,7 @@ class _BlockedNumbersDialogState extends State<BlockedNumbersDialog> {
                     if (ok) { _inputCtrl.clear(); _reload(); }
                     else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('$val is already blocked'),
+                        content: Text('Could not block $val. Check the Xame-ID and try again.'),
                         backgroundColor: context.xCard,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(

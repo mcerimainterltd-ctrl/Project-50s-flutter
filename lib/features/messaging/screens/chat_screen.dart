@@ -806,7 +806,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           onTap: () { Navigator.pop(context); _showDeleteContact(); }),
         ListTile(leading: const Icon(Icons.block, color: Colors.white70),
           title: const Text('Block Contact', style: TextStyle(color: Colors.white)),
-          onTap: () => Navigator.pop(context)),
+          onTap: () { Navigator.pop(context); _showBlockContact(); }),
         ListTile(leading: const Icon(Icons.delete_outline, color: XameColors.danger),
           title: const Text('Clear Chat', style: TextStyle(color: XameColors.danger)),
           onTap: () {
@@ -859,6 +859,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             },
             child: const Text('Save',
                 style: TextStyle(color: XameColors.primary,
+                    fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+  }
+
+  void _showBlockContact() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Block Contact',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content: const Text('They will not be able to message or call you, and will not be told. They are also removed from your contacts.',
+            style: TextStyle(color: Colors.white54)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          TextButton(
+            onPressed: () async {
+              final self = ref.read(currentUserProvider);
+              if (self == null) return;
+              final ok = await ref.read(contactsProvider.notifier)
+                  .blockContact(self.xameId, widget.userId);
+              if (!mounted) return;
+              Navigator.pop(context);
+              if (ok) {
+                context.go('/contacts');
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Could not block. Please try again.'),
+                  backgroundColor: Colors.redAccent));
+              }
+            },
+            child: const Text('Block',
+                style: TextStyle(color: Colors.redAccent,
                     fontWeight: FontWeight.w700))),
         ],
       ),
@@ -1159,6 +1197,7 @@ class _MessageList extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (showDay) _DaySeparator(ts: msg.ts),
             MessageBubble(
             message:     msg,
             isSelf:      msg.direction == MessageDirection.sent,
@@ -1167,7 +1206,6 @@ class _MessageList extends StatelessWidget {
             onLongPress: () => onLongPress(msg),
             onTap:       () => onTap(msg),
           ),
-          if (showDay) _DaySeparator(ts: msg.ts),
         ]);
       },
     );

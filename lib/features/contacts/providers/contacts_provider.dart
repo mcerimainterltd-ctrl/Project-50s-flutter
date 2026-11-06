@@ -3,6 +3,7 @@ import '../../calls/screens/call_history_screen.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/constants.dart';
 import '../../../core/services/auth_service.dart';
@@ -376,14 +377,17 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     } catch (_) {}
   }
 
-  Future<void> blockContact(String selfId, String contactId) async {
+  Future<bool> blockContact(String selfId, String contactId) async {
     try {
+      final token = await const FlutterSecureStorage().read(key: 'xame:sessionToken');
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       await dio.post('/api/block-contact',
-          data: {'userId': selfId, 'contactId': contactId});
+          data: {'userId': selfId, 'contactId': contactId},
+          options: Options(headers: {if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token'}));
       final current = state.valueOrNull ?? [];
       state = AsyncData(current.where((c) => c.id != contactId).toList());
-    } catch (_) {}
+      return true;
+    } catch (_) { return false; }
   }
 
   Future<void> clearChat(String selfId, String contactId) async {
