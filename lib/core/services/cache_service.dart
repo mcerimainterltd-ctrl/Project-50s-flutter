@@ -70,6 +70,7 @@ class CacheService {
       'albumId':     m.albumId,
       'albumIndex':  m.albumIndex,
       'albumTotal':  m.albumTotal,
+      'editedAt':    m.editedAt,
     }).toList();
     // Keep last 100 messages per contact
     final trimmed = data.length > 100 ? data.sublist(data.length - 100) : data;
@@ -119,6 +120,7 @@ class CacheService {
           albumId:      m['albumId']     as String?,
           albumIndex:   (m['albumIndex'] as num?)?.toInt(),
           albumTotal:   (m['albumTotal'] as num?)?.toInt(),
+          editedAt:     (m['editedAt'] as num?)?.toInt(),
         ))
         .where((m) => m.type != MessageType.call || m.callStatus != null)
         .toList();

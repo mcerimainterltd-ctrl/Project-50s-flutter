@@ -63,6 +63,7 @@ class SocketService {
   final _callResumedCtrl      = StreamController<String>.broadcast();
   final _callAcknowledgedCtrl = StreamController<String>.broadcast();
   final _messagesDeletedCtrl  = StreamController<MessagesDeletedData>.broadcast();
+  final _messageEditedCtrl    = StreamController<Map<String, dynamic>>.broadcast();
   final _callMessageCtrl      = StreamController<Map<String, dynamic>>.broadcast();
   final _disappearExpiredCtrl = StreamController<DisappearExpiredData>.broadcast();
   final _walletReceiveCtrl    = StreamController<WalletReceiveData>.broadcast();
@@ -112,6 +113,7 @@ class SocketService {
   Stream<String>                    get callResumed      => _callResumedCtrl.stream;
   Stream<String>                    get callAcknowledged => _callAcknowledgedCtrl.stream;
   Stream<MessagesDeletedData>       get messagesDeleted  => _messagesDeletedCtrl.stream;
+  Stream<Map<String, dynamic>>      get messageEdited    => _messageEditedCtrl.stream;
   Stream<DisappearExpiredData>      get disappearExpired => _disappearExpiredCtrl.stream;
   Stream<WalletReceiveData>         get walletReceive    => _walletReceiveCtrl.stream;
   Stream<Map<String,dynamic>>       get collabRequest   => _collabRequestCtrl.stream;
@@ -403,6 +405,9 @@ class SocketService {
         contactId:   d['contactId'],
         messageIds:  List<String>.from(d['messageIds'] ?? []),
         permanently: d['permanently'] ?? false));
+    });
+    socket.on('message-edited', (d) {
+      if (d != null) _messageEditedCtrl.add(Map<String, dynamic>.from(d));
     });
     socket.on('disappearing:expired', (d) {
       if (d != null) _disappearExpiredCtrl.add(DisappearExpiredData(
@@ -713,6 +718,7 @@ class SocketService {
     _callResumedCtrl.close();
     _callAcknowledgedCtrl.close();
     _messagesDeletedCtrl.close();
+    _messageEditedCtrl.close();
     _callMessageCtrl.close();
     _disappearExpiredCtrl.close();
     _walletReceiveCtrl.close();

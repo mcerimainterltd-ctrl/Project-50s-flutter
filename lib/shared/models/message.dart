@@ -33,6 +33,7 @@ class XameMessage {
   final String?          albumId;       // groups multi-image picks sent together
   final int?             albumIndex;    // position within the album (0-based)
   final int?             albumTotal;    // total images in this album
+  final int?             editedAt;      // set when the sender edits the text
 
   const XameMessage({
     required this.id,
@@ -65,6 +66,7 @@ class XameMessage {
     this.albumId,
     this.albumIndex,
     this.albumTotal,
+    this.editedAt,
     this.uploadProgress = 0.0,
   });
 
@@ -77,9 +79,11 @@ XameMessage copyWith({
     String? callStatus,
     int? callDuration,
     double? uploadProgress,
+    String? text,
+    int? editedAt,
   }) => XameMessage(
     id:             id,             senderId:      senderId,
-    recipientId:    recipientId,    text:          text,
+    recipientId:    recipientId,    text:          text ?? this.text,
     type:           type,           direction:     direction,
     ts:             ts,
     status:         status ?? this.status,
@@ -100,6 +104,7 @@ XameMessage copyWith({
     albumId:        albumId,
     albumIndex:     albumIndex,
     albumTotal:     albumTotal,
+    editedAt:       editedAt ?? this.editedAt,
   );
 
   DateTime get dateTime => DateTime.fromMillisecondsSinceEpoch(ts);

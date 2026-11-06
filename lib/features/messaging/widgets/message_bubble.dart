@@ -354,7 +354,7 @@ class MessageBubble extends ConsumerWidget {
           ? EdgeInsets.zero
           : const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(time, style: TextStyle(color: context.xMuted, fontSize: 10)),
+        Text(message.editedAt != null ? 'edited · $time' : time, style: TextStyle(color: context.xMuted, fontSize: 10)),
         if (isSelf) ...[
           const SizedBox(width: 4),
           _StatusTick(message: message),

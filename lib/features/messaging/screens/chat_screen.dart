@@ -936,6 +936,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  // EDIT_MESSAGE_UI_V1: edit own text message (server enforces ownership and the 15-minute window)
+  void _showEditMessage(XameMessage msg) {
+    final ctrl = TextEditingController(text: msg.text);
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Edit message',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          minLines: 1,
+          maxLines: 6,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: XameColors.primary)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white38))),
+          TextButton(
+            onPressed: () {
+              final t = ctrl.text.trim();
+              Navigator.pop(context);
+              if (t.isEmpty || t == msg.text) return;
+              ref.read(chatProvider(widget.userId).notifier).editMessage(msg.id, t);
+            },
+            child: const Text('Save',
+                style: TextStyle(color: XameColors.primary, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+  }
+
   void _showBubbleMenu(XameMessage msg, List<XameMessage> messages) {
     showModalBottomSheet(
       context: context, backgroundColor: XameColors.darkCard,
@@ -994,6 +1033,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             },
           ),
 
+        if (msg.direction == MessageDirection.sent &&
+            msg.type == MessageType.text &&
+            msg.text.isNotEmpty && !msg.isDeleted && msg.fileUrl == null &&
+            DateTime.now().millisecondsSinceEpoch - msg.ts < 14 * 60 * 1000)
+          ListTile(leading: const Icon(Icons.edit_outlined, color: Colors.white70),
+            title: const Text('Edit', style: TextStyle(color: Colors.white)),
+            onTap: () { Navigator.pop(context); _showEditMessage(msg); }),
         ListTile(leading: const Icon(Icons.select_all, color: Colors.white70),
           title: const Text('Select', style: TextStyle(color: Colors.white)),
           onTap: () { Navigator.pop(context); _enterSelectMode(msg.id); }),

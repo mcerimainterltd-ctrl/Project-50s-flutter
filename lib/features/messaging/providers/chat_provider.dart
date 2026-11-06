@@ -138,6 +138,16 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       CacheService.saveChat(_contactId, state);
     }));
 
+    _subs.add(socket.messageEdited.listen((d) {
+      if ((d['senderId'] as String?) != _contactId) return;
+      final id  = d['messageId'] as String?;
+      final txt = d['newText']   as String?;
+      final at  = (d['editedAt'] as num?)?.toInt();
+      if (id == null || txt == null) return;
+      state = state.map((m) => m.id == id ? m.copyWith(text: txt, editedAt: at) : m).toList();
+      CacheService.saveChat(_contactId, state);
+    }));
+
     _subs.add(socket.chatHistory.listen((historyData) {
       if (historyData == null) return;
       try {
@@ -698,6 +708,16 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
     });
   }
 
+  // EDIT_MESSAGE_V1: sender-side edit; the server enforces ownership and the time window
+  void editMessage(String messageId, String newText) {
+    final text = newText.trim();
+    if (text.isEmpty) return;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    state = state.map((m) => m.id == messageId ? m.copyWith(text: text, editedAt: now) : m).toList();
+    CacheService.saveChat(_contactId, state);
+    _ref.read(socketServiceProvider).emit('edit-message', {'messageId': messageId, 'newText': text});
+  }
+
   // ── Forward messages ──────────────────────────────────────────────────
   void toggleReaction(String messageId, String emoji) {
     final selfId = _ref.read(currentUserProvider)?.xameId ?? '';
@@ -820,8 +840,29 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       return serverIds.contains(m.id); // inside range but missing → was deleted
     }).toList();
 
+    // EDIT_MERGE_V1: pick up edits made while this device was offline
+    final serverEdits = <String, Map<String, dynamic>>{
+      for (final sm in serverMessages)
+        if (sm['id'] is String && sm['editedAt'] != null) sm['id'] as String: sm,
+    };
+    var editApplied = false;
+    if (serverEdits.isNotEmpty) {
+      for (var i = 0; i < reconciledState.length; i++) {
+        final lm = reconciledState[i];
+        final se = serverEdits[lm.id];
+        if (se == null) continue;
+        final at = (se['editedAt'] as num?)?.toInt();
+        final txt = se['text'] as String?;
+        if (at == null || txt == null) continue;
+        if ((lm.editedAt ?? 0) < at) {
+          reconciledState[i] = lm.copyWith(text: txt, editedAt: at);
+          editApplied = true;
+        }
+      }
+    }
+
     if (newMsgs.isEmpty) {
-      if (reconciledState.length != state.length) {
+      if (reconciledState.length != state.length || editApplied) {
         state = reconciledState;
         CacheService.saveChat(_contactId, state);
       }
