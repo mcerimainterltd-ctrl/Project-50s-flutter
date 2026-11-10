@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../contacts/providers/contacts_provider.dart';
@@ -82,6 +83,36 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
       _showMessage(
         billingError.replaceFirst('Bad state: ', ''),
       );
+    }
+  }
+
+  // LIVE_PREVIEW_V1: the author checks their camera before any session exists
+  Future<void> _previewThenStart() async {
+    final title = _titleController.text.trim();
+    final category = _categoryController.text.trim();
+    if (title.isEmpty || category.isEmpty) {
+      _showMessage('Please enter a live title and category.');
+      return;
+    }
+    if (_audience == 'selected' && _selectedViewers.isEmpty) {
+      _showMessage('Choose at least one person, or pick another audience.');
+      return;
+    }
+    final camera = await Permission.camera.request();
+    if (!camera.isGranted) {
+      _showMessage('Camera permission is required to go live.');
+      return;
+    }
+    if (!mounted) return;
+    final go = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _LivePreviewDialog(),
+    );
+    if (go == true && mounted) {
+      // Give the camera a moment to be fully released before publishing.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (mounted) await _startLive();
     }
   }
 
@@ -312,7 +343,7 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
                     width: double.infinity,
                     height: 52,
                     child: FilledButton.icon(
-                      onPressed: _starting ? null : _startLive,
+                      onPressed: _starting ? null : _previewThenStart,
                       icon: _starting
                           ? const SizedBox(
                               width: 20,
@@ -680,6 +711,148 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+// LIVE_PREVIEW_V1: local camera preview; nothing is published and no session exists yet
+class _LivePreviewDialog extends StatefulWidget {
+  const _LivePreviewDialog();
+
+  @override
+  State<_LivePreviewDialog> createState() => _LivePreviewDialogState();
+}
+
+class _LivePreviewDialogState extends State<_LivePreviewDialog> {
+  final RTCVideoRenderer _renderer = RTCVideoRenderer();
+  MediaStream? _stream;
+  bool _ready = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _open();
+  }
+
+  Future<void> _open() async {
+    try {
+      await _renderer.initialize();
+      final stream = await navigator.mediaDevices.getUserMedia({
+        'audio': false,
+        'video': {'facingMode': 'user', 'width': 640, 'height': 480},
+      });
+      if (!mounted) {
+        for (final t in stream.getTracks()) {
+          await t.stop();
+        }
+        await stream.dispose();
+        return;
+      }
+      _stream = stream;
+      _renderer.srcObject = stream;
+      setState(() => _ready = true);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not open the camera.');
+    }
+  }
+
+  Future<void> _release() async {
+    final s = _stream;
+    _stream = null;
+    _renderer.srcObject = null;
+    if (s != null) {
+      for (final t in s.getTracks()) {
+        await t.stop();
+      }
+      await s.dispose();
+    }
+  }
+
+  Future<void> _close(bool go) async {
+    await _release();
+    if (mounted) Navigator.of(context).pop(go);
+  }
+
+  @override
+  void dispose() {
+    _release();
+    _renderer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: context.xSurface,
+      insetPadding: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Check how you look',
+              style: TextStyle(
+                color: context.xText,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Nobody can see you yet.',
+              style: TextStyle(color: context.xMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            AspectRatio(
+              aspectRatio: 3 / 4,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  color: Colors.black,
+                  child: _error != null
+                      ? Center(
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        )
+                      : _ready
+                          ? RTCVideoView(
+                              _renderer,
+                              mirror: true,
+                              objectFit: RTCVideoViewObjectFit
+                                  .RTCVideoViewObjectFitCover,
+                            )
+                          : const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _close(false),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _ready ? () => _close(true) : null,
+                    child: const Text('Start Live'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
