@@ -364,6 +364,8 @@ class LiveNotifier extends StateNotifier<LiveState> {
   Future<LiveStartResult?> startLive({
     required String title,
     required String category,
+    String audience = 'everyone',
+    List<String> allowedViewers = const [],
   }) async {
     state = state.copyWith(
       loading: true,
@@ -375,6 +377,8 @@ class LiveNotifier extends StateNotifier<LiveState> {
       final result = await _api.startLive(
         title: title,
         category: category,
+        audience: audience,
+        allowedViewers: allowedViewers,
       );
 
       state = state.copyWith(

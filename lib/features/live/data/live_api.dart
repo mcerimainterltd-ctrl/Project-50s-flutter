@@ -183,6 +183,8 @@ class LiveApi {
   Future<LiveStartResult> startLive({
     required String title,
     required String category,
+    String audience = 'everyone',
+    List<String> allowedViewers = const [],
   }) async {
     final response = await http.post(
       _uri('/api/live/start'),
@@ -190,6 +192,8 @@ class LiveApi {
       body: jsonEncode({
         'title': title,
         'category': category,
+        'audience': audience,
+        'allowedViewers': allowedViewers,
       }),
     );
 

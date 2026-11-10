@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../contacts/providers/contacts_provider.dart';
 import '../providers/live_provider.dart';
 import 'live_broadcast_screen.dart';
 
@@ -19,6 +20,8 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
   final _categoryController = TextEditingController();
 
   bool _starting = false;
+  String _audience = 'everyone';
+  final Set<String> _selectedViewers = {};
   bool _claimingTrial = false;
 
   @override
@@ -91,6 +94,11 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
       return;
     }
 
+    if (_audience == 'selected' && _selectedViewers.isEmpty) {
+      _showMessage('Choose at least one person, or pick another audience.');
+      return;
+    }
+
     final microphone = await Permission.microphone.request();
 
     if (!microphone.isGranted) {
@@ -105,6 +113,8 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
     final result = await ref.read(liveProvider.notifier).startLive(
           title: title,
           category: category,
+          audience: _audience,
+          allowedViewers: _selectedViewers.toList(),
         );
 
     if (!mounted) return;
@@ -233,6 +243,70 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
                     hint: 'e.g. Music, News, Chat',
                     icon: Icons.category_rounded,
                   ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Who can watch',
+                    style: TextStyle(
+                      color: context.xText,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final o in const [
+                        ['everyone', 'Everyone'],
+                        ['contacts', 'My contacts'],
+                        ['selected', 'Selected people'],
+                      ])
+                        ChoiceChip(
+                          label: Text(o[1]),
+                          selected: _audience == o[0],
+                          onSelected: _starting
+                              ? null
+                              : (_) => setState(() => _audience = o[0]),
+                        ),
+                    ],
+                  ),
+                  if (_audience == 'selected') ...[
+                    const SizedBox(height: 8),
+                    Builder(builder: (context) {
+                      final contacts =
+                          ref.watch(contactsProvider).valueOrNull ?? [];
+                      if (contacts.isEmpty) {
+                        return Text(
+                          'You have no contacts to choose from yet.',
+                          style: TextStyle(
+                              color: context.xMuted, fontSize: 13),
+                        );
+                      }
+                      return Column(
+                        children: [
+                          for (final c in contacts)
+                            CheckboxListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: _selectedViewers.contains(c.id),
+                              title: Text(
+                                c.name,
+                                style: TextStyle(color: context.xText),
+                              ),
+                              onChanged: _starting
+                                  ? null
+                                  : (v) => setState(() {
+                                        if (v == true) {
+                                          _selectedViewers.add(c.id);
+                                        } else {
+                                          _selectedViewers.remove(c.id);
+                                        }
+                                      }),
+                            ),
+                        ],
+                      );
+                    }),
+                  ],
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
