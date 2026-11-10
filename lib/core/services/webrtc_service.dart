@@ -144,6 +144,13 @@ class WebRTCService {
   Future<void> setSpeakerphone(bool enabled) async {
     _speakerOn = enabled;
     await Helper.setSpeakerphoneOn(enabled);
+    // OUTGOING_TONE_ROUTE_V1: the ringback is a separate player; restart it so it follows the new route
+    if (_callState == CallState.outgoing && !_callCancelled) {
+      try {
+        await _audio.stopOutgoing();
+        await _audio.playOutgoing();
+      } catch (_) {}
+    }
   }
 
   Future<void> restoreCallAudio() async {

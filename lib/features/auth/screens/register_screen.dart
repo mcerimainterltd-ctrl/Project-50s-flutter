@@ -44,6 +44,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
+  // REF_PREFILL_V1: fill the referral code when the screen is reused with a new link
+  @override
+  void didUpdateWidget(covariant RegisterScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final code = widget.referralCode;
+    if (code != null && code.isNotEmpty &&
+        code != oldWidget.referralCode &&
+        _referralCtrl.text.trim().isEmpty) {
+      _referralCtrl.text = code;
+    }
+  }
+
   @override
   void dispose() {
     _referralCtrl.dispose();
