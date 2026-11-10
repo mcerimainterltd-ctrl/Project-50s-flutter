@@ -108,6 +108,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: "/tv", name: "tv", builder: (context, state) => const XameTVPage()),
       GoRoute(path: "/people", name: "people", builder: (c, s) => const PeopleDiscoveryScreen()),
       GoRoute(path: '/login',    builder: (c, s) => const LoginScreen()),
+      // JOIN_ROUTE_V1: invite links open the app on the right screen instead of 'Page Not Found'
+      GoRoute(
+        path: '/join/:code',
+        builder: (c, s) => const SizedBox.shrink(),
+        redirect: (c, s) {
+          if (user != null) return '/contacts';
+          final code = s.pathParameters['code'] ?? '';
+          return code.isEmpty
+              ? '/register'
+              : '/register?ref=${Uri.encodeQueryComponent(code)}';
+        },
+      ),
       GoRoute(path: '/register', builder: (c, s) => RegisterScreen(referralCode: s.uri.queryParameters['ref'])),
       GoRoute(path: '/contacts', builder: (c, s) => const ContactsScreen()),
       GoRoute(path: '/chat/:userId',
