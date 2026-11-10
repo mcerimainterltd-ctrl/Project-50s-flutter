@@ -30,6 +30,19 @@ class AudioService {
   // ── Outgoing call tone (loops) ─────────────────────────────
   Future<void> playOutgoing() async {
     try {
+      // OUTGOING_TONE_CONTEXT_V1: play the ringback as call audio so it follows the call route
+      try {
+        await _outgoingPlayer.setAudioContext(AudioContext(
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: false,
+            stayAwake: false,
+            contentType: AndroidContentType.speech,
+            usageType: AndroidUsageType.voiceCommunication,
+            audioMode: AndroidAudioMode.inCommunication,
+            audioFocus: AndroidAudioFocus.none,
+          ),
+        ));
+      } catch (_) {}
       await _outgoingPlayer.setReleaseMode(ReleaseMode.loop);
       await _outgoingPlayer.setVolume(0.8);
       await _outgoingPlayer.play(AssetSource('audio/xamepage_outgoing.mp3'));
