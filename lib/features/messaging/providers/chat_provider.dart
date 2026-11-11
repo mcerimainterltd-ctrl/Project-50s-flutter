@@ -861,8 +861,26 @@ class ChatNotifier extends StateNotifier<List<XameMessage>> {
       }
     }
 
+    // STATUS_MERGE_V1: ticks catch up after the recipient got or read messages while this device was offline
+    int rank(String st) => st == 'seen' ? 3 : st == 'delivered' ? 2 : st == 'sent' ? 1 : 0;
+    final serverStatus = <String, String>{
+      for (final sm in serverMessages)
+        if (sm['id'] is String && sm['status'] is String) sm['id'] as String: sm['status'] as String,
+    };
+    var statusApplied = false;
+    for (var i = 0; i < reconciledState.length; i++) {
+      final lm = reconciledState[i];
+      if (lm.direction != MessageDirection.sent) continue;
+      if (lm.status == 'sending' || lm.status == 'uploading' || lm.status == 'failed') continue;
+      final ss = serverStatus[lm.id];
+      if (ss != null && rank(ss) > rank(lm.status)) {
+        reconciledState[i] = lm.copyWith(status: ss);
+        statusApplied = true;
+      }
+    }
+
     if (newMsgs.isEmpty) {
-      if (reconciledState.length != state.length || editApplied) {
+      if (reconciledState.length != state.length || editApplied || statusApplied) {
         state = reconciledState;
         CacheService.saveChat(_contactId, state);
       }
