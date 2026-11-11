@@ -760,13 +760,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: Text(widget.userId,
                 style: const TextStyle(color: XameColors.accent, fontSize: 11)),
             ),
-            Text(
-              isTyping ? 'typing...'
-                : contact?.isOnline == true ? 'online' : 'offline',
-              style: TextStyle(
-                color:     isTyping ? XameColors.accent : (contact?.isOnline == true ? XameColors.accent : Colors.white38),
-                fontSize:  12,
-                fontStyle: isTyping ? FontStyle.italic : FontStyle.normal),
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: isTyping
+                        ? 'typing...'
+                        : (contact?.isOnline == true ? 'online' : 'offline'),
+                    style: TextStyle(
+                      color: isTyping
+                          ? XameColors.accent
+                          : (contact?.isOnline == true ? XameColors.accent : Colors.white38),
+                      fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
+                    ),
+                  ),
+                  // HEADER_STATUS_V1: personal status beside presence, hidden while typing
+                  if (!isTyping && '${contact?.personalStatusEmoji ?? ''} ${contact?.personalStatusMessage ?? ''}'.trim().isNotEmpty)
+                    TextSpan(
+                      text: ' · ' + '${contact?.personalStatusEmoji ?? ''} ${contact?.personalStatusMessage ?? ''}'.trim(),
+                      style: const TextStyle(color: Colors.white54, fontStyle: FontStyle.normal),
+                    ),
+                ],
+              ),
+              style: const TextStyle(fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ])),
         ]),
