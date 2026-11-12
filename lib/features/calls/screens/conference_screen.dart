@@ -123,6 +123,25 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     _listenSocket();
   }
 
+  // CONF_ICE_QUEUE_V1: trickle-ICE candidates can arrive before the peer exists or before its
+  // remote description is set. They are buffered here and flushed in order once it is set.
+  final Map<String, List<RTCIceCandidate>> _pendingIce = {};
+  final Map<String, bool> _remoteDescSet = {};
+
+  Future<void> _flushPendingIce(String peerId) async {
+    _remoteDescSet[peerId] = true;
+    final peer = _peers[peerId];
+    final queued = _pendingIce.remove(peerId);
+    if (peer == null || queued == null) return;
+    for (final c in queued) {
+      try {
+        await peer.pc.addCandidate(c);
+      } catch (e) {
+        _log('addCandidate (queued) failed peer=$peerId: $e');
+      }
+    }
+  }
+
   List<_ConferencePeer> get peers => List.unmodifiable(_peers.values);
 
   void _listenSocket() {
@@ -162,6 +181,7 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
       }
       final peer = _peers[from]!;
       await peer.pc.setRemoteDescription(offer);
+      await _flushPendingIce(from);
       final answer = await peer.pc.createAnswer();
       await peer.pc.setLocalDescription(answer);
       socket.rawSocket?.emit('conference:answer', {
@@ -179,18 +199,26 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
       final answer = RTCSessionDescription(
         map['answer']['sdp'] as String, map['answer']['type'] as String);
       await peer.pc.setRemoteDescription(answer);
+      await _flushPendingIce(from);
     });
 
     socket.rawSocket?.on('conference:ice', (data) async {
       final map  = Map<String, dynamic>.from(data as Map);
       final from = map['from'] as String;
-      final peer = _peers[from];
-      if (peer == null) return;
       final ice = RTCIceCandidate(
         map['candidate']['candidate'] as String,
         map['candidate']['sdpMid'] as String?,
         map['candidate']['sdpMLineIndex'] as int?);
-      await peer.pc.addCandidate(ice);
+      final peer = _peers[from];
+      if (peer == null || _remoteDescSet[from] != true) {
+        (_pendingIce[from] ??= <RTCIceCandidate>[]).add(ice);
+        return;
+      }
+      try {
+        await peer.pc.addCandidate(ice);
+      } catch (e) {
+        _log('addCandidate failed peer=$from: $e');
+      }
     });
 
     socket.rawSocket?.on('conference:peer-left', (data) async {
@@ -289,7 +317,7 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
 
     // Remote track → renderer
     pc.onTrack = (event) {
-      _log('onTrack peer=$peerId streams=\${event.streams.length} kind=\${event.track?.kind}');
+      _log('onTrack peer=$peerId streams=${event.streams.length} kind=${event.track?.kind}');
       if (event.streams.isNotEmpty) {
         renderer.srcObject = event.streams[0];
         _notifyPeers();
@@ -309,7 +337,7 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
     };
 
     pc.onIceConnectionState = (s) {
-      _log('ICE peer=$peerId state=\$s');
+      _log('ICE peer=$peerId state=$s');
       if (s == RTCIceConnectionState.RTCIceConnectionStateFailed ||
           s == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
         _removePeer(peerId);
@@ -332,6 +360,8 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
 
   Future<void> _removePeer(String peerId) async {
     final peer = _peers.remove(peerId);
+    _pendingIce.remove(peerId);
+    _remoteDescSet.remove(peerId);
     if (peer != null) {
       await peer.pc.close();
       await peer.renderer.dispose();
