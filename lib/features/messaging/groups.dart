@@ -4,6 +4,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:xamepage/core/config/constants.dart';
 import 'package:xamepage/core/services/socket_service.dart';
 import 'package:xamepage/core/services/session_headers.dart';
@@ -52,14 +56,16 @@ class GroupMessage {
   final String id, senderId, senderName;
   final String? text;
   final int ts;
+  final Map<String, dynamic>? file; // GROUPS_MEDIA_V1
   const GroupMessage({required this.id, required this.senderId,
-      required this.senderName, this.text, required this.ts});
+      required this.senderName, this.text, required this.ts, this.file});
   factory GroupMessage.fromJson(Map<String, dynamic> j) => GroupMessage(
     id:         (j['id'] ?? j['_id'] ?? '').toString(),
     senderId:   j['senderId']   as String,
     senderName: j['senderName'] as String? ?? '',
     text:       j['text']       as String?,
     ts:         j['ts']         as int,
+    file:       j['file'] is Map ? Map<String, dynamic>.from(j['file'] as Map) : null,
   );
 }
 
@@ -119,7 +125,7 @@ class GroupsService {
         orElse: () => XameGroup(groupId: '', name: '', createdBy: '',
             members: []));
     if (g.groupId.isNotEmpty) {
-      g.lastMessagePreview = msg.text ?? 'Attachment';
+      g.lastMessagePreview = (msg.text != null && msg.text!.isNotEmpty) ? msg.text! : '📎 Attachment';
       g.lastMessageTs      = msg.ts;
     }
     onMessage?.call(msg, groupId);
@@ -176,6 +182,23 @@ class GroupsService {
       }
     } catch (e) { debugPrint('[Groups] Create error: $e'); }
     return null;
+  }
+
+  // GROUPS_MEDIA_V1: send an already-uploaded file (url/name/type/size) to the group
+  GroupMessage sendFileMessage(String groupId, Map<String, dynamic> file) {
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    _socket.emit('group:send-message', {
+      'groupId': groupId,
+      'message': {'senderId': _userId, 'text': '', 'file': file, 'ts': ts},
+    });
+    for (final g in _groups) {
+      if (g.groupId == groupId) {
+        g.lastMessagePreview = '\u{1F4CE} Attachment';
+        g.lastMessageTs = ts;
+      }
+    }
+    onGroupsChanged?.call();
+    return GroupMessage(id: 'local-$ts', senderId: _userId, senderName: '', text: '', ts: ts, file: file);
   }
 
   // GROUPS_APP_V1: sends in the server's contract (group:send-message). The server forwards only to the
@@ -1269,6 +1292,233 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     });
   }
 
+  // GROUPS_MEDIA_V1 ─────────────────────────────────────────────────────────
+  bool _uploadingFile = false;
+  static const int _groupMaxFileBytes = 50 * 1024 * 1024;
+
+  void _groupSnack(String t) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t)));
+  }
+
+  String _groupMimeFor(String name) {
+    final e = name.contains('.') ? name.split('.').last.toLowerCase() : '';
+    const m = {
+      'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif',
+      'webp': 'image/webp', 'heic': 'image/heic',
+      'mp4': 'video/mp4', 'mov': 'video/quicktime', '3gp': 'video/3gpp', 'mkv': 'video/x-matroska',
+      'mp3': 'audio/mpeg', 'm4a': 'audio/x-m4a', 'aac': 'audio/aac', 'wav': 'audio/wav', 'ogg': 'audio/ogg',
+      'pdf': 'application/pdf', 'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'txt': 'text/plain', 'csv': 'text/csv', 'zip': 'application/zip',
+    };
+    return m[e] ?? 'application/octet-stream';
+  }
+
+  String _groupSizeLabel(int b) {
+    if (b <= 0) return '';
+    if (b < 1024) return '$b B';
+    if (b < 1024 * 1024) return '${(b / 1024).toStringAsFixed(0)} KB';
+    return '${(b / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  Future<void> _showAttachSheet() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: context.xCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Wrap(children: [
+          ListTile(
+            leading: Icon(Icons.photo_library_outlined, color: context.xPrimary),
+            title: Text('Photo or video', style: TextStyle(color: context.xText)),
+            onTap: () => Navigator.pop(ctx, 'gallery'),
+          ),
+          ListTile(
+            leading: Icon(Icons.photo_camera_outlined, color: context.xPrimary),
+            title: Text('Camera', style: TextStyle(color: context.xText)),
+            onTap: () => Navigator.pop(ctx, 'camera'),
+          ),
+          ListTile(
+            leading: Icon(Icons.insert_drive_file_outlined, color: context.xPrimary),
+            title: Text('Document or file', style: TextStyle(color: context.xText)),
+            onTap: () => Navigator.pop(ctx, 'file'),
+          ),
+        ]),
+      ),
+    );
+    if (choice == null) return;
+    await _pickAndSendFile(choice);
+  }
+
+  Future<void> _pickAndSendFile(String kind) async {
+    try {
+      String? path;
+      String name = 'file';
+      if (kind == 'file') {
+        final r = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false, withData: false);
+        if (r == null || r.files.isEmpty) return;
+        path = r.files.single.path;
+        name = r.files.single.name;
+      } else {
+        final picker = ImagePicker();
+        final XFile? x = kind == 'camera'
+            ? await picker.pickImage(source: ImageSource.camera, imageQuality: 85)
+            : await picker.pickMedia();
+        if (x == null) return;
+        path = x.path;
+        name = x.name;
+      }
+      if (path == null || path.isEmpty) return;
+
+      final size = await File(path).length();
+      if (size > _groupMaxFileBytes) {
+        _groupSnack('File too large (${_groupSizeLabel(size)}). Max ${_groupSizeLabel(_groupMaxFileBytes)} in groups.');
+        return;
+      }
+
+      if (mounted) setState(() => _uploadingFile = true);
+      final req = http.MultipartRequest('POST', Uri.parse('${AppConstants.serverUrl}/api/upload-file'));
+      req.headers.addAll(await sessionAuthHeaders());
+      req.files.add(await http.MultipartFile.fromPath('file', path, filename: name));
+      final streamed = await req.send().timeout(const Duration(minutes: 10));
+      final res = await http.Response.fromStream(streamed);
+      final body = jsonDecode(res.body);
+      if (res.statusCode != 200 || body is! Map || body['success'] != true || body['url'] == null) {
+        _groupSnack('Upload failed. Please try again.');
+        return;
+      }
+      final file = <String, dynamic>{
+        'url': body['url'].toString(),
+        'name': name,
+        'type': _groupMimeFor(name),
+        'size': size,
+      };
+      final sent = widget.service.sendFileMessage(_group.groupId, file);
+      if (!mounted) return;
+      setState(() => _msgs.add(sent));
+      _scrollDown();
+    } catch (e) {
+      _groupSnack('Could not send file: $e');
+    } finally {
+      if (mounted) setState(() => _uploadingFile = false);
+    }
+  }
+
+  void _viewGroupImage(String url) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(
+          child: InteractiveViewer(
+            child: CachedNetworkImage(
+              imageUrl: url,
+              fit: BoxFit.contain,
+              placeholder: (_, __) => const CircularProgressIndicator(),
+              errorWidget: (_, __, ___) =>
+                  const Icon(Icons.broken_image, color: Colors.white54, size: 48),
+            ),
+          ),
+        ),
+      ),
+    ));
+  }
+
+  Future<void> _openGroupFile(String url, String name) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final safe = name.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+      final out = File('${dir.path}/grp_${url.hashCode.toRadixString(16)}_$safe');
+      if (!await out.exists()) {
+        _groupSnack('Downloading $name...');
+        final client = http.Client();
+        try {
+          final resp = await client.send(http.Request('GET', Uri.parse(url)));
+          if (resp.statusCode != 200) {
+            _groupSnack('Download failed (${resp.statusCode}).');
+            return;
+          }
+          final sink = out.openWrite();
+          await resp.stream.pipe(sink);
+        } finally {
+          client.close();
+        }
+      }
+      final result = await OpenFilex.open(out.path);
+      if (result.type != ResultType.done) {
+        _groupSnack('No app found to open this file.');
+      }
+    } catch (e) {
+      _groupSnack('Could not open file: $e');
+    }
+  }
+
+  Widget _groupFileBody(GroupMessage msg, bool isMe) {
+    final f = msg.file!;
+    final url = (f['url'] ?? '').toString();
+    final name = (f['name'] ?? 'File').toString();
+    final type = (f['type'] ?? '').toString();
+    final size = f['size'] is num ? (f['size'] as num).toInt() : 0;
+    final fg = isMe ? Colors.white : context.xText;
+    final sub = isMe ? Colors.white70 : context.xMuted;
+    if (type.startsWith('image/') && url.isNotEmpty) {
+      return GestureDetector(
+        onTap: () => _viewGroupImage(url),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: CachedNetworkImage(
+            imageUrl: url,
+            width: 220,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => const SizedBox(
+                width: 220, height: 140,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+            errorWidget: (_, __, ___) => const SizedBox(
+                width: 220, height: 100,
+                child: Center(child: Icon(Icons.broken_image, size: 32))),
+          ),
+        ),
+      );
+    }
+    final IconData icon = type.startsWith('video/')
+        ? Icons.videocam_rounded
+        : type.startsWith('audio/')
+            ? Icons.audiotrack_rounded
+            : type == 'application/pdf'
+                ? Icons.picture_as_pdf_rounded
+                : Icons.insert_drive_file_rounded;
+    return InkWell(
+      onTap: url.isEmpty ? null : () => _openGroupFile(url, name),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: fg, size: 30),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(name, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w600)),
+              if (size > 0)
+                Text(_groupSizeLabel(size), style: TextStyle(color: sub, fontSize: 11)),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Icon(Icons.download_rounded, color: sub, size: 20),
+      ]),
+    );
+  }
+
   void _send() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
@@ -1393,7 +1643,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Flexible(child: Text(msg.text ?? '',
+                                    Flexible(child: msg.file != null ? _groupFileBody(msg, isMe) : Text(msg.text ?? '',
                                         style: TextStyle(
                                             color: isMe
                                                 ? Colors.white
@@ -1449,6 +1699,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     horizontal: 4, vertical: 8),
               ),
             ),
+          ),
+          IconButton(
+            icon: _uploadingFile
+                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: context.xPrimary))
+                : Icon(Icons.attach_file_rounded, color: context.xMuted),
+            onPressed: _uploadingFile ? null : _showAttachSheet,
           ),
           IconButton(
             icon: Icon(Icons.send_rounded, color: context.xPrimary),
