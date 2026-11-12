@@ -41,6 +41,10 @@ class SocketService {
   final _msgStatusCtrl        = StreamController<MsgStatusUpdate>.broadcast();
   final _msgSeenCtrl          = StreamController<MsgSeenUpdate>.broadcast();
   final _onlineUsersCtrl      = StreamController<List<String>>.broadcast();
+  // Groups (GROUPS_APP_V1)
+  final _groupMessageCtrl     = StreamController<Map<String, dynamic>>.broadcast();
+  final _groupTypingCtrl      = StreamController<Map<String, dynamic>>.broadcast();
+  final _groupAddedCtrl       = StreamController<Map<String, dynamic>>.broadcast();
   // Spaces
   final _spaceMessageCtrl     = StreamController<Map<String, dynamic>>.broadcast();
   final _spaceTypingCtrl      = StreamController<Map<String, dynamic>>.broadcast();
@@ -545,6 +549,11 @@ class SocketService {
     socket.on("conference:screen-share-stopped", (_) => _confScreenStopCtrl.add(null));
     socket.on("conference:room-closed",      (_) => _confRoomClosedCtrl.add(null));
 
+    // Group listeners (GROUPS_APP_V1)
+    socket.on("group:message", (d) { if (d != null) _groupMessageCtrl.add(Map<String,dynamic>.from(d as Map)); });
+    socket.on("group:typing",  (d) { if (d != null) _groupTypingCtrl.add(Map<String,dynamic>.from(d as Map)); });
+    socket.on("group:added",   (d) { if (d != null) _groupAddedCtrl.add(Map<String,dynamic>.from(d as Map)); });
+
     // Space listeners
     socket.on("space:message",     (d) { if (d != null) _spaceMessageCtrl.add(Map<String,dynamic>.from(d as Map)); });
     socket.on("space:typing",      (d) { if (d != null) _spaceTypingCtrl.add(Map<String,dynamic>.from(d as Map)); });
@@ -552,6 +561,11 @@ class SocketService {
     socket.on("space:user_left",   (d) { if (d != null) _spaceUserLeftCtrl.add(Map<String,dynamic>.from(d as Map)); });
     socket.on("space:reaction",    (d) { if (d != null) _spaceReactionCtrl.add(Map<String,dynamic>.from(d as Map)); });
   }
+
+  // Group streams (GROUPS_APP_V1)
+  Stream<Map<String, dynamic>> get groupMessage => _groupMessageCtrl.stream;
+  Stream<Map<String, dynamic>> get groupTyping  => _groupTypingCtrl.stream;
+  Stream<Map<String, dynamic>> get groupAdded   => _groupAddedCtrl.stream;
 
   // Space streams
   Stream<Map<String, dynamic>> get spaceMessage    => _spaceMessageCtrl.stream;
@@ -699,6 +713,9 @@ class SocketService {
     _msgStatusCtrl.close();
     _msgSeenCtrl.close();
     _onlineUsersCtrl.close();
+    _groupMessageCtrl.close();
+    _groupTypingCtrl.close();
+    _groupAddedCtrl.close();
     _spaceMessageCtrl.close();
     _spaceTypingCtrl.close();
     _spaceUserJoinedCtrl.close();

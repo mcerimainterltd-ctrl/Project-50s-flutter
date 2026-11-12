@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:xamepage/core/config/constants.dart';
 import 'package:xamepage/core/services/socket_service.dart';
+import 'package:xamepage/core/services/session_headers.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
 
 // ── Models ────────────────────────────────────────────────────────────────────
@@ -53,7 +55,7 @@ class GroupMessage {
   const GroupMessage({required this.id, required this.senderId,
       required this.senderName, this.text, required this.ts});
   factory GroupMessage.fromJson(Map<String, dynamic> j) => GroupMessage(
-    id:         j['id']         as String,
+    id:         (j['id'] ?? j['_id'] ?? '').toString(),
     senderId:   j['senderId']   as String,
     senderName: j['senderName'] as String? ?? '',
     text:       j['text']       as String?,
@@ -71,12 +73,41 @@ class GroupsService {
   void Function(GroupMessage msg, String groupId)? onMessage;
   void Function(String groupId, String name)? onTyping;
 
+  final List<StreamSubscription<Map<String, dynamic>>> _subs = [];
+  VoidCallback? onGroupsChanged; // GROUPS_APP_V1
+
   GroupsService(this._socket, this._userId) {
     _socket.emit('groups:subscribe', {'userId': _userId});
+    // GROUPS_APP_V1: connect the server's group events to this service
+    _subs.add(_socket.groupMessage.listen(handleGroupMessage));
+    _subs.add(_socket.groupTyping.listen(handleGroupTyping));
+    _subs.add(_socket.groupAdded.listen(_handleGroupAdded));
   }
 
   List<XameGroup>    get groups         => List.unmodifiable(_groups);
   List<GroupMessage> get activeMessages => List.unmodifiable(_activeMessages);
+
+  // GROUPS_APP_V1: someone created a group with me in it, or added me to one
+  void _handleGroupAdded(Map<String, dynamic> data) {
+    try {
+      final raw = data['group'];
+      if (raw is! Map) return;
+      final g = XameGroup.fromJson(Map<String, dynamic>.from(raw));
+      _groups.removeWhere((x) => x.groupId == g.groupId);
+      _groups.insert(0, g);
+      onGroupsChanged?.call();
+    } catch (e) {
+      debugPrint('[Groups] added handler error: $e');
+    }
+  }
+
+  void dispose() {
+    for (final s in _subs) {
+      s.cancel();
+    }
+    _subs.clear();
+    onGroupsChanged = null;
+  }
 
   void handleGroupMessage(Map<String, dynamic> data) {
     final groupId = data['groupId'] as String?;
@@ -92,6 +123,7 @@ class GroupsService {
       g.lastMessageTs      = msg.ts;
     }
     onMessage?.call(msg, groupId);
+    onGroupsChanged?.call();
   }
 
   void handleGroupTyping(Map<String, dynamic> data) {
@@ -103,7 +135,8 @@ class GroupsService {
   Future<void> loadGroups() async {
     try {
       final res = await http.get(
-          Uri.parse('${AppConstants.serverUrl}/api/groups/$_userId'));
+          Uri.parse('${AppConstants.serverUrl}/api/groups/$_userId'),
+          headers: await sessionAuthHeaders());
       final d = jsonDecode(res.body);
       _groups = (d['groups'] as List? ?? [])
           .map((g) => XameGroup.fromJson(Map<String, dynamic>.from(g)))
@@ -113,8 +146,9 @@ class GroupsService {
 
   Future<XameGroup?> loadMessages(String groupId) async {
     try {
-      final res = await http.get(Uri.parse(
-          '${AppConstants.serverUrl}/api/groups/$groupId/messages'));
+      final res = await http.get(
+          Uri.parse('${AppConstants.serverUrl}/api/groups/$groupId/messages'),
+          headers: await sessionAuthHeaders());
       final d = jsonDecode(res.body);
       _activeMessages = (d['messages'] as List? ?? [])
           .map((m) => GroupMessage.fromJson(Map<String, dynamic>.from(m)))
@@ -138,17 +172,28 @@ class GroupsService {
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
         final group = XameGroup.fromJson(Map<String, dynamic>.from(d['group']));
-        _groups.insert(0, group); return group;
+        _groups.insert(0, group); onGroupsChanged?.call(); return group;
       }
     } catch (e) { debugPrint('[Groups] Create error: $e'); }
     return null;
   }
 
-  void sendMessage(String groupId, String text) {
-    final msgId = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
-    _socket.emit('group:message', {'groupId': groupId, 'userId': _userId,
-        'message': {'id': msgId, 'text': text,
-            'ts': DateTime.now().millisecondsSinceEpoch}});
+  // GROUPS_APP_V1: sends in the server's contract (group:send-message). The server forwards only to the
+  // other members, so the local copy is returned for the sender's own screen.
+  GroupMessage sendMessage(String groupId, String text) {
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    _socket.emit('group:send-message', {
+      'groupId': groupId,
+      'message': {'senderId': _userId, 'text': text, 'ts': ts},
+    });
+    for (final g in _groups) {
+      if (g.groupId == groupId) {
+        g.lastMessagePreview = text;
+        g.lastMessageTs = ts;
+      }
+    }
+    onGroupsChanged?.call();
+    return GroupMessage(id: 'local-$ts', senderId: _userId, senderName: '', text: text, ts: ts);
   }
 
   void emitTyping(String groupId, String name) =>
@@ -1227,7 +1272,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void _send() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
-    widget.service.sendMessage(_group.groupId, text);
+    final sent = widget.service.sendMessage(_group.groupId, text);
+    setState(() => _msgs.add(sent));
+    _scrollDown();
     _ctrl.clear();
   }
 

@@ -523,7 +523,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen>
             final user = ref.read(currentUserProvider);
             final socket = ref.read(socketServiceProvider);
             if (user == null) return;
-            final svc = GroupsService(socket, user.xameId);
+            final svc = ref.read(groupsServiceProvider) ?? GroupsService(socket, user.xameId);
             GroupsListScreen.show(context,
               service: svc,
               contacts: (ref.read(contactsProvider).value ?? []).map((c) => {"id": c.id, "name": c.name}).toList(),
@@ -662,12 +662,21 @@ class _ChatsTab extends ConsumerWidget {
         final selfList = filtered.where((c) => c.id == self?.xameId).toList();
         final others   = filtered.where((c) => c.id != self?.xameId).toList();
 
-        if (list.isEmpty) {
+        // GROUPS_APP_V1: groups live in the Chats list too
+        ref.watch(groupsVersionProvider);
+        final groupsSvc = ref.watch(groupsServiceProvider);
+        final groupRows = (groupsSvc?.groups ?? <XameGroup>[]).where((g) =>
+            filter.isEmpty || g.name.toLowerCase().contains(filter.toLowerCase())).toList();
+        groupRows.sort((a, b) => (b.lastMessageTs ?? 0).compareTo(a.lastMessageTs ?? 0));
+        if (list.isEmpty && groupRows.isEmpty) {
           return _EmptyChats();
         }
 
         final items = <Widget>[
           ...selfList.map((c) => _ContactTile(contact: c, isSelf: true)),
+          if (groupRows.isNotEmpty && groupsSvc != null) _GroupsHeader(groupRows.length),
+          if (groupsSvc != null)
+            ...groupRows.map((g) => _GroupTile(group: g, svc: groupsSvc, selfId: self?.xameId ?? '')),
           if (others.isNotEmpty) _SectionHeader(others.length),
           ...others.map((c) => _ContactTile(contact: c)),
         ];
@@ -677,6 +686,103 @@ class _ChatsTab extends ConsumerWidget {
           itemCount: items.length,
           itemBuilder: (_, i) => items[i],
         );
+  }
+}
+
+// ── Groups in the Chats list (GROUPS_APP_V1) ─────────────────────────────────
+final groupsVersionProvider = StateProvider<int>((ref) => 0);
+
+final groupsServiceProvider = Provider<GroupsService?>((ref) {
+  final userId = ref.watch(currentUserProvider.select((u) => u?.xameId));
+  if (userId == null) return null;
+  final svc = GroupsService(ref.read(socketServiceProvider), userId);
+  var disposed = false;
+  void bump() {
+    if (!disposed) ref.read(groupsVersionProvider.notifier).state++;
+  }
+  svc.onGroupsChanged = bump;
+  svc.loadGroups().then((_) => bump());
+  ref.onDispose(() {
+    disposed = true;
+    svc.dispose();
+  });
+  return svc;
+});
+
+class _GroupsHeader extends StatelessWidget {
+  final int count;
+  const _GroupsHeader(this.count);
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+    child: Row(children: [
+      Text('Groups',
+        style: TextStyle(color: context.xMuted, fontSize: 12,
+            fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+      const SizedBox(width: 8),
+      Text('$count',
+        style: TextStyle(color: context.xMuted.withValues(alpha: 0.5), fontSize: 12)),
+    ]),
+  );
+}
+
+class _GroupTile extends StatelessWidget {
+  final XameGroup group;
+  final GroupsService svc;
+  final String selfId;
+  const _GroupTile({required this.group, required this.svc, required this.selfId});
+
+  String _subtitle() {
+    final preview = group.lastMessagePreview ?? '';
+    if (preview.isNotEmpty) return preview;
+    final mine = group.members.where((m) => m.userId == selfId).toList();
+    final by = mine.isNotEmpty ? (mine.first.addedBy ?? '') : '';
+    if (by.isNotEmpty && by != selfId) {
+      final adder = group.members.where((m) => m.userId == by).toList();
+      final who = (adder.isNotEmpty && adder.first.name.isNotEmpty) ? adder.first.name : by;
+      return 'Added by $who';
+    }
+    return 'No messages yet';
+  }
+
+  String _when() {
+    final ts = group.lastMessageTs ?? 0;
+    if (ts <= 0) return '';
+    final dt = DateTime.fromMillisecondsSinceEpoch(ts).toLocal();
+    final now = DateTime.now();
+    if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+    return '${dt.day}/${dt.month}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final when = _when();
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (_) => GroupChatScreen(group: group, currentUserId: selfId, service: svc))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: context.xPrimary.withValues(alpha: 0.15),
+            child: Icon(Icons.group, color: context.xPrimary)),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(group.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: context.xText, fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(_subtitle(), maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: context.xMuted, fontSize: 13)),
+          ])),
+          if (when.isNotEmpty)
+            Text(when, style: TextStyle(color: context.xMuted, fontSize: 12)),
+        ]),
+      ),
+    );
   }
 }
 
