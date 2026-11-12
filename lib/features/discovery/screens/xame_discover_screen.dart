@@ -44,6 +44,7 @@ import '../widgets/live_pulse.dart';
 import '../widgets/story_viewer.dart';
 import '../models/discovery_item.dart';
 import 'package:xamepage/core/theme/app_theme.dart';
+import '../../../core/services/session_headers.dart'; // SESSION_HEADERS_V1
 
 // ── API Service ───────────────────────────────────────────────────────────────
 class DiscoveryApiService {
@@ -4017,7 +4018,7 @@ class _DetailScreenState extends ConsumerState<_DetailScreen> {
     if (self == null) return;
     setState(() => _followLoading = true);
     try {
-      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl, headers: await sessionAuthHeaders()));
       if (_following) {
         // Unfollow
         await dio.post('/api/remove-contact', data: {

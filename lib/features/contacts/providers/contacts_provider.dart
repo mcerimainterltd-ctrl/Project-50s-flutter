@@ -12,6 +12,7 @@ import '../../../core/services/socket_service.dart';
 import '../../../shared/models/message.dart';
 import '../../messaging/providers/chat_provider.dart';
 import '../../../core/services/cache_service.dart';
+import '../../../core/services/session_headers.dart'; // SESSION_HEADERS_V1
 import '../../discovery/screens/xame_discover_screen.dart';
 
 final activeContactIdProvider = StateProvider<String?>((ref) => null);
@@ -359,6 +360,7 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       await dio.post('/api/remove-contact',
+          options: Options(headers: await sessionAuthHeaders()),
           data: {'userId': selfId, 'contactId': contactId});
       final current = state.valueOrNull ?? [];
       final updated = current.where((c) => c.id != contactId).toList();
@@ -394,6 +396,7 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
     try {
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       await dio.post('/api/clear-chat',
+          options: Options(headers: await sessionAuthHeaders()),
           data: {'userId': selfId, 'contactId': contactId});
     } catch (_) {}
   }
@@ -439,6 +442,7 @@ class ContactsNotifier extends AsyncNotifier<List<ContactModel>> {
   Future<void> deleteContact(String selfId, String contactId) async {
     try {
       await _dio.post('/api/delete-chat-and-contact',
+          options: Options(headers: await sessionAuthHeaders()),
         data: {'userId': selfId, 'contactId': contactId});
       final current = state.valueOrNull ?? [];
       state = AsyncData(current.where((c) => c.id != contactId).toList());
