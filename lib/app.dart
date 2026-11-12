@@ -1,3 +1,4 @@
+import 'package:app_links/app_links.dart';
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
@@ -117,6 +118,13 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
       ref.read(storageHealthServiceProvider).checkNow();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _initFcmNavigation());
+    // DEEPLINK_SPACES_V1: xamepage://spaces/<slug> while the app is already running
+    AppLinks().uriLinkStream.listen((uri) {
+      if (uri.scheme == 'xamepage' && uri.host == 'spaces' && uri.pathSegments.isNotEmpty) {
+        final slug = uri.pathSegments.first;
+        if (slug.isNotEmpty) ref.read(routerProvider).go('/spaces/$slug');
+      }
+    });
     if (widget.initialDeepLink != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(routerProvider).go(widget.initialDeepLink!);
@@ -280,18 +288,82 @@ class _XamePageAppState extends ConsumerState<XamePageApp> {
                   final user = ref.read(currentUserProvider);
                   if (user == null) return;
                   try {
+                    final prefs = await SharedPreferences.getInstance();
+                    final refKey = 'xamepage_p2p_${user.xameId}';
+                    final fingerprint = jsonEncode([user.xameId, fromId, amount, currency]);
+                    String txRef;
+                    final savedRaw = prefs.getString(refKey);
+                    if (savedRaw != null) {
+                      final saved = jsonDecode(savedRaw) as Map<String, dynamic>;
+                      if (saved['fingerprint'] != fingerprint) {
+                        throw StateError('A previous transfer is unresolved. Retry it before starting another.');
+                      }
+                      txRef = saved['reference'] as String;
+                    } else {
+                      txRef = 'xame-p2p-${DateTime.now().microsecondsSinceEpoch}';
+                      await prefs.setString(refKey, jsonEncode({
+                        'fingerprint': fingerprint, 'reference': txRef,
+                      }));
+                    }
                     final res = await http.post(
                       Uri.parse('${AppConstants.serverUrl}/api/wallet/p2p'),
-                      headers: {'Content-Type': 'application/json'},
+                      headers: await AuthService().authenticatedHeaders(),
                       body: jsonEncode({
-                        'senderId':    user.xameId,
-                        'recipientId': fromId,
-                        'amount':      amount,
-                        'currency':    currency,
-                        'note':        note,
+                        'senderId': user.xameId, 'recipientId': fromId,
+                        'amount': amount, 'currency': currency, 'note': note,
+                        'reference': txRef,
                       }),
                     );
-                    final d = jsonDecode(res.body);
+                    dynamic responseData;
+                    try {
+                      responseData = jsonDecode(res.body);
+                    } catch (_) {
+                      if ([400, 401, 403, 404].contains(res.statusCode)) {
+                        await prefs.remove(refKey);
+                      }
+                      if (ctx.mounted) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              res.statusCode < 200 || res.statusCode >= 300
+                                  ? 'Transfer rejected. You can try again.'
+                                  : 'Transfer response could not be confirmed; retry using the same reference.',
+                            ),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    if (res.statusCode < 200 || res.statusCode >= 300) {
+                      if ([400, 401, 403, 404].contains(res.statusCode)) {
+                        await prefs.remove(refKey);
+                      }
+                      final message = responseData is Map
+                          ? responseData['message']?.toString()
+                          : null;
+                      if (ctx.mounted) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              message ??
+                                  'Transfer could not be confirmed. Retry using the same reference.',
+                            ),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    if (responseData is! Map) {
+                      throw StateError(
+                        'Transfer response could not be confirmed; retry using the same reference.',
+                      );
+                    }
+                    if (responseData['success'] == true) {
+                      await prefs.remove(refKey);
+                    }
+                    final d = responseData;
                     if (ctx.mounted) {
                       ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                         content: Text(d['success'] == true

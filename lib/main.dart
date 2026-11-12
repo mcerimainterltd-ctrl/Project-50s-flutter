@@ -87,6 +87,8 @@ void main() async {
         initialDeepLink = '/pay/$id';
       } else if (action == 'u' && id.isNotEmpty) {
         initialDeepLink = '/u/$id';
+      } else if (action == 'spaces' && id.isNotEmpty) { // DEEPLINK_SPACES_V1
+        initialDeepLink = '/spaces/$id';
       }
     }
   } catch (_) {}
