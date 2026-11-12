@@ -168,7 +168,21 @@ class SocketService {
   bool get isConnected => _socket?.connected ?? false;
   IO.Socket? get rawSocket => _socket;
 
+  // SOCKET_SINGLE_V1: connect() awaits secure storage before _socket is set, so
+  // concurrent callers all passed the guards and each opened a socket.
+  bool _connectInFlight = false;
+
   Future<void> connect(String xameId, {bool stealth = false}) async {
+    if (_connectInFlight) return;
+    _connectInFlight = true;
+    try {
+      await _connectImpl(xameId, stealth: stealth);
+    } finally {
+      _connectInFlight = false;
+    }
+  }
+
+  Future<void> _connectImpl(String xameId, {bool stealth = false}) async {
     currentUserId = xameId;
     if (_socket?.connected == true) {
       debugPrint('✅ Socket already connected for: $xameId');
