@@ -114,7 +114,7 @@ class GroupsService {
     final msgData = data['message'] as Map<String, dynamic>?;
     if (groupId == null || msgData == null) return;
     final msg = GroupMessage.fromJson(msgData);
-    if (activeGroup?.groupId == groupId) _activeMessages.add(msg);
+    if (activeGroup?.groupId == groupId && !_activeMessages.any((x) => x.id == msg.id)) _activeMessages.add(msg); // GROUPS_FIX2_V1
     final g = _groups.firstWhere((g) => g.groupId == groupId,
         orElse: () => XameGroup(groupId: '', name: '', createdBy: '',
             members: []));
@@ -1228,7 +1228,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _load();
     widget.service.onMessage = (msg, groupId) {
       if (groupId == _group.groupId && mounted) {
-        setState(() => _msgs.add(msg));
+        if (!_msgs.any((x) => x.id == msg.id)) setState(() => _msgs.add(msg));
         _scrollDown();
       }
     };
@@ -1428,7 +1428,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       Container(
         padding: EdgeInsets.only(
             left: 12, right: 8, top: 8,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 8),
+            bottom: 8),
         decoration: BoxDecoration(
           color: context.xCard,
           border: Border(top: BorderSide(
