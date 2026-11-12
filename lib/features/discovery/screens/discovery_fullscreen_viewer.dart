@@ -1,3 +1,4 @@
+import 'package:xamepage/core/services/session_headers.dart'; // SESSION_HEADERS_V1
 import '../../../core/services/screen_awake.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -1893,7 +1894,7 @@ class _FollowChipState extends State<_FollowChip> {
     setState(() => _loading = true);
     final wasFollowing = _following;
     try {
-      final dio      = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final dio      = Dio(BaseOptions(baseUrl: AppConstants.serverUrl, headers: await sessionAuthHeaders()));
       final endpoint = wasFollowing
           ? '/api/discover/unfollow/${widget.authorId}'
           : '/api/discover/follow/${widget.authorId}';

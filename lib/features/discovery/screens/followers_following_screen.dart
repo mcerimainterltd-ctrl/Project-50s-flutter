@@ -1,3 +1,4 @@
+import 'package:xamepage/core/services/session_headers.dart'; // SESSION_HEADERS_V1
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -194,7 +195,7 @@ class _FollowActionChipState extends State<_FollowActionChip> {
     setState(() => _loading = true);
     final wasFollowing = _following;
     try {
-      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl, headers: await sessionAuthHeaders()));
       final endpoint = wasFollowing
           ? '/api/discover/unfollow/${widget.authorId}'
           : '/api/discover/follow/${widget.authorId}';

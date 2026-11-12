@@ -1,3 +1,4 @@
+import 'package:xamepage/core/services/session_headers.dart'; // SESSION_HEADERS_V1
 import 'package:image_picker/image_picker.dart';
 import 'dart:ui';
 
@@ -1238,7 +1239,7 @@ class _FollowButtonState extends State<_FollowButton> {
       final endpoint = wasFollowing ? 'unfollow' : 'follow';
       await http.post(
         Uri.parse(AppConstants.serverUrl + '/api/discover/' + endpoint + '/' + widget.authorId),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', ...await sessionAuthHeaders()},
         body: jsonEncode({'followerId': widget.followerId}),
       );
     } catch (_) { if (mounted) setState(() => _following = wasFollowing); }
