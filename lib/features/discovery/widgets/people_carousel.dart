@@ -135,6 +135,7 @@ class _PersonCardState extends State<_PersonCard>
               child: ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: user.avatarUrl, fit: BoxFit.cover,
+                  memCacheWidth: 272,
                   placeholder: (_, __) =>
                     Container(color: context.xSurface),
                   errorWidget: (_, __, ___) => Container(

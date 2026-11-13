@@ -88,6 +88,7 @@ class _StoryRingState extends State<_StoryRing>
               child: ClipOval(
                 child: CachedNetworkImage(
                   imageUrl: widget.avatar, fit: BoxFit.cover,
+                  memCacheWidth: 224,
                   placeholder: (_, __) =>
                     Container(color: XameColors.darkSurface),
                   errorWidget: (_, __, ___) => Container(
