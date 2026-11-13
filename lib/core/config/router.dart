@@ -55,6 +55,13 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/login',
     redirect: (context, state) {
+      // DEEPLINK_SCHEME_V1: a custom-scheme link (xamepage://<action>/<id>) arrives as a raw location;
+      // map it to the in-app path so the matching route opens instead of "Page Not Found".
+      final rawLink = state.uri;
+      if (rawLink.scheme == 'xamepage' && rawLink.host.isNotEmpty) {
+        final linkQuery = rawLink.hasQuery ? '?${rawLink.query}' : '';
+        return '/${rawLink.host}${rawLink.path}$linkQuery';
+      }
       final loggedIn    = user != null;
       final isAuthRoute = state.matchedLocation == '/login' ||
                           state.matchedLocation == '/register';
