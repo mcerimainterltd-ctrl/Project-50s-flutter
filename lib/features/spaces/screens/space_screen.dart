@@ -74,6 +74,7 @@ class _SpaceScreenState extends ConsumerState<SpaceScreen> {
       if (data['spaceSlug'] != widget.spaceSlug) return;
       final msg = SpaceMessage.fromJson(data['message']);
       if (!mounted) return;
+      if (_messages.any((x) => x.id == msg.id)) return; // SPACES_LIVE_V1
       setState(() => _messages.add(msg));
       _scrollToBottom();
     });
@@ -193,10 +194,7 @@ class _SpaceScreenState extends ConsumerState<SpaceScreen> {
       }
       setState(() => _messages.add(msg));
       ref.read(socketServiceProvider).emit('space:message',
-        {'spaceSlug': widget.spaceSlug, 'message': {'_id': msg.id, 'senderId': msg.senderId,
-          'senderName': msg.senderName, 'senderAvatar': msg.senderAvatar,
-          'text': msg.text, 'mediaUrl': msg.mediaUrl, 'mediaType': msg.mediaType,
-          'fileName': msg.fileName, 'createdAt': msg.createdAt.toIso8601String()}});
+        {'spaceSlug': widget.spaceSlug, 'message': _spaceSocketPayload(msg)});
       _scrollToBottom();
     } catch (e) {
       _spaceSnack('Could not send file: $e');
@@ -260,6 +258,25 @@ class _SpaceScreenState extends ConsumerState<SpaceScreen> {
     );
   }
 
+  // SPACES_LIVE_V1: the complete message, so every member renders the same bubble (quote, guest flag, media)
+  Map<String, dynamic> _spaceSocketPayload(SpaceMessage msg) => {
+    '_id': msg.id,
+    'spaceSlug': msg.spaceSlug,
+    'senderId': msg.senderId,
+    'senderName': msg.senderName,
+    'senderAvatar': msg.senderAvatar,
+    'isGuest': msg.isGuest,
+    'text': msg.text,
+    'mediaUrl': msg.mediaUrl,
+    'mediaType': msg.mediaType,
+    'fileName': msg.fileName,
+    'replyToId': msg.replyToId,
+    'replyToText': msg.replyToText,
+    'reactions': msg.reactions,
+    'deleted': msg.deleted,
+    'createdAt': msg.createdAt.toIso8601String(),
+  };
+
   Future<void> _send() async {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty || _sending) return;
@@ -275,9 +292,7 @@ class _SpaceScreenState extends ConsumerState<SpaceScreen> {
       setState(() => _messages.add(msg));
       // Broadcast via socket
       ref.read(socketServiceProvider).emit('space:message',
-        {'spaceSlug': widget.spaceSlug, 'message': {'_id': msg.id, 'senderId': msg.senderId,
-          'senderName': msg.senderName, 'senderAvatar': msg.senderAvatar,
-          'text': msg.text, 'createdAt': msg.createdAt.toIso8601String()}});
+        {'spaceSlug': widget.spaceSlug, 'message': _spaceSocketPayload(msg)});
       _scrollToBottom();
     }
   }
@@ -496,7 +511,7 @@ class _SpaceMessageBubble extends StatelessWidget {
                 if (!isMine) Text(msg.senderName,
                   style: TextStyle(color: XameColors.primary, fontSize: 11,
                     fontWeight: FontWeight.w700)),
-                if (msg.replyToText != null) Container(
+                if (msg.replyToText != null && msg.replyToText!.isNotEmpty) Container(
                   margin: const EdgeInsets.only(bottom: 4),
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2),
