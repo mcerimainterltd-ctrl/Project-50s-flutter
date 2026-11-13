@@ -277,7 +277,7 @@ class MainActivity : FlutterFragmentActivity() {
                     "startCallService" -> {
                         val caller   = call.argument<String>("callerName") ?: "Unknown"
                         val callType = call.argument<String>("callType")   ?: "voice"
-                        CallService.start(this, caller, callType)
+                        CallService.start(this, caller, callType, "", true)
                         result.success(null)
                     }
                     "prepareCallAudio" -> {
@@ -351,6 +351,12 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun handleCallIntent(intent: android.content.Intent?) {
+        // CALLSVC_A14_V1: the user acted on the call (or the call screen is visible),
+        // so the app is now eligible to add the microphone foreground-service type.
+        if (intent?.action == CallService.ACTION_ANSWER ||
+            intent?.action == CallService.ACTION_VIEW_INCOMING_CALL) {
+            CallService.upgradeToMicrophone(this)
+        }
         val engine = flutterEngine ?: return
         when (intent?.action) {
             CallService.ACTION_ANSWER -> {
