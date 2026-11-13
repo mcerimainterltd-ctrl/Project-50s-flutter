@@ -57,8 +57,12 @@ class GroupMessage {
   final String? text;
   final int ts;
   final Map<String, dynamic>? file; // GROUPS_MEDIA_V1
+  final bool deleted; // GROUP_DELETE_V1
   const GroupMessage({required this.id, required this.senderId,
-      required this.senderName, this.text, required this.ts, this.file});
+      required this.senderName, this.text, required this.ts, this.file, this.deleted = false});
+  // GROUP_DELETE_V1: tombstone copy of this message
+  GroupMessage asDeleted() => GroupMessage(id: id, senderId: senderId, senderName: senderName,
+      text: '', ts: ts, file: null, deleted: true);
   factory GroupMessage.fromJson(Map<String, dynamic> j) => GroupMessage(
     id:         (j['id'] ?? j['_id'] ?? '').toString(),
     senderId:   j['senderId']   as String,
@@ -66,6 +70,7 @@ class GroupMessage {
     text:       j['text']       as String?,
     ts:         j['ts']         as int,
     file:       j['file'] is Map ? Map<String, dynamic>.from(j['file'] as Map) : null,
+    deleted:    j['deleted'] == true,
   );
 }
 
@@ -79,6 +84,7 @@ class GroupsService {
   void Function(GroupMessage msg, String groupId)? onMessage;
   void Function(String groupId, String name)? onTyping;
 
+  void Function(String groupId, String messageId)? onMessageDeleted; // GROUP_DELETE_V1
   final List<StreamSubscription<Map<String, dynamic>>> _subs = [];
   VoidCallback? onGroupsChanged; // GROUPS_APP_V1
 
@@ -88,6 +94,7 @@ class GroupsService {
     _subs.add(_socket.groupMessage.listen(handleGroupMessage));
     _subs.add(_socket.groupTyping.listen(handleGroupTyping));
     _subs.add(_socket.groupAdded.listen(_handleGroupAdded));
+    _subs.add(_socket.groupMessageDeleted.listen(_handleMessageDeleted));
   }
 
   List<XameGroup>    get groups         => List.unmodifiable(_groups);
@@ -182,6 +189,33 @@ class GroupsService {
       }
     } catch (e) { debugPrint('[Groups] Create error: $e'); }
     return null;
+  }
+
+  // GROUP_DELETE_V1: delete a message for everyone (sender, or a group admin)
+  void deleteMessage(String groupId, String messageId) {
+    final payload = <String, dynamic>{'groupId': groupId, 'messageId': messageId};
+    if (messageId.startsWith('local-')) {
+      final ts = int.tryParse(messageId.substring(6));
+      if (ts != null) payload['ts'] = ts;
+    }
+    _socket.emit('group:delete-message', payload);
+    _markDeleted(groupId, messageId);
+  }
+
+  void _markDeleted(String groupId, String messageId) {
+    if (activeGroup?.groupId == groupId) {
+      final i = _activeMessages.indexWhere((x) => x.id == messageId);
+      if (i >= 0) _activeMessages[i] = _activeMessages[i].asDeleted();
+    }
+    onMessageDeleted?.call(groupId, messageId);
+    onGroupsChanged?.call();
+  }
+
+  void _handleMessageDeleted(Map<String, dynamic> data) {
+    final groupId = data['groupId'] as String?;
+    final messageId = data['messageId'] as String?;
+    if (groupId == null || messageId == null) return;
+    _markDeleted(groupId, messageId);
   }
 
   // GROUPS_MEDIA_V1: send an already-uploaded file (url/name/type/size) to the group
@@ -1249,6 +1283,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     super.initState();
     _group = widget.group;
     _load();
+    widget.service.onMessageDeleted = (groupId, messageId) { // GROUP_DELETE_V1
+      if (!mounted || groupId != _group.groupId) return;
+      final i = _msgs.indexWhere((x) => x.id == messageId);
+      if (i >= 0) setState(() => _msgs[i] = _msgs[i].asDeleted());
+    };
     widget.service.onMessage = (msg, groupId) {
       if (groupId == _group.groupId && mounted) {
         if (!_msgs.any((x) => x.id == msg.id)) setState(() => _msgs.add(msg));
@@ -1269,6 +1308,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void dispose() {
     _ctrl.dispose(); _scroll.dispose();
     widget.service.onMessage = null;
+    widget.service.onMessageDeleted = null;
     widget.service.onTyping  = null;
     super.dispose();
   }
@@ -1519,6 +1559,51 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
+  // GROUP_DELETE_V1 ─────────────────────────────────────────────────────────
+  void _onGroupMessageLongPress(GroupMessage msg, bool isMe) {
+    if (msg.deleted) return;
+    if (!(isMe || _isAdmin)) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.xCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Wrap(children: [
+          ListTile(
+            leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+            title: Text(isMe ? 'Delete for everyone' : 'Delete message (admin)',
+                style: TextStyle(color: context.xText)),
+            onTap: () {
+              Navigator.pop(ctx);
+              _confirmGroupDelete(msg);
+            },
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _confirmGroupDelete(GroupMessage msg) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.xCard,
+        title: Text('Delete message?', style: TextStyle(color: context.xText)),
+        content: Text('This removes it for everyone in the group.',
+            style: TextStyle(color: context.xMuted)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) widget.service.deleteMessage(_group.groupId, msg.id);
+  }
+
   void _send() {
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
@@ -1605,7 +1690,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       return Align(
                         alignment: isMe
                             ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
+                        child: GestureDetector(
+  onLongPress: () => _onGroupMessageLongPress(msg, isMe),
+  child: Container(
                           margin: const EdgeInsets.only(bottom: 4),
                           constraints: BoxConstraints(
                               maxWidth:
@@ -1643,7 +1730,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Flexible(child: msg.file != null ? _groupFileBody(msg, isMe) : Text(msg.text ?? '',
+                                    Flexible(child: msg.deleted
+    ? Text('🚫 This message was deleted',
+        style: TextStyle(color: isMe ? Colors.white70 : context.xMuted, fontSize: 13, fontStyle: FontStyle.italic))
+    : msg.file != null ? _groupFileBody(msg, isMe) : Text(msg.text ?? '',
                                         style: TextStyle(
                                             color: isMe
                                                 ? Colors.white
@@ -1661,7 +1751,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                               ),
                             ],
                           ),
-                        ),
+                        )),
                       );
                     }),
       ),
