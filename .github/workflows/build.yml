@@ -129,6 +129,17 @@ jobs:
           path: build/app/outputs/bundle/release/XamePage_*.aab
           retention-days: 30
 
+      - name: Save R8 mapping and Dart debug symbols
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: XamePage-mapping-v${{ steps.version.outputs.name }}-build${{ github.run_number }}
+          path: |
+            build/app/outputs/mapping/release/
+            build/debug-info/
+          if-no-files-found: warn
+          retention-days: 90
+
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
