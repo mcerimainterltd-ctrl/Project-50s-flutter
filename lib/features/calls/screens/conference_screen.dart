@@ -449,18 +449,20 @@ class ConferenceNotifier extends StateNotifier<ConferenceState> {
 
 // ── Conference Screen ─────────────────────────────────────────────────────────
 class ConferenceScreen extends ConsumerWidget {
-  const ConferenceScreen({super.key});
+  final bool showBack;
+  const ConferenceScreen({super.key, this.showBack = true});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conf = ref.watch(conferenceProvider);
     if (conf.inConference) return const _ActiveConferenceView();
-    return const _ConferenceLobby();
+    return _ConferenceLobby(showBack: showBack);
   }
 }
 
 // ── Lobby ─────────────────────────────────────────────────────────────────────
 class _ConferenceLobby extends ConsumerWidget {
-  const _ConferenceLobby();
+  final bool showBack;
+  const _ConferenceLobby({this.showBack = true});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ctrl = TextEditingController();
@@ -469,11 +471,14 @@ class _ConferenceLobby extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: context.xBg,
         elevation: 0,
-        leading: IconButton(
+        automaticallyImplyLeading: false,
+        leading: showBack
+            ? IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: context.xText),
           tooltip: 'Back',
           onPressed: () => context.go('/contacts'),
-        ),
+        )
+            : null,
         title: const Text(
           'Conference',
           style: TextStyle(fontWeight: FontWeight.w800),

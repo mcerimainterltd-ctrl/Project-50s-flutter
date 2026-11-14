@@ -96,7 +96,7 @@ class _CallScheduleTab extends StatelessWidget {
 class _ConferenceTab extends StatelessWidget {
   _ConferenceTab();
   @override
-  Widget build(BuildContext context) => const ConferenceScreen();
+  Widget build(BuildContext context) => const ConferenceScreen(showBack: false);
 }
 
 
