@@ -41,6 +41,89 @@ class MainActivity : FlutterFragmentActivity() {
             )
         }
         requestOneTimePermissions()
+        // CALLACCESS_PROMPT_V1: friendly, repeatable prompt, shown after the app has loaded
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            try { showCallAccessPromptIfNeeded() } catch (e: Exception) { e.printStackTrace() }
+        }, 4000L)
+    }
+
+    private fun showCallAccessPromptIfNeeded() {
+        if (isFinishing || isDestroyed) return
+        val act = intent?.action
+        if (act == CallService.ACTION_ANSWER || act == CallService.ACTION_DECLINE ||
+            act == CallService.ACTION_VIEW_INCOMING_CALL) return
+
+        val prefs = getSharedPreferences("xamepage_prefs", MODE_PRIVATE)
+        val needFsi = Build.VERSION.SDK_INT >= 34 &&
+            !getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
+        val brand = Build.MANUFACTURER.lowercase()
+        val isXiaomi = brand == "xiaomi" || brand == "redmi" || brand == "poco"
+
+        val fsiCount = prefs.getInt("call_access_fsi_count", 0)
+        val xmCount  = prefs.getInt("call_access_xiaomi_count", 0)
+        val kind = when {
+            needFsi && fsiCount < 4 -> "fsi"
+            isXiaomi && xmCount < 3 -> "xiaomi"
+            else -> return
+        }
+        val countKey = "call_access_${kind}_count"
+        val lastKey  = "call_access_${kind}_last"
+        val now = System.currentTimeMillis()
+        if (now - prefs.getLong(lastKey, 0L) < 12L * 60L * 60L * 1000L) return
+        prefs.edit()
+            .putInt(countKey, prefs.getInt(countKey, 0) + 1)
+            .putLong(lastKey, now)
+            .apply()
+
+        val message = if (kind == "fsi")
+            "Allow XamePage to show incoming calls on your lock screen, so you never miss a call."
+        else
+            "On this phone, also switch on \"Show on lock screen\" and \"Display pop-up windows while running in the background\" for XamePage, so incoming calls appear when your phone is locked."
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Don\'t miss a call")
+            .setMessage(message)
+            .setPositiveButton("Allow") { _, _ ->
+                if (kind == "fsi") {
+                    try {
+                        startActivity(android.content.Intent(
+                            "android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT",
+                            Uri.parse("package:$packageName")
+                        ))
+                    } catch (_: Exception) { openCallAppDetails() }
+                } else {
+                    prefs.edit().putInt(countKey, 99).apply()
+                    openXiaomiCallAccess()
+                }
+            }
+            .setNegativeButton("Later", null)
+            .show()
+    }
+
+    private fun openCallAppDetails() {
+        try {
+            startActivity(android.content.Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:$packageName")
+            ))
+        } catch (_: Exception) {}
+    }
+
+    private fun openXiaomiCallAccess() {
+        val targets = listOf(
+            "com.miui.permcenter.permissions.PermissionsEditorActivity",
+            "com.miui.permcenter.permissions.AppPermissionsEditorActivity"
+        )
+        for (cls in targets) {
+            try {
+                startActivity(android.content.Intent("miui.intent.action.APP_PERM_EDITOR").apply {
+                    setClassName("com.miui.securitycenter", cls)
+                    putExtra("extra_pkgname", packageName)
+                })
+                return
+            } catch (_: Exception) {}
+        }
+        openCallAppDetails()
     }
 
     private fun requestOneTimePermissions() {
@@ -67,18 +150,9 @@ class MainActivity : FlutterFragmentActivity() {
             )
         }
 
-            // Android 14+ (API 34+): request USE_FULL_SCREEN_INTENT for call ringtones over lock screen
-            if (Build.VERSION.SDK_INT >= 34) {
-                val nm = getSystemService(android.app.NotificationManager::class.java)
-                if (!nm.canUseFullScreenIntent()) {
-                    try {
-                        startActivity(android.content.Intent(
-                            "android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT",
-                            Uri.parse("package:$packageName")
-                        ))
-                    } catch (_: Exception) {}
-                }
-            }
+            // CALLACCESS_PROMPT_V1: the full-screen-intent permission is no longer
+            // opened from this one-time chain (it was buried under other prompts and
+            // never asked again). showCallAccessPromptIfNeeded() handles it.
         prefs.edit().putInt("permissions_asked_version", versionCode).apply()
 
         // Cold start (app was fully killed): the Answer/Decline intent
