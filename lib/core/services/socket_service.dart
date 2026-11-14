@@ -45,6 +45,8 @@ class SocketService {
   final _groupMessageCtrl     = StreamController<Map<String, dynamic>>.broadcast();
   final _groupTypingCtrl      = StreamController<Map<String, dynamic>>.broadcast();
   final _groupAddedCtrl       = StreamController<Map<String, dynamic>>.broadcast();
+  final _groupUpdatedCtrl     = StreamController<Map<String, dynamic>>.broadcast(); // GROUPS_ADMIN_V1
+  final _groupRemovedCtrl     = StreamController<Map<String, dynamic>>.broadcast(); // GROUPS_ADMIN_V1
   final _groupDeletedCtrl     = StreamController<Map<String, dynamic>>.broadcast(); // GROUP_DELETE_V1
   // Spaces
   final _spaceMessageCtrl     = StreamController<Map<String, dynamic>>.broadcast();
@@ -568,6 +570,8 @@ class SocketService {
     socket.on("group:message", (d) { if (d != null) _groupMessageCtrl.add(Map<String,dynamic>.from(d as Map)); });
     socket.on("group:typing",  (d) { if (d != null) _groupTypingCtrl.add(Map<String,dynamic>.from(d as Map)); });
     socket.on("group:added",   (d) { if (d != null) _groupAddedCtrl.add(Map<String,dynamic>.from(d as Map)); });
+    socket.on("group:updated", (d) { if (d != null) _groupUpdatedCtrl.add(Map<String,dynamic>.from(d as Map)); }); // GROUPS_ADMIN_V1
+    socket.on("group:removed", (d) { if (d != null) _groupRemovedCtrl.add(Map<String,dynamic>.from(d as Map)); }); // GROUPS_ADMIN_V1
     socket.on("group:message-deleted", (d) { if (d != null) _groupDeletedCtrl.add(Map<String,dynamic>.from(d as Map)); });
 
     // Space listeners
@@ -582,6 +586,8 @@ class SocketService {
   Stream<Map<String, dynamic>> get groupMessage => _groupMessageCtrl.stream;
   Stream<Map<String, dynamic>> get groupTyping  => _groupTypingCtrl.stream;
   Stream<Map<String, dynamic>> get groupAdded   => _groupAddedCtrl.stream;
+  Stream<Map<String, dynamic>> get groupUpdated => _groupUpdatedCtrl.stream; // GROUPS_ADMIN_V1
+  Stream<Map<String, dynamic>> get groupRemoved => _groupRemovedCtrl.stream; // GROUPS_ADMIN_V1
   Stream<Map<String, dynamic>> get groupMessageDeleted => _groupDeletedCtrl.stream;
 
   // Space streams
@@ -733,6 +739,8 @@ class SocketService {
     _groupMessageCtrl.close();
     _groupTypingCtrl.close();
     _groupAddedCtrl.close();
+    _groupUpdatedCtrl.close(); // GROUPS_ADMIN_V1
+    _groupRemovedCtrl.close(); // GROUPS_ADMIN_V1
     _groupDeletedCtrl.close();
     _spaceMessageCtrl.close();
     _spaceTypingCtrl.close();

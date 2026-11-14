@@ -58,8 +58,9 @@ class GroupMessage {
   final int ts;
   final Map<String, dynamic>? file; // GROUPS_MEDIA_V1
   final bool deleted; // GROUP_DELETE_V1
+  final bool system; // GROUPS_ADMIN_V1: centred notice ("X added Y")
   const GroupMessage({required this.id, required this.senderId,
-      required this.senderName, this.text, required this.ts, this.file, this.deleted = false});
+      required this.senderName, this.text, required this.ts, this.file, this.deleted = false, this.system = false});
   // GROUP_DELETE_V1: tombstone copy of this message
   GroupMessage asDeleted() => GroupMessage(id: id, senderId: senderId, senderName: senderName,
       text: '', ts: ts, file: null, deleted: true);
@@ -71,6 +72,7 @@ class GroupMessage {
     ts:         j['ts']         as int,
     file:       j['file'] is Map ? Map<String, dynamic>.from(j['file'] as Map) : null,
     deleted:    j['deleted'] == true,
+    system:     j['system'] == true, // GROUPS_ADMIN_V1
   );
 }
 
@@ -87,6 +89,7 @@ class GroupsService {
   void Function(String groupId, String messageId)? onMessageDeleted; // GROUP_DELETE_V1
   final List<StreamSubscription<Map<String, dynamic>>> _subs = [];
   VoidCallback? onGroupsChanged; // GROUPS_APP_V1
+  List<Map<String, dynamic>> Function()? contactsLoader; // GROUPS_ADMIN_V1
 
   GroupsService(this._socket, this._userId) {
     _socket.emit('groups:subscribe', {'userId': _userId});
@@ -95,6 +98,8 @@ class GroupsService {
     _subs.add(_socket.groupTyping.listen(handleGroupTyping));
     _subs.add(_socket.groupAdded.listen(_handleGroupAdded));
     _subs.add(_socket.groupMessageDeleted.listen(_handleMessageDeleted));
+    _subs.add(_socket.groupUpdated.listen(_handleGroupUpdated)); // GROUPS_ADMIN_V1
+    _subs.add(_socket.groupRemoved.listen(_handleGroupRemoved)); // GROUPS_ADMIN_V1
   }
 
   List<XameGroup>    get groups         => List.unmodifiable(_groups);
@@ -112,6 +117,33 @@ class GroupsService {
     } catch (e) {
       debugPrint('[Groups] added handler error: $e');
     }
+  }
+
+  // GROUPS_ADMIN_V1: members or roles changed (someone added, removed, left, promoted)
+  void _handleGroupUpdated(Map<String, dynamic> data) {
+    try {
+      final raw = data['group'];
+      if (raw is! Map) return;
+      final g = XameGroup.fromJson(Map<String, dynamic>.from(raw));
+      final i = _groups.indexWhere((x) => x.groupId == g.groupId);
+      if (i >= 0) {
+        _groups[i].members = g.members; // in place, so an open chat sees it
+      } else {
+        _groups.insert(0, g);
+      }
+      onGroupsChanged?.call();
+    } catch (e) {
+      debugPrint('[Groups] updated handler error: $e');
+    }
+  }
+
+  // GROUPS_ADMIN_V1: removed from a group, or the group was deleted
+  void _handleGroupRemoved(Map<String, dynamic> data) {
+    final id = data['groupId'] as String?;
+    if (id == null) return;
+    _groups.removeWhere((x) => x.groupId == id);
+    if (activeGroup?.groupId == id) activeGroup = null;
+    onGroupsChanged?.call();
   }
 
   void dispose() {
@@ -260,11 +292,13 @@ class GroupsService {
     try {
       final res = await http.post(
         Uri.parse('${AppConstants.serverUrl}/api/groups/$groupId/leave'),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': _userId}),
       );
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
         _groups.removeWhere((g) => g.groupId == groupId);
+        onGroupsChanged?.call(); // GROUPS_ADMIN_V1: redraw the chats list at once
         return true;
       }
     } catch (e) {
@@ -283,6 +317,7 @@ class GroupsService {
       final d = jsonDecode(res.body);
       if (d['success'] == true) {
         _groups.removeWhere((g) => g.groupId == groupId);
+        onGroupsChanged?.call(); // GROUPS_ADMIN_V1: redraw the chats list at once
         return true;
       }
     } catch (e) {
@@ -309,9 +344,34 @@ class GroupsService {
               .map((m) => GroupMember.fromJson(Map<String, dynamic>.from(m)))
               .toList();
         }
+        onGroupsChanged?.call(); // GROUPS_ADMIN_V1
         return true;
       }
     } catch (e) { debugPrint('[Groups] Add member error: $e'); }
+    return false;
+  }
+
+  // GROUPS_ADMIN_V1: promote / demote (any admin promotes; only the creator demotes)
+  Future<bool> setRole(String groupId, String userId, String role) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${AppConstants.serverUrl}/api/groups/set-role'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'groupId': groupId, 'requesterId': _userId,
+            'userId': userId, 'role': role}),
+      );
+      final d = jsonDecode(res.body);
+      if (d['success'] == true && d['group'] is Map) {
+        final i = _groups.indexWhere((x) => x.groupId == groupId);
+        if (i >= 0) {
+          _groups[i].members = (d['group']['members'] as List)
+              .map((m) => GroupMember.fromJson(Map<String, dynamic>.from(m)))
+              .toList();
+        }
+        onGroupsChanged?.call();
+        return true;
+      }
+    } catch (e) { debugPrint('[Groups] Set role error: $e'); }
     return false;
   }
 
@@ -1561,7 +1621,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   // GROUP_DELETE_V1 ─────────────────────────────────────────────────────────
   void _onGroupMessageLongPress(GroupMessage msg, bool isMe) {
-    if (msg.deleted) return;
+    if (msg.deleted || msg.system) return; // GROUPS_ADMIN_V1
     if (!(isMe || _isAdmin)) return;
     showModalBottomSheet(
       context: context,
@@ -1684,6 +1744,17 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     itemCount: _msgs.length,
                     itemBuilder: (_, i) {
                       final msg   = _msgs[i];
+                      if (msg.system) return Padding( // GROUPS_ADMIN_V1
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 24),
+                        child: Center(child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                              color: context.xMuted.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12)),
+                          child: Text(msg.text ?? '', textAlign: TextAlign.center,
+                              style: TextStyle(color: context.xMuted, fontSize: 12)),
+                        )),
+                      );
                       final isMe  = msg.senderId == widget.currentUserId;
                       final showName = !isMe && (i == 0 ||
                           _msgs[i - 1].senderId != msg.senderId);
@@ -1841,6 +1912,86 @@ class _GroupInfoPanelState extends State<_GroupInfoPanel> {
   @override
   void initState() { super.initState(); _group = widget.group; }
 
+  // GROUPS_ADMIN_V1: add members from this panel
+  Future<void> _showAddMembers() async {
+    final existing = _group.members.map((m) => m.userId).toSet();
+    List<Map<String, dynamic>> all = const [];
+    try { all = widget.service.contactsLoader?.call() ?? const []; } catch (_) {}
+    final available = all
+        .where((c) => c['id'] != widget.currentUserId && !existing.contains(c['id']))
+        .toList();
+    if (available.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('All your contacts are already in this group'),
+          behavior: SnackBarBehavior.floating));
+      return;
+    }
+    final selected = <String>{};
+    final picked = await showModalBottomSheet<Set<String>>(
+      context: context,
+      backgroundColor: context.xCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setSt) => SafeArea(child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('Add members', style: TextStyle(color: ctx.xText,
+                fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: ListView(shrinkWrap: true, children: available.map((c) {
+                final id   = c['id'] as String;
+                final name = (c['name'] as String?) ?? id;
+                return CheckboxListTile(
+                  value: selected.contains(id),
+                  onChanged: (v) => setSt(() {
+                    if (v == true) { selected.add(id); } else { selected.remove(id); }
+                  }),
+                  title: Text(name, style: TextStyle(color: ctx.xText)),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: ctx.xPrimary,
+                );
+              }).toList()),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(width: double.infinity, child: FilledButton(
+              onPressed: selected.isEmpty ? null : () => Navigator.pop(sheetCtx, selected),
+              child: Text(selected.isEmpty ? 'Select contacts' : 'Add ${selected.length}'),
+            )),
+          ]),
+        )),
+      ),
+    );
+    if (picked == null || picked.isEmpty) return;
+    var okCount = 0;
+    for (final uid in picked) {
+      if (await widget.service.addMember(_group.groupId, uid)) okCount++;
+    }
+    if (!mounted) return;
+    setState(() {});
+    widget.onUpdated(_group);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(okCount > 0 ? '$okCount member(s) added' : 'Could not add members'),
+        behavior: SnackBarBehavior.floating));
+  }
+
+  // GROUPS_ADMIN_V1: make admin / remove admin
+  Future<void> _setRole(String userId, String role) async {
+    final ok = await widget.service.setRole(_group.groupId, userId, role);
+    if (!mounted) return;
+    setState(() {});
+    widget.onUpdated(_group);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not change role'),
+          behavior: SnackBarBehavior.floating));
+    }
+  }
+
   Future<void> _removeMember(String userId) async {
     final ok = await widget.service.removeMember(_group.groupId, userId);
     if (ok && mounted) {
@@ -1883,9 +2034,18 @@ class _GroupInfoPanelState extends State<_GroupInfoPanel> {
                 textAlign: TextAlign.center),
           )),
         const SizedBox(height: 20),
-        Text('${_group.members.length} Members',
-            style: TextStyle(color: context.xMuted, fontSize: 12,
-                fontWeight: FontWeight.w700, letterSpacing: 1)),
+        Row(children: [ // GROUPS_ADMIN_V1: Add button for admins
+          Expanded(child: Text('${_group.members.length} Members',
+              style: TextStyle(color: context.xMuted, fontSize: 12,
+                  fontWeight: FontWeight.w700, letterSpacing: 1))),
+          if (widget.isAdmin)
+            TextButton.icon(
+              onPressed: _showAddMembers,
+              icon: Icon(Icons.person_add_alt_1, size: 18, color: context.xPrimary),
+              label: Text('Add', style: TextStyle(color: context.xPrimary,
+                  fontWeight: FontWeight.w700)),
+            ),
+        ]),
         const SizedBox(height: 8),
         ..._group.members.map((m) => ListTile(
           contentPadding: EdgeInsets.zero,
@@ -1912,11 +2072,29 @@ class _GroupInfoPanelState extends State<_GroupInfoPanel> {
                         fontSize: 11)),
             ],
           ),
-          trailing: widget.isAdmin && m.userId != widget.currentUserId
-              ? IconButton(
-                  icon: Icon(Icons.remove_circle_outline,
-                      color: Colors.redAccent, size: 20),
-                  onPressed: () => _removeMember(m.userId),
+          // GROUPS_ADMIN_V1: admin menu (make/remove admin, remove). Only the creator
+          // can change another admin; the creator has no menu.
+          trailing: widget.isAdmin && m.userId != widget.currentUserId &&
+                  m.userId != _group.createdBy &&
+                  (m.role != 'admin' || _group.createdBy == widget.currentUserId)
+              ? PopupMenuButton<String>(
+                  color: context.xCard,
+                  icon: Icon(Icons.more_vert, color: context.xMuted, size: 20),
+                  onSelected: (v) {
+                    if (v == 'admin') _setRole(m.userId, 'admin');
+                    if (v == 'member') _setRole(m.userId, 'member');
+                    if (v == 'remove') _removeMember(m.userId);
+                  },
+                  itemBuilder: (_) => [
+                    if (m.role != 'admin')
+                      PopupMenuItem<String>(value: 'admin',
+                          child: Text('Make admin', style: TextStyle(color: context.xText))),
+                    if (m.role == 'admin')
+                      PopupMenuItem<String>(value: 'member',
+                          child: Text('Remove admin', style: TextStyle(color: context.xText))),
+                    const PopupMenuItem<String>(value: 'remove',
+                        child: Text('Remove from group', style: TextStyle(color: Colors.redAccent))),
+                  ],
                 )
               : null,
         )),
@@ -1958,7 +2136,7 @@ class _GroupInfoPanelState extends State<_GroupInfoPanel> {
               },
             ),
           ),
-        if (widget.isAdmin)
+        if (_group.createdBy == widget.currentUserId) // GROUPS_ADMIN_V1: only the creator can delete
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: SizedBox(width: double.infinity,

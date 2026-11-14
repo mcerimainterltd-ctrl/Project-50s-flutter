@@ -701,6 +701,9 @@ final groupsServiceProvider = Provider<GroupsService?>((ref) {
     if (!disposed) ref.read(groupsVersionProvider.notifier).state++;
   }
   svc.onGroupsChanged = bump;
+  // GROUPS_ADMIN_V1: lets the chat's group-info panel offer your contacts when adding members
+  svc.contactsLoader = () => (ref.read(contactsProvider).value ?? [])
+      .map<Map<String, dynamic>>((c) => {"id": c.id, "name": c.name}).toList();
   svc.loadGroups().then((_) => bump());
   ref.onDispose(() {
     disposed = true;
