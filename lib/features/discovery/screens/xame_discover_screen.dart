@@ -1439,11 +1439,67 @@ class _AllPeopleScreenState extends State<_AllPeopleScreen> {
   final _scrollCtrl = ScrollController();
   final _searchCtrl = TextEditingController();
   String _query = '';
+  // DISCOVER_SEARCH_V1: the server searches and sorts A-Z; these track what was last asked
+  String _activeQuery = '';
+  int _searchTick = 0;
+  int _reqTick = 0;
+
+  List<DiscoveryUser> _parsePeople(List raw) => raw.map((p) {
+        final m = Map<String, dynamic>.from(p as Map);
+        return DiscoveryUser(
+          id:          m['id']          as String? ?? '',
+          name:        m['name']        as String? ?? '',
+          avatarUrl:   m['avatarUrl']   as String? ?? '',
+          mutualCount: (m['mutualCount'] as num?)?.toInt() ?? 0,
+          isOnline:    m['isOnline']    as bool? ?? false,
+          tagline:     m['tagline']     as String?,
+        );
+      }).toList();
+
+  // Loads page 1 A-Z (filtered by the current search), replacing the list.
+  Future<void> _reload() async {
+    final tick = ++_reqTick;
+    if (mounted) setState(() => _loading = true);
+    try {
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final res = await dio.get('/api/discover/people', queryParameters: {
+        'userId': widget.userId, 'page': 1, 'limit': 30, 'sort': 'name',
+        if (_activeQuery.isNotEmpty) 'q': _activeQuery,
+      });
+      if (!mounted || tick != _reqTick) return;
+      final data = res.data as Map<String, dynamic>;
+      if (data['success'] == true) {
+        final list = _parsePeople(data['people'] as List);
+        setState(() {
+          _people = list;
+          _page = 1;
+          _hasMore = list.length >= 30;
+          _loadingMore = false;
+          _loading = false;
+        });
+        return;
+      }
+    } catch (_) {}
+    if (mounted && tick == _reqTick) setState(() => _loading = false);
+  }
+
+  // Waits a moment after the last keystroke, then asks the server.
+  void _onSearchChanged(String v) {
+    setState(() => _query = v);
+    final tick = ++_searchTick;
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (!mounted || tick != _searchTick) return;
+      _activeQuery = v.trim();
+      _reload();
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _people = List.from(widget.initialPeople);
+    _loading = true; // DISCOVER_SEARCH_V1: first page is re-fetched A-Z
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
     _scrollCtrl.addListener(() {
       if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200) {
         _loadMore();
@@ -1460,12 +1516,14 @@ class _AllPeopleScreenState extends State<_AllPeopleScreen> {
 
   Future<void> _loadMore() async {
     if (_loadingMore || !_hasMore) return;
+    final loadTick = _reqTick; // DISCOVER_SEARCH_V1
     setState(() => _loadingMore = true);
     try {
       // Fetch next page — reuse fetchPeople with page param
       final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
       final res = await dio.get('/api/discover/people',
-          queryParameters: {'userId': widget.userId, 'page': _page + 1, 'limit': 30});
+          queryParameters: {'userId': widget.userId, 'page': _page + 1, 'limit': 30,
+            'sort': 'name', if (_activeQuery.isNotEmpty) 'q': _activeQuery});
       final data = res.data as Map<String, dynamic>;
       if (data['success'] == true) {
         final more = (data['people'] as List).map((p) {
@@ -1480,9 +1538,11 @@ class _AllPeopleScreenState extends State<_AllPeopleScreen> {
           );
         }).toList();
         setState(() {
-          _people.addAll(more);
-          _page++;
-          _hasMore = more.length >= 30;
+          if (loadTick == _reqTick) { // ignore a page that arrived after the list was reset
+            _people.addAll(more);
+            _page++;
+            _hasMore = more.length >= 30;
+          }
           _loadingMore = false;
         });
       } else {
@@ -1493,9 +1553,7 @@ class _AllPeopleScreenState extends State<_AllPeopleScreen> {
     }
   }
 
-  List<DiscoveryUser> get _filtered => _query.isEmpty
-      ? _people
-      : _people.where((u) => u.name.toLowerCase().contains(_query.toLowerCase())).toList();
+  List<DiscoveryUser> get _filtered => _people; // DISCOVER_SEARCH_V1: the server searches
 
   @override
   Widget build(BuildContext context) {
@@ -1526,14 +1584,18 @@ class _AllPeopleScreenState extends State<_AllPeopleScreen> {
                     borderSide: BorderSide.none),
                 prefixIcon: Icon(Icons.search, color: context.xMuted, size: 20),
                 contentPadding: const EdgeInsets.symmetric(vertical: 10)),
-              onChanged: (v) => setState(() => _query = v),
+              onChanged: _onSearchChanged,
             ),
           ),
         ),
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator(color: context.xPrimary))
-          : ListView.builder(
+          : _filtered.isEmpty
+              ? Center(child: Text(
+                  _activeQuery.isEmpty ? 'No people to show' : 'No people found',
+                  style: TextStyle(color: context.xMuted)))
+              : ListView.builder(
               controller: _scrollCtrl,
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: _filtered.length + (_loadingMore ? 1 : 0),
