@@ -822,6 +822,20 @@ class _StorageHealthOverlayState
     extends ConsumerState<_StorageHealthOverlay> {
   StorageHealthStatus _lastStatus = StorageHealthStatus.healthy;
   bool _dialogShowing = false;
+  StorageHealthStatus? _dismissedStatus;
+  StorageHealthStatus? _timerStatus;
+  Timer? _autoHideTimer;
+  // Below this much free space the banner stays on screen (cannot be dismissed).
+  static const int _persistBelowBytes = 300 * 1024 * 1024;
+
+  bool _isPersistent(StorageHealthService s) =>
+      s.hasChecked && s.availableBytes > 0 && s.availableBytes < _persistBelowBytes;
+
+  @override
+  void dispose() {
+    _autoHideTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -838,6 +852,15 @@ class _StorageHealthOverlayState
             _lastStatus != StorageHealthStatus.critical;
 
         _lastStatus = status;
+
+        if (next.showBanner && !_isPersistent(next) && _timerStatus != status) {
+          _timerStatus = status;
+          _autoHideTimer?.cancel();
+          _autoHideTimer = Timer(const Duration(seconds: 5), () {
+            if (!mounted) return;
+            setState(() => _dismissedStatus = status);
+          });
+        }
 
         if (enteredCritical) {
           _showCriticalStorageDialog(next);
@@ -879,48 +902,76 @@ class _StorageHealthOverlayState
   @override
   Widget build(BuildContext context) {
     final storage = ref.watch(storageHealthServiceProvider);
+    final persistent = _isPersistent(storage);
 
-    if (!storage.showBanner) {
+    if (!storage.showBanner ||
+        (!persistent &&
+            _dismissedStatus != null &&
+            storage.status.index <= _dismissedStatus!.index)) {
       return const SizedBox.shrink();
     }
 
+    final shownStatus = storage.status;
     final top = MediaQuery.of(context).padding.top + 8;
 
     return Positioned(
       top: top,
       left: 12,
       right: 12,
-      child: Material(
-        elevation: 6,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 10,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).colorScheme.surface,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline,
+      child: Dismissible(
+        key: ValueKey('storage_banner_${shownStatus.name}'),
+        direction:
+            persistent ? DismissDirection.none : DismissDirection.horizontal,
+        onDismissed: (_) {
+          if (!mounted) return;
+          setState(() => _dismissedStatus = shownStatus);
+        },
+        child: Material(
+          elevation: 6,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 10,
             ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.storage_rounded,
-                size: 22,
-                color: Theme.of(context).colorScheme.error,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  storage.bannerMessage,
-                  style: Theme.of(context).textTheme.bodySmall,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.storage_rounded,
+                  size: 22,
+                  color: Theme.of(context).colorScheme.error,
                 ),
-              ),
-            ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    storage.bannerMessage,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                if (!persistent)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () =>
+                        setState(() => _dismissedStatus = shownStatus),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
