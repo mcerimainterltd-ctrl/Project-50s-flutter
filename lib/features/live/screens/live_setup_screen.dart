@@ -1,3 +1,4 @@
+import 'live_stage_test_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -219,7 +220,14 @@ class _LiveSetupScreenState extends ConsumerState<LiveSetupScreen> {
         backgroundColor: context.xBg,
         foregroundColor: context.xText,
         elevation: 0,
-        title: const Text('Go Live'),
+        title: GestureDetector(
+          onLongPress: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const LiveStageTestScreen(),
+            ),
+          ),
+          child: const Text('Go Live'),
+        ),
       ),
       body: SafeArea(
         child: ListView(
