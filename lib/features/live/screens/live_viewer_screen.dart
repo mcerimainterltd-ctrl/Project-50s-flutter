@@ -1,3 +1,4 @@
+import '../widgets/live_interactions.dart';
 import '../../../core/services/screen_awake.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -537,6 +538,15 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                             _participating &&
                             !_joining &&
                             !_leaving,
+                        onHeart: () => ref
+                            .read(liveProvider.notifier)
+                            .sendLiveReaction(widget.session.sessionId, 'heart'),
+                        onChat: () => showLiveCommentSheet(
+                          context,
+                          (text) => ref
+                              .read(liveProvider.notifier)
+                              .sendLiveComment(widget.session.sessionId, text),
+                        ),
                       ),
                     ],
                   ),
@@ -544,6 +554,21 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
               ),
             ),
 
+            // XAMELIVE_INTERACTIONS_V1
+            Builder(
+              builder: (_) {
+                final liveNotifier = ref.read(liveProvider.notifier);
+                final liveSessionId = widget.session.sessionId;
+                return LiveInteractionLayer(
+                  initialComments: liveNotifier.liveCommentsSnapshot,
+                  commentsStream: liveNotifier.liveCommentsStream,
+                  reactionsStream: liveNotifier.liveReactionsStream,
+                  onAttach: () => liveNotifier.watchLiveRoom(liveSessionId),
+                  onDetach: () => liveNotifier.unwatchLiveRoom(liveSessionId),
+                  bottomOffset: 210,
+                );
+              },
+            ),
             if (_joining)
               Positioned.fill(
                 child: IgnorePointer(
@@ -664,23 +689,35 @@ class _ViewerBadge extends StatelessWidget {
 class _InteractionRail extends StatelessWidget {
   const _InteractionRail({
     required this.enabled,
+    this.onHeart,
+    this.onChat,
   });
 
   final bool enabled;
+  final VoidCallback? onHeart;
+  final VoidCallback? onChat;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _ActionButton(
-          icon: Icons.favorite_border_rounded,
-          enabled: enabled,
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: enabled ? onHeart : null,
+          child: _ActionButton(
+            icon: Icons.favorite_border_rounded,
+            enabled: enabled,
+          ),
         ),
         const SizedBox(height: 12),
-        _ActionButton(
-          icon: Icons.chat_bubble_outline_rounded,
-          enabled: enabled,
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: enabled ? onChat : null,
+          child: _ActionButton(
+            icon: Icons.chat_bubble_outline_rounded,
+            enabled: enabled,
+          ),
         ),
         const SizedBox(height: 12),
         _ActionButton(

@@ -1,3 +1,4 @@
+import '../widgets/live_interactions.dart';
 import '../../../core/services/screen_awake.dart';
 import 'dart:async';
 
@@ -584,6 +585,21 @@ class _LiveBroadcastScreenState
               ),
             ),
 
+            // XAMELIVE_INTERACTIONS_V1
+            Builder(
+              builder: (_) {
+                final liveNotifier = ref.read(liveProvider.notifier);
+                final liveSessionId = widget.result.session.sessionId;
+                return LiveInteractionLayer(
+                  initialComments: liveNotifier.liveCommentsSnapshot,
+                  commentsStream: liveNotifier.liveCommentsStream,
+                  reactionsStream: liveNotifier.liveReactionsStream,
+                  onAttach: () => liveNotifier.watchLiveRoom(liveSessionId),
+                  onDetach: () => liveNotifier.unwatchLiveRoom(liveSessionId),
+                  bottomOffset: 190,
+                );
+              },
+            ),
             if (_connectionError != null)
               Positioned(
                 left: 16,

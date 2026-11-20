@@ -120,6 +120,61 @@ class LiveNotifier extends StateNotifier<LiveState> {
 
   io.Socket? get _socket => _socketService.rawSocket;
 
+  // XAMELIVE_INTERACTIONS_V1: comments and reactions. Everyone watching
+  // receives them; only users who joined to participate can send.
+  final List<Map<String, dynamic>> _liveComments = <Map<String, dynamic>>[];
+  final StreamController<List<Map<String, dynamic>>> _liveCommentsCtrl =
+      StreamController<List<Map<String, dynamic>>>.broadcast();
+  final StreamController<String> _liveReactionsCtrl =
+      StreamController<String>.broadcast();
+  String? _watchedSessionId;
+  DateTime _lastLiveReactionAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  List<Map<String, dynamic>> get liveCommentsSnapshot =>
+      List<Map<String, dynamic>>.unmodifiable(_liveComments);
+  Stream<List<Map<String, dynamic>>> get liveCommentsStream =>
+      _liveCommentsCtrl.stream;
+  Stream<String> get liveReactionsStream => _liveReactionsCtrl.stream;
+
+  void watchLiveRoom(String sessionId) {
+    if (sessionId.isEmpty) return;
+    if (_watchedSessionId != sessionId) {
+      _liveComments.clear();
+      if (!_liveCommentsCtrl.isClosed) {
+        _liveCommentsCtrl.add(const <Map<String, dynamic>>[]);
+      }
+    }
+    _watchedSessionId = sessionId;
+    _socketService.emit('live:watch', {'sessionId': sessionId});
+  }
+
+  void unwatchLiveRoom(String sessionId) {
+    if (_watchedSessionId != sessionId) return;
+    _watchedSessionId = null;
+    _socketService.emit('live:unwatch', {'sessionId': sessionId});
+    _liveComments.clear();
+  }
+
+  bool sendLiveComment(String sessionId, String text) {
+    final clean = text.trim();
+    if (clean.isEmpty || clean.length > 500) return false;
+    _socketService.emit('live:comment', {
+      'sessionId': sessionId,
+      'text': clean,
+    });
+    return true;
+  }
+
+  void sendLiveReaction(String sessionId, String reaction) {
+    final now = DateTime.now();
+    if (now.difference(_lastLiveReactionAt).inMilliseconds < 250) return;
+    _lastLiveReactionAt = now;
+    _socketService.emit('live:reaction', {
+      'sessionId': sessionId,
+      'reaction': reaction,
+    });
+  }
+
   void _listenSocket() {
     final socket = _socket;
     if (socket == null || identical(socket, _listeningSocket)) {
@@ -172,6 +227,43 @@ class LiveNotifier extends StateNotifier<LiveState> {
 
       _updateViewerCount(sessionId, viewerCount);
     });
+
+    // XAMELIVE_INTERACTIONS_V1 listeners
+    socket.on('live:comment', (data) {
+      final map = _asMap(data);
+      if (map == null) return;
+      final sid = map['sessionId']?.toString();
+      if (sid == null || sid != _watchedSessionId) return;
+      final comment = _asMap(map['comment']);
+      if (comment == null) return;
+      _liveComments.add(comment);
+      if (_liveComments.length > 100) {
+        _liveComments.removeRange(0, _liveComments.length - 100);
+      }
+      if (!_liveCommentsCtrl.isClosed) {
+        _liveCommentsCtrl.add(
+          List<Map<String, dynamic>>.unmodifiable(_liveComments),
+        );
+      }
+    });
+
+    socket.on('live:reaction', (data) {
+      final map = _asMap(data);
+      if (map == null) return;
+      final sid = map['sessionId']?.toString();
+      if (sid == null || sid != _watchedSessionId) return;
+      final reaction = map['reaction']?.toString() ?? '';
+      if (reaction.isEmpty) return;
+      if (!_liveReactionsCtrl.isClosed) {
+        _liveReactionsCtrl.add(reaction);
+      }
+    });
+
+    // A reconnect creates a new server-side socket: rejoin the room.
+    final watchedId = _watchedSessionId;
+    if (watchedId != null) {
+      _socketService.emit('live:watch', {'sessionId': watchedId});
+    }
   }
 
   String? goLivePriceFor(String productId) {
@@ -683,6 +775,8 @@ class LiveNotifier extends StateNotifier<LiveState> {
       socket.off('live:started');
       socket.off('live:ended');
       socket.off('live:viewer-count');
+      socket.off('live:comment');
+      socket.off('live:reaction');
     }
 
     _listeningSocket = null;
@@ -690,6 +784,8 @@ class LiveNotifier extends StateNotifier<LiveState> {
   _billingEventSubscription?.cancel();
   _billingEventSubscription = null;
   _billing.dispose();
+  _liveCommentsCtrl.close();
+  _liveReactionsCtrl.close();
 
     super.dispose();
   }
