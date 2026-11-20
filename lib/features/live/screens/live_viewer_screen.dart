@@ -10,6 +10,7 @@ import '../data/live_api.dart';
 import '../models/live_session.dart';
 import '../providers/live_provider.dart';
 import '../services/live_webrtc_service.dart';
+import '../widgets/live_guests.dart';
 
 class LiveViewerScreen extends ConsumerStatefulWidget {
   const LiveViewerScreen({
@@ -552,6 +553,13 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                   ),
                 ),
               ),
+            ),
+
+            // XAMELIVE_GUESTS_V1
+            LiveGuestsOverlay(
+              sessionId: widget.session.sessionId,
+              isHost: false,
+              canRequest: _participating && !_leaving,
             ),
 
             // XAMELIVE_INTERACTIONS_V1

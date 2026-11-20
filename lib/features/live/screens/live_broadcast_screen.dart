@@ -13,6 +13,7 @@ import '../data/live_api.dart';
 import '../models/live_session.dart';
 import '../providers/live_provider.dart';
 import '../services/live_webrtc_service.dart';
+import '../widgets/live_guests.dart';
 
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({
@@ -583,6 +584,12 @@ class _LiveBroadcastScreenState
                   ),
                 ),
               ),
+            ),
+
+            // XAMELIVE_GUESTS_V1
+            LiveGuestsOverlay(
+              sessionId: widget.result.session.sessionId,
+              isHost: true,
             ),
 
             // XAMELIVE_INTERACTIONS_V1
