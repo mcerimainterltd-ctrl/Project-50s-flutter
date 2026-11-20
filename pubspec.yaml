@@ -2,7 +2,7 @@ name: xamepage
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 2.1.1+2002
+version: 2.1.1+2001
 
 
 
@@ -66,7 +66,6 @@ dependencies:
   youtube_player_flutter: 9.1.2
   archive: ^3.6.1
   flutter_webrtc: ^0.12.5
-  realtimekit_ui: ^0.3.0
   wechat_assets_picker: ^10.1.2
   file_picker: ^8.1.3
 

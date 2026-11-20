@@ -50,33 +50,6 @@ class LiveApi {
   }
 
 
-  // XAMELIVE_STAGE_POC_V1
-  Future<String> stagePocToken(String role) async {
-    final response = await http.post(
-      _uri('/api/live/stage-poc/token'),
-      headers: await _headers(),
-      body: jsonEncode({'role': role}),
-    );
-
-    final data = _decode(response);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw LiveApiException(
-        code: data['code']?.toString(),
-        statusCode: response.statusCode,
-        message: data['message']?.toString() ??
-            'Unable to prepare the stage (${response.statusCode}).',
-      );
-    }
-
-    final authToken = data['authToken']?.toString() ?? '';
-    if (authToken.isEmpty) {
-      throw StateError('Stage token was not returned.');
-    }
-
-    return authToken;
-  }
-
   Future<GoLiveEntitlement?> getGoLiveEntitlement() async {
     final response = await http.get(
       _uri('/api/live/entitlement'),
