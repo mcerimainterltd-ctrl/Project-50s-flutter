@@ -11,6 +11,7 @@ import '../models/live_session.dart';
 import '../providers/live_provider.dart';
 import '../services/live_webrtc_service.dart';
 import '../widgets/live_guests.dart';
+import '../widgets/live_media.dart';
 
 class LiveViewerScreen extends ConsumerStatefulWidget {
   const LiveViewerScreen({
@@ -318,6 +319,10 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                   child: CircularProgressIndicator(),
                 ),
               ),
+
+            LiveMediaLayer(
+              sessionId: widget.session.sessionId,
+            ),
 
             // XAMELIVE_HOSTALONE_V1: double-tap the host video to watch the host alone; double-tap again to show everyone.
             Positioned.fill(

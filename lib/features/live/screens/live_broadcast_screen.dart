@@ -14,6 +14,7 @@ import '../models/live_session.dart';
 import '../providers/live_provider.dart';
 import '../services/live_webrtc_service.dart';
 import '../widgets/live_guests.dart';
+import '../widgets/live_media.dart';
 
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({
@@ -539,6 +540,11 @@ class _LiveBroadcastScreenState
                 ),
               ),
 
+            LiveMediaLayer(
+              sessionId: widget.result.session.sessionId,
+              muted: true,
+            ),
+
             Positioned(
               top: 0,
               left: 0,
@@ -584,6 +590,11 @@ class _LiveBroadcastScreenState
                   ),
                 ),
               ),
+            ),
+
+            LiveMediaControls(
+              sessionId: widget.result.session.sessionId,
+              streamGetter: () => _webrtc.localStream,
             ),
 
             // XAMELIVE_GUESTS_V1

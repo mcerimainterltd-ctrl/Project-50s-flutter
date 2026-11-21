@@ -36,6 +36,7 @@ class _LiveGuestsOverlayState extends State<LiveGuestsOverlay> {
   bool _polling = false;
   bool _starting = false;
   bool _publishing = false;
+  bool _micOn = true;
   bool _gone = false;
   List<Map<String, dynamic>> _guests = <Map<String, dynamic>>[];
   Map<String, dynamic>? _me;
@@ -127,6 +128,7 @@ class _LiveGuestsOverlayState extends State<LiveGuestsOverlay> {
           return;
         }
         _pub = svc;
+        _micOn = true;
         _pubRenderer = renderer;
         if (mounted) setState(() => _publishing = true);
         try {
@@ -297,6 +299,23 @@ class _LiveGuestsOverlayState extends State<LiveGuestsOverlay> {
       } else if (status == 'PUBLISHING') {
         controls.add(_pill(Row(mainAxisSize: MainAxisSize.min, children: [
           const Text('You are on camera', style: _small),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            onPressed: () {
+              final s = _pub?.localStream;
+              if (s == null) return;
+              final next = !_micOn;
+              for (final t in s.getAudioTracks()) {
+                t.enabled = next;
+              }
+              setState(() => _micOn = next);
+            },
+            icon: Icon(
+              _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
+              color: _micOn ? Colors.white : Colors.redAccent,
+              size: 20,
+            ),
+          ),
           TextButton(
             onPressed: _busy ? null : () => _act('POST', '/guest/me/leave'),
             child: const Text('Stop'),
