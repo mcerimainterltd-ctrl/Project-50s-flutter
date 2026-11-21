@@ -3,12 +3,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as dart_io;
 
-import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import '../../../core/config/constants.dart';
 
@@ -16,6 +17,7 @@ class _LiveMediaBus {
   static final ValueNotifier<int> nudge = ValueNotifier<int>(0);
   static Map<String, dynamic>? media;
   static DateTime fetchedAt = DateTime.now();
+  static final ValueNotifier<bool> hostSound = ValueNotifier<bool>(false);
 }
 
 const FlutterSecureStorage _lmStorage = FlutterSecureStorage();
@@ -75,14 +77,25 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
   bool _vcReady = false;
   bool _failed = false;
   int _seq = -1;
+  DateTime _lastSeek = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
     super.initState();
     _LiveMediaBus.media = null;
     _LiveMediaBus.nudge.addListener(_onNudge);
+    _LiveMediaBus.hostSound.addListener(_onSound);
     _timer = Timer.periodic(const Duration(seconds: 3), (_) => _poll());
     _poll();
+  }
+
+  double _vol() => widget.muted ? (_LiveMediaBus.hostSound.value ? 1.0 : 0.0) : 1.0;
+
+  void _onSound() {
+    final v = _vc;
+    if (v != null && _vcReady) {
+      unawaited(v.setVolume(_vol()));
+    }
   }
 
   void _onNudge() {
@@ -190,7 +203,7 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
       _vcReady = false;
       try {
         await nc.initialize();
-        await nc.setVolume(widget.muted ? 0.0 : 1.0);
+        await nc.setVolume(_vol());
         await nc.setLooping(false);
         if (_gone || _vc != nc) return;
         _vcReady = true;
@@ -218,7 +231,12 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
     if (mode != 'media') {
       if (vc.value.isPlaying) await vc.pause();
     } else {
-      if (changed || (cur - target).abs() > 1500) {
+      final needSeek = changed ||
+          (!vc.value.isBuffering &&
+              (cur - target).abs() > 4000 &&
+              DateTime.now().difference(_lastSeek).inMilliseconds > 8000);
+      if (needSeek) {
+        _lastSeek = DateTime.now();
         await vc.seekTo(Duration(milliseconds: target));
       }
       if (playing && !vc.value.isPlaying) await vc.play();
@@ -232,6 +250,7 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
     _gone = true;
     _timer?.cancel();
     _LiveMediaBus.nudge.removeListener(_onNudge);
+    _LiveMediaBus.hostSound.removeListener(_onSound);
     unawaited(_dropVideo());
     super.dispose();
   }
@@ -305,6 +324,25 @@ class LiveMediaControls extends StatefulWidget {
 class _LiveMediaControlsState extends State<LiveMediaControls> {
   bool _micOn = true;
 
+  @override
+  void initState() {
+    super.initState();
+    _LiveMediaBus.hostSound.value = false;
+  }
+
+  void _toggleSound() {
+    final next = !_LiveMediaBus.hostSound.value;
+    _LiveMediaBus.hostSound.value = next;
+    setState(() {});
+    if (next) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Use headphones so the clip is not picked up by your microphone.'),
+        ),
+      );
+    }
+  }
+
   void _toggleMic() {
     final s = widget.streamGetter();
     if (s == null) return;
@@ -337,6 +375,11 @@ class _LiveMediaControlsState extends State<LiveMediaControls> {
             icon: _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
             bg: _micOn ? null : Colors.red.shade700,
             onTap: _toggleMic,
+          ),
+          const SizedBox(height: 10),
+          _lmRoundButton(
+            icon: _LiveMediaBus.hostSound.value ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+            onTap: _toggleSound,
           ),
           const SizedBox(height: 10),
           _lmRoundButton(icon: Icons.perm_media_rounded, onTap: _openSheet),
@@ -430,19 +473,53 @@ class _MediaSheetState extends State<_MediaSheet> {
   Future<void> _upload() async {
     if (_busy) return;
     try {
-      final res = await FilePicker.platform.pickFiles(
-        type: FileType.media,
-        allowMultiple: false,
-        withData: false,
+      final assets = await AssetPicker.pickAssets(
+        context,
+        pickerConfig: const AssetPickerConfig(
+          requestType: RequestType.common,
+          maxAssets: 1,
+        ),
       );
-      if (res == null || res.files.isEmpty) return;
-      final path = res.files.single.path;
-      if (path == null || path.isEmpty) return;
-      final size = await dart_io.File(path).length();
-      if (size > 60 * 1024 * 1024) {
-        _note('That file is over 60 MB. Paste a link instead.');
+      if (assets == null || assets.isEmpty) return;
+      final asset = assets.first;
+      if (asset.duration > 600) {
+        _note('That video is longer than 10 minutes.');
         return;
       }
+      final file = await asset.originFile;
+      if (file == null) {
+        _note('Unable to read that file.');
+        return;
+      }
+      final path = file.path;
+      final size = await file.length();
+      if (size <= 0) {
+        _note('That file is empty.');
+        return;
+      }
+      if (size > AppConstants.maxFileSizeBytes) {
+        _note('That file is too large.');
+        return;
+      }
+      final lower = path.toLowerCase();
+      final dot = lower.lastIndexOf('.');
+      final ext = dot >= 0 ? lower.substring(dot + 1) : '';
+      const types = <String, String>{
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'webp': 'image/webp',
+        'gif': 'image/gif',
+        'mp4': 'video/mp4',
+        'webm': 'video/webm',
+        'mov': 'video/quicktime',
+      };
+      final contentType = types[ext];
+      if (contentType == null) {
+        _note('Use a JPG, PNG, WEBP, GIF, MP4, WEBM or MOV file.');
+        return;
+      }
+      final kind = contentType.startsWith('video/') ? 'video' : 'image';
       final token = await _lmStorage.read(key: AppConstants.keySessionToken);
       if (token == null || token.isEmpty) {
         _note('Please sign in again.');
@@ -451,31 +528,152 @@ class _MediaSheetState extends State<_MediaSheet> {
       if (mounted) {
         setState(() {
           _busy = true;
-          _msg = 'Uploading…';
+          _msg = 'Uploading… 0%';
         });
       }
-      final req = http.MultipartRequest(
-        'POST',
-        Uri.parse('${AppConstants.serverUrl}/api/live/${widget.sessionId}/media/upload'),
-      );
-      req.headers['Authorization'] = 'Bearer $token';
-      req.files.add(await http.MultipartFile.fromPath('file', path));
-      final streamed = await req.send().timeout(const Duration(minutes: 4));
-      final body = await streamed.stream.bytesToString();
-      var d = <String, dynamic>{};
-      try {
-        final j = jsonDecode(body);
-        if (j is Map<String, dynamic>) d = j;
-      } catch (_) {}
-      if (d['success'] == true && d['url'] != null && d['kind'] != null) {
-        await _show(d['url'].toString(), d['kind'].toString());
-      } else {
-        _note(d['message']?.toString() ?? 'Upload failed (${streamed.statusCode}).');
-      }
-    } catch (_) {
+      final url = await _directUpload(file, size, path.split('/').last, contentType, token);
+      if (!mounted) return;
+      await _show(url, kind);
+    } catch (e) {
+      if (e is StateError && e.message == 'cancelled') return;
       _note('Upload failed. Check your connection and try again.');
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<String> _directUpload(
+    dart_io.File file,
+    int size,
+    String name,
+    String contentType,
+    String token,
+  ) async {
+    final init = await http
+        .post(
+          Uri.parse('${AppConstants.serverUrl}/api/media/upload-init'),
+          headers: <String, String>{
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(<String, dynamic>{
+            'fileName': name,
+            'contentType': contentType,
+            'size': size,
+            'folder': 'chat',
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
+    final initData = jsonDecode(init.body);
+    if (initData is! Map ||
+        initData['success'] != true ||
+        initData['key'] == null ||
+        initData['uploadId'] == null ||
+        initData['capability'] == null) {
+      throw StateError('Upload could not start.');
+    }
+    final key = initData['key'] as String;
+    final uploadId = initData['uploadId'] as String;
+    final capability = initData['capability'] as String;
+    final worker = dio.Dio(
+      dio.BaseOptions(
+        baseUrl: AppConstants.mediaWorkerUrl,
+        connectTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(minutes: 10),
+        receiveTimeout: const Duration(minutes: 5),
+      ),
+    );
+    const chunk = 8 * 1024 * 1024;
+    final totalParts = (size + chunk - 1) ~/ chunk;
+    final parts = <Map<String, dynamic>>[];
+    var done = 0;
+    var lastPct = -1;
+    try {
+      for (var n = 1; n <= totalParts; n++) {
+        if (!mounted) throw StateError('cancelled');
+        final start = (n - 1) * chunk;
+        final end = start + chunk < size ? start + chunk : size;
+        final len = end - start;
+        Map<String, dynamic>? okPart;
+        Object? lastErr;
+        for (var attempt = 1; attempt <= 3 && okPart == null; attempt++) {
+          try {
+            final r = await worker.put(
+              '/multipart/part',
+              queryParameters: <String, dynamic>{
+                'key': key,
+                'uploadId': uploadId,
+                'partNumber': n,
+              },
+              data: file.openRead(start, end),
+              options: dio.Options(
+                headers: <String, dynamic>{
+                  'Authorization': 'Bearer $capability',
+                  'Content-Type': 'application/octet-stream',
+                  'Content-Length': len,
+                },
+              ),
+              onSendProgress: (sent, total) {
+                final overall = done + (sent > len ? len : sent);
+                final pct = overall * 100 ~/ size;
+                if (pct != lastPct) {
+                  lastPct = pct;
+                  _note('Uploading… $pct%');
+                }
+              },
+            );
+            final d = r.data;
+            if (d is Map && d['success'] == true && d['etag'] != null) {
+              okPart = <String, dynamic>{'partNumber': n, 'etag': d['etag']};
+            } else {
+              throw StateError('Part failed.');
+            }
+          } catch (e) {
+            lastErr = e;
+            if (attempt < 3) {
+              await Future<void>.delayed(Duration(seconds: attempt));
+            }
+          }
+        }
+        if (okPart == null) {
+          throw StateError('Upload failed: $lastErr');
+        }
+        parts.add(okPart);
+        done += len;
+      }
+      final c = await worker.post(
+        '/multipart/complete',
+        data: <String, dynamic>{
+          'key': key,
+          'uploadId': uploadId,
+          'parts': parts,
+        },
+        options: dio.Options(
+          headers: <String, dynamic>{
+            'Authorization': 'Bearer $capability',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+      final cd = c.data;
+      if (cd is Map && cd['success'] == true && cd['url'] != null) {
+        return cd['url'] as String;
+      }
+      throw StateError('Upload could not finish.');
+    } catch (e) {
+      try {
+        await worker.post(
+          '/multipart/abort',
+          data: <String, dynamic>{'key': key, 'uploadId': uploadId},
+          options: dio.Options(
+            headers: <String, dynamic>{
+              'Authorization': 'Bearer $capability',
+              'Content-Type': 'application/json',
+            },
+          ),
+        );
+      } catch (_) {}
+      rethrow;
     }
   }
 
@@ -588,7 +786,7 @@ class _MediaSheetState extends State<_MediaSheet> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.upload_file_rounded, color: Colors.white),
               title: const Text('Upload photo or video', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Up to 60 MB', style: TextStyle(color: Colors.white54)),
+              subtitle: const Text('Up to 10 minutes. Keep this open while uploading.', style: TextStyle(color: Colors.white54)),
               onTap: _busy ? null : _upload,
             ),
             ListTile(
