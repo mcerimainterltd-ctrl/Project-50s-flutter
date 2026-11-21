@@ -18,6 +18,7 @@ class _LiveMediaBus {
   static Map<String, dynamic>? media;
   static DateTime fetchedAt = DateTime.now();
   static final ValueNotifier<bool> hostSound = ValueNotifier<bool>(false);
+  static int durationMs = 0;
 }
 
 const FlutterSecureStorage _lmStorage = FlutterSecureStorage();
@@ -157,6 +158,7 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
     final old = _vc;
     _vc = null;
     _vcUrl = '';
+    _LiveMediaBus.durationMs = 0;
     _vcReady = false;
     if (old != null) {
       try {
@@ -207,6 +209,7 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
         await nc.setLooping(false);
         if (_gone || _vc != nc) return;
         _vcReady = true;
+        _LiveMediaBus.durationMs = nc.value.duration.inMilliseconds;
         _failed = false;
         _seq = -1;
       } catch (_) {
@@ -224,7 +227,7 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
     }
     final dur = vc.value.duration.inMilliseconds;
     var target = pos + (playing ? age : 0);
-    if (dur > 0 && target > dur) target = dur;
+    if (dur > 400 && target > dur - 200) target = dur - 200;
     final cur = vc.value.position.inMilliseconds;
     final changed = seq != _seq;
     _seq = seq;
@@ -239,7 +242,13 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
         _lastSeek = DateTime.now();
         await vc.seekTo(Duration(milliseconds: target));
       }
-      if (playing && !vc.value.isPlaying) await vc.play();
+      final overEnd = dur > 400 && target >= dur - 300;
+      final atEnd = dur > 0 && vc.value.position.inMilliseconds >= dur - 300;
+      if (playing && overEnd) {
+        if (vc.value.isPlaying) await vc.pause();
+      } else if (playing && !vc.value.isPlaying && !atEnd) {
+        await vc.play();
+      }
       if (!playing && vc.value.isPlaying) await vc.pause();
     }
     if (mounted) setState(() => _media = m);
@@ -400,16 +409,21 @@ class _MediaSheet extends StatefulWidget {
 
 class _MediaSheetState extends State<_MediaSheet> {
   bool _busy = false;
+  Timer? _tick;
   String _msg = '';
 
   @override
   void initState() {
     super.initState();
     _LiveMediaBus.nudge.addListener(_r);
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _tick?.cancel();
     _LiveMediaBus.nudge.removeListener(_r);
     super.dispose();
   }
@@ -716,6 +730,8 @@ class _MediaSheetState extends State<_MediaSheet> {
     final isVideo = m != null && m['kind'] == 'video';
     final playing = m != null && m['playing'] == true;
     final camera = m != null && m['mode'] == 'camera';
+    final durMs = _LiveMediaBus.durationMs;
+    final ended = isVideo && durMs > 0 && _curPos() >= durMs - 300;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -760,9 +776,9 @@ class _MediaSheetState extends State<_MediaSheet> {
                     icon: const Icon(Icons.replay_10_rounded, color: Colors.white),
                   ),
                   IconButton(
-                    onPressed: _busy ? null : () => _send(playing ? 'pause' : 'play'),
+                    onPressed: _busy ? null : () => (ended ? _send('play', pos: 0) : _send(playing ? 'pause' : 'play')),
                     icon: Icon(
-                      playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+                      ended ? Icons.replay_rounded : (playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded),
                       color: Colors.white,
                       size: 40,
                     ),
