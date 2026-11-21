@@ -35,6 +35,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
   bool _sawSession = false;
   bool _watchOnly = false;
   bool _participating = false;
+  bool _hostAlone = false; // XAMELIVE_HOSTALONE_V1
   String _connectionStatus = 'Connecting…';
 
   @override
@@ -318,6 +319,15 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                 ),
               ),
 
+            // XAMELIVE_HOSTALONE_V1: double-tap the host video to watch the host alone; double-tap again to show everyone.
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onDoubleTap: () => setState(() => _hostAlone = !_hostAlone),
+                child: const SizedBox.expand(),
+              ),
+            ),
+
             // Subtle readability gradient.
             Positioned(
               left: 0,
@@ -560,6 +570,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
               sessionId: widget.session.sessionId,
               isHost: false,
               canRequest: _participating && !_leaving,
+              hideTiles: _hostAlone,
             ),
 
             // XAMELIVE_INTERACTIONS_V1

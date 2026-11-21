@@ -17,11 +17,13 @@ class LiveGuestsOverlay extends StatefulWidget {
     required this.sessionId,
     required this.isHost,
     this.canRequest = false,
+    this.hideTiles = false,
   });
 
   final String sessionId;
   final bool isHost;
   final bool canRequest;
+  final bool hideTiles;
 
   @override
   State<LiveGuestsOverlay> createState() => _LiveGuestsOverlayState();
@@ -242,6 +244,8 @@ class _LiveGuestsOverlayState extends State<LiveGuestsOverlay> {
       ));
     }
 
+    if (widget.hideTiles) tiles.clear();
+
     final controls = <Widget>[];
     if (widget.isHost) {
       for (final g in _guests) {
@@ -319,6 +323,13 @@ class _LiveGuestsOverlayState extends State<LiveGuestsOverlay> {
         child: Text(_error!,
             style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
       ));
+    }
+
+    if (widget.hideTiles) {
+      controls.add(_pill(const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Text('Host only. Double-tap to show everyone.', style: _small),
+      )));
     }
 
     return Positioned.fill(
