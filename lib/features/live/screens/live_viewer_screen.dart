@@ -398,6 +398,8 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                       _ViewerBadge(
                         count: viewerCount,
                       ),
+                      const SizedBox(width: 8),
+                      const LiveCaptionsButton(),
                       const Spacer(),
                       IconButton(
                         onPressed:
@@ -577,6 +579,8 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
               canRequest: _participating && !_leaving,
               hideTiles: _hostAlone,
             ),
+
+            LiveCaptionsOverlay(sessionId: widget.session.sessionId),
 
             // XAMELIVE_INTERACTIONS_V1
             Builder(

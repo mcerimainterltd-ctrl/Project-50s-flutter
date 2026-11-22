@@ -10,6 +10,8 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:youtube_player_flutter/youtube_player_flutter.dart' as yt;
 
 import '../../../core/config/constants.dart';
 
@@ -78,6 +80,12 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
   bool _vcReady = false;
   bool _failed = false;
   int _seq = -1;
+  yt.YoutubePlayerController? _yt;
+  String _ytId = '';
+  int _ytSeq = -1;
+  int _ytErr = 0;
+  bool _ytReady = false;
+  bool _ytReadySeen = false;
   DateTime _lastSeek = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
@@ -93,10 +101,148 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
   double _vol() => widget.muted ? (_LiveMediaBus.hostSound.value ? 1.0 : 0.0) : 1.0;
 
   void _onSound() {
+    final yc = _yt;
+    if (yc != null && yc.value.isReady) {
+      if (_vol() <= 0) {
+        yc.mute();
+      } else {
+        yc.unMute();
+      }
+    }
     final v = _vc;
     if (v != null && _vcReady) {
       unawaited(v.setVolume(_vol()));
     }
+  }
+
+  String _ytIdOf(String url) {
+    final u = Uri.tryParse(url);
+    final v = u == null ? '' : (u.queryParameters['v'] ?? '');
+    return RegExp(r'^[A-Za-z0-9_-]{11}$').hasMatch(v) ? v : '';
+  }
+
+  void _dropYt() {
+    final c = _yt;
+    _yt = null;
+    _ytId = '';
+    _ytSeq = -1;
+    _ytErr = 0;
+    _ytReady = false;
+    _ytReadySeen = false;
+    if (c != null) {
+      c.removeListener(_onYt);
+      try {
+        c.dispose();
+      } catch (_) {}
+    }
+  }
+
+  void _onYt() {
+    final c = _yt;
+    if (_gone || !mounted || c == null) return;
+    final err = c.value.errorCode;
+    final ready = c.value.isReady;
+    final changed = err != _ytErr || ready != _ytReady;
+    _ytErr = err;
+    _ytReady = ready;
+    if (ready && !_ytReadySeen) {
+      _ytReadySeen = true;
+      _syncYt(_LiveMediaBus.media);
+    }
+    if (changed) setState(() {});
+  }
+
+  Future<void> _applyYoutube(Map<String, dynamic> m) async {
+    final id = _ytIdOf(m['url']?.toString() ?? '');
+    await _dropPlayer();
+    if (id.isEmpty) {
+      _dropYt();
+      _failed = true;
+      if (mounted) setState(() => _media = m);
+      return;
+    }
+    if (_yt == null || _ytId != id) {
+      _dropYt();
+      _ytId = id;
+      _failed = false;
+      final c = yt.YoutubePlayerController(
+        initialVideoId: id,
+        flags: yt.YoutubePlayerFlags(
+          autoPlay: false,
+          mute: true,
+          hideControls: true,
+          disableDragSeek: true,
+          enableCaption: false,
+        ),
+      );
+      c.addListener(_onYt);
+      _yt = c;
+    }
+    if (mounted) setState(() => _media = m);
+    _syncYt(m);
+  }
+
+  void _syncYt(Map<String, dynamic>? m) {
+    final c = _yt;
+    if (c == null || m == null || !c.value.isReady) return;
+    final mode = m['mode']?.toString() ?? 'media';
+    final playing = m['playing'] == true;
+    final seq = _lmInt(m['seq']);
+    final pos = _lmInt(m['positionMs']);
+    final age = DateTime.now().difference(_LiveMediaBus.fetchedAt).inMilliseconds;
+    final dur = c.value.metaData.duration.inMilliseconds;
+    if (dur > 0) _LiveMediaBus.durationMs = dur;
+    var target = pos + (playing ? age : 0);
+    if (dur > 400 && target > dur - 200) target = dur - 200;
+    final cur = c.value.position.inMilliseconds;
+    final changed = seq != _ytSeq;
+    _ytSeq = seq;
+    try {
+      if (_vol() <= 0) {
+        c.mute();
+      } else {
+        c.unMute();
+      }
+      if (mode != 'media') {
+        c.pause();
+        return;
+      }
+      final overEnd = dur > 400 && target >= dur - 300;
+      final ended = c.value.playerState == yt.PlayerState.ended;
+      if (changed ||
+          ((cur - target).abs() > 4000 &&
+              DateTime.now().difference(_lastSeek).inMilliseconds > 8000)) {
+        _lastSeek = DateTime.now();
+        c.seekTo(Duration(milliseconds: target));
+      }
+      if (playing && !overEnd) {
+        if (!(ended && !changed)) c.play();
+      } else {
+        c.pause();
+      }
+    } catch (_) {}
+  }
+
+  Widget _ytContent() {
+    final c = _yt;
+    if (c == null || _failed) {
+      return const Center(
+        child: Text('Unable to play this video.', style: TextStyle(color: Colors.white70)),
+      );
+    }
+    if (c.value.errorCode != 0) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'This YouTube video cannot be played here (its owner may block embedding).',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+    }
+    return Center(child: yt.YoutubePlayer(controller: c, aspectRatio: 16 / 9));
   }
 
   void _onNudge() {
@@ -155,6 +301,11 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
   }
 
   Future<void> _dropVideo() async {
+    _dropYt();
+    await _dropPlayer();
+  }
+
+  Future<void> _dropPlayer() async {
     final old = _vc;
     _vc = null;
     _vcUrl = '';
@@ -186,6 +337,11 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
     final seq = _lmInt(m['seq']);
     final pos = _lmInt(m['positionMs']);
     final age = DateTime.now().difference(_LiveMediaBus.fetchedAt).inMilliseconds;
+
+    if (kind == 'youtube') {
+      await _applyYoutube(m);
+      return;
+    }
 
     if (kind != 'video') {
       await _dropVideo();
@@ -285,7 +441,9 @@ class _LiveMediaLayerState extends State<LiveMediaLayer> {
       );
     } else {
       final vc = _vc;
-      if (_failed) {
+      if (kind == 'youtube') {
+        content = _ytContent();
+      } else if (_failed) {
         content = const Center(
           child: Text('Unable to play this video.', style: TextStyle(color: Colors.white70)),
         );
@@ -352,6 +510,133 @@ class _LiveMediaControlsState extends State<LiveMediaControls> {
     }
   }
 
+  final stt.SpeechToText _stt = stt.SpeechToText();
+  bool _cc = false;
+  bool _ccBusy = false;
+  String _ccLocale = 'en_US';
+  int _ccErrors = 0;
+  DateTime _ccLastCb = DateTime.now();
+  Timer? _ccKick;
+  Timer? _ccWatch;
+
+  @override
+  void dispose() {
+    _cc = false;
+    _ccKick?.cancel();
+    _ccWatch?.cancel();
+    unawaited(_stt.cancel());
+    super.dispose();
+  }
+
+  void _snack(String s) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
+  }
+
+  Future<void> _toggleCc() async {
+    if (_cc) {
+      await _ccStop();
+      return;
+    }
+    final loc = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Language you speak'),
+        children: [
+          for (final e in _lmCcLocales.entries)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(ctx).pop(e.key),
+              child: Text(e.value),
+            ),
+        ],
+      ),
+    );
+    if (loc == null || !mounted) return;
+    _ccLocale = loc;
+    bool ok = false;
+    try {
+      ok = await _stt.initialize(onError: (_) => _ccAfter(true));
+    } catch (_) {
+      ok = false;
+    }
+    if (!ok) {
+      _snack('Speech recognition is not available on this phone.');
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _cc = true;
+    });
+    _ccErrors = 0;
+    _ccLastCb = DateTime.now();
+    _ccWatch?.cancel();
+    _ccWatch = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_cc && DateTime.now().difference(_ccLastCb).inSeconds > 40) {
+        _ccKick?.cancel();
+        unawaited(_ccListen());
+      }
+    });
+    _snack('Captions on. If viewers stop hearing you, switch captions off.');
+    await _ccListen();
+  }
+
+  Future<void> _ccStop() async {
+    _cc = false;
+    _ccKick?.cancel();
+    _ccWatch?.cancel();
+    try {
+      await _stt.stop();
+    } catch (_) {}
+    if (mounted) setState(() {});
+  }
+
+  void _ccAfter(bool error) {
+    if (!_cc || !mounted) return;
+    _ccLastCb = DateTime.now();
+    if (error) {
+      _ccErrors++;
+      if (_ccErrors >= 6) {
+        unawaited(_ccStop());
+        _snack('Captions stopped. This phone could not recognise that language.');
+        return;
+      }
+    }
+    _ccKick?.cancel();
+    _ccKick = Timer(Duration(milliseconds: error ? 1500 : 300), () {
+      unawaited(_ccListen());
+    });
+  }
+
+  Future<void> _ccListen() async {
+    if (!_cc || _ccBusy || !mounted) return;
+    _ccBusy = true;
+    try {
+      await _stt.listen(
+        onResult: (r) {
+          _ccLastCb = DateTime.now();
+          if (!r.finalResult) return;
+          final w = r.recognizedWords.trim();
+          if (w.isNotEmpty) {
+            _ccErrors = 0;
+            unawaited(
+              _lmApi('POST', widget.sessionId, '/captions', body: <String, dynamic>{'text': w})
+                  .catchError((_) => <String, dynamic>{}),
+            );
+          }
+          _ccAfter(false);
+        },
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 2),
+        localeId: _ccLocale,
+        listenMode: stt.ListenMode.confirmation,
+      );
+    } catch (_) {
+      _ccAfter(true);
+    } finally {
+      _ccBusy = false;
+    }
+  }
+
   void _toggleMic() {
     final s = widget.streamGetter();
     if (s == null) return;
@@ -392,6 +677,12 @@ class _LiveMediaControlsState extends State<LiveMediaControls> {
           ),
           const SizedBox(height: 10),
           _lmRoundButton(icon: Icons.perm_media_rounded, onTap: _openSheet),
+          const SizedBox(height: 10),
+          _lmRoundButton(
+            icon: Icons.closed_caption_rounded,
+            bg: _cc ? Colors.green.shade700 : null,
+            onTap: _toggleCc,
+          ),
         ],
       ),
     );
@@ -565,7 +856,7 @@ class _MediaSheetState extends State<_MediaSheet> {
   ) async {
     final init = await http
         .post(
-          Uri.parse('${AppConstants.serverUrl}/api/media/upload-init'),
+          Uri.parse('${AppConstants.serverUrl}/api/live/${widget.sessionId}/media/upload-init'),
           headers: <String, String>{
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
@@ -574,7 +865,7 @@ class _MediaSheetState extends State<_MediaSheet> {
             'fileName': name,
             'contentType': contentType,
             'size': size,
-            'folder': 'chat',
+            'folder': 'live_media',
           }),
         )
         .timeout(const Duration(seconds: 30));
@@ -708,6 +999,7 @@ class _MediaSheetState extends State<_MediaSheet> {
           TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.of(ctx).pop('image'), child: const Text('As photo')),
           TextButton(onPressed: () => Navigator.of(ctx).pop('video'), child: const Text('As video')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop('youtube'), child: const Text('YouTube')),
         ],
       ),
     );
@@ -715,7 +1007,11 @@ class _MediaSheetState extends State<_MediaSheet> {
     if (kind == null || link.isEmpty) return;
     if (mounted) setState(() => _busy = true);
     try {
-      await _show(link, kind);
+      if (kind == 'youtube') {
+        _accept(await _lmCall('POST', widget.sessionId, '/youtube', body: <String, dynamic>{'url': link}));
+      } else {
+        await _show(link, kind);
+      }
     } catch (_) {
       _note('Network problem. Please try again.');
     } finally {
@@ -727,7 +1023,7 @@ class _MediaSheetState extends State<_MediaSheet> {
   Widget build(BuildContext context) {
     final m = _LiveMediaBus.media;
     final has = m != null;
-    final isVideo = m != null && m['kind'] == 'video';
+    final isVideo = m != null && (m['kind'] == 'video' || m['kind'] == 'youtube');
     final playing = m != null && m['playing'] == true;
     final camera = m != null && m['mode'] == 'camera';
     final durMs = _LiveMediaBus.durationMs;
@@ -817,6 +1113,231 @@ class _MediaSheetState extends State<_MediaSheet> {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(_msg, style: const TextStyle(color: Colors.amberAccent, fontSize: 12)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// XAMELIVE_MEDIA2_V1: live captions (viewer side) and shared helpers.
+const Map<String, String> _lmCcLocales = <String, String>{
+  'en_US': 'English',
+  'fr_FR': 'French',
+  'sw_KE': 'Swahili',
+  'ha_NG': 'Hausa',
+  'yo_NG': 'Yoruba',
+  'ak_GH': 'Twi',
+  'ar_SA': 'Arabic',
+  'pt_PT': 'Portuguese',
+};
+
+const Map<String, String> _lmCapLangs = <String, String>{
+  'orig': 'Original (as spoken)',
+  'en': 'English',
+  'fr': 'French',
+  'sw': 'Swahili',
+  'ha': 'Hausa',
+  'yo': 'Yoruba',
+  'tw': 'Twi',
+  'ar': 'Arabic',
+  'pt': 'Portuguese',
+};
+
+class _LiveCapBus {
+  static final ValueNotifier<String> lang = ValueNotifier<String>('');
+}
+
+Future<Map<String, dynamic>> _lmApi(
+  String method,
+  String sessionId,
+  String path, {
+  Map<String, dynamic>? body,
+}) async {
+  final token = await _lmStorage.read(key: AppConstants.keySessionToken);
+  if (token == null || token.isEmpty) return <String, dynamic>{'success': false};
+  final uri = Uri.parse('${AppConstants.serverUrl}/api/live/$sessionId$path');
+  final headers = <String, String>{
+    'Authorization': 'Bearer $token',
+    'Content-Type': 'application/json',
+  };
+  final r = method == 'GET'
+      ? await http.get(uri, headers: headers)
+      : await http.post(uri, headers: headers, body: jsonEncode(body ?? <String, dynamic>{}));
+  try {
+    final d = jsonDecode(r.body);
+    if (d is Map<String, dynamic>) {
+      d['_status'] = r.statusCode;
+      return d;
+    }
+  } catch (_) {}
+  return <String, dynamic>{'_status': r.statusCode};
+}
+
+/// Viewer's CC chip: choose caption language (or off).
+class LiveCaptionsButton extends StatelessWidget {
+  const LiveCaptionsButton({super.key});
+
+  Future<void> _pick(BuildContext context) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Captions off', style: TextStyle(color: Colors.white)),
+                trailing: _LiveCapBus.lang.value.isEmpty
+                    ? const Icon(Icons.check, color: Colors.greenAccent)
+                    : null,
+                onTap: () => Navigator.of(ctx).pop('off'),
+              ),
+              for (final e in _lmCapLangs.entries)
+                ListTile(
+                  title: Text(e.value, style: const TextStyle(color: Colors.white)),
+                  trailing: _LiveCapBus.lang.value == e.key
+                      ? const Icon(Icons.check, color: Colors.greenAccent)
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(e.key),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (choice == null) return;
+    _LiveCapBus.lang.value = choice == 'off' ? '' : choice;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String>(
+      valueListenable: _LiveCapBus.lang,
+      builder: (context, lang, _) {
+        return Material(
+          color: lang.isNotEmpty
+              ? Colors.green.shade700
+              : Colors.black.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _pick(context),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Icon(Icons.closed_caption_rounded, color: Colors.white, size: 20),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CapLine {
+  _CapLine(this.text) : at = DateTime.now();
+
+  final String text;
+  final DateTime at;
+}
+
+/// Viewer's caption lines, shown above the host info.
+class LiveCaptionsOverlay extends StatefulWidget {
+  const LiveCaptionsOverlay({super.key, required this.sessionId});
+
+  final String sessionId;
+
+  @override
+  State<LiveCaptionsOverlay> createState() => _LiveCaptionsOverlayState();
+}
+
+class _LiveCaptionsOverlayState extends State<LiveCaptionsOverlay> {
+  Timer? _timer;
+  bool _busy = false;
+  int _since = -1;
+  final List<_CapLine> _lines = <_CapLine>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _LiveCapBus.lang.addListener(_onLang);
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _tick());
+  }
+
+  void _onLang() {
+    _since = -1;
+    _lines.clear();
+    if (mounted) setState(() {});
+    _tick();
+  }
+
+  Future<void> _tick() async {
+    if (!mounted) return;
+    final before = _lines.length;
+    _lines.removeWhere((l) => DateTime.now().difference(l.at).inSeconds >= 7);
+    if (_lines.length != before) setState(() {});
+    final lang = _LiveCapBus.lang.value;
+    if (lang.isEmpty || _busy) return;
+    _busy = true;
+    try {
+      final q = _since < 0 ? '' : '&since=$_since';
+      final d = await _lmApi('GET', widget.sessionId, '/captions?lang=$lang$q');
+      if (!mounted || _LiveCapBus.lang.value != lang) return;
+      if (d['success'] == true) {
+        final seq = d['seq'];
+        final items = d['items'];
+        if (seq is num) _since = seq.toInt();
+        if (items is List && items.isNotEmpty) {
+          for (final it in items) {
+            if (it is Map && it['text'] != null) {
+              _lines.add(_CapLine(it['text'].toString()));
+            }
+          }
+          while (_lines.length > 3) {
+            _lines.removeAt(0);
+          }
+          setState(() {});
+        }
+      }
+    } catch (_) {
+    } finally {
+      _busy = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _LiveCapBus.lang.removeListener(_onLang);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 16,
+      right: 84,
+      bottom: 156,
+      child: IgnorePointer(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final l in _lines)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  l.text,
+                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.25),
+                ),
               ),
           ],
         ),
