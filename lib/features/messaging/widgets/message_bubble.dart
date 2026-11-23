@@ -334,6 +334,10 @@ class MessageBubble extends ConsumerWidget {
                     }
                   : null);
       case MessageType.text:
+        // OFFICIAL_FOLD_V1: long official-account messages fold with Read more
+        if (message.senderId == '058000000001' && message.text.length > 240) {
+          return _OfficialFoldedText(text: message.text, isSelf: isSelf, actionButton: message.actionButton);
+        }
         return _TextContent(text: message.text, isSelf: isSelf, actionButton: message.actionButton);
       case MessageType.call:
         return _CallBubble(
@@ -438,6 +442,59 @@ String _fmtSize(int? bytes) {
   if (bytes < 1024 * 1024 * 1024)
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
   return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
+}
+
+// OFFICIAL_FOLD_V1: folds long official-account text; the full text is kept, only the display is shortened
+class _OfficialFoldedText extends StatefulWidget {
+  final String text;
+  final bool isSelf;
+  final Map<String, dynamic>? actionButton;
+  const _OfficialFoldedText({
+    required this.text,
+    required this.isSelf,
+    this.actionButton,
+  });
+
+  @override
+  State<_OfficialFoldedText> createState() => _OfficialFoldedTextState();
+}
+
+class _OfficialFoldedTextState extends State<_OfficialFoldedText> {
+  bool _expanded = false;
+
+  String get _shown {
+    if (_expanded) return widget.text;
+    var cut = widget.text.substring(0, 240);
+    final space = cut.lastIndexOf(RegExp(r'\s'));
+    if (space > 160) cut = cut.substring(0, space);
+    return '${cut.trimRight()}…';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _TextContent(
+          text: _shown,
+          isSelf: widget.isSelf,
+          actionButton: widget.actionButton,
+        ),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Text(
+            _expanded ? 'Show less' : 'Read more',
+            style: const TextStyle(
+              color: Colors.lightBlueAccent,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ─── Text content ─────────────────────────────────────────────────────────

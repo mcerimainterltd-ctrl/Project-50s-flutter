@@ -501,6 +501,7 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
     super.initState();
     final authorId = widget.post['authorId'] as String? ?? '';
     _likeCount = (widget.post['likeCount'] as int?) ?? 0;
+    _syncLikeFromServer();
 
     _burstAnim = AnimationController(
       vsync: this,
@@ -663,6 +664,26 @@ class _FullscreenPostPageState extends State<_FullscreenPostPage>
         ));
       }
     }
+  }
+
+  // LIKE_SYNC_V1: restore this user's like from the server when a page is (re)built
+  Future<void> _syncLikeFromServer() async {
+    final beforeLiked = _liked;
+    final beforeCount = _likeCount;
+    try {
+      final postId = widget.post['id'] ?? widget.post['_id'] ?? '';
+      if (postId.toString().isEmpty) return;
+      final dio = Dio(BaseOptions(baseUrl: AppConstants.serverUrl));
+      final r = await dio.get('/api/discover/like-status',
+          queryParameters: {'userId': widget.currentUserId, 'postId': postId});
+      final d = r.data;
+      if (d is! Map || d['success'] != true) return;
+      if (!mounted || _liked != beforeLiked || _likeCount != beforeCount) return;
+      setState(() {
+        _liked = d['liked'] == true;
+        _likeCount = (d['likeCount'] as num?)?.toInt() ?? _likeCount;
+      });
+    } catch (_) {}
   }
 
   Future<void> _toggleLike() async {

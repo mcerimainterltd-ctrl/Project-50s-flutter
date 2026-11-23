@@ -667,6 +667,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ]),
           );
         }),
+        widget.userId == '058000000001'
+            ? Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                color: XameColors.darkSurface,
+                child: const SafeArea(
+                  top: false,
+                  child: Text(
+                    'Official updates. Replies are off.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                ),
+              )
+            :
         _Composer(
           controller: _msgCtrl,
           onChanged:  _onTextChanged,
