@@ -10,6 +10,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:image_picker/image_picker.dart' as ip;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:youtube_player_flutter/youtube_player_flutter.dart' as yt;
 
@@ -778,20 +779,25 @@ class _MediaSheetState extends State<_MediaSheet> {
   Future<void> _upload() async {
     if (_busy) return;
     try {
-      final assets = await AssetPicker.pickAssets(
-        context,
-        pickerConfig: const AssetPickerConfig(
-          requestType: RequestType.common,
-          maxAssets: 1,
-        ),
-      );
-      if (assets == null || assets.isEmpty) return;
-      final asset = assets.first;
-      if (asset.duration > 600) {
-        _note('That video is longer than 10 minutes.');
-        return;
+      // XAMELIVE_SYSTEM_PICKER_V1: Android system photo picker (photo grid + Browse) instead of the in-app Recents/albums list
+      final picked = await ip.ImagePicker().pickMedia();
+      if (picked == null) return;
+      final pickedFile = dart_io.File(picked.path);
+      final pickedLower = picked.path.toLowerCase();
+      if (pickedLower.endsWith('.mp4') || pickedLower.endsWith('.mov') || pickedLower.endsWith('.webm')) {
+        final probe = VideoPlayerController.file(pickedFile);
+        try {
+          await probe.initialize();
+          if (probe.value.duration.inSeconds > 600) {
+            _note('That video is longer than 10 minutes.');
+            return;
+          }
+        } catch (_) {
+        } finally {
+          await probe.dispose();
+        }
       }
-      final file = await asset.originFile;
+      final dart_io.File? file = pickedFile;
       if (file == null) {
         _note('Unable to read that file.');
         return;
