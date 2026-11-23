@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
@@ -41,10 +42,12 @@ class _CommentsSheetState extends State<CommentsSheet> {
   void initState() {
     super.initState();
     _load();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _silentRefresh());
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _ctrl.dispose();
     _scroll.dispose();
     super.dispose();
@@ -68,6 +71,33 @@ class _CommentsSheetState extends State<CommentsSheet> {
       }
     } catch (_) {}
     setState(() => _loading = false);
+  }
+
+  Timer? _pollTimer;
+
+  // COMMENTS_POLL_V1: quietly refresh while the sheet is open so other people's comments appear without reopening
+  Future<void> _silentRefresh() async {
+    if (_loading || _posting || !mounted) return;
+    try {
+      final r = await _dio.get(
+        '${AppConstants.serverUrl}/api/discover/${widget.postId}/comments',
+        queryParameters: { 'limit': 50 },
+      );
+      if (!mounted || _posting || r.data['success'] != true) return;
+      final fresh = (r.data['comments'] as List)
+          .map((e) => DiscoveryComment.fromJson(e as Map<String, dynamic>))
+          .toList();
+      final total = r.data['total'] as int? ?? fresh.length;
+      final same = total == _total &&
+          fresh.length == _comments.length &&
+          (fresh.isEmpty || fresh.last.commentId == _comments.last.commentId);
+      if (same) return;
+      setState(() {
+        _comments = fresh;
+        _total = total;
+      });
+      widget.onCountChanged(_total);
+    } catch (_) {}
   }
 
   Future<void> _post() async {
