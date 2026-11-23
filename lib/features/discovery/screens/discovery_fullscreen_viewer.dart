@@ -1388,7 +1388,7 @@ class _VideoPageState extends State<_VideoPage> {
           top: 0, left: 0, right: 0,
           bottom: 80,
           child: GestureDetector(
-            onTap: _toggleControlsVisibility,
+            onTap: _togglePause,
             behavior: HitTestBehavior.translucent,
           ),
         ),
