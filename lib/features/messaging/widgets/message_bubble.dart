@@ -230,6 +230,7 @@ class MessageBubble extends ConsumerWidget {
         return _ImageBubble(
             url: message.fileUrl ?? '',
             caption: message.text,
+            foldLong: message.senderId == '058000000001' && message.text.length > 240,
             viewOnce: message.viewOnce,
             albumIndex: message.albumIndex,
             albumTotal: message.albumTotal,
@@ -491,6 +492,85 @@ class _OfficialFoldedTextState extends State<_OfficialFoldedText> {
               fontWeight: FontWeight.w600,
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+// CAPTION_LINKS_V1: image captions get tappable links; long official-account captions fold with Read more
+class _CaptionText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  final bool fold;
+  const _CaptionText({required this.text, required this.style, this.fold = false});
+
+  @override
+  State<_CaptionText> createState() => _CaptionTextState();
+}
+
+class _CaptionTextState extends State<_CaptionText> {
+  bool _expanded = false;
+  final List<TapGestureRecognizer> _taps = [];
+
+  static final RegExp _url = RegExp(r'(https?://[^\s]+)', caseSensitive: false);
+
+  @override
+  void dispose() {
+    for (final t in _taps) {
+      t.dispose();
+    }
+    super.dispose();
+  }
+
+  String get _shown {
+    if (!widget.fold || _expanded) return widget.text;
+    var cut = widget.text.substring(0, 240);
+    final space = cut.lastIndexOf(RegExp(r'\s'));
+    if (space > 160) cut = cut.substring(0, space);
+    return '${cut.trimRight()}…';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    for (final t in _taps) {
+      t.dispose();
+    }
+    _taps.clear();
+    final text = _shown;
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final m in _url.allMatches(text)) {
+      if (m.start > cursor) spans.add(TextSpan(text: text.substring(cursor, m.start)));
+      final raw = m.group(0)!;
+      final url = raw.replaceFirst(RegExp(r'[.,!?;:)\]}]+$'), '');
+      final tap = TapGestureRecognizer()
+        ..onTap = () async {
+          final uri = Uri.tryParse(url);
+          if (uri != null && await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        };
+      _taps.add(tap);
+      spans.add(TextSpan(
+        text: url,
+        style: widget.style.copyWith(color: Colors.lightBlueAccent, decoration: TextDecoration.underline),
+        recognizer: tap,
+      ));
+      if (url.length < raw.length) spans.add(TextSpan(text: raw.substring(url.length)));
+      cursor = m.end;
+    }
+    if (cursor < text.length) spans.add(TextSpan(text: text.substring(cursor)));
+    final body = RichText(text: TextSpan(style: widget.style, children: spans));
+    if (!widget.fold) return body;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        body,
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Text(_expanded ? 'Show less' : 'Read more', style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 13, fontWeight: FontWeight.w600)),
         ),
       ],
     );
@@ -872,6 +952,7 @@ class _UploadStatusOverlay extends StatelessWidget {
 
 class _ImageBubble extends StatelessWidget {
   final String url, caption;
+  final bool   foldLong;
   final bool   viewOnce;
   final int?   albumIndex;
   final int?   albumTotal;
@@ -882,7 +963,7 @@ class _ImageBubble extends StatelessWidget {
   final VoidCallback? onResumeUpload;
   final VoidCallback? onRetryUpload;
   _ImageBubble(
-      {required this.url, required this.caption, required this.viewOnce,
+      {required this.url, required this.caption, required this.viewOnce, this.foldLong = false,
        this.albumIndex, this.albumTotal, this.albumSiblings = const [],
        this.status = '', this.uploadProgress = 0.0,
        this.onPauseUpload, this.onResumeUpload, this.onRetryUpload});
@@ -1003,8 +1084,7 @@ class _ImageBubble extends StatelessWidget {
           if (caption.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
-              child: Text(caption,
-                  style: TextStyle(color: context.xText, fontSize: 13))),
+              child: _CaptionText(text: caption, fold: foldLong, style: TextStyle(color: context.xText, fontSize: 13))),
         ]),
         ),
         _UploadStatusOverlay(
@@ -1057,8 +1137,7 @@ class _ImageBubble extends StatelessWidget {
         if (caption.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
-            child: Text(caption,
-                style: TextStyle(color: context.xText, fontSize: 13))),
+            child: _CaptionText(text: caption, fold: foldLong, style: TextStyle(color: context.xText, fontSize: 13))),
       ]),
       ),
       _UploadStatusOverlay(
