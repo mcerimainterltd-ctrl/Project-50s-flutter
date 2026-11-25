@@ -552,10 +552,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                       ),
                       const SizedBox(width: 12),
                       _InteractionRail(
-                        enabled:
-                            _participating &&
-                            !_joining &&
-                            !_leaving,
+                        enabled: (_participating || _watchOnly) && !_joining && !_leaving, // XL_WATCHER_RAIL_V1
                         onHeart: () => ref
                             .read(liveProvider.notifier)
                             .sendLiveReaction(widget.session.sessionId, 'heart'),
