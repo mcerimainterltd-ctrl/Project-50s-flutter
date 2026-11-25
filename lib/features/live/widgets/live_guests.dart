@@ -18,12 +18,14 @@ class LiveGuestsOverlay extends StatefulWidget {
     required this.isHost,
     this.canRequest = false,
     this.hideTiles = false,
+    this.tilesOut,
   });
 
   final String sessionId;
   final bool isHost;
   final bool canRequest;
   final bool hideTiles;
+  final ValueNotifier<List<Widget>>? tilesOut;
 
   @override
   State<LiveGuestsOverlay> createState() => _LiveGuestsOverlayState();
@@ -247,6 +249,14 @@ class _LiveGuestsOverlayState extends State<LiveGuestsOverlay> {
     }
 
     if (widget.hideTiles) tiles.clear();
+    // XAMELIVE_SPLIT_V1: hand the tiles to the screen's split panel
+    final tilesOut = widget.tilesOut;
+    if (tilesOut != null) {
+      final snapshot = List<Widget>.of(tiles);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) tilesOut.value = snapshot;
+      });
+    }
 
     final controls = <Widget>[];
     if (widget.isHost) {
@@ -365,7 +375,7 @@ class _LiveGuestsOverlayState extends State<LiveGuestsOverlay> {
                 children: controls,
               ),
             ),
-          if (tiles.isNotEmpty)
+          if (tiles.isNotEmpty && widget.tilesOut == null)
             Positioned(
               right: 12,
               top: top + 64,
@@ -500,6 +510,62 @@ class _GuestTileState extends State<_GuestTile> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 )),
+    );
+  }
+}
+
+// XAMELIVE_SPLIT_V1: the right half of the screen holds the guests; the host keeps the left half
+class LiveGuestsPanel extends StatelessWidget {
+  const LiveGuestsPanel({super.key, required this.tiles, this.stacked = false});
+
+  final ValueNotifier<List<Widget>> tiles;
+  final bool stacked; // XAMELIVE_LAYOUT_SWITCH_V1
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<Widget>>(
+      valueListenable: tiles,
+      builder: (context, list, _) {
+        if (list.isEmpty) {
+          return const Positioned(left: 0, top: 0, width: 0, height: 0, child: SizedBox.shrink());
+        }
+        final size = MediaQuery.of(context).size;
+        return Positioned(
+          right: 0,
+          bottom: 0,
+          top: stacked ? size.height / 2 : 0,
+          left: stacked ? 0 : size.width / 2,
+          child: ColoredBox(
+            color: Colors.black,
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final n = list.length;
+                final cols = stacked ? (n <= 3 ? n : 2) : (n <= 3 ? 1 : 2);
+                final rows = (n + cols - 1) ~/ cols;
+                final tileW = (box.maxWidth / cols).floorToDouble();
+                final fit = box.maxHeight / rows;
+                final tileH = fit < 130 ? 130.0 : fit;
+                return SingleChildScrollView(
+                  child: Wrap(
+                    children: [
+                      for (final t in list)
+                        SizedBox(
+                          key: t.key,
+                          width: tileW,
+                          height: tileH,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(3, 0, 3, 0),
+                            child: t,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }

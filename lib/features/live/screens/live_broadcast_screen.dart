@@ -36,6 +36,9 @@ class _LiveBroadcastScreenState
 
   bool _initializing = true;
   bool _ending = false;
+  bool _hostAlone = false;
+  final ValueNotifier<List<Widget>> _guestTiles = ValueNotifier<List<Widget>>(const []);
+  bool _stacked = false;
   bool _backendEnded = false;
   bool _shutdownRequested = false;
   bool _screenDisposed = false;
@@ -522,11 +525,21 @@ class _LiveBroadcastScreenState
           fit: StackFit.expand,
           children: [
             if (_localRenderer.srcObject != null)
-              RTCVideoView(
-                _localRenderer,
-                mirror: true,
-                objectFit:
-                    RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              ValueListenableBuilder<List<Widget>>(
+                valueListenable: _guestTiles,
+                builder: (_, tiles, __) => AnimatedPositioned(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
+                  left: 0,
+                  top: 0,
+                  bottom: (_stacked && tiles.isNotEmpty) ? MediaQuery.of(context).size.height / 2 : 0,
+                  right: (!_stacked && tiles.isNotEmpty) ? MediaQuery.of(context).size.width / 2 : 0,
+                  child: RTCVideoView(
+                    _localRenderer,
+                    mirror: true,
+                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                  ),
+                ),
               )
             else
               const ColoredBox(
@@ -544,6 +557,15 @@ class _LiveBroadcastScreenState
               sessionId: widget.result.session.sessionId,
               muted: true,
             ),
+            // XAMELIVE_SPLIT_V1: double-tap the host side to see the host alone; again to show everyone
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onDoubleTap: () => setState(() => _hostAlone = !_hostAlone),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            LiveGuestsPanel(tiles: _guestTiles, stacked: _stacked),
 
             Positioned(
               top: 0,
@@ -573,6 +595,20 @@ class _LiveBroadcastScreenState
                           ),
                         ),
                       ],
+                      // XAMELIVE_LAYOUT_SWITCH_V1: switch between side-by-side and stacked layouts
+                      ValueListenableBuilder<List<Widget>>(
+                        valueListenable: _guestTiles,
+                        builder: (_, tiles, __) => tiles.isEmpty
+                            ? const SizedBox.shrink()
+                            : IconButton(
+                                onPressed: () => setState(() => _stacked = !_stacked),
+                                tooltip: 'Switch layout',
+                                icon: Icon(
+                                  _stacked ? Icons.vertical_split_rounded : Icons.horizontal_split_rounded,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
                       const Spacer(),
                       IconButton(
                         onPressed:
@@ -601,6 +637,8 @@ class _LiveBroadcastScreenState
             LiveGuestsOverlay(
               sessionId: widget.result.session.sessionId,
               isHost: true,
+              hideTiles: _hostAlone,
+              tilesOut: _guestTiles,
             ),
 
             // XAMELIVE_INTERACTIONS_V1

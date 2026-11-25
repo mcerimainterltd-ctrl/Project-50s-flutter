@@ -4886,7 +4886,42 @@ void _showLiveNowSheet(BuildContext screenContext) {
                     itemBuilder: (_, i) {
                       final live = lives[i];
                       return GestureDetector(
-                        onTap: () {
+                        onTap: () async {
+                          // XAMELIVE_OWNLIVE_V1: the host who taps their own live can end it
+                          final myId = ref.read(currentUserProvider)?.xameId ?? '';
+                          if (myId.isNotEmpty && live.broadcasterXameId == myId) {
+                            final choice = await showDialog<String>(
+                              context: sheetContext,
+                              builder: (dctx) => AlertDialog(
+                                title: const Text('This is your live'),
+                                content: const Text('End it now, or watch it?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(dctx).pop('cancel'),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(dctx).pop('watch'),
+                                    child: const Text('Watch'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(dctx).pop('end'),
+                                    child: const Text('End live', style: TextStyle(color: Colors.redAccent)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (choice == 'end') {
+                              final ended = await ref.read(liveProvider.notifier).endLiveSession(live.sessionId);
+                              if (!ended && screenContext.mounted) {
+                                ScaffoldMessenger.of(screenContext).showSnackBar(
+                                  const SnackBar(content: Text('Could not end the live. Please try again.')),
+                                );
+                              }
+                              return;
+                            }
+                            if (choice != 'watch' || !sheetContext.mounted) return;
+                          }
                           Navigator.of(sheetContext).pop();
                           if (screenContext.mounted) {
                             screenContext.push(

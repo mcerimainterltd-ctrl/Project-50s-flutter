@@ -37,6 +37,8 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
   bool _watchOnly = false;
   bool _participating = false;
   bool _hostAlone = false; // XAMELIVE_HOSTALONE_V1
+  final ValueNotifier<List<Widget>> _guestTiles = ValueNotifier<List<Widget>>(const []);
+  bool _stacked = false;
   String _connectionStatus = 'Connecting…';
 
   @override
@@ -307,10 +309,20 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
           fit: StackFit.expand,
           children: [
             if (_renderer.srcObject != null)
-              RTCVideoView(
-                _renderer,
-                objectFit:
-                    RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              ValueListenableBuilder<List<Widget>>(
+                valueListenable: _guestTiles,
+                builder: (_, tiles, __) => AnimatedPositioned(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
+                  left: 0,
+                  top: 0,
+                  bottom: (_stacked && tiles.isNotEmpty) ? MediaQuery.of(context).size.height / 2 : 0,
+                  right: (!_stacked && tiles.isNotEmpty) ? MediaQuery.of(context).size.width / 2 : 0,
+                  child: RTCVideoView(
+                    _renderer,
+                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                  ),
+                ),
               )
             else
               const ColoredBox(
@@ -332,6 +344,8 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                 child: const SizedBox.expand(),
               ),
             ),
+            // XAMELIVE_SPLIT_V1: guests fill the right half of the screen
+            LiveGuestsPanel(tiles: _guestTiles, stacked: _stacked),
 
             // Subtle readability gradient.
             Positioned(
@@ -400,6 +414,20 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
                       ),
                       const SizedBox(width: 8),
                       const LiveCaptionsButton(),
+                      // XAMELIVE_LAYOUT_SWITCH_V1: switch between side-by-side and stacked layouts
+                      ValueListenableBuilder<List<Widget>>(
+                        valueListenable: _guestTiles,
+                        builder: (_, tiles, __) => tiles.isEmpty
+                            ? const SizedBox.shrink()
+                            : IconButton(
+                                onPressed: () => setState(() => _stacked = !_stacked),
+                                tooltip: 'Switch layout',
+                                icon: Icon(
+                                  _stacked ? Icons.vertical_split_rounded : Icons.horizontal_split_rounded,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
                       const Spacer(),
                       IconButton(
                         onPressed:
@@ -575,6 +603,7 @@ class _LiveViewerScreenState extends ConsumerState<LiveViewerScreen> {
               isHost: false,
               canRequest: _participating && !_leaving,
               hideTiles: _hostAlone,
+              tilesOut: _guestTiles,
             ),
 
             LiveCaptionsOverlay(sessionId: widget.session.sessionId),
